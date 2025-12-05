@@ -38,7 +38,7 @@ from firecrown.metadata_types._measurements import (
 )
 from firecrown.metadata_types._utils import TypeSource
 
-RULE_REGISTRY: dict[str, type["BinPairSelector"]] = {}
+BIN_PAIR_SELECTOR_REGISTRY: dict[str, type["BinPairSelector"]] = {}
 
 
 def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSelector"]:
@@ -61,9 +61,9 @@ def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSel
     if kind_field.default is PydanticUndefined:
         raise ValueError(f"{cls.__name__} has no default for 'kind'")
     kind_value = kind_field.default
-    if kind_value in RULE_REGISTRY:
+    if kind_value in BIN_PAIR_SELECTOR_REGISTRY:
         raise ValueError(f"Duplicate pair selector kind {kind_value}")
-    RULE_REGISTRY[kind_value] = cls
+    BIN_PAIR_SELECTOR_REGISTRY[kind_value] = cls
     return cls
 
 
@@ -156,7 +156,7 @@ class BinPairSelector(BaseModel):
                 assert isinstance(v, dict)
                 assert "kind" in v
                 kind = v["kind"]
-                concrete_cls = RULE_REGISTRY.get(kind)
+                concrete_cls = BIN_PAIR_SELECTOR_REGISTRY.get(kind)
                 if concrete_cls is None:
                     raise ValueError(f"Unknown kind {kind}")
                 return concrete_cls.model_validate(v)
@@ -265,16 +265,26 @@ class NotBinPairSelector(BinPairSelector):
         return not self.pair_selector.keep(zdist, m)
 
 
+class CompositeSelector(BinPairSelector):
+    """Base class for selectors composed from other selectors."""
+
+    _impl: BinPairSelector
+
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair):
+        """Delegate to the underlying selector implementation."""
+        return self._impl.keep(zdist, m)
+
+
 @register_bin_pair_selector
 class NamedBinPairSelector(BinPairSelector):
     """Selector for explicitly specified bin name pairs.
 
     This selector keeps bin pairs if their names match any entry in the configured
-    list. Matching is symmetric: (name1, name2) is considered equivalent to
-    (name2, name1).
+    list exactly, in the given order. The matching is order-dependent: (name1, name2)
+    is different from (name2, name1).
 
     Example:
-        names=[("bin0", "bin1"), ("bin2", "bin2")]  # Cross-correlation and one auto
+        names=[("bin0", "bin1"), ("bin2", "bin2")]  # Matches in that exact order
     """
 
     kind: str = "named"
@@ -360,46 +370,136 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
 
 
 @register_bin_pair_selector
-class SourceBinPairSelector(BinPairSelector):
+class AutoBinPairSelector(CompositeSelector):
+    """Selector for auto-correlations based on both bin name and measurement type.
+
+    This selector keeps only pairs where both bins have identical names and both
+    measurements are identical, effectively selecting auto-correlations within the same
+    tomographic bin and measurement type.
+    """
+
+    kind: str = "auto-bin"
+
+    def model_post_init(self, _: Any, /) -> None:
+        self._impl = AutoNameBinPairSelector() & AutoMeasurementBinPairSelector()
+
+
+@register_bin_pair_selector
+class LeftMeasurementBinPairSelector(BinPairSelector):
+    """Selector filtering pairs by the left (x) measurement type.
+
+    This selector keeps pairs where the left (x) measurement is one of the
+    configured measurement types.
+
+    Example:
+        # Select pairs where left measurement is a source (shear) measurement
+        selector = LeftMeasurementBinPairSelector(measurement_set=GALAXY_SOURCE_TYPES)
+    """
+
+    kind: str = "left-measurement"
+    measurement_set: set[Measurement]
+
+    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+        """Return True if the left measurement is in the configured set.
+
+        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param m: Pair of Measurement objects.
+
+        :return: True if the left measurement is in the set, False otherwise.
+        """
+        return m[0] in self.measurement_set
+
+
+@register_bin_pair_selector
+class RightMeasurementBinPairSelector(BinPairSelector):
+    """Selector filtering pairs by the right (y) measurement type.
+
+    This selector keeps pairs where the right (y) measurement is one of the
+    configured measurement types.
+
+    Example:
+        # Select pairs where right measurement is a lens (density) measurement
+        selector = RightMeasurementBinPairSelector(measurement_set=GALAXY_LENS_TYPES)
+    """
+
+    kind: str = "right-measurement"
+    measurement_set: set[Measurement]
+
+    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+        """Return True if the right measurement is in the configured set.
+
+        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param m: Pair of Measurement objects.
+
+        :return: True if the right measurement is in the set, False otherwise.
+        """
+        return m[1] in self.measurement_set
+
+
+@register_bin_pair_selector
+class SourceBinPairSelector(CompositeSelector):
     """Selector for galaxy source (weak lensing) measurement pairs.
 
     This selector keeps pairs where both measurements are galaxy source types,
     which correspond to weak lensing shear measurements (e.g., galaxy_shear_plus,
     galaxy_shear_minus).
+
+    Implementation note: This is a composite selector combining
+    LeftMeasurementBinPairSelector and RightMeasurementBinPairSelector
+    with GALAXY_SOURCE_TYPES.
     """
 
     kind: str = "source"
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
-        """Return True if both measurements are galaxy source measurements.
-
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
-        :param m: Pair of Measurement objects.
-
-        :return: True if both are source measurements, False otherwise.
-        """
-        return (m[0] in GALAXY_SOURCE_TYPES) and (m[1] in GALAXY_SOURCE_TYPES)
+    def model_post_init(self, _: Any, /) -> None:
+        """Initialize as composite of left and right source measurement selectors."""
+        self._impl = LeftMeasurementBinPairSelector(
+            measurement_set=set(GALAXY_SOURCE_TYPES)
+        ) & RightMeasurementBinPairSelector(measurement_set=set(GALAXY_SOURCE_TYPES))
 
 
 @register_bin_pair_selector
-class LensBinPairSelector(BinPairSelector):
+class LensBinPairSelector(CompositeSelector):
     """Selector for galaxy lens (clustering) measurement pairs.
 
     This selector keeps pairs where both measurements are galaxy lens types,
     which correspond to galaxy number density or clustering measurements.
+
+    Implementation note: This is a composite selector combining
+    LeftMeasurementBinPairSelector and RightMeasurementBinPairSelector
+    with GALAXY_LENS_TYPES.
     """
 
     kind: str = "lens"
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
-        """Return True if both measurements are galaxy lens measurements.
+    def model_post_init(self, _: Any, /) -> None:
+        """Initialize as composite of left and right lens measurement selectors."""
+        self._impl = LeftMeasurementBinPairSelector(
+            measurement_set=set(GALAXY_LENS_TYPES)
+        ) & RightMeasurementBinPairSelector(measurement_set=set(GALAXY_LENS_TYPES))
 
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
-        :param m: Pair of Measurement objects.
 
-        :return: True if both are lens measurements, False otherwise.
-        """
-        return (m[0] in GALAXY_LENS_TYPES) and (m[1] in GALAXY_LENS_TYPES)
+@register_bin_pair_selector
+class SourceLensBinPairSelector(CompositeSelector):
+    """Selector for mixed source-lens measurement pairs.
+
+    This selector keeps pairs where the left measurement is a galaxy source type
+    (weak lensing shear) and the right measurement is a galaxy lens type
+    (density/clustering). The measurement order follows the convention: source types
+    are ordered before lens types.
+
+    Implementation note: This is a composite selector combining
+    LeftMeasurementBinPairSelector with GALAXY_SOURCE_TYPES and
+    RightMeasurementBinPairSelector with GALAXY_LENS_TYPES.
+    """
+
+    kind: str = "source-lens"
+
+    def model_post_init(self, _: Any, /) -> None:
+        """Initialize as composite of source-left and lens-right selectors."""
+        self._impl = LeftMeasurementBinPairSelector(
+            measurement_set=set(GALAXY_SOURCE_TYPES)
+        ) & RightMeasurementBinPairSelector(measurement_set=set(GALAXY_LENS_TYPES))
 
 
 @register_bin_pair_selector
