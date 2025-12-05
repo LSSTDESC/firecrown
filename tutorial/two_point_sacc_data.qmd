@@ -92,24 +92,24 @@ sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
 all_meta = extract_all_real_metadata_indices(sacc_data)
 ```
 
-You can inspect the extracted metadata layout:
+The extracted metadata describes the following two-point correlations:
 
 ```{python}
 # | code-fold: true
-import yaml
+import pandas as pd
 from IPython.display import Markdown
 
-all_meta_prune = [
+all_meta_table = [
     {
-        "data_type": meta["data_type"],
-        "tracer1": str(meta["tracer_names"].name1),
-        "tracer2": str(meta["tracer_names"].name2),
+        "bin-x": str(meta["tracer_names"].name1),
+        "bin-y": str(meta["tracer_names"].name2),
+        "SACC data-type": meta["data_type"],
     }
     for meta in all_meta
 ]
 
-all_meta_yaml = yaml.safe_dump(all_meta_prune[::4], default_flow_style=False)
-Markdown(f"```yaml\n{all_meta_yaml}\n```")
+df = pd.DataFrame(all_meta_table)
+Markdown(df.to_markdown(index=False))
 ```
 
 Construct the [[likelihood|TwoPoint]] objects using the extracted layout and the factory:
