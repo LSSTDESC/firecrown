@@ -239,40 +239,85 @@ class Clusters(YAMLSerializable, str, Enum):
         return hash((Clusters, self.value))
 
 
-# Type alias for any measurement type
 Measurement = Galaxies | CMB | Clusters
+"""Type alias for any measurement type."""
 
-# Comprehensive list of all measurement types
 ALL_MEASUREMENTS: list[Measurement] = list(chain(Galaxies, CMB, Clusters))
+"""Comprehensive list of all measurement types.
 
-# Tuple of all measurement type classes
+Includes all measurement types across all categories (Galaxies, CMB, Clusters).
+"""
+
 ALL_MEASUREMENT_TYPES = (Galaxies, CMB, Clusters)
+"""Tuple of all measurement type classes.
 
-# Measurement type categorization constants
+Used for type checking and iteration over measurement categories.
+"""
+
 HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
+"""Galaxy measurements analyzable only in harmonic space.
+
+Currently includes shear E-mode measurements, which can only be analyzed in
+Fourier/harmonic space.
+"""
+
 REAL_ONLY_MEASUREMENTS = (
     Galaxies.SHEAR_T,
     Galaxies.PART_OF_XI_MINUS,
     Galaxies.PART_OF_XI_PLUS,
 )
+"""Galaxy measurements analyzable only in real space.
+
+Includes shear T-mode and correlation function components (xi_minus, xi_plus), which
+can only be analyzed in configuration/real space.
+"""
+
 EXACT_MATCH_MEASUREMENTS = (Galaxies.PART_OF_XI_MINUS, Galaxies.PART_OF_XI_PLUS)
+"""Measurements requiring exact type matching in correlations.
+
+Used for xi_minus and xi_plus correlation functions, where both measurements in a
+correlation must be of the exact same type.
+"""
+
 INCOMPATIBLE_MEASUREMENTS = (Galaxies.SHEAR_T,)
+"""Measurements incompatible with cross-correlations.
 
-# Regular expressions for tracer name patterns
+Currently includes shear T-mode measurements, which cannot be correlated with other
+measurement types.
+"""
+
 LENS_REGEX = re.compile(r"^lens\d+$")
-SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
+"""Regular expression for lens tracer bin names.
 
-# Galaxy measurement categorization
+Matches names like lens0, lens1, lens2, etc.
+"""
+
+SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
+"""Regular expression for source tracer bin names.
+
+Matches names like src0, src1, source0, source1, etc.
+"""
+
 GALAXY_SOURCE_TYPES = (
     Galaxies.SHEAR_E,
     Galaxies.SHEAR_T,
     Galaxies.PART_OF_XI_MINUS,
     Galaxies.PART_OF_XI_PLUS,
 )
+"""Galaxy measurements for source tracers.
+
+Includes all shear-related measurements associated with source (weak lensing)
+tracers.
+"""
+
 GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
+"""Galaxy measurements for lens tracers.
 
-# CMB measurement types
+Includes galaxy number counts (density) associated with lens (clustering) tracers.
+"""
+
 CMB_TYPES = tuple(CMB)
+"""Tuple of all CMB measurement types."""
 
-# Cluster measurement types
 CLUSTER_TYPES = tuple(Clusters)
+"""Tuple of all cluster measurement types."""

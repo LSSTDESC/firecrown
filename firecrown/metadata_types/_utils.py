@@ -32,8 +32,11 @@ class TracerNames(YAMLSerializable):
         yield self.name2
 
 
-# Special name to represent total
 TRACER_NAMES_TOTAL = TracerNames("", "")
+"""Special TracerNames instance for totals.
+
+Represents the total/sum over all tracers, indicated by empty tracer names.
+"""
 
 
 class TypeSource(str):

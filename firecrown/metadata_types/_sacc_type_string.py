@@ -83,3 +83,8 @@ MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
     for a, b in product(ALL_MEASUREMENTS, repeat=2)
     if measurement_is_compatible_harmonic(a, b)
 }
+"""Mapping from SACC strings to measurement type pairs.
+
+Maps SACC measurement type strings (like 'galaxy_density_cl' or 'galaxy_shear_cl_ee')
+to their corresponding pairs of Measurement types.
+"""
