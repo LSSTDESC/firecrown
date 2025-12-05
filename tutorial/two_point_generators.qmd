@@ -11,11 +11,18 @@ In the tutorial [redshift distributions](inferred_zdist_generators.qmd) we illus
 Additionally, in [serializable redshift distributions](inferred_zdist_serialization.qmd) we demonstrate how to generate redshift distributions using serializable objects.
 This document outlines how to use `InferredGalaxyZDist` objects to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
 
+This tutorial focuses on generating two-point statistics from scratch using metadata. For loading existing data from SACC files and applying scale cuts, see:
+- [Two-Point Factory Basics](two_point_factory_basics.qmd)
+- [Loading SACC Data](two_point_sacc_loading.qmd)
+- [Scale Cuts and Filtering](two_point_scale_cuts.qmd)
+
 ## Two-point statistics
 
 Two-point statistics are widely used in cosmological analyses.
-They provide a statistical summary of the distribution, in either real of harmonic space, of galaxies and the matter density field, or of other observables.
+They provide a statistical summary of the distribution, in either real or harmonic space, of galaxies and the matter density field, or of other observables.
 In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood.two_point`.
+
+**Note:** This tutorial demonstrates generating two-point statistics from scratch. If you have existing data in a SACC file, see [Loading SACC Data](two_point_sacc_loading.qmd) for how to extract and use it.
 
 ## Generating the LSST Year 1 Redshift Distribution Bins
 
@@ -151,6 +158,9 @@ all_two_point_functions = TwoPoint.from_metadata(
     ),
 )
 ```
+
+The `TwoPointFactory` here uses default integration options. For information on controlling integration methods (Limber approximation vs. FKEM methods), see [Integration Methods](two_point_integration.qmd).
+
 
 ## Setting Up the Two-Point Statistics
 

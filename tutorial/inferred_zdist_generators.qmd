@@ -53,7 +53,7 @@ The following code block demonstrates how to use them to generate the redshift d
 
 [^2]: Note that the SRD fixes $\beta = 2$.
 The values of $\alpha$ and $z_0$ are different for Year 1 and Year 10.
-`ZDistLLSTSRD` provides these values as defaults and allows for greater flexibility when desired.
+`ZDistLSSTSRD` provides these values as defaults and allows for greater flexibility when desired.
 
 Below we calculate @eq-fz for year 1 and year 10 parameters from LSST SRD.
 Here we are choosing $100$ equally-spaced points in the range $0 < z < 3.5$ at which to evaluate the function $f(z)$.
@@ -83,10 +83,10 @@ Pz_y1_source = zdist_y1_source.distribution(z)
 Pz_y10_source = zdist_y10_source.distribution(z)
 ```
 
-We use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation.
-This allows us to create the knots such that the interpolation error is less than $10^{-5}$.[^4]
+We use NumCosmo's `autoknots` algorithm to determine the number of knots to use in the spline interpolation.
+This allows us to create the knots such that the interpolation error is less than the specified tolerance (here $10^{-5}$).[^4]
 
-[^4]: The `autoknots` method is a part of the NumCosmo package, which is a dependency of Firecrown.
+[^4]: The `autoknots` method is part of the NumCosmo package, which is a dependency of Firecrown.
 See [the NumCosmo documentation](https://numcosmo.readthedocs.io/en/latest/reference/numcosmo-math/class.SplineCubicNotaknot.html) for more information.
 
 The generated data are plotted in @fig-fz
@@ -99,7 +99,7 @@ The generated data are plotted in @fig-fz
 from plotnine import *  # bad form in programs, but seems OK for plotnine
 import pandas as pd
 
-# The data were not originally generated in a dataframe convenient for
+# The data were not originally generated in a data frame convenient for
 # plotting, so our first task it to put them into such a form.
 d_y_all = pd.concat(
     [
@@ -203,7 +203,7 @@ The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxy
 # | fig-cap-location: margin
 # | code-fold: true
 # We have already imported plotnine, so we don't need to do that again.
-# This time we generate the dataframe using a different technique.
+# This time we generate the data frame using a different technique.
 d_lens0_y1 = pd.DataFrame(
     {
         "z": Pz_lens0_y1.z,
@@ -289,7 +289,7 @@ The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxy
 # | fig-cap-location: margin
 # | code-fold: true
 # We have already imported plotnine, so we don't need to do that again.
-# This time we generate the dataframe using a different technique.
+# This time we generate the data frame using a different technique.
 d_y1 = pd.concat(
     [
         pd.DataFrame(
@@ -334,6 +334,7 @@ Because this exact approach can be computationally expensive, the `equal_area_bi
 In this mode, the bins are generated using the **true redshift distribution** only, which is faster but may not perfectly balance the galaxy counts across bins.
 
 The following code block demonstrates how to generate source bins with equal galaxy counts using the `ZDistLSSTSRD` class.
+The `last_z` parameter specifies the maximum photometric redshift to consider when generating bins.
 ```{python}
 # We use the same zdist_y1_source that was created above.
 # Next, we generate the source bins using the true distribution.
@@ -350,7 +351,7 @@ source_bins_phot = zdist_y1_source.equal_area_bins(
 We can plot just the bins edges to see the difference between the two methods.
 ```{python}
 # | label: fig-source-bins-edges
-# | fig-cap: Source bins edges for LSST Year 1 using the formulation from the SRD.
+# | fig-cap: Source bin edges for LSST Year 1 using the formulation from the SRD.
 # | fig-cap-location: margin
 # | code-fold: true
 
@@ -388,8 +389,8 @@ d_bin_edges_phot = pd.DataFrame({"bin_edges_phot": source_bins_phot})
 ```
 
 The plot in @fig-source-bins-edges shows the bin edges for the source sample in LSST Year 1.
-The red dashed lines represent the bin edges generated using the true distribution, while the blue dotted lines represent the bin edges generated using the photometric distribution.
-The percentage difference in the number of galaxies in each bin is shown in the table below.
+The red dashed lines represent the bin edges generated using the true redshift distribution, while the blue dotted lines represent the bin edges generated using the photometric redshift distribution.
+The table below shows the percentage difference in the number of galaxies in each bin between the two methods.
 ```{python}
 # | label: tbl-source-bins-diff
 # | tbl-cap: Percentage difference in the number of galaxies in each bin for LSST Year 1 using the formulation from the SRD.
@@ -432,4 +433,4 @@ percent_diff = 100.0 * (N_gal - N_gal_phot) / N_gal
 
 Note that these facilities for creating redshift distributions are not limitations on the use of the distributions.
 Any facility that can create the $z$ and $\textrm{d}N/\textrm{d}z$  arrays can be used to create an `InferredGalaxyZDist` object.
-Code that uses the `InferrredGalaxyZDist` objects does not depend on how they were created.
+Code that uses the `InferredGalaxyZDist` objects does not depend on how they were created.

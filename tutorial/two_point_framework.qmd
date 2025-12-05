@@ -77,7 +77,7 @@ It is valid to include multiple measurement types for the same bin, such as gala
 To further differentiate among subpopulations, each bin may be tagged with a [[metadata_types|InferredGalaxyZDist.type_source]].
 This identifier, while typically a simple string[^type_source], distinguishes between subsets within the same measurement category.
 For example, in galaxy surveys, [[metadata_types|InferredGalaxyZDist.type_source]] might refer to red vs. blue galaxies, or in CMB lensing, to Planck vs. SPT data.
-This tag allows the modeling framework to apply different theoretical treatments or nuisance parameterizations to distinct subcomponents while keeping the overall bin structure unified.
+This tag allows the modeling framework to apply different theoretical treatments or nuisance parametrization to distinct subcomponents while keeping the overall bin structure unified.
 
 [^type_source]: More precisely, `type_source` is actually of type `TypeSource`, which is a subclass of `str`.
   This type has some additional functionality used by the metadata system for validation, and which is usually transparent to users of Firecrown.

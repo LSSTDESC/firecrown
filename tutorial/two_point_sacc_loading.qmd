@@ -1,0 +1,196 @@
+---
+title: "Loading SACC Data with TwoPointFactory"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+This tutorial demonstrates how to load data from `SACC` files and construct **[[likelihood|TwoPoint]]** objects using the **[[likelihood|TwoPointFactory]]**. 
+
+For an overview of the factory system, see [Two-Point Factory Basics](two_point_factory_basics.qmd).
+
+## Working with `SACC` Objects
+
+A `SACC` object provides all components needed for a statistical analysis in Firecrown:
+
+- **Metadata**: Layout, data types, binning, tracer names.
+- **Calibration data**: Redshift distributions $\mathrm{d}n/\mathrm{d}z$ for each bin.
+- **Data**: Measurements (e.g., power spectra).
+- **Covariance**: Uncertainties and correlations.
+
+Firecrown supports two workflows: the **recommended full extraction approach**, and a **legacy indices-only approach**, now deprecated.
+
+### Recommended: Full Metadata + Data Extraction
+
+In the current interface, Firecrown extracts everything from a `SACC` object — layout, calibration, and measurements. These are passed directly to constructors that build ready-to-use likelihoods.
+
+```{python}
+from firecrown.data_functions import (
+    extract_all_real_data,
+    check_two_point_consistence_real,
+)
+from firecrown.likelihood.factories import load_sacc_data
+
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
+
+two_point_reals = extract_all_real_data(sacc_data)
+check_two_point_consistence_real(two_point_reals)
+```
+
+Use a factory to build the `TwoPoint` objects in the **ready** state:
+
+```{python}
+from firecrown.likelihood import TwoPoint, TwoPointFactory
+from firecrown.utils import base_model_from_yaml
+
+two_point_yaml = """
+correlation_space: real
+weak_lensing_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: MultiplicativeShearBiasFactory
+    - type: PhotoZShiftFactory
+    global_systematics:
+    - type: LinearAlignmentSystematicFactory
+      alphag: 1.0
+number_counts_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: PhotoZShiftFactory
+    global_systematics: []
+"""
+
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_points_ready = TwoPoint.from_measurement(two_point_reals, tp_factory)
+```
+
+Create a `Likelihood` object in the ready state using the covariance matrix:
+
+```{python}
+from firecrown.likelihood import ConstGaussian
+
+likelihood_ready = ConstGaussian.create_ready(
+    two_points_ready, sacc_data.covariance.dense
+)
+```
+
+### Deprecated: Indices-Only Extraction
+
+This approach was used in Firecrown $\leq 1.7$. Users needed to know the structure of the `SACC` file a priori and create [[likelihood|TwoPoint]] objects manually.
+
+To reduce this burden, Firecrown introduced a helper to extract tracer pairs and data types from a `SACC` file:
+
+```{python}
+from firecrown.metadata_functions import extract_all_real_metadata_indices
+from firecrown.likelihood.factories import load_sacc_data
+
+# Load the SACC file
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
+# Extract all metadata indices
+all_meta = extract_all_real_metadata_indices(sacc_data)
+```
+
+You can inspect the extracted metadata layout:
+
+```{python}
+# | code-fold: true
+import yaml
+from IPython.display import Markdown
+
+all_meta_prune = [
+    {
+        "data_type": meta["data_type"],
+        "tracer1": str(meta["tracer_names"].name1),
+        "tracer2": str(meta["tracer_names"].name2),
+    }
+    for meta in all_meta
+]
+
+all_meta_yaml = yaml.safe_dump(all_meta_prune[::4], default_flow_style=False)
+Markdown(f"```yaml\n{all_meta_yaml}\n```")
+```
+
+Construct the [[likelihood|TwoPoint]] objects using the extracted layout and the factory:
+
+```{python}
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_point_list = TwoPoint.from_metadata_index(all_meta, tp_factory)
+```
+
+At this stage, the [[likelihood|TwoPoint]] objects contain only structural metadata (e.g., tracer combinations, data types). They are not yet in the **ready** state, as no metadata or measurement data has been attached. To complete the construction, you must call the [[likelihood|Statistic.read]] method on each object. Alternatively, if the [[likelihood|TwoPoint]] objects are part of a [[likelihood|Likelihood]] instance, calling its [[likelihood|Likelihood.read]] method will internally propagate to each contained statistic:
+
+```{python}
+likelihood = ConstGaussian(two_point_list)
+likelihood.read(sacc_data)
+```
+
+> Each [[likelihood|TwoPoint]] object is a subclass of [[likelihood|Statistic]], and the `Likelihood.read` method delegates to `Statistic.read` for each of its components.
+
+> **Note:** This indices-only method is deprecated and kept for compatibility with older code. For new projects, prefer the full extraction interface above.
+
+## Comparing Results
+
+We now verify that both approaches—constructing the likelihood in two phases (metadata-only) and directly in the ready state—produce identical results.
+
+First, we extract the required parameter sets for both likelihoods:
+```{python}
+from firecrown.parameters import ParamsMap
+import pandas as pd
+
+req_params = likelihood.required_parameters()
+req_params_ready = likelihood_ready.required_parameters()
+
+assert req_params_ready == req_params
+
+default_values = req_params.get_default_values()
+params = ParamsMap(default_values)
+
+pd.DataFrame(
+    {
+        "ready": sorted(req_params_ready.get_params_names()),
+        "regular": sorted(req_params.get_params_names()),
+    }
+)
+```
+
+Both likelihoods depend on the same parameter set. The default values used are:
+```{python}
+# | code-fold: true
+import yaml
+from IPython.display import Markdown
+
+default_values_yaml = yaml.dump(default_values, default_flow_style=False)
+Markdown(f"```yaml\n{default_values_yaml}\n```")
+```
+
+Next, we prepare both likelihoods with the same model setup and parameters:
+```{python}
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params_map
+
+tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+params = get_default_params_map(tools, likelihood)
+
+tools.update(params)
+tools.prepare()
+
+likelihood.update(params)
+likelihood_ready.update(params)
+```
+
+Finally, we compute and compare the log-likelihood values from both construction methods:
+```{python}
+# | code-fold: true
+print(f"Loglike (metadata-only): {likelihood.compute_loglike(tools)}")
+print(f"Loglike (ready state):   {likelihood_ready.compute_loglike(tools)}")
+```
+
+Both values should match exactly, confirming that the two construction methods are consistent.
+
+## Next Steps
+
+- [Scale Cuts and Filtering](two_point_scale_cuts.qmd): Learn how to apply physical scale cuts to your data
+- [Integration Methods](two_point_integration.qmd): Control how two-point functions are computed

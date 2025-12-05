@@ -1,0 +1,197 @@
+---
+title: "Scale Cuts and Data Filtering"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+This tutorial demonstrates how to apply physical scale cuts to two-point statistics using **[[data_functions|TwoPointBinFilterCollection]]**. Scale cuts are essential for limiting analyses to scales where theoretical models are accurate.
+
+For background on the factory system, see [Two-Point Factory Basics](two_point_factory_basics.qmd). For loading SACC data, see [Loading SACC Data](two_point_sacc_loading.qmd). For information on defining systematics factories, see [Two-Point Generators](two_point_generators.qmd#sec-factories).
+
+## Filtering Data: Scale Cuts
+
+Real analyses use only a subset of the measured two-point statistics, where the utilized data is typically limited by the accuracy of the models used to fit the data. It is useful to define the physical scales (corresponding to the data) that should be analyzed in a given likelihood evaluation of two-point statistics. Firecrown implements this feature through its factories, notably by defining a [[data_functions|TwoPointBinFilterCollection]] object.
+
+This object is a collection of [[data_functions|TwoPointBinFilter]] objects, which define the valid data analysis range for a given combination of two-point tracers. For instance, we can define the filtered range of galaxy clustering auto-correlations as follows:
+
+```{python}
+from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
+from firecrown.metadata_types import Galaxies
+from firecrown.utils import base_model_to_yaml
+from IPython.display import Markdown
+
+tp_collection = TwoPointBinFilterCollection(
+    filters=[
+        TwoPointBinFilter.from_args(
+            name1=f"lens{i}",
+            measurement1=Galaxies.COUNTS,
+            name2=f"lens{i}",
+            measurement2=Galaxies.COUNTS,
+            lower=2,
+            upper=300,
+        )
+        for i in range(5)
+    ],
+    require_filter_for_all=True,
+    allow_empty=True,
+)
+Markdown(f"```yaml\n{base_model_to_yaml(tp_collection)}\n```")
+```
+
+Equivalently, we may reduce the complexity of the code slightly and specify the use of auto-correlations only:
+
+```{python}
+tp_collection = TwoPointBinFilterCollection(
+    filters=[
+        TwoPointBinFilter.from_args_auto(
+            name=f"lens{i}",
+            measurement=Galaxies.COUNTS,
+            lower=2,
+            upper=300,
+        )
+        for i in range(5)
+    ],
+    require_filter_for_all=True,
+    allow_empty=True,
+)
+Markdown(f"```yaml\n{base_model_to_yaml(tp_collection)}\n```")
+```
+
+One may alternatively define the tracers directly (instead of from arguments) as [[data_functions|TwoPointTracerSpec]] objects.
+
+## Using TwoPointExperiment
+
+A [[likelihood.factories|TwoPointExperiment]] object keeps track of the relevant `Factory` instances to generate the two-point configurations of the analysis (either in configuration or harmonic space) and the scale-cut/data filtering choices to evaluate a defined likelihood. The interpretation of the filtered lower and upper limits of the data depend on the definition of the [[likelihood.factories|TwoPointExperiment]] factories in either configuration or harmonic space.
+
+With this formalism, we can evaluate the likelihood exactly as in the [Loading SACC Data](two_point_sacc_loading.qmd) tutorial by defining filters to be very wide. Alternatively, by setting a restrictively small filtered range, we can remove data from the analysis. In the example below, we filter out all galaxy clustering data by using an extremely narrow range.
+
+```{python}
+from firecrown.likelihood import TwoPointFactory
+from firecrown.likelihood.factories import (
+    DataSourceSacc,
+    TwoPointExperiment,
+)
+from firecrown.utils import base_model_from_yaml
+
+two_point_yaml = """
+correlation_space: real
+weak_lensing_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: MultiplicativeShearBiasFactory
+    - type: PhotoZShiftFactory
+    global_systematics:
+    - type: LinearAlignmentSystematicFactory
+      alphag: 1.0
+number_counts_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: PhotoZShiftFactory
+    global_systematics: []
+"""
+
+tpf = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+
+two_point_experiment = TwoPointExperiment(
+    two_point_factory=tpf,
+    data_source=DataSourceSacc(
+        sacc_data_file="../examples/des_y1_3x2pt/sacc_data.hdf5",
+        filters=TwoPointBinFilterCollection(
+            require_filter_for_all=False,
+            allow_empty=True,
+            filters=[
+                TwoPointBinFilter.from_args_auto(
+                    name=f"lens{i}",
+                    measurement=Galaxies.COUNTS,
+                    lower=0.5,
+                    upper=300,
+                )
+                for i in range(5)
+            ],
+        ),
+    ),
+)
+
+two_point_experiment_filtered = TwoPointExperiment(
+    two_point_factory=tpf,
+    data_source=DataSourceSacc(
+        sacc_data_file="../examples/des_y1_3x2pt/sacc_data.hdf5",
+        filters=TwoPointBinFilterCollection(
+            require_filter_for_all=False,
+            allow_empty=True,
+            filters=[
+                TwoPointBinFilter.from_args_auto(
+                    name=f"lens{i}",
+                    measurement=Galaxies.COUNTS,
+                    lower=2999,
+                    upper=3000,
+                )
+                for i in range(5)
+            ],
+        ),
+    ),
+)
+```
+
+## Serializing TwoPointExperiment
+
+The [[likelihood.factories|TwoPointExperiment]] objects can also be used to create likelihoods in the ready state. Additionally, they can be serialized into a YAML file, making it easier to share specific analysis choices with other users and collaborators.
+
+The `yaml` below shows the first experiment:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{base_model_to_yaml(two_point_experiment)}\n```")
+```
+
+The `yaml` below shows the second experiment:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{base_model_to_yaml(two_point_experiment_filtered)}\n```")
+```
+
+## Creating and Comparing Likelihoods
+
+Next, we create likelihoods from the [[likelihood.factories|TwoPointExperiment]] objects and compare the loglike values.
+
+```{python}
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params_map
+
+tools = ModelingTools()
+likelihood_tpe = two_point_experiment.make_likelihood()
+
+
+params = get_default_params_map(tools, likelihood_tpe)
+
+likelihood_tpe.update(params)
+tools.update(params)
+tools.prepare()
+
+likelihood_tpe_filtered = two_point_experiment_filtered.make_likelihood()
+
+tools = ModelingTools()
+params = get_default_params_map(tools, likelihood_tpe_filtered)
+
+tools.update(params)
+tools.prepare()
+likelihood_tpe_filtered.update(params)
+```
+
+Compare the log-likelihood values:
+```{python}
+# | code-fold: true
+print(f"Loglike from TwoPointExperiment: {likelihood_tpe.compute_loglike(tools)}")
+print(
+    f"Loglike from filtered TwoPointExperiment: {likelihood_tpe_filtered.compute_loglike(tools)}"
+)
+```
+
+The filtered likelihood should show a different value due to the excluded data points.
+
+## Next Steps
+
+- [Integration Methods](two_point_integration.qmd): Learn how to control integration methods for two-point functions

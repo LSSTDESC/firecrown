@@ -1,0 +1,61 @@
+---
+title: "Two-Point Factory Basics"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+This tutorial explains how the **[[likelihood|TwoPointFactory]]** automates the construction of **[[likelihood|TwoPoint]]** likelihood objects in Firecrown. It leverages Firecrown's hierarchical metadata framework, described in [Two-Point Framework](two_point_framework.qmd), to translate abstract metadata and input data into fully configured measurement pipelines—ensuring consistency and minimizing redundancy across analyses.
+
+### Framework Hierarchy Overview
+
+Firecrown's two-point framework organizes metadata into four layers:
+
+1. **Bin Descriptors** (e.g., [[metadata_types|InferredGalaxyZDist]])
+   - Define properties of individual observables (e.g., redshift distributions, tracer types).
+   - Shared across components to enforce *configuration consistency by construction*.
+
+2. **Bin Pairs** ([[metadata_types|TwoPointXY]])
+   - Represent cross-correlations between two bins (e.g., galaxy lensing × galaxy clustering).
+   - Ensure consistency of paired bin definitions (e.g., redshift ranges, tracer compatibility).
+
+3. **Data Layouts**
+   - Describe the measurement structure:
+     - **[[metadata_types|TwoPointHarmonic]]**: for harmonic-space statistics (e.g., $C(\ell)$).
+     - **[[metadata_types|TwoPointReal]]**: for real-space statistics (e.g., $\xi(\theta)$).
+   - Contain only metadata (no observational data), making them reusable for theory comparisons or forecasting.
+
+4. **Measurement Containers** ([[data_types|TwoPointMeasurement]])
+   - Combine a data layout with observed or simulated data.
+
+### Role of the TwoPointFactory
+
+The **[[likelihood|TwoPointFactory]]** serves as the interface between data layout definitions and the construction of [[likelihood|TwoPoint]] objects. It handles:
+
+1. Parsing layout metadata from:
+   - Manually defined configurations (e.g., YAML descriptors).
+   - Automated pipelines ([Two-Point Generators](two_point_generators.qmd)).
+   - `SACC` files, with or without embedded data.
+
+2. Building [[likelihood|TwoPoint]] objects that:
+   - Map tracer definitions (e.g., galaxy samples, lens bins) to measurement configurations.
+   - Establish the link between theory predictions and data layout.
+   - Optionally incorporate observational data, producing the associated **[[data_types|DataVector]]**.
+
+The tutorials [InferredGalaxyZDist](inferred_zdist.qmd), [InferredGalaxyZDist Generators](inferred_zdist_generators.qmd), and [InferredGalaxyZDist Serialization](inferred_zdist_serialization.qmd) describe how to construct and serialize redshift distribution objects. 
+
+**Two main workflows** are supported:
+- **Generator workflow** ([Two-Point Generators](two_point_generators.qmd)): Create two-point statistics from scratch using generated metadata and redshift distributions.
+- **SACC workflow** (this tutorial series): Extract metadata and data from existing SACC files.
+
+This tutorial series focuses specifically on extracting layout and redshift information from a `SACC` object to support the use of [[likelihood|TwoPointFactory]].
+
+## Next Steps
+
+Continue with these related tutorials:
+
+- [Loading SACC Data](two_point_sacc_loading.qmd): Learn how to extract data from SACC files
+- [Scale Cuts and Filtering](two_point_scale_cuts.qmd): Apply physical scale cuts to your analysis
+- [Integration Methods](two_point_integration.qmd): Control how two-point functions are computed
