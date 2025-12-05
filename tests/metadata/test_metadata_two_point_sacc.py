@@ -1623,3 +1623,341 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty():
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
     assert len(combinations) == 0
+
+
+def test_extract_all_photoz_bin_combinations_with_selector(sacc_galaxy_cells):
+    """Test extract_all_photoz_bin_combinations with bin_pair_selector."""
+    from firecrown.metadata_types import AutoNameBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # Without selector - should get all combinations
+    all_combinations = extract_all_photoz_bin_combinations(sacc_data)
+    
+    # With auto-correlation selector - should only get auto-correlations
+    auto_selector = AutoNameBinPairSelector()
+    auto_combinations = extract_all_photoz_bin_combinations(
+        sacc_data, bin_pair_selector=auto_selector
+    )
+    
+    # Verify all auto combinations have matching bin names
+    for combo in auto_combinations:
+        assert combo.x.bin_name == combo.y.bin_name
+    
+    # Auto combinations should be a subset of all combinations
+    assert len(auto_combinations) < len(all_combinations)
+    assert len(auto_combinations) > 0
+
+
+def test_extract_all_photoz_bin_combinations_with_source_selector(sacc_galaxy_cells):
+    """Test extract_all_photoz_bin_combinations with source bin selector."""
+    from firecrown.metadata_types import SourceBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # With source selector - should only get source (shear) measurements
+    source_selector = SourceBinPairSelector()
+    source_combinations = extract_all_photoz_bin_combinations(
+        sacc_data, bin_pair_selector=source_selector
+    )
+    
+    # Verify all combinations involve source measurements
+    from firecrown.metadata_types import GALAXY_SOURCE_TYPES
+    for combo in source_combinations:
+        assert combo.x_measurement in GALAXY_SOURCE_TYPES
+        assert combo.y_measurement in GALAXY_SOURCE_TYPES
+    
+    assert len(source_combinations) > 0
+
+
+def test_extract_all_photoz_bin_combinations_with_lens_selector(sacc_galaxy_cells):
+    """Test extract_all_photoz_bin_combinations with lens bin selector."""
+    from firecrown.metadata_types import LensBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # With lens selector - should only get lens (counts) measurements
+    lens_selector = LensBinPairSelector()
+    lens_combinations = extract_all_photoz_bin_combinations(
+        sacc_data, bin_pair_selector=lens_selector
+    )
+    
+    # Verify all combinations involve lens measurements
+    for combo in lens_combinations:
+        assert combo.x_measurement == Galaxies.COUNTS
+        assert combo.y_measurement == Galaxies.COUNTS
+    
+    assert len(lens_combinations) > 0
+
+
+def test_extract_all_harmonic_metadata_with_selector(sacc_galaxy_cells):
+    """Test extract_all_harmonic_metadata with bin_pair_selector."""
+    from firecrown.metadata_types import AutoNameBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # Without selector - should get all metadata
+    all_metadata = extract_all_harmonic_metadata(sacc_data)
+    
+    # With auto-correlation selector - should only get auto-correlations
+    auto_selector = AutoNameBinPairSelector()
+    auto_metadata = extract_all_harmonic_metadata(
+        sacc_data, bin_pair_selector=auto_selector
+    )
+    
+    # Verify all auto metadata have matching bin names
+    for meta in auto_metadata:
+        assert meta.XY.x.bin_name == meta.XY.y.bin_name
+    
+    # Auto metadata should be a subset of all metadata
+    assert len(auto_metadata) < len(all_metadata)
+    assert len(auto_metadata) > 0
+    
+    # Check that ells are properly extracted
+    for meta in auto_metadata:
+        assert len(meta.ells) > 0
+        assert isinstance(meta.ells, np.ndarray)
+
+
+def test_extract_all_harmonic_metadata_with_source_selector(sacc_galaxy_cells):
+    """Test extract_all_harmonic_metadata with source bin selector."""
+    from firecrown.metadata_types import SourceBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # With source selector - should only get source (shear) measurements
+    source_selector = SourceBinPairSelector()
+    source_metadata = extract_all_harmonic_metadata(
+        sacc_data, bin_pair_selector=source_selector
+    )
+    
+    # Verify all metadata involve source measurements
+    from firecrown.metadata_types import GALAXY_SOURCE_TYPES
+    for meta in source_metadata:
+        assert meta.XY.x_measurement in GALAXY_SOURCE_TYPES
+        assert meta.XY.y_measurement in GALAXY_SOURCE_TYPES
+    
+    assert len(source_metadata) > 0
+
+
+def test_extract_all_harmonic_metadata_with_combined_selector(sacc_galaxy_cells):
+    """Test extract_all_harmonic_metadata with combined selectors."""
+    from firecrown.metadata_types import (
+        AutoNameBinPairSelector,
+        AutoMeasurementBinPairSelector,
+    )
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # Combine auto-name and auto-measurement selectors
+    combined_selector = AutoNameBinPairSelector() & AutoMeasurementBinPairSelector()
+    filtered_metadata = extract_all_harmonic_metadata(
+        sacc_data, bin_pair_selector=combined_selector
+    )
+    
+    # Verify all filtered metadata have matching bins AND measurements
+    for meta in filtered_metadata:
+        assert meta.XY.x.bin_name == meta.XY.y.bin_name
+        assert meta.XY.x_measurement == meta.XY.y_measurement
+    
+    assert len(filtered_metadata) > 0
+
+
+def test_extract_all_real_metadata_with_selector(sacc_galaxy_xis):
+    """Test extract_all_real_metadata with bin_pair_selector."""
+    from firecrown.metadata_types import AutoNameBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_xis
+    
+    # Without selector - should get all metadata
+    all_metadata = extract_all_real_metadata(sacc_data)
+    
+    # With auto-correlation selector - should only get auto-correlations
+    auto_selector = AutoNameBinPairSelector()
+    auto_metadata = extract_all_real_metadata(
+        sacc_data, bin_pair_selector=auto_selector
+    )
+    
+    # Verify all auto metadata have matching bin names
+    for meta in auto_metadata:
+        assert meta.XY.x.bin_name == meta.XY.y.bin_name
+    
+    # Auto metadata should be a subset of all metadata
+    assert len(auto_metadata) < len(all_metadata)
+    assert len(auto_metadata) > 0
+    
+    # Check that thetas are properly extracted
+    for meta in auto_metadata:
+        assert len(meta.thetas) > 0
+        assert isinstance(meta.thetas, np.ndarray)
+
+
+def test_extract_all_real_metadata_with_lens_selector(sacc_galaxy_xis):
+    """Test extract_all_real_metadata with lens bin selector."""
+    from firecrown.metadata_types import LensBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_xis
+    
+    # With lens selector - should only get lens (counts) measurements
+    lens_selector = LensBinPairSelector()
+    lens_metadata = extract_all_real_metadata(
+        sacc_data, bin_pair_selector=lens_selector
+    )
+    
+    # Verify all metadata involve lens measurements
+    for meta in lens_metadata:
+        assert meta.XY.x_measurement == Galaxies.COUNTS
+        assert meta.XY.y_measurement == Galaxies.COUNTS
+    
+    assert len(lens_metadata) > 0
+
+
+def test_extract_all_real_metadata_with_combined_selector(sacc_galaxy_xis):
+    """Test extract_all_real_metadata with combined selectors."""
+    from firecrown.metadata_types import (
+        AutoNameBinPairSelector,
+        LensBinPairSelector,
+    )
+    
+    sacc_data, _, _ = sacc_galaxy_xis
+    
+    # Combine auto-name and lens selectors
+    combined_selector = AutoNameBinPairSelector() & LensBinPairSelector()
+    filtered_metadata = extract_all_real_metadata(
+        sacc_data, bin_pair_selector=combined_selector
+    )
+    
+    # Verify all filtered metadata have matching bins AND are lens measurements
+    for meta in filtered_metadata:
+        assert meta.XY.x.bin_name == meta.XY.y.bin_name
+        assert meta.XY.x_measurement == Galaxies.COUNTS
+        assert meta.XY.y_measurement == Galaxies.COUNTS
+    
+    assert len(filtered_metadata) > 0
+
+
+def test_extract_all_harmonic_metadata_with_not_selector(sacc_galaxy_cells):
+    """Test extract_all_harmonic_metadata with NOT selector."""
+    from firecrown.metadata_types import AutoNameBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # Get all metadata
+    all_metadata = extract_all_harmonic_metadata(sacc_data)
+    
+    # Get auto-correlation metadata
+    auto_selector = AutoNameBinPairSelector()
+    auto_metadata = extract_all_harmonic_metadata(
+        sacc_data, bin_pair_selector=auto_selector
+    )
+    
+    # Get cross-correlation metadata using NOT selector
+    not_auto_selector = ~auto_selector
+    cross_metadata = extract_all_harmonic_metadata(
+        sacc_data, bin_pair_selector=not_auto_selector
+    )
+    
+    # Verify cross metadata have different bin names
+    for meta in cross_metadata:
+        assert meta.XY.x.bin_name != meta.XY.y.bin_name
+    
+    # Auto + cross should equal all
+    assert len(auto_metadata) + len(cross_metadata) == len(all_metadata)
+
+
+def test_extract_all_real_metadata_with_or_selector(sacc_galaxy_xis):
+    """Test extract_all_real_metadata with OR selector."""
+    from firecrown.metadata_types import (
+        NamedBinPairSelector,
+        AutoNameBinPairSelector,
+    )
+    
+    sacc_data, _, _ = sacc_galaxy_xis
+    
+    # Get all tracers to find specific bin names
+    tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    if len(tracers) < 2:
+        pytest.skip("Need at least 2 tracers for this test")
+    
+    bin1 = tracers[0].bin_name
+    bin2 = tracers[1].bin_name
+    
+    # Create OR selector: auto-correlations OR specific named pair
+    auto_selector = AutoNameBinPairSelector()
+    named_selector = NamedBinPairSelector(names=[(bin1, bin2)])
+    or_selector = auto_selector | named_selector
+    
+    filtered_metadata = extract_all_real_metadata(
+        sacc_data, bin_pair_selector=or_selector
+    )
+    
+    # All filtered metadata should be either auto-correlations or the named pair
+    for meta in filtered_metadata:
+        is_auto = meta.XY.x.bin_name == meta.XY.y.bin_name
+        is_named = (
+            (meta.XY.x.bin_name == bin1 and meta.XY.y.bin_name == bin2) or
+            (meta.XY.x.bin_name == bin2 and meta.XY.y.bin_name == bin1)
+        )
+        assert is_auto or is_named
+    
+    assert len(filtered_metadata) > 0
+
+
+def test_extract_with_selector_empty_result(sacc_galaxy_cells):
+    """Test that selector can result in empty extraction."""
+    from firecrown.metadata_types import NamedBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # Create selector for non-existent bin names
+    impossible_selector = NamedBinPairSelector(
+        names=[("nonexistent1", "nonexistent2")]
+    )
+    
+    # Should return empty lists
+    empty_combinations = extract_all_photoz_bin_combinations(
+        sacc_data, bin_pair_selector=impossible_selector
+    )
+    empty_harmonic = extract_all_harmonic_metadata(
+        sacc_data, bin_pair_selector=impossible_selector
+    )
+    
+    assert len(empty_combinations) == 0
+    assert len(empty_harmonic) == 0
+
+
+def test_extract_with_selector_preserves_data_quality(sacc_galaxy_cells):
+    """Test that using selector doesn't affect data quality of extracted metadata."""
+    from firecrown.metadata_types import SourceBinPairSelector
+    
+    sacc_data, _, _ = sacc_galaxy_cells
+    
+    # Extract without selector
+    all_metadata = extract_all_harmonic_metadata(sacc_data)
+    
+    # Extract with selector
+    source_selector = SourceBinPairSelector()
+    filtered_metadata = extract_all_harmonic_metadata(
+        sacc_data, bin_pair_selector=source_selector
+    )
+    
+    # For each filtered item, find its counterpart in all_metadata
+    # and verify they have identical data
+    from firecrown.metadata_types import GALAXY_SOURCE_TYPES
+    for filtered in filtered_metadata:
+        # Find matching item in all_metadata
+        matching = [
+            m for m in all_metadata
+            if (m.XY.x.bin_name == filtered.XY.x.bin_name and
+                m.XY.y.bin_name == filtered.XY.y.bin_name and
+                m.XY.x_measurement == filtered.XY.x_measurement and
+                m.XY.y_measurement == filtered.XY.y_measurement)
+        ]
+        assert len(matching) == 1
+        match = matching[0]
+        
+        # Verify data is identical
+        assert_array_equal(filtered.ells, match.ells)
+        assert filtered.window == match.window
+        assert filtered.window_ells == match.window_ells
+
