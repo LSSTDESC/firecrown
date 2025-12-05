@@ -59,14 +59,27 @@ def make_all_photoz_bin_combinations(
     expanded = [
         (igz, m) for igz in inferred_galaxy_zdists for m in igz.measurement_list
     ]
+
     # Create all combinations of the expanded list, keeping only compatible ones
     # and avoiding duplicates in the case of correlations of the same type
-    return [
+    all_xy = [
         mdt.TwoPointXY(x=igz1, y=igz2, x_measurement=m1, y_measurement=m2)
         for (igz1, m1), (igz2, m2) in product(expanded, repeat=2)
         if mdt.measurement_is_compatible(m1, m2)
         and ((m1 != m2) or (igz2.bin_name >= igz1.bin_name))
     ]
+
+    # Reorder expanded to have alphabetical order considering first measurements, then
+    # bin names.
+    return sorted(
+        all_xy,
+        key=lambda xy: (
+            xy.x_measurement,
+            xy.y_measurement,
+            xy.x.bin_name,
+            xy.y.bin_name,
+        ),
+    )
 
 
 def make_all_photoz_bin_combinations_with_cmb(
