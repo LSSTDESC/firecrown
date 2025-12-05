@@ -12,6 +12,7 @@ project:
     - inferred_zdist_serialization.qmd
     - two_point_generators.qmd
     - two_point_workflow.qmd
+    - two_point_bin_selectors.qmd
     - two_point_factory_basics.qmd
     - two_point_sacc_data.qmd
     - two_point_scale_cuts.qmd
@@ -51,6 +52,8 @@ website:
                   text: "Framework"
                 - href: two_point_workflow.qmd
                   text: "Workflow"
+                - href: two_point_bin_selectors.qmd
+                  text: "Bin Pair Selectors"
                 - href: two_point_generators.qmd
                   text: "Generators"
                 - href: two_point_sacc_data.qmd

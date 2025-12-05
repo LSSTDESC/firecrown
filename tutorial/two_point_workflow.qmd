@@ -45,8 +45,10 @@ graph TD
   A["Start: Choose Data Source"]
   A --> B1["Generate from Scratch<br/>(Two-Point Generators)"]
   A --> B2["Extract from SACC<br/>(Loading SACC Data)"]
-  B1 --> C["Metadata + Optional Data"]
-  B2 --> C
+  B1 --> B1F["Optional: Filter with<br/>Bin Pair Selectors"]
+  B2 --> B2F["Optional: Filter with<br/>Bin Pair Selectors"]
+  B1F --> C["Metadata + Optional Data"]
+  B2F --> C
   C --> D["Apply Scale Cuts<br/>(Optional)"]
   D --> E["TwoPointFactory<br/>(Factory Basics)"]
   E --> F["TwoPoint Objects"]
@@ -67,6 +69,7 @@ Create metadata and data programmatically for forecasts or simulations:
 - Generate LSST-SRD compliant redshift distributions
 - Define measurement types (galaxy counts, weak lensing, etc.)
 - Configure systematics models upfront
+- **Optional:** Apply [[metadata_types|BinPairSelector]] to include only specific bin pair combinations
 - **Output:** Metadata layouts (TwoPointHarmonic/TwoPointReal) with optional data
 
 **When to use:** Creating forecasts, Fisher forecasts, synthetic analyses, or testing new models.
@@ -77,10 +80,22 @@ Extract both metadata and measurements from standardized SACC files:
 
 - Full extraction (recommended) gets metadata + data together
 - Legacy approach extracts metadata only, loads data separately
+- **Optional:** Apply [[metadata_types|BinPairSelector]] to extract only specific bin pair combinations
 - Validates consistency of extracted components
 - **Output:** Metadata layouts with optional measurements (TwoPointMeasurement)
 
 **When to use:** Analyzing real observations, working with pre-existing simulations, or integrating with other analysis pipelines.
+
+### Filtering with Bin Pair Selectors ([Tutorial](two_point_bin_selectors.qmd))
+
+Both workflows support optional filtering to control which bin pair combinations are included:
+
+- **Auto-correlations only**: Same bin correlated with itself
+- **Cross-correlations only**: Different bins correlated together
+- **Measurement-specific**: Only source (shear) or lens (counts) measurements
+- **Custom combinations**: Use logical operators (AND, OR, NOT) to build complex criteria
+
+See [Bin Pair Selectors](two_point_bin_selectors.qmd) for detailed examples and available selector types.
 
 ## Step 2: Construct TwoPoint Objects ([Tutorial](two_point_factory_basics.qmd))
 
@@ -105,16 +120,17 @@ Restrict analysis to physically valid ranges where your models are accurate:
 
 - Define valid scale ranges per tracer combination
 - Use [[data_functions|TwoPointBinFilterCollection]] for flexible filtering
-- Integrate with [[likelihood.factories|TwoPointExperiment]] for complete configuration management
+# Tutorial Reference {#sec-tutorial-reference}
 
-**When to use:** Models with limited validity (e.g., excluding small scales where baryonic effects dominate, or large scales with poor statistics).
-
-## Step 4: Compute Theory Predictions ([Tutorial](two_point_integration.qmd))
-
-Control integration methods for harmonic-space calculations via [[utils|ClIntegrationOptions]]:
-
-- **Limber approximation:** Fast but less accurate at large scales
-- **FKEM methods:** More accurate but computationally expensive
+| Tutorial | Purpose | Use When |
+|----------|---------|----------|
+| [Framework](two_point_framework.qmd) | Conceptual foundations | Learning Firecrown concepts |
+| [Bin Selectors](two_point_bin_selectors.qmd) | Filter bin pair combinations | Selecting specific correlations |
+| [Generators](two_point_generators.qmd) | Create data from scratch | Forecasts, simulations, testing |
+| [Loading SACC](two_point_sacc_data.qmd) | Extract from SACC files | Real data, existing simulations |
+| [Factory Basics](two_point_factory_basics.qmd) | Construct TwoPoint objects | **All analyses** (required) |
+| [Scale Cuts](two_point_scale_cuts.qmd) | Filter by physical scales | Limited model validity |
+| [Integration](two_point_integration.qmd) | Tune computation methods | Accuracy/speed optimization |
 
 **When to tune:** High-precision requirements, large-scale analyses, or computational optimization.
 

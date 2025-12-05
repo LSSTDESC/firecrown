@@ -39,6 +39,8 @@ two_point_reals = extract_all_real_data(sacc_data)
 check_two_point_consistence_real(two_point_reals)
 ```
 
+**Filtering with Bin Pair Selectors**: If you only need specific subsets of correlations from the SACC file (e.g., only auto-correlations, only source measurements, or custom combinations), you can pass a [[metadata_types|BinPairSelector]] to the extraction functions. See [Bin Pair Selectors](two_point_bin_selectors.qmd) for details on how to control which bin pairs are extracted.
+
 Use a factory to build the `TwoPoint` objects in the **ready** state:
 
 ```{python}
@@ -151,6 +153,7 @@ The key outputs from this tutorial are:
 
 To compute predictions and evaluate likelihoods:
 
+- **[Bin Pair Selectors](two_point_bin_selectors.qmd)**: Learn how to filter which bin pair combinations are extracted (optional)
 - **[Factory Basics](two_point_factory_basics.qmd)**: Detailed examples of setting up parameters, computing theory vectors, and evaluating likelihoods
 - **[Scale Cuts](two_point_scale_cuts.qmd)**: Apply physical scale cuts to your data
 - **[Integration Methods](two_point_integration.qmd)**: Control computation accuracy and speed
