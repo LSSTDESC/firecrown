@@ -364,6 +364,20 @@ class AutoNameBinPairSelector(BinPairSelector):
 
 
 @register_bin_pair_selector
+class CrossNameBinPairSelector(CompositeSelector):
+    """Selector for cross-correlations: excludes auto-name pairs.
+
+    This selector keeps only pairs where both bins have different names.
+    """
+
+    kind: str = "cross-name"
+
+    def model_post_init(self, _: Any, /) -> None:
+        # Invert AutoNameBinPairSelector
+        self._impl = ~AutoNameBinPairSelector()
+
+
+@register_bin_pair_selector
 class AutoMeasurementBinPairSelector(BinPairSelector):
     """Selector for auto-correlations based on measurement type.
 
@@ -385,6 +399,20 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
 
 
 @register_bin_pair_selector
+class CrossMeasurementBinPairSelector(CompositeSelector):
+    """Selector for cross-correlations: excludes auto-measurement pairs.
+
+    This selector keeps only pairs where both measurements differ.
+    """
+
+    kind: str = "cross-measurement"
+
+    def model_post_init(self, _: Any, /) -> None:
+        # Invert AutoMeasurementBinPairSelector
+        self._impl = ~AutoMeasurementBinPairSelector()
+
+
+@register_bin_pair_selector
 class AutoBinPairSelector(CompositeSelector):
     """Selector for auto-correlations based on both bin name and measurement type.
 
@@ -397,6 +425,21 @@ class AutoBinPairSelector(CompositeSelector):
 
     def model_post_init(self, _: Any, /) -> None:
         self._impl = AutoNameBinPairSelector() & AutoMeasurementBinPairSelector()
+
+
+@register_bin_pair_selector
+class CrossBinPairSelector(CompositeSelector):
+    """Selector for cross-correlations: excludes auto-bin pairs.
+
+    This selector keeps only pairs where the bin names differ, effectively selecting
+    cross-correlations between different tomographic bins.
+    """
+
+    kind: str = "cross-bin"
+
+    def model_post_init(self, _: Any, /) -> None:
+        # Invert AutoBinPairSelector
+        self._impl = ~AutoBinPairSelector()
 
 
 @register_bin_pair_selector

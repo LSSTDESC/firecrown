@@ -793,3 +793,219 @@ def test_source_lens_pair_selector_deserialization():
     """
     rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
     assert isinstance(rule, mt.SourceLensBinPairSelector)
+
+
+# ============================================================================
+# Cross Selector Tests
+# ============================================================================
+
+
+def test_cross_name_bin_pair_selector_keep():
+    """Test CrossNameBinPairSelector keep method."""
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    rule = mt.CrossNameBinPairSelector()
+    # Different bin names: should keep
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    # Same bin name: should NOT keep
+    assert not rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+
+def test_cross_name_bin_pair_selector(all_harmonic_bins):
+    """Test CrossNameBinPairSelector filters out auto-name correlations."""
+    cross_name_selector = mt.CrossNameBinPairSelector()
+
+    two_point_xy_combinations = make_binned_two_point_filtered(
+        all_harmonic_bins, cross_name_selector
+    )
+    # Should exclude same-name pairs (bin_1, bin_1) and (bin_2, bin_2)
+    # Should include cross pairs: (bin_1, bin_2) with all measurement combinations
+    # With 2 bins and 2 measurements each: 2*2*2 - 2*2 = 8 - 4 = 4 cross-name pairs
+    # Actually: (bin_1, bin_2) with 2x2=4 measurement combos = 4 pairs
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x.bin_name != two_point_xy.y.bin_name
+
+
+def test_cross_measurement_bin_pair_selector_keep():
+    """Test CrossMeasurementBinPairSelector keep method."""
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    rule = mt.CrossMeasurementBinPairSelector()
+    # Different measurements: should keep
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
+    # Same measurement: should NOT keep
+    assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+
+def test_cross_measurement_bin_pair_selector(all_harmonic_bins):
+    """Test CrossMeasurementBinPairSelector filters out auto-measurement correlations."""
+    cross_measurement_selector = mt.CrossMeasurementBinPairSelector()
+
+    two_point_xy_combinations = make_binned_two_point_filtered(
+        all_harmonic_bins, cross_measurement_selector
+    )
+    # Should exclude same-measurement pairs
+    # Should include only cross-measurement pairs
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x_measurement != two_point_xy.y_measurement
+
+
+def test_cross_bin_pair_selector_keep():
+    """Test CrossBinPairSelector keep method."""
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    rule = mt.CrossBinPairSelector()
+    # Different bins: should keep
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    # Same bin and same measurement: should NOT keep
+    assert not rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    # Same bin but different measurement: should keep (because AutoBinPairSelector requires both to match)
+    assert rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
+
+
+def test_cross_bin_pair_selector(all_harmonic_bins):
+    """Test CrossBinPairSelector filters out auto-bin correlations."""
+    cross_bin_selector = mt.CrossBinPairSelector()
+
+    two_point_xy_combinations = make_binned_two_point_filtered(
+        all_harmonic_bins, cross_bin_selector
+    )
+    # Should exclude pairs where BOTH bin name and measurement match
+    # All other combinations should be included
+    for two_point_xy in two_point_xy_combinations:
+        # Not both bin name and measurement can be the same
+        is_auto_bin = (
+            two_point_xy.x.bin_name == two_point_xy.y.bin_name
+            and two_point_xy.x_measurement == two_point_xy.y_measurement
+        )
+        assert not is_auto_bin
+
+
+def test_cross_name_bin_pair_selector_serialization():
+    """Test serialization of CrossNameBinPairSelector."""
+    rule = mt.CrossNameBinPairSelector()
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule_from_yaml, mt.CrossNameBinPairSelector)
+    assert rule == rule_from_yaml
+
+
+def test_cross_measurement_bin_pair_selector_serialization():
+    """Test serialization of CrossMeasurementBinPairSelector."""
+    rule = mt.CrossMeasurementBinPairSelector()
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule_from_yaml, mt.CrossMeasurementBinPairSelector)
+    assert rule == rule_from_yaml
+
+
+def test_cross_bin_pair_selector_serialization():
+    """Test serialization of CrossBinPairSelector."""
+    rule = mt.CrossBinPairSelector()
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule_from_yaml, mt.CrossBinPairSelector)
+    assert rule == rule_from_yaml
+
+
+def test_cross_name_bin_pair_selector_deserialization():
+    """Test deserialization of CrossNameBinPairSelector."""
+    yaml_str = """
+    kind: cross-name
+    """
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.CrossNameBinPairSelector)
+
+
+def test_cross_measurement_bin_pair_selector_deserialization():
+    """Test deserialization of CrossMeasurementBinPairSelector."""
+    yaml_str = """
+    kind: cross-measurement
+    """
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.CrossMeasurementBinPairSelector)
+
+
+def test_cross_bin_pair_selector_deserialization():
+    """Test deserialization of CrossBinPairSelector."""
+    yaml_str = """
+    kind: cross-bin
+    """
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.CrossBinPairSelector)
+
+
+def test_cross_selectors_are_inverses():
+    """Test that Cross selectors are exact inverses of Auto selectors."""
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+
+    # Test all combinations
+    test_cases = [
+        ((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)),
+        ((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)),
+        ((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E)),
+        ((z2, z1), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS)),
+    ]
+
+    # CrossName vs AutoName
+    auto_name = mt.AutoNameBinPairSelector()
+    cross_name = mt.CrossNameBinPairSelector()
+    for zdist, measurements in test_cases:
+        assert auto_name.keep(zdist, measurements) != cross_name.keep(
+            zdist, measurements
+        )
+
+    # CrossMeasurement vs AutoMeasurement
+    auto_measurement = mt.AutoMeasurementBinPairSelector()
+    cross_measurement = mt.CrossMeasurementBinPairSelector()
+    for zdist, measurements in test_cases:
+        assert auto_measurement.keep(zdist, measurements) != cross_measurement.keep(
+            zdist, measurements
+        )
+
+    # CrossBin vs AutoBin
+    auto_bin = mt.AutoBinPairSelector()
+    cross_bin = mt.CrossBinPairSelector()
+    for zdist, measurements in test_cases:
+        assert auto_bin.keep(zdist, measurements) != cross_bin.keep(zdist, measurements)
