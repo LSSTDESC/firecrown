@@ -51,12 +51,12 @@ website:
                   text: "Framework"
                 - href: two_point_generators.qmd
                   text: "Generators"
-                - href: two_point_factories.qmd
-                  text: "Factories Overview"
-                - href: two_point_factory_basics.qmd
-                  text: "Factories Basics"
                 - href: two_point_sacc_loading.qmd
                   text: "Loading SACC Data"
+                - href: two_point_factories.qmd
+                  text: "Workflow Overview"
+                - href: two_point_factory_basics.qmd
+                  text: "Factory Basics"
                 - href: two_point_scale_cuts.qmd
                   text: "Scale Cuts"
                 - href: two_point_integration.qmd

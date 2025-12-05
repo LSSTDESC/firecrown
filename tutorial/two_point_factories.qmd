@@ -7,50 +7,90 @@ format: html
 
 ## Purpose of this Document
 
-This document provides an overview of the Firecrown two-point factory system and links to detailed tutorials on specific topics.
+This document provides an overview of working with two-point statistics in Firecrown, from obtaining data to computing predictions.
+
+## Complete Workflow
+
+Working with two-point statistics in Firecrown follows this general pattern:
+
+```{mermaid}
+%%| label: fig-workflow
+%%| fig-align: center
+%%| fig-cap: "Two-Point Statistics Workflow"
+graph TD
+  A["Metadata + Data Sources"]
+  A --> B1["Generate from Scratch<br/>(Two-Point Generators)"]
+  A --> B2["Extract from SACC<br/>(Loading SACC Data)"]
+  B1 --> C["Metadata + Optional Data"]
+  B2 --> C
+  C --> D["Apply Scale Cuts<br/>(Optional)"]
+  D --> E["TwoPointFactory<br/>(Factory Basics)"]
+  E --> F["TwoPoint Objects"]
+  F --> G["Compute Theory<br/>(Integration Methods)"]
+```
 
 ## Tutorial Series
 
-The two-point factory system is covered in the following tutorials:
+### 1. Obtaining Data
 
-### Core Factory System
+First, obtain the metadata and data needed for your analysis:
 
-1. **[Two-Point Factory Basics](two_point_factory_basics.qmd)**
-   - Overview of the hierarchical metadata framework
-   - Role of TwoPointFactory in constructing likelihood objects
-   - Understanding the four-layer framework: bin descriptors, bin pairs, data layouts, and measurement containers
-   - Comparison with the generator workflow
+**[Two-Point Generators](two_point_generators.qmd)**
+- Create metadata and data programmatically
+- Generate LSST-SRD redshift distributions
+- Define systematics factories (WeakLensingFactory, NumberCountsFactory)
+- **Use when:** Creating forecasts or simulations from scratch
 
-2. **[Loading SACC Data](two_point_sacc_loading.qmd)**
-   - Extracting data from SACC files
-   - Full metadata + data extraction (recommended approach)
-   - Legacy indices-only extraction (deprecated)
-   - Comparing different construction methods
+**[Loading SACC Data](two_point_sacc_loading.qmd)**
+- Extract metadata and data from SACC files
+- Full extraction (recommended) vs. legacy indices-only approach
+- Validate consistency of extracted data
+- **Use when:** Working with real observations or pre-existing simulations
 
-3. **[Scale Cuts and Data Filtering](two_point_scale_cuts.qmd)**
-   - Applying physical scale cuts using TwoPointBinFilterCollection
-   - Defining valid analysis ranges for tracer combinations
-   - Using TwoPointExperiment for managing analysis configurations
-   - Serializing experiment configurations to YAML
+### 2. Constructing TwoPoint Objects
 
-4. **[Integration Methods](two_point_integration.qmd)**
-   - Controlling integration methods for harmonic-space calculations
-   - Comparing Limber approximation vs. FKEM methods
-   - Understanding accuracy trade-offs
-   - Configuring ClIntegrationOptions
+Once you have metadata ± data, construct [[likelihood|TwoPoint]] objects:
 
-### Related: Generator Workflow
+**[Factory Basics](two_point_factory_basics.qmd)**
+- Understanding the [[likelihood|TwoPointFactory]] role
+- Mapping measurements to source factories
+- Handling multiple TypeSource instances
+- Construction from layouts vs. measurements
+- **Use for:** All analyses — this is the core construction mechanism
 
-5. **[Two-Point Generators](two_point_generators.qmd)**
-   - Creating two-point statistics from scratch using generated metadata
-   - Defining systematics factories (WeakLensingFactory, NumberCountsFactory)
-   - Generating LSST-SRD redshift distributions
-   - Alternative to loading from SACC files
+### 3. Optional: Data Filtering
 
-## Quick Start
+Apply scale cuts to restrict analysis ranges (independent of data source):
 
-**Choose your workflow:**
+**[Scale Cuts and Filtering](two_point_scale_cuts.qmd)**
+- Define valid ranges with TwoPointBinFilterCollection
+- Filter by tracer combinations
+- Use TwoPointExperiment for complete configuration management
+- **Use when:** Models have limited validity ranges
 
-- **Have a SACC file?** Start with [Two-Point Factory Basics](two_point_factory_basics.qmd), then proceed through [Loading SACC Data](two_point_sacc_loading.qmd) to understand how to work with real data.
+### 4. Computing Predictions
 
-- **Generating from scratch?** Use the [Two-Point Generators](two_point_generators.qmd) tutorial to create metadata and two-point statistics programmatically.
+Control how theory predictions are computed:
+
+**[Integration Methods](two_point_integration.qmd)**
+- Choose integration methods (Limber vs. FKEM)
+- Configure accuracy vs. speed trade-offs
+- Understand method differences at different scales
+- **Use when:** Optimizing computation or requiring high accuracy
+
+## Quick Start Guide
+
+**New to Firecrown?** Start with [Two-Point Framework](two_point_framework.qmd) for conceptual overview.
+
+**Have a SACC file?**
+1. [Loading SACC Data](two_point_sacc_loading.qmd)
+2. [Factory Basics](two_point_factory_basics.qmd)
+3. Optionally: [Scale Cuts](two_point_scale_cuts.qmd)
+
+**Generating from scratch?**
+1. [Two-Point Generators](two_point_generators.qmd)
+2. [Factory Basics](two_point_factory_basics.qmd)
+3. Optionally: [Scale Cuts](two_point_scale_cuts.qmd)
+
+**Optimizing computation?**
+- [Integration Methods](two_point_integration.qmd)

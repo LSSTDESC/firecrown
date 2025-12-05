@@ -1,5 +1,5 @@
 ---
-title: "Two-Point Factory Basics"
+title: "Factory Basics: Constructing TwoPoint Objects"
 format: html
 ---
 
@@ -7,55 +7,115 @@ format: html
 
 ## Purpose of this Document
 
-This tutorial explains how the **[[likelihood|TwoPointFactory]]** automates the construction of **[[likelihood|TwoPoint]]** likelihood objects in Firecrown. It leverages Firecrown's hierarchical metadata framework, described in [Two-Point Framework](two_point_framework.qmd), to translate abstract metadata and input data into fully configured measurement pipelines—ensuring consistency and minimizing redundancy across analyses.
+This tutorial explains how to use the **[[likelihood|TwoPointFactory]]** to construct **[[likelihood|TwoPoint]]** objects from metadata and optional data. This is the core mechanism for building likelihood objects, regardless of whether your metadata came from generators or SACC files.
 
-### Framework Hierarchy Overview
+For conceptual background, see [Two-Point Framework](two_point_framework.qmd).
 
-Firecrown's two-point framework organizes metadata into four layers:
+## The Role of TwoPointFactory
+
+The **[[likelihood|TwoPointFactory]]** automates the construction of **[[likelihood|TwoPoint]]** likelihood objects. It:
+
+1. **Inspects metadata** to determine what types of measurements are involved
+2. **Delegates to source factories** (e.g., [[likelihood.weak_lensing|WeakLensingFactory]], [[likelihood.number_counts|NumberCountsFactory]]) based on measurement types
+3. **Applies modeling choices** including systematics and nuisance parameters
+4. **Produces ready-to-use TwoPoint objects** that can compute theory predictions or evaluate likelihoods
+
+### Input: Metadata ± Data
+
+The factory accepts either:
+
+- **Layout only** ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) → produces theory-only TwoPoint objects
+- **Measurement** ([[data_types|TwoPointMeasurement]]) → produces TwoPoint objects with both data and theory
+
+The metadata can come from two sources:
+
+1. **Generated** ([Two-Point Generators](two_point_generators.qmd)): Programmatically created using Firecrown's generators
+2. **Extracted** ([Loading SACC Data](two_point_sacc_loading.qmd)): Read from existing SACC files
+
+Regardless of source, the factory treats the metadata identically.
+
+### Output: TwoPoint Objects
+
+Each produced [[likelihood|TwoPoint]] object:
+- Contains all modeling assumptions (systematics, bias models, etc.)
+- Can compute theoretical predictions via `compute_theory_vector()`
+- If created from measurement data, can contribute to likelihood evaluation
+- Is a subclass of [[likelihood|Statistic]] and can be combined into a [[likelihood|Likelihood]]
+
+## Source Factory Mapping
+
+The [[likelihood|TwoPointFactory]] automatically maps measurement types to appropriate source factories:
+
+| Measurement Type | Source Factory |
+|-----------------|----------------|
+| [[metadata_types|Galaxies.COUNTS]] | [[likelihood.number_counts|NumberCountsFactory]] |
+| [[metadata_types|Galaxies.SHEAR_E]], [[metadata_types|Galaxies.SHEAR_T]], etc. | [[likelihood.weak_lensing|WeakLensingFactory]] |
+| [[metadata_types|CMB.CONVERGENCE]] | [[likelihood.weak_lensing|WeakLensingFactory]] |
+
+### Multiple TypeSource Support
+
+The factory can hold multiple instances of the same source factory type, each associated with a different [[metadata_types|TypeSource]]. This enables distinct modeling choices for subpopulations:
+
+```python
+# Example: Different systematics for red vs. blue galaxies
+factory = TwoPointFactory(
+    correlation_space=TwoPointCorrelationSpace.HARMONIC,
+    number_counts_factories=[
+        NumberCountsFactory(type_source="red", ...),
+        NumberCountsFactory(type_source="blue", ...),
+    ]
+)
+```
+
+By default, both bins and factories use [[metadata_types|TypeSource.DEFAULT]], so simple analyses don't need to worry about this feature.
+
+## Metadata Structure Overview
+
+Before using the factory, it's helpful to understand Firecrown's four-layer metadata hierarchy:
 
 1. **Bin Descriptors** (e.g., [[metadata_types|InferredGalaxyZDist]])
-   - Define properties of individual observables (e.g., redshift distributions, tracer types).
-   - Shared across components to enforce *configuration consistency by construction*.
+   - Properties of individual observables (redshift distributions, tracer types)
+   - Shared across components for consistency
 
 2. **Bin Pairs** ([[metadata_types|TwoPointXY]])
-   - Represent cross-correlations between two bins (e.g., galaxy lensing × galaxy clustering).
-   - Ensure consistency of paired bin definitions (e.g., redshift ranges, tracer compatibility).
+   - Cross-correlations between two bins
+   - Ensures paired bin compatibility
 
-3. **Data Layouts**
-   - Describe the measurement structure:
-     - **[[metadata_types|TwoPointHarmonic]]**: for harmonic-space statistics (e.g., $C(\ell)$).
-     - **[[metadata_types|TwoPointReal]]**: for real-space statistics (e.g., $\xi(\theta)$).
-   - Contain only metadata (no observational data), making them reusable for theory comparisons or forecasting.
+3. **Data Layouts** ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]])
+   - Measurement structure: harmonic space ($C_\ell$) or real space ($\xi(\theta)$)
+   - Metadata only — no observational data
 
 4. **Measurement Containers** ([[data_types|TwoPointMeasurement]])
-   - Combine a data layout with observed or simulated data.
+   - Combines layout with observed/simulated data
 
-### Role of the TwoPointFactory
+See [Two-Point Framework](two_point_framework.qmd) for detailed explanation.
 
-The **[[likelihood|TwoPointFactory]]** serves as the interface between data layout definitions and the construction of [[likelihood|TwoPoint]] objects. It handles:
+## Where Metadata Comes From
 
-1. Parsing layout metadata from:
-   - Manually defined configurations (e.g., YAML descriptors).
-   - Automated pipelines ([Two-Point Generators](two_point_generators.qmd)).
-   - `SACC` files, with or without embedded data.
+There are two primary workflows for obtaining the metadata that the factory needs:
 
-2. Building [[likelihood|TwoPoint]] objects that:
-   - Map tracer definitions (e.g., galaxy samples, lens bins) to measurement configurations.
-   - Establish the link between theory predictions and data layout.
-   - Optionally incorporate observational data, producing the associated **[[data_types|DataVector]]**.
+### 1. Generate from Scratch
+[Two-Point Generators](two_point_generators.qmd) shows how to:
+- Create [[metadata_types|InferredGalaxyZDist]] bins programmatically
+- Generate LSST-SRD redshift distributions
+- Define systematics factories
+- Build metadata layouts
 
-The tutorials [InferredGalaxyZDist](inferred_zdist.qmd), [InferredGalaxyZDist Generators](inferred_zdist_generators.qmd), and [InferredGalaxyZDist Serialization](inferred_zdist_serialization.qmd) describe how to construct and serialize redshift distribution objects. 
+Use this when creating forecasts or simulations.
 
-**Two main workflows** are supported:
-- **Generator workflow** ([Two-Point Generators](two_point_generators.qmd)): Create two-point statistics from scratch using generated metadata and redshift distributions.
-- **SACC workflow** (this tutorial series): Extract metadata and data from existing SACC files.
+### 2. Extract from SACC Files
+[Loading SACC Data](two_point_sacc_loading.qmd) shows how to:
+- Extract metadata and data from SACC files
+- Use full extraction (recommended) or legacy indices-only approach
+- Validate extracted data consistency
 
-This tutorial series focuses specifically on extracting layout and redshift information from a `SACC` object to support the use of [[likelihood|TwoPointFactory]].
+Use this when working with real observations or pre-existing data files.
 
 ## Next Steps
 
-Continue with these related tutorials:
+Once you understand factory basics:
 
-- [Loading SACC Data](two_point_sacc_loading.qmd): Learn how to extract data from SACC files
-- [Scale Cuts and Filtering](two_point_scale_cuts.qmd): Apply physical scale cuts to your analysis
-- [Integration Methods](two_point_integration.qmd): Control how two-point functions are computed
+- **Work with SACC files**: [Loading SACC Data](two_point_sacc_loading.qmd)
+- **Generate from scratch**: [Two-Point Generators](two_point_generators.qmd)
+- **Apply scale cuts** (optional): [Scale Cuts and Filtering](two_point_scale_cuts.qmd)
+- **Control integration**: [Integration Methods](two_point_integration.qmd)
