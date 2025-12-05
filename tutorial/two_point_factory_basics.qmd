@@ -110,7 +110,7 @@ Use this when working with real observations or pre-existing data files.
 
 ## Complete Example: Generated Metadata {#sec-example-generated}
 
-This example shows the full workflow starting from generated metadata. For details on generating the LSST Year 1 bins and metadata, see [Two-Point Generators](two_point_generators.qmd).
+This example shows the full workflow starting from generated metadata. For details on generating the LSST Year 1 bins and metadata, see [Two-Point Generators](two_point_generators.qmd). In this example we use the 3x2pt bin pair selection logic from [Bin Pair Selectors](two_point_bin_selectors.qmd).
 
 ### Step 1: Generate Metadata
 
@@ -120,16 +120,19 @@ from firecrown.generators import (
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )
-from firecrown.metadata_functions import make_all_photoz_bin_combinations
-from firecrown.metadata_types import TwoPointHarmonic
+from firecrown.metadata_functions import make_binned_two_point_filtered
+from firecrown.metadata_types import TwoPointHarmonic, ThreeTwoBinPairSelector
 
 # Generate LSST Y1 bins
 count_bins = LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.generate()
 shear_bins = LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.generate()
 all_y1_bins = count_bins + shear_bins
 
-# Create all possible two-point combinations
-all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
+# Create two-point combinations using 3x2pt logic
+bin_pair_selector = ThreeTwoBinPairSelector(
+    lens_dist=1, source_dist=1, source_lens_dist=5
+)
+all_two_point_xy = make_binned_two_point_filtered(all_y1_bins, bin_pair_selector)
 ells = np.unique(np.geomspace(2, 2000, 128).astype(int))
 all_two_point_cells = [TwoPointHarmonic(XY=xy, ells=ells) for xy in all_two_point_xy]
 ```
