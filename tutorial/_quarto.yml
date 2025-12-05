@@ -33,18 +33,22 @@ website:
               text: "Introduction"
         - section: "Tutorials"
           contents:
-            - href: two_point_framework.qmd
-              text: "Two-Point Framework"
-            - href: inferred_zdist.qmd
-              text: "Inferred Redshift Distributions"
-            - href: inferred_zdist_generators.qmd
-              text: "Redshift Distribution Generators"
-            - href: inferred_zdist_serialization.qmd
-              text: "Redshift Distribution Serialization"
-            - href: two_point_generators.qmd
-              text: "Two-Point Function Generators"
-            - href: two_point_factories.qmd
-              text: "Two-Point Function Factories"
+            - section: "Tomographic Bins"
+              contents:
+                - href: inferred_zdist.qmd
+                  text: "Distributions"
+                - href: inferred_zdist_generators.qmd
+                  text: "Distribution Generators"
+                - href: inferred_zdist_serialization.qmd
+                  text: "Serialization"
+            - section: "Two-Point"
+              contents:
+                - href: two_point_framework.qmd
+                  text: "Framework"
+                - href: two_point_generators.qmd
+                  text: "Generators"
+                - href: two_point_factories.qmd
+                  text: "Factories"
         - section: "Firecrown on GitHub"
           contents:
             - text: "Source Code"
