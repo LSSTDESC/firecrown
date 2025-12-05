@@ -267,6 +267,15 @@ data = pd.concat(two_point_pd_list)
     + scale_y_log10()
     + facet_wrap("measurement")
     + doc_theme()
+    + theme(
+        figure_size=(12, 6),
+        legend_position="bottom",
+        legend_box="vertical",
+    )
+    + guides(
+        color=guide_legend(nrow=2),
+        shape=guide_legend(nrow=2),
+    )
 )
 ```
 
