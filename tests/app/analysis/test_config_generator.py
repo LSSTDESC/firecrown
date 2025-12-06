@@ -121,6 +121,25 @@ class TestGetGenerator:
         assert gen_abs.use_absolute_path is True
         assert gen_rel.use_absolute_path is False
 
+    def test_get_generator_invalid_framework(
+        self, tmp_path: Path, _mock_cosmo_spec: MagicMock
+    ) -> None:
+        """Test that get_generator raises ValueError for invalid framework."""
+        # Create a mock object that will bypass the type check
+        # but fail the match statement
+        invalid_framework = MagicMock()
+        invalid_framework.value = "invalid_framework"
+
+        with pytest.raises(ValueError, match="Unsupported framework"):
+            get_generator(
+                framework=invalid_framework,
+                output_path=tmp_path,
+                prefix="test",
+                use_absolute_path=True,
+                cosmo_spec=_mock_cosmo_spec,
+                required_cosmology=FrameworkCosmology.NONLINEAR,
+            )
+
     def test_get_generator_cobaya_framework(
         self, tmp_path: Path, _mock_cosmo_spec: MagicMock
     ) -> None:

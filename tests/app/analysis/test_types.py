@@ -15,7 +15,14 @@ from firecrown.app.analysis import (
     PriorGaussian,
     COSMO_DESC,
     CCL_COSMOLOGY_MINIMAL_SET,
+    CCLCosmologySpec,
 )
+from firecrown.app.analysis._types import (
+    PoweSpecAmplitudeParameter,
+    get_path_str,
+)
+from firecrown.app.analysis._cobaya import CobayaConfigGenerator
+from firecrown.likelihood import NamedParameters
 
 
 class TestFrameworksEnum:
@@ -297,3 +304,193 @@ class TestCosmoDesc:
         assert omega_c.symbol == r"\Omega_c"
         assert omega_c.lower_bound < omega_c.upper_bound
         assert omega_c.lower_bound <= omega_c.default_value <= omega_c.upper_bound
+
+
+class TestCCLCosmologySpec:
+    """Tests for CCLCosmologySpec validation."""
+
+    def test_invalid_parameter_name(self) -> None:
+        """Test that CCLCosmologySpec rejects invalid parameter names."""
+        invalid_param = Parameter(
+            name="invalid_param",
+            symbol="invalid",
+            lower_bound=0.0,
+            upper_bound=1.0,
+            default_value=0.5,
+            free=True,
+        )
+
+        with pytest.raises(ValidationError, match="not a valid CCL cosmological"):
+            CCLCosmologySpec(parameters=[invalid_param])
+
+    def test_missing_required_parameter(self) -> None:
+        """Test that CCLCosmologySpec requires minimal parameter set."""
+        # Missing Omega_k from minimal set
+        incomplete_params = [
+            Parameter(
+                name="Omega_c",
+                symbol="Omega_c",
+                lower_bound=0.2,
+                upper_bound=0.3,
+                default_value=0.25,
+                free=True,
+            ),
+            Parameter(
+                name="Omega_b",
+                symbol="Omega_b",
+                lower_bound=0.03,
+                upper_bound=0.07,
+                default_value=0.05,
+                free=True,
+            ),
+        ]
+
+        with pytest.raises(ValidationError, match="missing required parameter"):
+            CCLCosmologySpec(parameters=incomplete_params)
+
+    def test_both_amplitude_parameters(self) -> None:
+        """Test that CCLCosmologySpec rejects both A_s and sigma8."""
+        params_with_both = [
+            COSMO_DESC[name]
+            for name in CCL_COSMOLOGY_MINIMAL_SET
+            if name not in ["sigma8", "A_s"]
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+            ),
+            Parameter(
+                name="sigma8",
+                symbol="sigma8",
+                lower_bound=0.6,
+                upper_bound=1.0,
+                default_value=0.8,
+                free=True,
+            ),
+        ]
+
+        with pytest.raises(
+            ValidationError, match="Exactly one of A_s and sigma8 must be supplied"
+        ):
+            CCLCosmologySpec(parameters=params_with_both)
+
+    def test_get_amplitude_parameter_as(self) -> None:
+        """Test get_amplitude_parameter returns AS when A_s is present."""
+        params_with_as = [
+            COSMO_DESC[name] for name in CCL_COSMOLOGY_MINIMAL_SET if name != "sigma8"
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+            )
+        ]
+
+        spec = CCLCosmologySpec(parameters=params_with_as)
+        assert spec.get_amplitude_parameter() == PoweSpecAmplitudeParameter.AS
+
+
+class TestConfigGeneratorMethods:
+    """Tests for ConfigGenerator methods."""
+
+    def test_config_generator_add_sacc(self, tmp_path) -> None:
+        """Test add_sacc method."""
+        gen = CobayaConfigGenerator(
+            output_path=tmp_path,
+            prefix="test",
+            use_absolute_path=True,
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        sacc_path = tmp_path / "test.sacc"
+        gen.add_sacc(sacc_path)
+        assert gen.sacc_path == sacc_path
+
+    def test_config_generator_add_factory(self, tmp_path) -> None:
+        """Test add_factory method."""
+        gen = CobayaConfigGenerator(
+            output_path=tmp_path,
+            prefix="test",
+            use_absolute_path=True,
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        factory_path = tmp_path / "factory.py"
+        gen.add_factory(factory_path)
+        assert gen.factory_source == factory_path
+
+    def test_config_generator_add_build_parameters(self, tmp_path) -> None:
+        """Test add_build_parameters method."""
+        gen = CobayaConfigGenerator(
+            output_path=tmp_path,
+            prefix="test",
+            use_absolute_path=True,
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        params = NamedParameters({"param1": "value1"})
+        gen.add_build_parameters(params)
+        assert gen.build_parameters == params
+
+    def test_config_generator_add_models(self, tmp_path) -> None:
+        """Test add_models method."""
+        gen = CobayaConfigGenerator(
+            output_path=tmp_path,
+            prefix="test",
+            use_absolute_path=True,
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        model = Model(
+            name="test_model",
+            description="Test model",
+            parameters=[
+                Parameter(
+                    name="param1",
+                    symbol="p1",
+                    lower_bound=0.0,
+                    upper_bound=1.0,
+                    default_value=0.5,
+                    free=True,
+                )
+            ],
+        )
+        gen.add_models([model])
+        assert gen.models == [model]
+
+
+class TestGetPathStr:
+    """Tests for get_path_str utility function."""
+
+    def test_get_path_str_with_string(self) -> None:
+        """Test get_path_str returns string as-is."""
+        result = get_path_str("my_string_path", use_absolute=True)
+        assert result == "my_string_path"
+
+        result = get_path_str("my_string_path", use_absolute=False)
+        assert result == "my_string_path"
+
+    def test_get_path_str_with_path_absolute(self, tmp_path) -> None:
+        """Test get_path_str with Path object and absolute flag."""
+        test_path = tmp_path / "subdir" / "file.txt"
+
+        result = get_path_str(test_path, use_absolute=True)
+        assert result == test_path.absolute().as_posix()
+
+    def test_get_path_str_with_path_relative(self, tmp_path) -> None:
+        """Test get_path_str with Path object and relative flag."""
+        test_path = tmp_path / "subdir" / "file.txt"
+
+        result = get_path_str(test_path, use_absolute=False)
+        assert result == "file.txt"
