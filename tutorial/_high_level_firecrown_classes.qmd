@@ -14,7 +14,7 @@ Moreover, we define for `ModelingTools` an abstract class [^abstract-class] for 
 Thus, the same tool can have different implementations, and the user can choose which one to use.
 This is intended to partially address the issue of systematic effects, as we can have different implementations of the same tool, each one representing a different systematic effect.
 For example, we can have different implementations of the halo model, each one including a different effects.
-This is in contrast to the current implementation, where we would have a single halo model that needs to have its results modified by `Systematic` objects.
+This is in contrast to the current implementation, where we would have a single halo model that needs to have its results modified by systematic objects.
 
 [^abstract-class]: An [abstract class](https://en.wikipedia.org/wiki/Abstract_type) provides either methods or data (or both) for derived classes but is not complete.
 It is not possible to create an object whose type is an abstract class.
@@ -24,13 +24,21 @@ The likelihoods are represented by a base class `firecrown.likelihood.Likelihood
 The minimum implementation for a likelihood implements two methods:
 
 ```{.python}
-read(sacc: sacc.SACC) -> None
-calculate_loglike(tools: ModelingTools) -> float
+class MyLikelihood(firecrown.likelihood.Likelihood):
+    """A dummy sample likelihood class."""
+
+    def read(sacc: sacc.SACC) -> None:
+        """Read data from a SACC object"""
+        ...
+
+    def calculate_loglike(tools: ModelingTools) -> float:
+        """Calculate the log-likelihood for the given modeling tools."""
+        ...
 ```
 
 The method `read` reads the necessary data (data vectors and covariances) from the provided `sacc.SACC` object.
 This specifies the data for which we are calculating the likelihood.
 The method `calculate_loglike` return the (natural) logarithm of the likelihood for the data given the cosmology and models in `tools`.
-Gaussian-related likelihoods are subclasses of `firecrown.likelihood.gaussfamily.GaussFamily`.
+Gaussian-related likelihoods are subclasses of `firecrown.likelihood.GaussFamily`.
 Currently-implemented subclasses include `ConstGaussian` and `StudentT`.
 `ConstGaussian` assumes a Gaussian distribution in which the covariance of the data is constant.

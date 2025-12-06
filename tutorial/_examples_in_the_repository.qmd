@@ -25,5 +25,5 @@ Currently, all the examples use the `ConstGaussian` likelihood.
   It includes both CosmoSIS and NumCosmo examples.
   The NumCosmo example demonstrates the construction of a Fisher matrix, using an adaptive algorithm for the calculation of derivatives.
 
-* The `cluster_number_counts` directory contains an example of the use of the `ClusterNumberCounts` statistic.
+* The `cluster_number_counts` directory contains an example of the use of the `BinnedClusterNumberCounts` statistic.
   It includes both CosmoSIS and NumCosmo examples.
