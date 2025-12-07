@@ -6,6 +6,8 @@ Tests NumCosmo configuration generation and parameter handling.
 from pathlib import Path
 import pytest
 
+from numcosmo_py import Ncm
+
 from firecrown.likelihood import NamedParameters
 from firecrown.app.analysis._numcosmo import (
     ConfigOptions,
@@ -23,6 +25,14 @@ from firecrown.app.analysis._types import (
     PriorUniform,
     Model,
 )
+
+
+@pytest.fixture(name="numcosmo_init", scope="session")
+def fixture_numcosmo_init() -> bool:
+    """Fixture to initialize NumCosmo for testing."""
+    Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
+
+    return True
 
 
 @pytest.fixture(name="vanilla_cosmo")
@@ -156,20 +166,29 @@ class TestCreateMapping:
         result = _create_mapping(config_options)
         assert result is None
 
-    def test_create_mapping_nonlinear(self, config_options: ConfigOptions) -> None:
+    def test_create_mapping_nonlinear(
+        self, numcosmo_init: bool, config_options: ConfigOptions
+    ) -> None:
         """Test creating mapping for nonlinear cosmology."""
+        assert numcosmo_init
         config_options.required_cosmology = FrameworkCosmology.NONLINEAR
         result = _create_mapping(config_options)
         assert result is not None
 
-    def test_create_mapping_linear(self, config_options: ConfigOptions) -> None:
+    def test_create_mapping_linear(
+        self, numcosmo_init: bool, config_options: ConfigOptions
+    ) -> None:
         """Test creating mapping for linear cosmology."""
+        assert numcosmo_init
         config_options.required_cosmology = FrameworkCosmology.LINEAR
         result = _create_mapping(config_options)
         assert result is not None
 
-    def test_create_mapping_background(self, config_options: ConfigOptions) -> None:
+    def test_create_mapping_background(
+        self, numcosmo_init: bool, config_options: ConfigOptions
+    ) -> None:
         """Test creating mapping for background cosmology."""
+        assert numcosmo_init
         config_options.required_cosmology = FrameworkCosmology.BACKGROUND
         result = _create_mapping(config_options)
         assert result is not None
@@ -253,9 +272,10 @@ class TestNumCosmoConfigGenerator:
         assert NumCosmoConfigGenerator.framework == Frameworks.NUMCOSMO
 
     def test_generator_initialization(
-        self, tmp_path: Path, vanilla_cosmo: CCLCosmologySpec
+        self, numcosmo_init: bool, tmp_path: Path, vanilla_cosmo: CCLCosmologySpec
     ) -> None:
         """Test generator initialization."""
+        assert numcosmo_init
         gen = NumCosmoConfigGenerator(
             output_path=tmp_path,
             prefix="test",
@@ -267,11 +287,11 @@ class TestNumCosmoConfigGenerator:
         assert gen.prefix == "test"
         assert gen.output_path == tmp_path
 
-    @pytest.mark.slow
     def test_generator_write_config(
-        self, tmp_path: Path, vanilla_cosmo: CCLCosmologySpec
+        self, numcosmo_init: bool, tmp_path: Path, vanilla_cosmo: CCLCosmologySpec
     ) -> None:
         """Test that write_config creates YAML files."""
+        assert numcosmo_init
         gen = NumCosmoConfigGenerator(
             output_path=tmp_path,
             prefix="my_analysis",
@@ -283,26 +303,50 @@ class TestNumCosmoConfigGenerator:
         # Create a minimal factory file
         factory_file = tmp_path / "factory.py"
         factory_file.write_text(
-            "from firecrown.likelihood.gauss_family.statistic.source.number_counts import NumberCounts\n"
-            "def build_likelihood(params):\n"
-            "    return NumberCounts(sacc_tracer='lens0')\n"
+            """
+
+import sacc
+import numpy as np
+from firecrown.likelihood.number_counts import NumberCounts
+from firecrown.likelihood import ConstGaussian, TwoPoint
+
+
+def build_likelihood(_):
+    lens0 = NumberCounts(sacc_tracer="lens0")
+    two_point = TwoPoint("galaxy_density_cl", source0=lens0, source1=lens0)
+    statistics = [two_point]
+
+    sacc_data = sacc.Sacc()
+
+    sacc_data.add_tracer(
+        "NZ",
+        "lens0",
+        np.array([0.1, 0.2, 0.3]),
+        np.array([0.0, 1.0, 0.0]),
+    )
+    sacc_data.add_ell_cl(
+        "galaxy_density_cl",
+        "lens0",
+        "lens0",
+        np.array([10, 20, 30]),
+        np.array([1.0, 2.0, 3.0]),
+    )
+    sacc_data.add_covariance(np.eye(3) * 0.1)
+
+    likelihood = ConstGaussian(statistics=statistics)
+    likelihood.read(sacc_data)
+
+    return likelihood
+""".strip()
         )
 
         gen.factory_source = factory_file
         gen.build_parameters = NamedParameters({})
+        gen.write_config()
 
-        # This test requires full NumCosmo initialization which is complex
-        # We'll mark it as slow and skip in fast test runs
-        try:
-            gen.write_config()
-
-            # Check that files were created
-            expected_file = tmp_path / "numcosmo_my_analysis.yaml"
-            assert expected_file.exists()
-        except Exception:
-            # NumCosmo initialization can fail in test environments
-            # Mark test as expected failure if environment doesn't support it
-            pytest.skip("NumCosmo initialization not available in test environment")
+        # Check that files were created
+        expected_file = tmp_path / "numcosmo_my_analysis.yaml"
+        assert expected_file.exists()
 
 
 class TestPriorHandling:
