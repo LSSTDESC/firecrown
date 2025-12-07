@@ -1,4 +1,4 @@
-"""Tests for the modules firecrown.metadaa_types and firecrown.metadata_functions.
+"""Tests for the modules firecrown.metadata_types and firecrown.metadata_functions.
 
 In this module, we test the functions and classes involved SACC extraction tools.
 """
@@ -48,6 +48,8 @@ from firecrown.likelihood._two_point import (
     TwoPointFactory,
     use_source_factory,
 )
+
+# pylint: disable=too-many-lines
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")

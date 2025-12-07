@@ -788,7 +788,7 @@ class TestCosmosisConfigGenerator:
         """Test that write_config creates INI files."""
         gen = CosmosisConfigGenerator(
             output_path=tmp_path,
-            prefix="myanalysis",
+            prefix="my_analysis",
             use_absolute_path=True,
             cosmo_spec=vanilla_cosmo,
             required_cosmology=FrameworkCosmology.NONLINEAR,
@@ -799,8 +799,8 @@ class TestCosmosisConfigGenerator:
         gen.write_config()
 
         # Check that files were created
-        assert (tmp_path / "cosmosis_myanalysis.ini").exists()
-        assert (tmp_path / "cosmosis_myanalysis_values.ini").exists()
+        assert (tmp_path / "cosmosis_my_analysis.ini").exists()
+        assert (tmp_path / "cosmosis_my_analysis_values.ini").exists()
 
     def test_generator_write_config_with_priors(self, tmp_path: Path) -> None:
         """Test configuration with priors file."""
