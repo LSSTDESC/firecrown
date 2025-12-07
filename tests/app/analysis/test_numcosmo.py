@@ -25,6 +25,7 @@ from firecrown.app.analysis._types import (
     PriorUniform,
     Model,
 )
+from firecrown.app.analysis._numcosmo import _to_pascal
 
 
 @pytest.fixture(name="numcosmo_init", scope="session")
@@ -454,3 +455,293 @@ class TestCosmologySpecHandling:
         num_nu = vanilla_cosmo.get_num_massive_neutrinos()
         assert isinstance(num_nu, int)
         assert num_nu >= 0
+
+
+class TestToPascal:
+    """Tests for _to_pascal utility function."""
+
+    def test_to_pascal_snake_case(self) -> None:
+        """Test converting snake_case to PascalCase."""
+        assert _to_pascal("my_model_name") == "MyModelName"
+
+    def test_to_pascal_kebab_case(self) -> None:
+        """Test converting kebab-case to PascalCase."""
+        assert _to_pascal("my-model-name") == "MyModelName"
+
+    def test_to_pascal_mixed(self) -> None:
+        """Test converting mixed separators."""
+        assert _to_pascal("my_model-name") == "MyModelName"
+
+    def test_to_pascal_single_word(self) -> None:
+        """Test single word conversion."""
+        assert _to_pascal("model") == "Model"
+
+
+class TestPriorIntegration:
+    """Tests for prior handling in NumCosmo configuration."""
+
+    def test_generator_with_gaussian_priors(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Test generator with Gaussian priors on cosmology parameters."""
+        assert numcosmo_init
+
+        # Create cosmology with Gaussian priors
+        prior_omega_c = PriorGaussian(mean=0.25, sigma=0.05)
+        param_omega_c = Parameter(
+            name="Omega_c",
+            symbol="Omega_c",
+            lower_bound=0.2,
+            upper_bound=0.3,
+            default_value=0.25,
+            free=True,
+            prior=prior_omega_c,
+        )
+
+        params = [param_omega_c] + [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "Omega_c"
+        ]
+        cosmo_with_prior = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_prior",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_prior,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        assert gen.cosmo_spec["Omega_c"].prior is not None
+
+    def test_generator_with_uniform_priors(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Test generator with uniform priors on cosmology parameters."""
+        assert numcosmo_init
+
+        # Create cosmology with uniform priors
+        prior_omega_b = PriorUniform(lower=0.04, upper=0.06)
+        param_omega_b = Parameter(
+            name="Omega_b",
+            symbol="Omega_b",
+            lower_bound=0.03,
+            upper_bound=0.07,
+            default_value=0.05,
+            free=True,
+            prior=prior_omega_b,
+        )
+
+        params = [param_omega_b] + [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "Omega_b"
+        ]
+        cosmo_with_prior = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_prior",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_prior,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        assert gen.cosmo_spec["Omega_b"].prior is not None
+
+    def test_generator_with_model_priors(
+        self, numcosmo_init: bool, tmp_path: Path, vanilla_cosmo: CCLCosmologySpec
+    ) -> None:
+        """Test generator with priors on model parameters."""
+        assert numcosmo_init
+
+        # Create model with Gaussian prior
+        prior = PriorGaussian(mean=1.0, sigma=0.2)
+        param_with_prior = Parameter(
+            name="model_param",
+            symbol="m_p",
+            lower_bound=0.5,
+            upper_bound=1.5,
+            default_value=1.0,
+            free=True,
+            prior=prior,
+        )
+        model = Model(
+            name="test_model",
+            description="Model with prior",
+            parameters=[param_with_prior],
+        )
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_model_prior",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+        gen.add_models([model])
+
+        assert len(gen.models) == 1
+        assert gen.models[0].parameters[0].prior is not None
+
+
+class TestAmplitudeParameterHandling:
+    """Tests for A_s and sigma8 parameter handling."""
+
+    def test_generator_with_a_s_parameter(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Test generator with A_s instead of sigma8."""
+        assert numcosmo_init
+
+        # Create cosmology with A_s
+        params = [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "sigma8"
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+            )
+        ]
+        cosmo_with_as = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_as",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_as,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        assert "A_s" in gen.cosmo_spec
+        assert "sigma8" not in gen.cosmo_spec
+
+    def test_generator_with_a_s_gaussian_prior(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Test generator with Gaussian prior on A_s."""
+        assert numcosmo_init
+
+        prior_as = PriorGaussian(mean=2e-9, sigma=0.1e-9)
+        params = [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "sigma8"
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+                prior=prior_as,
+            )
+        ]
+        cosmo_with_as = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_as_prior",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_as,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        assert gen.cosmo_spec["A_s"].prior is not None
+
+    def test_generator_with_a_s_uniform_prior(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Test generator with uniform prior on A_s."""
+        assert numcosmo_init
+
+        prior_as = PriorUniform(lower=1.5e-9, upper=2.5e-9)
+        params = [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "sigma8"
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+                prior=prior_as,
+            )
+        ]
+        cosmo_with_as = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_as_uniform",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_as,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        assert gen.cosmo_spec["A_s"].prior is not None
+
+
+class TestNeutrinoHandling:
+    """Tests for massive neutrino parameter handling."""
+
+    def test_generator_with_massive_neutrinos(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Test generator with massive neutrinos."""
+        assert numcosmo_init
+
+        cosmo_with_nu = CCLCosmologySpec.vanilla_lcdm_with_neutrinos()
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_neutrinos",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_nu,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        assert gen.cosmo_spec.get_num_massive_neutrinos() > 0
+
+    def test_generator_with_neutrino_prior(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Test generator with prior on neutrino mass."""
+        assert numcosmo_init
+
+        prior_mnu = PriorGaussian(mean=0.06, sigma=0.01)
+        params = [
+            p if p.name != "m_nu" else p.model_copy(update={"prior": prior_mnu})
+            for p in CCLCosmologySpec.vanilla_lcdm_with_neutrinos().parameters
+        ]
+        cosmo_with_nu_prior = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_nu_prior",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_nu_prior,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        assert gen.cosmo_spec["m_nu"].prior is not None
+
+
+class TestCosmologyNone:
+    """Tests for NONE cosmology framework."""
+
+    def test_generator_with_none_cosmology(
+        self, numcosmo_init: bool, tmp_path: Path, vanilla_cosmo: CCLCosmologySpec
+    ) -> None:
+        """Test generator with NONE cosmology framework."""
+        assert numcosmo_init
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_none",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONE,
+        )
+
+        assert gen.required_cosmology == FrameworkCosmology.NONE
