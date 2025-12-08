@@ -46,7 +46,7 @@ The `WeakLensingSystematic` and `NumberCountsSystematic` classes inherit from `S
 We will use the number counts systematic `PTNonLinearBiasSystematic`[^ptnlbs] to illustrate the use of systematics in Firecrown.
 A class diagram for this systematic is shown below.
 
-[^ptnlbs]: `firecrown.likelihood.number_counts.PTNonLenearBiasSystematic` is the full name of this class.
+[^ptnlbs]: `firecrown.likelihood.number_counts.PTNonLinearBiasSystematic` is the full name of this class.
 
 ```{mermaid}
 classDiagram

@@ -15,7 +15,7 @@ This document outlines how to use `InferredGalaxyZDist` objects to derive the tw
 
 Two-point statistics are widely used in cosmological analyses.
 They provide a statistical summary of the distribution, in either real of harmonic space, of galaxies and the matter density field, or of other observables.
-In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood.two_point`.
+In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood`.
 
 ## Generating the LSST Year 1 Redshift Distribution Bins
 

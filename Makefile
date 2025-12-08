@@ -71,11 +71,24 @@ format-check:  ## Check code formatting without modifying files
 
 lint:  ## Run all linting tools in parallel
 	@echo "Running all linters in parallel..."
-	@(black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ black passed" || (echo "❌ black failed" && exit 1)) & \
-	(flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ flake8 passed" || (echo "❌ flake8 failed" && exit 1)) & \
-	(mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) && echo "✅ mypy passed" || (echo "❌ mypy failed" && exit 1)) & \
-	($(MAKE) lint-pylint && echo "✅ pylint passed" || (echo "❌ pylint failed" && exit 1)) & \
-	wait
+	@(black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ black passed" || (echo "❌ black failed" && false)) & \
+	PID1=$$! ; \
+	(flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ flake8 passed" || (echo "❌ flake8 failed" && false)) & \
+	PID2=$$! ; \
+	(mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) && echo "✅ mypy passed" || (echo "❌ mypy failed" && false)) & \
+	PID3=$$! ; \
+	($(MAKE) lint-pylint && echo "✅ pylint passed" || (echo "❌ pylint failed" && false)) & \
+	PID4=$$! ; \
+	FAILED=0 ; \
+	wait $$PID1 || FAILED=1 ; \
+	wait $$PID2 || FAILED=1 ; \
+	wait $$PID3 || FAILED=1 ; \
+	wait $$PID4 || FAILED=1 ; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo "❌ One or more linters failed" ; \
+		exit 1 ; \
+	fi ; \
+	echo "✅ All linters passed!"
 
 lint-black:  ## Check code formatting with black
 	@echo "Running black..."
@@ -87,11 +100,24 @@ lint-flake8:  ## Run flake8 linter
 
 lint-pylint:  ## Run pylint on all packages in parallel
 	@echo "Running pylint on all packages in parallel..."
-	@(pylint $(FIRECROWN_PKG_DIR) && echo "✅ pylint passed for firecrown" || (echo "❌ pylint failed for firecrown" && exit 1)) & \
-	(pylint $(PYLINT_PLUGINS_DIR) && echo "✅ pylint passed for pylint_plugins" || (echo "❌ pylint failed for pylint_plugins" && exit 1)) & \
-	(pylint --rcfile $(TESTS_DIR)/pylintrc $(TESTS_DIR) && echo "✅ pylint passed for tests" || (echo "❌ pylint failed for tests" && exit 1)) & \
-	(pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) && echo "✅ pylint passed for examples" || (echo "❌ pylint failed for examples" && exit 1)) & \
-	wait
+	@(pylint $(FIRECROWN_PKG_DIR) && echo "✅ pylint passed for firecrown" || (echo "❌ pylint failed for firecrown" && false)) & \
+	PID1=$$! ; \
+	(pylint $(PYLINT_PLUGINS_DIR) && echo "✅ pylint passed for pylint_plugins" || (echo "❌ pylint failed for pylint_plugins" && false)) & \
+	PID2=$$! ; \
+	(pylint --rcfile $(TESTS_DIR)/pylintrc $(TESTS_DIR) && echo "✅ pylint passed for tests" || (echo "❌ pylint failed for tests" && false)) & \
+	PID3=$$! ; \
+	(pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) && echo "✅ pylint passed for examples" || (echo "❌ pylint failed for examples" && false)) & \
+	PID4=$$! ; \
+	FAILED=0 ; \
+	wait $$PID1 || FAILED=1 ; \
+	wait $$PID2 || FAILED=1 ; \
+	wait $$PID3 || FAILED=1 ; \
+	wait $$PID4 || FAILED=1 ; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo "❌ One or more pylint checks failed" ; \
+		exit 1 ; \
+	fi ; \
+	echo "✅ All pylint checks passed!"
 
 lint-pylint-firecrown:  ## Run pylint on firecrown package
 	@echo "Running pylint on firecrown..."
@@ -220,20 +246,29 @@ unit-tests:  ## Run all unit tests in parallel
 
 ##@ Documentation
 
+docs-generate-symbol-map:  ## Generate the firecrown symbol-to-URL map for documentation
+	@mkdir -p $(TUTORIAL_OUTPUT_DIR)
+	python $(FIRECROWN_PKG_DIR)/fctools/generate_symbol_map.py > $(TUTORIAL_OUTPUT_DIR)/symbol_map.json
 
-##@ Documentation
+docs-code-check:  ## Check Python code blocks in tutorials for syntax errors
+	@echo "Checking tutorial code blocks for syntax errors..."
+	@python -m firecrown.fctools.code_block_checker $(TUTORIAL_DIR)
 
-tutorials:  ## Render tutorials with quarto
-	quarto render $(TUTORIAL_DIR) --output-dir=../$(TUTORIAL_OUTPUT_DIR)
+docs-symbol-check:  ## Validate Firecrown symbol references in tutorials
+	@echo "Validating Firecrown symbol references in tutorials..."
+	@python -m firecrown.fctools.symbol_reference_checker $(TUTORIAL_DIR) $(TUTORIAL_OUTPUT_DIR)/symbol_map.json --external-symbols-file $(TUTORIAL_DIR)/external_symbols.txt
+
+tutorials:  ## Render tutorials with quarto, applying symbol linking filter
+	quarto render $(TUTORIAL_DIR) --output-dir=$(CURDIR)/$(TUTORIAL_OUTPUT_DIR) --to html --metadata "quarto-filters=[$(TUTORIAL_DIR)/link_symbols.lua]"
 
 api-docs:  ## Build API documentation with Sphinx
 	$(MAKE) -C $(DOCS_DIR) html
 
 docs-build: tutorials api-docs  ## Build tutorials and API docs (can run in parallel with make -j2)
 
-docs: docs-build docs-linkcheck ## Build and check all documentation (tutorials + API docs)
+docs: docs-generate-symbol-map docs-build docs-linkcheck docs-code-check docs-symbol-check ## Build and check all documentation (tutorials + API docs)
 	@echo ""
-	@echo "Documentation built successfully:"
+	@echo "Documentation built and checked successfully:"
 	@echo "  - Tutorials: $(TUTORIAL_OUTPUT_DIR)/"
 	@echo "  - API docs: $(DOCS_BUILD_DIR)/html/index.html"
 
