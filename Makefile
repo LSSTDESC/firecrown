@@ -7,8 +7,8 @@
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
 	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
-	test-updatable test-utils test-parameters test-models test-models-cluster \
-	test-models-two-point unit-tests
+	test-updatable test-utils test-parameters test-modeling-tools test-models \
+	test-models-cluster test-models-two-point unit-tests
 
 # Default target
 .DEFAULT_GOAL := help
@@ -166,6 +166,13 @@ test-parameters:  ## Run tests for firecrown.parameters module with coverage
 		--cov-branch \
 		--cov-fail-under=100
 
+test-modeling-tools:  ## Run tests for firecrown.modeling_tools module with coverage
+	$(PYTEST) tests/test_modeling_tools.py \
+		--cov=firecrown.modeling_tools \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100
+
 test-models-cluster:  ## Run unit tests for firecrown.models.cluster package with coverage
 	$(PYTEST) tests/models/cluster/ \
 		--cov=firecrown.models.cluster \
@@ -189,16 +196,19 @@ unit-tests:  ## Run all unit tests in parallel
 	PID2=$$! ; \
 	(COVERAGE_FILE=.coverage.parameters $(MAKE) test-parameters && echo "✅ test-parameters passed" || (echo "❌ test-parameters failed" && exit 1)) & \
 	PID3=$$! ; \
-	(COVERAGE_FILE=.coverage.models-cluster $(MAKE) test-models-cluster && echo "✅ test-models-cluster passed" || (echo "❌ test-models-cluster failed" && exit 1)) & \
+	(COVERAGE_FILE=.coverage.modeling-tools $(MAKE) test-modeling-tools && echo "✅ test-modeling-tools passed" || (echo "❌ test-modeling-tools failed" && exit 1)) & \
 	PID4=$$! ; \
-	(COVERAGE_FILE=.coverage.models-two-point $(MAKE) test-models-two-point && echo "✅ test-models-two-point passed" || (echo "❌ test-models-two-point failed" && exit 1)) & \
+	(COVERAGE_FILE=.coverage.models-cluster $(MAKE) test-models-cluster && echo "✅ test-models-cluster passed" || (echo "❌ test-models-cluster failed" && exit 1)) & \
 	PID5=$$! ; \
+	(COVERAGE_FILE=.coverage.models-two-point $(MAKE) test-models-two-point && echo "✅ test-models-two-point passed" || (echo "❌ test-models-two-point failed" && exit 1)) & \
+	PID6=$$! ; \
 	FAILED=0 ; \
 	wait $$PID1 || FAILED=1 ; \
 	wait $$PID2 || FAILED=1 ; \
 	wait $$PID3 || FAILED=1 ; \
 	wait $$PID4 || FAILED=1 ; \
 	wait $$PID5 || FAILED=1 ; \
+	wait $$PID6 || FAILED=1 ; \
 	if [ $$FAILED -eq 1 ]; then \
 		echo "❌ One or more unit test targets failed" ; \
 		exit 1 ; \
