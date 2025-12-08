@@ -27,6 +27,8 @@ from firecrown.app.analysis._types import (
 )
 from firecrown.app.analysis._numcosmo import _to_pascal
 
+# pylint: disable=too-many-lines
+
 
 @pytest.fixture(name="numcosmo_init", scope="session")
 def fixture_numcosmo_init() -> bool:
@@ -81,6 +83,50 @@ def fixture_config_options(
         required_cosmology=FrameworkCosmology.NONLINEAR,
         prefix="test",
     )
+
+
+@pytest.fixture(name="minimal_factory_file")
+def fixture_minimal_factory_file(tmp_path: Path) -> Path:
+    """Create a minimal factory file for testing.
+
+    This factory creates a simple likelihood with:
+    - One tracer (lens0)
+    - One two-point statistic (galaxy_density_cl)
+    - Mock SACC data with 3 data points
+    """
+    factory_file = tmp_path / "factory.py"
+    factory_file.write_text(
+        """
+import sacc
+import numpy as np
+from firecrown.likelihood.number_counts import NumberCounts
+from firecrown.likelihood import ConstGaussian, TwoPoint
+
+
+def build_likelihood(_):
+    lens0 = NumberCounts(sacc_tracer="lens0")
+    two_point = TwoPoint("galaxy_density_cl", source0=lens0, source1=lens0)
+    statistics = [two_point]
+
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer(
+        "NZ", "lens0", np.array([0.1, 0.2, 0.3]), np.array([0.0, 1.0, 0.0])
+    )
+    sacc_data.add_ell_cl(
+        "galaxy_density_cl",
+        "lens0",
+        "lens0",
+        np.array([10, 20, 30]),
+        np.array([1.0, 2.0, 3.0]),
+    )
+    sacc_data.add_covariance(np.eye(3) * 0.1)
+
+    likelihood = ConstGaussian(statistics=statistics)
+    likelihood.read(sacc_data)
+    return likelihood
+""".strip()
+    )
+    return factory_file
 
 
 class TestNameMap:
@@ -289,7 +335,11 @@ class TestNumCosmoConfigGenerator:
         assert gen.output_path == tmp_path
 
     def test_generator_write_config(
-        self, numcosmo_init: bool, tmp_path: Path, vanilla_cosmo: CCLCosmologySpec
+        self,
+        numcosmo_init: bool,
+        tmp_path: Path,
+        vanilla_cosmo: CCLCosmologySpec,
+        minimal_factory_file: Path,
     ) -> None:
         """Test that write_config creates YAML files."""
         assert numcosmo_init
@@ -301,47 +351,7 @@ class TestNumCosmoConfigGenerator:
             required_cosmology=FrameworkCosmology.NONLINEAR,
         )
 
-        # Create a minimal factory file
-        factory_file = tmp_path / "factory.py"
-        factory_file.write_text(
-            """
-
-import sacc
-import numpy as np
-from firecrown.likelihood.number_counts import NumberCounts
-from firecrown.likelihood import ConstGaussian, TwoPoint
-
-
-def build_likelihood(_):
-    lens0 = NumberCounts(sacc_tracer="lens0")
-    two_point = TwoPoint("galaxy_density_cl", source0=lens0, source1=lens0)
-    statistics = [two_point]
-
-    sacc_data = sacc.Sacc()
-
-    sacc_data.add_tracer(
-        "NZ",
-        "lens0",
-        np.array([0.1, 0.2, 0.3]),
-        np.array([0.0, 1.0, 0.0]),
-    )
-    sacc_data.add_ell_cl(
-        "galaxy_density_cl",
-        "lens0",
-        "lens0",
-        np.array([10, 20, 30]),
-        np.array([1.0, 2.0, 3.0]),
-    )
-    sacc_data.add_covariance(np.eye(3) * 0.1)
-
-    likelihood = ConstGaussian(statistics=statistics)
-    likelihood.read(sacc_data)
-
-    return likelihood
-""".strip()
-        )
-
-        gen.factory_source = factory_file
+        gen.factory_source = minimal_factory_file
         gen.build_parameters = NamedParameters({})
         gen.write_config()
 
@@ -745,3 +755,257 @@ class TestCosmologyNone:
         )
 
         assert gen.required_cosmology == FrameworkCosmology.NONE
+
+
+class TestFullWorkflowIntegration:
+    """Integration tests for full NumCosmo workflow."""
+
+    def test_write_config_with_cosmology_priors(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test write_config with priors on cosmology parameters."""
+        assert numcosmo_init
+
+        # Create cosmology with Gaussian priors
+        prior_omega_c = PriorGaussian(mean=0.25, sigma=0.05)
+        prior_h = PriorUniform(lower=0.6, upper=0.8)
+
+        params = []
+        for p in CCLCosmologySpec.vanilla_lcdm().parameters:
+            if p.name == "Omega_c":
+                params.append(p.model_copy(update={"prior": prior_omega_c}))
+            elif p.name == "h":
+                params.append(p.model_copy(update={"prior": prior_h}))
+            else:
+                params.append(p)
+
+        cosmo_with_priors = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_cosmo_priors",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_priors,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        expected_file = tmp_path / "numcosmo_test_cosmo_priors.yaml"
+        assert expected_file.exists()
+
+    def test_write_config_with_a_s_priors(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test write_config with A_s parameter and priors."""
+        assert numcosmo_init
+
+        # Create cosmology with A_s and Gaussian prior
+        prior_as = PriorGaussian(mean=2e-9, sigma=0.1e-9)
+        params = [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "sigma8"
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+                prior=prior_as,
+            )
+        ]
+        cosmo_with_as = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_as_workflow",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_as,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        expected_file = tmp_path / "numcosmo_test_as_workflow.yaml"
+        assert expected_file.exists()
+
+    def test_write_config_with_a_s_uniform_prior(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test write_config with A_s parameter and uniform prior."""
+        assert numcosmo_init
+
+        # Create cosmology with A_s and uniform prior
+        prior_as = PriorUniform(lower=1.5e-9, upper=2.5e-9)
+        params = [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "sigma8"
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+                prior=prior_as,
+            )
+        ]
+        cosmo_with_as = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_as_uniform",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_as,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        expected_file = tmp_path / "numcosmo_test_as_uniform.yaml"
+        assert expected_file.exists()
+
+    def test_write_config_with_model_parameters(
+        self,
+        numcosmo_init: bool,
+        tmp_path: Path,
+        vanilla_cosmo: CCLCosmologySpec,
+        minimal_factory_file: Path,
+    ) -> None:
+        """Test write_config with model parameters and priors."""
+        assert numcosmo_init
+
+        # Create model with priors
+        prior_gaussian = PriorGaussian(mean=1.0, sigma=0.2)
+        prior_uniform = PriorUniform(lower=0.5, upper=1.5)
+
+        model = Model(
+            name="test_model",
+            description="Test model with priors",
+            parameters=[
+                Parameter(
+                    name="param1",
+                    symbol="p1",
+                    lower_bound=0.0,
+                    upper_bound=2.0,
+                    default_value=1.0,
+                    free=True,
+                    prior=prior_gaussian,
+                ),
+                Parameter(
+                    name="param2",
+                    symbol="p2",
+                    lower_bound=0.0,
+                    upper_bound=2.0,
+                    default_value=1.0,
+                    free=True,
+                    prior=prior_uniform,
+                ),
+            ],
+        )
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_model_workflow",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.add_models([model])
+        gen.write_config()
+
+        expected_file = tmp_path / "numcosmo_test_model_workflow.yaml"
+        assert expected_file.exists()
+
+    def test_write_config_with_sigma8_gaussian_prior(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test write_config with sigma8 parameter and Gaussian prior."""
+        assert numcosmo_init
+
+        # Create cosmology with sigma8 Gaussian prior (vanilla LCDM has sigma8)
+        prior_sigma8 = PriorGaussian(mean=0.8, sigma=0.05)
+        params = [
+            p.model_copy(update={"prior": prior_sigma8}) if p.name == "sigma8" else p
+            for p in CCLCosmologySpec.vanilla_lcdm().parameters
+        ]
+        cosmo_with_sigma8 = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_sigma8_gauss",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_sigma8,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        expected_file = tmp_path / "numcosmo_test_sigma8_gauss.yaml"
+        assert expected_file.exists()
+
+    def test_write_config_with_sigma8_uniform_prior(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test write_config with sigma8 parameter and uniform prior."""
+        assert numcosmo_init
+
+        # Create cosmology with sigma8 uniform prior
+        prior_sigma8 = PriorUniform(lower=0.7, upper=0.9)
+        params = [
+            p.model_copy(update={"prior": prior_sigma8}) if p.name == "sigma8" else p
+            for p in CCLCosmologySpec.vanilla_lcdm().parameters
+        ]
+        cosmo_with_sigma8 = CCLCosmologySpec(parameters=params)
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_sigma8_uniform",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_sigma8,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        expected_file = tmp_path / "numcosmo_test_sigma8_uniform.yaml"
+        assert expected_file.exists()
+
+    def test_write_config_with_none_cosmology_workflow(
+        self,
+        numcosmo_init: bool,
+        tmp_path: Path,
+        vanilla_cosmo: CCLCosmologySpec,
+        minimal_factory_file: Path,
+    ) -> None:
+        """Test write_config with NONE cosmology framework."""
+        assert numcosmo_init
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_none_workflow",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONE,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        expected_file = tmp_path / "numcosmo_test_none_workflow.yaml"
+        assert expected_file.exists()
