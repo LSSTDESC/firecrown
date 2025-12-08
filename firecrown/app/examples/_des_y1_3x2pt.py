@@ -8,7 +8,7 @@ from typing import ClassVar, Annotated, Sequence, assert_never
 from types import ModuleType
 from dataclasses import dataclass
 from pathlib import Path
-from enum import Enum
+from enum import StrEnum
 
 import typer
 
@@ -30,7 +30,7 @@ from . import (
 )
 
 
-class DESY1FactoryType(str, Enum):
+class DESY1FactoryType(StrEnum):
     """Available factory implementations for DES Y1 3x2pt analysis."""
 
     STANDARD = "standard"

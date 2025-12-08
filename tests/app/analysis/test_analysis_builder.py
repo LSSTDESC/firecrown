@@ -392,6 +392,66 @@ class TestSaccFormatHandling:
 
             assert builder.sacc_format == SaccFormat.FITS
 
+    def test_sacc_no_conversion_needed(self, tmp_path: Path) -> None:
+        """Test that no conversion happens when SACC is already in target format."""
+        # Create actual SACC file
+        sacc_file = tmp_path / "data.sacc"
+        sacc_file.touch()
+
+        with patch.object(
+            ConcreteAnalysisBuilder,
+            "generate_sacc",
+            return_value=sacc_file,
+        ):
+            with patch.object(
+                ConcreteAnalysisBuilder,
+                "generate_factory",
+                return_value=tmp_path / "factory.py",
+            ):
+                with patch.object(
+                    ConcreteAnalysisBuilder,
+                    "get_build_parameters",
+                    return_value=NamedParameters({}),
+                ):
+                    with patch.object(
+                        ConcreteAnalysisBuilder, "get_models", return_value=[]
+                    ):
+                        with patch(
+                            "firecrown.app.analysis._analysis_builder.get_generator"
+                        ) as mock_get_gen:
+                            mock_generator = mock_get_gen.return_value
+                            mock_generator.add_sacc.return_value = None
+                            mock_generator.add_factory.return_value = None
+                            mock_generator.add_build_parameters.return_value = None
+                            mock_generator.add_models.return_value = None
+                            mock_generator.write_config.return_value = None
+
+                            with patch(
+                                "firecrown.app.analysis._analysis_builder.Transform"
+                            ) as mock_transform:
+                                # Mock detect_format to return HDF5 (same as default)
+                                mock_transform.detect_format.return_value = (
+                                    SaccFormat.HDF5
+                                )
+
+                                _ = ConcreteAnalysisBuilder(
+                                    output_path=tmp_path,
+                                    prefix="test",
+                                    target_framework=Frameworks.COSMOSIS,
+                                    sacc_format=SaccFormat.HDF5,
+                                )
+
+                                # Transform should only have detect_format called, not instantiated
+                                mock_transform.detect_format.assert_called_once_with(
+                                    sacc_file
+                                )
+                                # Transform itself should not be instantiated
+                                assert mock_transform.call_count == 0
+                                # Verify the generator received the original file (not converted)
+                                mock_generator.add_sacc.assert_called_once_with(
+                                    sacc_file
+                                )
+
 
 class TestFrameworkSelection:
     """Tests for framework selection."""
