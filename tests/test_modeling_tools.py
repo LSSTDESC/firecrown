@@ -182,6 +182,8 @@ def test_modeling_tools_get_pk_nonlinear_fails() -> None:
     # Attempting to get a nonlinear power spectrum should raise RuntimeError
     with pytest.raises(RuntimeError, match="CCL failed to compute the nonlinear"):
         tools.get_pk("delta_matter:delta_matter")
+
+
 def test_get_pk_fallback_to_ccl_cosmology() -> None:
     """Test get_pk falls back to ccl_cosmo.get_nonlin_power.
 
