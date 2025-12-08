@@ -441,13 +441,15 @@ class TestSaccFormatHandling:
                                     sacc_format=SaccFormat.HDF5,
                                 )
 
-                                # Transform should only have detect_format called, not instantiated
+                                # Transform should only have detect_format called, not
+                                # instantiated
                                 mock_transform.detect_format.assert_called_once_with(
                                     sacc_file
                                 )
                                 # Transform itself should not be instantiated
                                 assert mock_transform.call_count == 0
-                                # Verify the generator received the original file (not converted)
+                                # Verify the generator received the original file (not
+                                # converted)
                                 mock_generator.add_sacc.assert_called_once_with(
                                     sacc_file
                                 )
@@ -568,6 +570,8 @@ class TestModelHandling:
         """Test builder with custom models."""
 
         class BuilderWithModels(ConcreteAnalysisBuilder):
+            """Builder that returns sample models."""
+
             def get_models(self) -> list[Model]:
                 return [
                     Model(
