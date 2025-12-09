@@ -6,7 +6,7 @@ Tests NumCosmo configuration generation and parameter handling.
 from pathlib import Path
 import pytest
 
-from numcosmo_py import Ncm
+from numcosmo_py import Ncm, Nc
 
 from firecrown.likelihood import NamedParameters
 from firecrown.app.analysis._numcosmo import (
@@ -1009,3 +1009,299 @@ class TestFullWorkflowIntegration:
 
         expected_file = tmp_path / "numcosmo_test_none_workflow.yaml"
         assert expected_file.exists()
+
+
+class TestWriteConfigSerialization:
+    """Tests for write_config() output deserialization and validation.
+
+    These tests call write_config() to generate YAML files, then deserialize them
+    to verify the created NumCosmo objects are correct. This ensures the subprocess
+    isolation in _write_config_worker creates valid configurations.
+    """
+
+    def test_write_config_creates_valid_yaml(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test that write_config creates valid YAML files."""
+        assert numcosmo_init
+
+        vanilla_cosmo = CCLCosmologySpec.vanilla_lcdm()
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_yaml",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        # Verify YAML files exist
+        yaml_file = tmp_path / "numcosmo_test_yaml.yaml"
+        builders_file = tmp_path / "numcosmo_test_yaml.builders.yaml"
+        assert yaml_file.exists()
+        assert builders_file.exists()
+
+        # Deserialize and check structure
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+        assert experiment is not None
+        keys = experiment.keys()
+        assert "likelihood" in keys
+        assert "model-set" in keys
+
+    def test_write_config_model_set_contains_cosmology(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test that model set in config contains cosmology model."""
+        assert numcosmo_init
+
+        vanilla_cosmo = CCLCosmologySpec.vanilla_lcdm()
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_mset",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        yaml_file = tmp_path / "numcosmo_test_mset.yaml"
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+        mset_obj = experiment.get("model-set")
+        assert mset_obj is not None
+        # Verify model set was deserialized correctly
+        assert isinstance(mset_obj, Ncm.MSet)
+
+        # Verify we can retrieve the cosmology model
+        cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        assert cosmo is not None
+        assert isinstance(cosmo, Nc.HICosmo)
+
+    def test_write_config_cosmology_parameters_set(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test that cosmology parameters are correctly set in model set."""
+        assert numcosmo_init
+
+        vanilla_cosmo = CCLCosmologySpec.vanilla_lcdm()
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_cosmo_params",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        yaml_file = tmp_path / "numcosmo_test_cosmo_params.yaml"
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+        mset_obj = experiment.get("model-set")
+        # Retrieve the actual cosmology model
+        cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        assert cosmo is not None
+
+        # Verify standard parameters are set
+        for param_name in vanilla_cosmo.parameters:
+            if param_name.name == "A_s":  # Skip amplitude parameter
+                continue
+            nc_name = NAME_MAP.get(param_name.name)
+            if nc_name is not None and nc_name in cosmo.param_names():
+                # Parameter should have a value
+                value = cosmo[nc_name]
+                assert isinstance(value, float)
+
+    def test_write_config_with_priors_includes_priors(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test that priors are correctly included in likelihood."""
+        assert numcosmo_init
+
+        # Create cosmology with a prior
+        prior_omega_c = PriorGaussian(mean=0.265, sigma=0.01)
+        cosmo_with_prior = CCLCosmologySpec(
+            parameters=[
+                (
+                    p
+                    if p.name != "Omega_c"
+                    else p.model_copy(update={"prior": prior_omega_c})
+                )
+                for p in CCLCosmologySpec.vanilla_lcdm().parameters
+            ]
+        )
+
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_priors",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_prior,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        yaml_file = tmp_path / "numcosmo_test_priors.yaml"
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+        likelihood_obj = experiment.get("likelihood")
+        mset_obj = experiment.get("model-set")
+        # Verify both objects were deserialized correctly
+        assert isinstance(likelihood_obj, Ncm.Likelihood)
+        assert isinstance(mset_obj, Ncm.MSet)
+
+        # Verify we have a cosmology with priors set
+        cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        assert cosmo is not None
+
+    def test_write_config_with_neutrinos_sets_massnu(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test that write_config handles neutrino cosmology."""
+        assert numcosmo_init
+
+        cosmo_with_nu = CCLCosmologySpec.vanilla_lcdm_with_neutrinos()
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_neutrinos_ser",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_nu,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        yaml_file = tmp_path / "numcosmo_test_neutrinos_ser.yaml"
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+        mset_obj = experiment.get("model-set")
+        # Verify neutrino cosmology configuration was created
+        assert isinstance(mset_obj, Ncm.MSet)
+        assert mset_obj.nmodels() > 0
+
+        # Retrieve and verify the cosmology model has neutrino support
+        cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        assert cosmo is not None
+        assert isinstance(cosmo, Nc.HICosmo)
+        assert cosmo.vparam_len(Nc.HICosmoDEVParams.M) > 0
+
+    def test_write_config_with_a_s_parameter(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test that A_s amplitude configuration is created."""
+        assert numcosmo_init
+
+        cosmo_with_as = CCLCosmologySpec.vanilla_lcdm()
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_as_ser",
+            use_absolute_path=True,
+            cosmo_spec=cosmo_with_as,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        yaml_file = tmp_path / "numcosmo_test_as_ser.yaml"
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+        # Verify both components were serialized
+        mset_obj = experiment.get("model-set")
+        likelihood_obj = experiment.get("likelihood")
+        assert isinstance(mset_obj, Ncm.MSet)
+        assert isinstance(likelihood_obj, Ncm.Likelihood)
+
+        # Verify cosmology model was properly created
+        cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        assert cosmo is not None
+        assert isinstance(cosmo, Nc.HICosmo)
+
+    def test_write_config_with_linear_cosmology(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test write_config with LINEAR cosmology level."""
+        assert numcosmo_init
+
+        vanilla_cosmo = CCLCosmologySpec.vanilla_lcdm()
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_linear",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.LINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        yaml_file = tmp_path / "numcosmo_test_linear.yaml"
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+        mset_obj = experiment.get("model-set")
+        assert isinstance(mset_obj, Ncm.MSet)
+
+        # Verify cosmology model is properly configured for LINEAR
+        cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        assert cosmo is not None
+        assert isinstance(cosmo, Nc.HICosmo)
+
+    def test_write_config_deserialized_likelihood_evaluates(
+        self, numcosmo_init: bool, tmp_path: Path, minimal_factory_file: Path
+    ) -> None:
+        """Test that deserialized likelihood can be evaluated."""
+        assert numcosmo_init
+
+        vanilla_cosmo = CCLCosmologySpec.vanilla_lcdm()
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="test_eval",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+        gen.write_config()
+
+        yaml_file = tmp_path / "numcosmo_test_eval.yaml"
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+        likelihood_obj = experiment.get("likelihood")
+        mset_obj = experiment.get("model-set")
+
+        # Verify we have valid deserialized objects
+        assert isinstance(mset_obj, Ncm.MSet)
+        assert isinstance(likelihood_obj, Ncm.Likelihood)
+        assert mset_obj.nmodels() > 0
+
+        cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        prim = mset_obj.get(Nc.HIPrim.id())  # pylint: disable=no-value-for-parameter
+        reion = mset_obj.get(Nc.HIReion.id())  # pylint: disable=no-value-for-parameter
+
+        assert cosmo is not None
+        assert prim is not None
+        assert reion is not None

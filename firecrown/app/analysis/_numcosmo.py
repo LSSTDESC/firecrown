@@ -48,7 +48,7 @@ NAME_MAP: dict[str, str] = {
     "n_s": "n_SA",
     "T_CMB": "Tgamma0",
     "Neff": "ENnu",
-    "m_nu": "mnu_0",
+    "m_nu": "massnu_0",
 }
 
 
@@ -170,8 +170,7 @@ def _add_prior(
     :param prior: Prior specification (Gaussian or uniform)
     :param param_scale: Optional scale factors indexed by parameter name
     """
-    if prior is None:
-        return
+    assert prior is not None
     param_scale = param_scale or {}
     scale = param_scale.get(param_name, 1.0)
 

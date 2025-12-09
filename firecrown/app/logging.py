@@ -1,5 +1,6 @@
 """Logging configuration for Firecrown."""
 
+from io import TextIOWrapper
 from typing import Annotated, Optional
 import dataclasses
 from pathlib import Path
@@ -38,5 +39,8 @@ class Logging:
 
     def __del__(self):
         """Destructor to ensure file is closed."""
-        if self.console_io:
-            self.console_io.close()
+        # fallback: be defensive (no AttributeError)
+        console_io = getattr(self, "console_io", None)
+        if console_io:
+            assert isinstance(console_io, TextIOWrapper)
+            console_io.close()
