@@ -4,7 +4,6 @@ Tests the method tracing facility.
 """
 
 # pylint: disable=missing-class-docstring,missing-function-docstring
-# pylint: disable=import-outside-toplevel
 # Test helper classes don't need docstrings
 # types module imported inside tests to create mock frame objects
 
@@ -86,7 +85,7 @@ def test_trace_call_event(tmp_path):
     tracer = TracerState(str(trace_file))
 
     # Create a simple frame-like object for testing
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(
@@ -121,7 +120,7 @@ def test_trace_call_with_self_argument(tmp_path):
 
     obj = TestClass()
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(
@@ -148,7 +147,7 @@ def test_trace_call_no_arguments(tmp_path):
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(
@@ -177,7 +176,7 @@ def test_trace_return_event(tmp_path):
     tracer = TracerState(str(trace_file))
     tracer.level = 1  # Simulate being inside a function
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(co_qualname="test_func"),
@@ -203,7 +202,7 @@ def test_trace_return_with_none(tmp_path):
     tracer = TracerState(str(trace_file))
     tracer.level = 1
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(co_qualname="test_func"),
@@ -234,7 +233,7 @@ def test_trace_return_with_unprintable_object(tmp_path):
 
     obj = UnprintableObject()
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(co_qualname="test_func"),
@@ -264,7 +263,7 @@ def test_trace_return_with_recursion_error(tmp_path):
 
     obj = RecursiveObject()
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(co_qualname="test_func"),
@@ -294,7 +293,7 @@ def test_trace_return_with_type_error(tmp_path):
 
     obj = TypeErrorObject()
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(co_qualname="test_func"),
@@ -321,7 +320,7 @@ def test_trace_exception_event(tmp_path):
     tracer = TracerState(str(trace_file))
     tracer.level = 1
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(co_qualname="test_func"),
@@ -345,7 +344,7 @@ def test_trace_call_returns_itself(tmp_path):
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
 
-    import types
+    import types  # pylint: disable=import-outside-toplevel
 
     frame_obj = types.SimpleNamespace(
         f_code=types.SimpleNamespace(
@@ -881,7 +880,7 @@ func()
 
 def test_main_function_with_script(tmp_path, capsys):
     """Test main function directly with a script file."""
-    from firecrown.fctools.tracer import main
+    from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
     # Create a simple test script
     script_file = tmp_path / "test_script.py"
@@ -900,7 +899,7 @@ def test_main_function_with_script(tmp_path, capsys):
 
 def test_main_function_with_nonexistent_script(tmp_path, capsys):
     """Test main function with nonexistent script."""
-    from firecrown.fctools.tracer import main
+    from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
     trace_file = tmp_path / "trace.tsv"
 
@@ -917,7 +916,7 @@ def test_main_function_with_nonexistent_script(tmp_path, capsys):
 
 def test_main_function_with_module(tmp_path, capsys):
     """Test main function in module mode."""
-    from firecrown.fctools.tracer import main
+    from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
     trace_file = tmp_path / "trace.tsv"
 
@@ -933,7 +932,7 @@ def test_main_function_with_module(tmp_path, capsys):
 
 def test_main_function_with_invalid_module(tmp_path, capsys):
     """Test main function with invalid module name."""
-    from firecrown.fctools.tracer import main
+    from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
     trace_file = tmp_path / "trace.tsv"
 
@@ -949,7 +948,7 @@ def test_main_function_with_invalid_module(tmp_path, capsys):
 
 def test_main_function_with_script_system_exit(tmp_path, capsys):
     """Test main function with script that calls sys.exit()."""
-    from firecrown.fctools.tracer import main
+    from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
     script_file = tmp_path / "exit_script.py"
     script_file.write_text("import sys\nsys.exit(0)\n")
@@ -965,7 +964,7 @@ def test_main_function_with_script_system_exit(tmp_path, capsys):
 
 def test_main_function_with_script_import_error(tmp_path, capsys):
     """Test main function with script that has import error."""
-    from firecrown.fctools.tracer import main
+    from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
     script_file = tmp_path / "bad_import.py"
     script_file.write_text("import nonexistent_module\n")
@@ -982,7 +981,7 @@ def test_main_function_with_script_import_error(tmp_path, capsys):
 
 def test_main_function_with_script_value_error(tmp_path, capsys):
     """Test main function with script that raises ValueError."""
-    from firecrown.fctools.tracer import main
+    from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
     script_file = tmp_path / "value_error.py"
     script_file.write_text("raise ValueError('test error')\n")

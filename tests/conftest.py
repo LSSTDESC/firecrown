@@ -338,7 +338,7 @@ def fixture_harmonic_two_point_xy(
     harmonic_bin_1: InferredGalaxyZDist,
     harmonic_bin_2: InferredGalaxyZDist,
 ) -> TwoPointXY:
-    """Generate a TwoPointCWindow object with 100 ells."""
+    """Generate a TwoPointXY object with 100 ells."""
     m1 = list(harmonic_bin_1.measurements)[0]
     m2 = list(harmonic_bin_2.measurements)[0]
     if not measurement_is_compatible_harmonic(m1, m2):
@@ -354,7 +354,7 @@ def fixture_real_two_point_xy(
     real_bin_1: InferredGalaxyZDist,
     real_bin_2: InferredGalaxyZDist,
 ) -> TwoPointXY:
-    """Generate a TwoPointCWindow object with 100 ells."""
+    """Generate a TwoPointXY object with 100 ells."""
     m1 = list(real_bin_1.measurements)[0]
     m2 = list(real_bin_2.measurements)[0]
     if not measurement_is_compatible_real(m1, m2):
@@ -370,7 +370,7 @@ def fixture_two_point_cwindow(
     ],
     harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
-    """Generate a TwoPointCWindow object with 100 ells."""
+    """Generate a TwoPointXY object with 100 ells."""
     two_point = TwoPointHarmonic(
         XY=harmonic_two_point_xy,
         ells=window_1[0],
@@ -384,14 +384,14 @@ def fixture_two_point_cwindow(
 def fixture_two_point_cell(
     harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
-    """Generate a TwoPointCWindow object with 100 ells."""
+    """Generate a TwoPointXY object with 100 ells."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     return TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
 
 
 @pytest.fixture(name="two_point_real")
 def fixture_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
-    """Generate a TwoPointCWindow object with 100 ells."""
+    """Generate a TwoPointXY object with 100 ells."""
     thetas = np.array(np.linspace(0, 100, 100), dtype=np.float64)
     return TwoPointReal(thetas=thetas, XY=real_two_point_xy)
 
@@ -1376,7 +1376,7 @@ def fixture_optimized_two_point_cwindow(
     ],
     optimized_harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
-    """Generate a TwoPointCWindow object with zero skipped tests.
+    """Generate a TwoPointXY object with zero skipped tests.
 
     Uses optimized fixtures that pre-filter for valid measurement pairs.
     """
