@@ -37,6 +37,11 @@ class WeakLensingArgs(SourceGalaxyArgs):
 
     ia_bias: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
 
+    ia_amplitude: None | tuple[npt.NDArray[np.float64]] = None
+    ia_mass_scaling: None | tuple[npt.NDArray[np.float64]] = None
+    red_fraction: None | tuple[npt.NDArray[np.float64]] = None
+    average_halo_mass: None | tuple[npt.NDArray[np.float64]] = None
+
     has_pt: bool = False
     has_hm: bool = False
 
@@ -175,6 +180,52 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         )
 
         ia_bias_array = pref * self.ia_bias
+
+        return replace(
+            tracer_arg,
+            ia_bias=(tracer_arg.z, ia_bias_array),
+        )
+
+
+class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
+
+    def __init__(self, sacc_tracer: None | str = None, alphag: None | float = 1.0):
+        """Create a LinearAlignmentSystematic object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
+
+        self.ia_amplitude = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_IA_BIAS, shared=True
+        )
+        self.ia_mass_scaling = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAZ, shared=True
+        )
+        self.red_fraction = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAG
+        )
+        self.average_halo_mass = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+        )
+        self.pivot_halo_mass = parameters.register_new_updatable_parameter(
+            value=10**13.5,
+            default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+        )
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
+        """Return a new linear alignment systematic.
+
+        This choice is based on the given tracer_arg, in the context of the given
+        cosmology.
+        """
+        pref = self.ia_amplitude * self.red_fraction * (self.average_halo_mass/self.pivot_halo_mass)**self.ia_mass_scaling
+
+        ia_bias_array = np.full_like(tracer_arg.z, pref)
 
         return replace(
             tracer_arg,

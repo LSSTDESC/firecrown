@@ -8,6 +8,7 @@ for use in likelihood calculations.
 from firecrown.likelihood._weak_lensing import (
     HMAlignmentSystematic,
     LinearAlignmentSystematic,
+    MassDependentLinearAlignmentSystematic,
     LinearAlignmentSystematicFactory,
     MultiplicativeShearBias,
     MultiplicativeShearBiasFactory,
@@ -31,6 +32,7 @@ from firecrown.likelihood._base import (
 __all__ = [
     "HMAlignmentSystematic",
     "LinearAlignmentSystematic",
+    "MassDependentLinearAlignmentSystematic",
     "LinearAlignmentSystematicFactory",
     "MultiplicativeShearBias",
     "MultiplicativeShearBiasFactory",

@@ -47,6 +47,7 @@ class SamplerParameter:
         else:
             self._prefix = prefix
         self._name = name
+        print(self._prefix, self._name)
 
     @property
     def shared(self) -> bool:
