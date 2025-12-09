@@ -8,9 +8,12 @@ from pathlib import Path
 import pytest
 
 from numcosmo_py import Ncm
+from firecrown.likelihood import NamedParameters
 from firecrown.app.analysis._numcosmo import (
+    ConfigOptions,
     NumCosmoConfigGenerator,
     _param_to_nc_dict,
+    _setup_models,
 )
 from firecrown.app.analysis._types import (
     FrameworkCosmology,
@@ -231,3 +234,342 @@ class TestPriorIntegration:
 
         assert len(gen.models) == 1
         assert gen.models[0].parameters[0].prior is not None
+
+
+class TestSetupModels:
+    """Tests for _setup_models function."""
+
+    def test_setup_models_with_gaussian_priors(self, numcosmo_init: bool) -> None:
+        """Test _setup_models with Gaussian priors on model parameters.
+
+        This test verifies that _setup_models correctly:
+        1. Creates and registers model builders
+        2. Adds models to the model set
+        3. Adds Gaussian priors to the priors list for parameters with priors
+        """
+        assert numcosmo_init
+
+        # Create model with Gaussian prior
+        prior_gauss = PriorGaussian(mean=1.0, sigma=0.2)
+        param_with_prior = Parameter(
+            name="bias",
+            symbol="b",
+            lower_bound=0.5,
+            upper_bound=2.0,
+            default_value=1.0,
+            free=True,
+            prior=prior_gauss,
+        )
+        model = Model(
+            name="bias_model",
+            description="Galaxy bias model",
+            parameters=[param_with_prior],
+        )
+
+        # Create config options
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[model],
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create NumCosmo model set and priors list
+        mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+        priors: list[Ncm.Prior] = []
+        initial_priors_count = len(priors)
+
+        # Call _setup_models
+        model_builders = _setup_models(config_opts, mset, priors)
+
+        # Verify model builders were created
+        assert model_builders is not None
+        assert isinstance(model_builders, Ncm.ObjDictStr)
+
+        # Verify model was added to model set
+        assert mset.nmodels() == 1
+
+        # Verify prior was added
+        assert len(priors) == initial_priors_count + 1
+        assert isinstance(priors[-1], Ncm.PriorGauss)
+
+    def test_setup_models_with_uniform_priors(self, numcosmo_init: bool) -> None:
+        """Test _setup_models with uniform priors on model parameters.
+
+        This test verifies that _setup_models correctly adds uniform priors
+        to the priors list for parameters with uniform prior specifications.
+        """
+        assert numcosmo_init
+
+        # Create model with uniform prior
+        prior_uniform = PriorUniform(lower=0.8, upper=1.5)
+        param_with_prior = Parameter(
+            name="amplitude",
+            symbol="A",
+            lower_bound=0.0,
+            upper_bound=3.0,
+            default_value=1.0,
+            free=True,
+            prior=prior_uniform,
+        )
+        model = Model(
+            name="amplitude_model",
+            description="Amplitude model",
+            parameters=[param_with_prior],
+        )
+
+        # Create config options
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[model],
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create NumCosmo model set and priors list
+        mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+        priors: list[Ncm.Prior] = []
+        initial_priors_count = len(priors)
+
+        # Call _setup_models
+        _ = _setup_models(config_opts, mset, priors)
+
+        # Verify model was added
+        assert mset.nmodels() == 1
+
+        # Verify prior was added
+        assert len(priors) == initial_priors_count + 1
+        assert isinstance(priors[-1], Ncm.PriorFlat)
+
+    def test_setup_models_without_priors(self, numcosmo_init: bool) -> None:
+        """Test _setup_models with parameters that have no priors.
+
+        This test verifies that _setup_models does not add any priors
+        when model parameters have no prior specifications.
+        """
+        assert numcosmo_init
+
+        # Create model without priors
+        param_no_prior = Parameter(
+            name="slope",
+            symbol="s",
+            lower_bound=-1.0,
+            upper_bound=1.0,
+            default_value=0.0,
+            free=True,
+            prior=None,  # No prior
+        )
+        model = Model(
+            name="slope_model",
+            description="Slope model without prior",
+            parameters=[param_no_prior],
+        )
+
+        # Create config options
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[model],
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create NumCosmo model set and priors list
+        mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+        priors: list[Ncm.Prior] = []
+        initial_priors_count = len(priors)
+
+        # Call _setup_models
+        _ = _setup_models(config_opts, mset, priors)
+
+        # Verify model was added
+        assert mset.nmodels() == 1
+
+        # Verify no prior was added
+        assert len(priors) == initial_priors_count
+
+    def test_setup_models_mixed_priors(self, numcosmo_init: bool) -> None:
+        """Test _setup_models with multiple parameters, some with priors and some without.
+
+        This test verifies that _setup_models correctly handles a model with
+        multiple parameters where only some have priors.
+        """
+        assert numcosmo_init
+
+        # Create model with mixed priors
+        param_with_gauss = Parameter(
+            name="param1",
+            symbol="p1",
+            lower_bound=0.0,
+            upper_bound=2.0,
+            default_value=1.0,
+            free=True,
+            prior=PriorGaussian(mean=1.0, sigma=0.1),
+        )
+        param_without_prior = Parameter(
+            name="param2",
+            symbol="p2",
+            lower_bound=0.0,
+            upper_bound=2.0,
+            default_value=1.0,
+            free=True,
+            prior=None,
+        )
+        param_with_uniform = Parameter(
+            name="param3",
+            symbol="p3",
+            lower_bound=0.0,
+            upper_bound=2.0,
+            default_value=1.0,
+            free=True,
+            prior=PriorUniform(lower=0.5, upper=1.5),
+        )
+
+        model = Model(
+            name="mixed_model",
+            description="Model with mixed priors",
+            parameters=[param_with_gauss, param_without_prior, param_with_uniform],
+        )
+
+        # Create config options
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[model],
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create NumCosmo model set and priors list
+        mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+        priors: list[Ncm.Prior] = []
+        initial_priors_count = len(priors)
+
+        # Call _setup_models
+        _ = _setup_models(config_opts, mset, priors)
+
+        # Verify model was added
+        assert mset.nmodels() == 1
+
+        # Verify exactly 2 priors were added (for param1 and param3, not param2)
+        assert len(priors) == initial_priors_count + 2
+        assert isinstance(priors[-2], Ncm.PriorGauss)
+        assert isinstance(priors[-1], Ncm.PriorFlat)
+
+    def test_setup_models_multiple_models(self, numcosmo_init: bool) -> None:
+        """Test _setup_models with multiple models.
+
+        This test verifies that _setup_models correctly handles multiple models,
+        each with their own parameters and priors.
+        """
+        assert numcosmo_init
+
+        # Create first model with Gaussian prior
+        model1 = Model(
+            name="model_one",
+            description="First model",
+            parameters=[
+                Parameter(
+                    name="param_a",
+                    symbol="a",
+                    lower_bound=0.0,
+                    upper_bound=2.0,
+                    default_value=1.0,
+                    free=True,
+                    prior=PriorGaussian(mean=1.0, sigma=0.2),
+                )
+            ],
+        )
+
+        # Create second model with uniform prior
+        model2 = Model(
+            name="model_two",
+            description="Second model",
+            parameters=[
+                Parameter(
+                    name="param_b",
+                    symbol="b",
+                    lower_bound=0.0,
+                    upper_bound=2.0,
+                    default_value=1.0,
+                    free=True,
+                    prior=PriorUniform(lower=0.5, upper=1.5),
+                )
+            ],
+        )
+
+        # Create config options with both models
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[model1, model2],
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create NumCosmo model set and priors list
+        mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+        priors: list[Ncm.Prior] = []
+        initial_priors_count = len(priors)
+
+        # Call _setup_models
+        _ = _setup_models(config_opts, mset, priors)
+
+        # Verify both models were added
+        assert mset.nmodels() == 2
+
+        # Verify both priors were added
+        assert len(priors) == initial_priors_count + 2
+        assert isinstance(priors[-2], Ncm.PriorGauss)
+        assert isinstance(priors[-1], Ncm.PriorFlat)
+
+    def test_setup_models_no_models(self, numcosmo_init: bool) -> None:
+        """Test _setup_models with no models.
+
+        This test verifies that _setup_models handles the case where
+        no models are provided in the configuration.
+        """
+        assert numcosmo_init
+
+        # Create config options with no models
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[],  # No models
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create NumCosmo model set and priors list
+        mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+        priors: list[Ncm.Prior] = []
+        initial_priors_count = len(priors)
+
+        # Call _setup_models
+        _ = _setup_models(config_opts, mset, priors)
+
+        # Verify no models were added
+        assert mset.nmodels() == 0
+
+        # Verify no priors were added
+        assert len(priors) == initial_priors_count
