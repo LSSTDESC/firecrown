@@ -4,6 +4,8 @@ Tests NumCosmo configuration generation and parameter handling.
 """
 
 from pathlib import Path
+from unittest.mock import patch
+import numpy as np
 import pytest
 
 from numcosmo_py import Ncm, Nc
@@ -15,6 +17,8 @@ from firecrown.app.analysis._numcosmo import (
     _param_to_nc_dict,
     NAME_MAP,
     NumCosmoConfigGenerator,
+    _set_amplitude_A_s,
+    _set_standard_params,
 )
 from firecrown.app.analysis._types import (
     Frameworks,
@@ -360,6 +364,117 @@ class TestNumCosmoConfigGenerator:
         assert expected_file.exists()
 
 
+class TestSetStandardParams:
+    """Tests for _set_standard_params function error handling."""
+
+    def test_set_standard_params_unknown_parameter(self, numcosmo_init: bool) -> None:
+        """Test that ValueError is raised when parameter is not found in models.
+
+        This test patches NAME_MAP to point a parameter to a nonexistent NumCosmo
+        parameter name. This causes the for-else loop to fail to find the parameter
+        in any model, raising ValueError with "Unknown parameter" message
+        (line 266 of _numcosmo.py).
+        """
+        assert numcosmo_init
+
+        # Create a standard cosmology spec
+        vanilla_cosmo = CCLCosmologySpec.vanilla_lcdm()
+
+        # Create minimal config options
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[],
+            cosmo_spec=vanilla_cosmo,
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create minimal NumCosmo objects
+        mset = Ncm.MSet.new_array(
+            [Nc.HICosmoDECpl.new()]  # pylint: disable=no-value-for-parameter
+        )
+        cosmo = mset.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
+        prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
+        reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
+        priors: list[Ncm.Prior] = []
+
+        assert isinstance(cosmo, Nc.HICosmoDECpl)
+
+        # Patch NAME_MAP to map a valid parameter to a nonexistent NumCosmo param
+        with patch.dict(
+            NAME_MAP,
+            {"Omega_c": "nonexistent_param_in_cosmology"},
+        ):
+            # This should raise ValueError because "nonexistent_param_in_cosmology"
+            # is not in cosmo.param_names(), prim.param_names(), or reion.param_names()
+            with pytest.raises(ValueError, match="Unknown parameter Omega_c"):
+                _set_standard_params(config_opts, mset, cosmo, prim, reion, priors)
+
+
+class TestAmplitudeParameterHandling:
+    """Tests for A_s and sigma8 amplitude parameter handling."""
+
+    def test_set_amplitude_a_s_no_prior(self, numcosmo_init: bool) -> None:
+        """Test _set_amplitude_A_s when A_s parameter has no prior.
+
+        This test verifies that _set_amplitude_A_s returns early (line 292-293)
+        when the A_s parameter exists but has no prior (prior is None).
+        The function should still set the parameter value but not add any priors.
+        """
+        assert numcosmo_init
+
+        # Create a cosmology spec with A_s but no prior
+        params = [
+            p for p in CCLCosmologySpec.vanilla_lcdm().parameters if p.name != "sigma8"
+        ] + [
+            Parameter(
+                name="A_s",
+                symbol="A_s",
+                lower_bound=1e-9,
+                upper_bound=3e-9,
+                default_value=2e-9,
+                free=True,
+                prior=None,  # No prior
+            )
+        ]
+        cosmo_with_as = CCLCosmologySpec(parameters=params)
+
+        # Create minimal config options
+        config_opts = ConfigOptions(
+            output_path=Path("/tmp"),
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[],
+            cosmo_spec=cosmo_with_as,
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+
+        # Create minimal NumCosmo objects with proper hierarchy
+        cosmo = Nc.HICosmoDECpl.new()  # pylint: disable=no-value-for-parameter
+        prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
+        cosmo.add_submodel(prim)
+        mset = Ncm.MSet.new_array([cosmo])
+
+        priors: list[Ncm.Prior] = []
+        initial_priors_count = len(priors)
+
+        # Call _set_amplitude_A_s
+        _set_amplitude_A_s(config_opts, mset, prim, priors)
+
+        # Verify A_s was set in the prim model
+        expected_ln_value = np.log(1.0e10 * 2e-9)
+        actual_ln_value = prim["ln10e10ASA"]
+        assert np.isclose(actual_ln_value, expected_ln_value)
+
+        # Verify no prior was added (early return at line 292-293)
+        assert len(priors) == initial_priors_count
+
+
 class TestPriorHandling:
     """Tests for prior-related functions."""
 
@@ -592,8 +707,8 @@ class TestPriorIntegration:
         assert gen.models[0].parameters[0].prior is not None
 
 
-class TestAmplitudeParameterHandling:
-    """Tests for A_s and sigma8 parameter handling."""
+class TestAmplitudeParametersGenerator:
+    """Tests for A_s and sigma8 parameter handling in generator."""
 
     def test_generator_with_a_s_parameter(
         self, numcosmo_init: bool, tmp_path: Path
@@ -1109,6 +1224,7 @@ class TestWriteConfigSerialization:
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 
         mset_obj = experiment.get("model-set")
+        assert isinstance(mset_obj, Ncm.MSet)
         # Retrieve the actual cosmology model
         cosmo = mset_obj.get(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
         assert cosmo is not None
