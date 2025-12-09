@@ -25,12 +25,12 @@ class TestGetGenerator:
     """Tests for get_generator factory function."""
 
     def test_get_generator_requires_output_path(
-        self, _mock_cosmo_spec: MagicMock
+        self, _mock_cosmo_spec: MagicMock, tmp_path: Path
     ) -> None:
         """Test that get_generator requires output_path parameter."""
         with_path = get_generator(
             framework=Frameworks.COSMOSIS,
-            output_path=Path("/tmp/test"),
+            output_path=tmp_path / "test",
             prefix="test_analysis",
             use_absolute_path=True,
             cosmo_spec=_mock_cosmo_spec,

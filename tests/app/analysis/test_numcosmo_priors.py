@@ -239,7 +239,9 @@ class TestPriorIntegration:
 class TestSetupModels:
     """Tests for _setup_models function."""
 
-    def test_setup_models_with_gaussian_priors(self, numcosmo_init: bool) -> None:
+    def test_setup_models_with_gaussian_priors(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _setup_models with Gaussian priors on model parameters.
 
         This test verifies that _setup_models correctly:
@@ -268,7 +270,7 @@ class TestSetupModels:
 
         # Create config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[model],
@@ -297,7 +299,9 @@ class TestSetupModels:
         assert len(priors) == initial_priors_count + 1
         assert isinstance(priors[-1], Ncm.PriorGauss)
 
-    def test_setup_models_with_uniform_priors(self, numcosmo_init: bool) -> None:
+    def test_setup_models_with_uniform_priors(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _setup_models with uniform priors on model parameters.
 
         This test verifies that _setup_models correctly adds uniform priors
@@ -324,7 +328,7 @@ class TestSetupModels:
 
         # Create config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[model],
@@ -349,7 +353,9 @@ class TestSetupModels:
         assert len(priors) == initial_priors_count + 1
         assert isinstance(priors[-1], Ncm.PriorFlat)
 
-    def test_setup_models_without_priors(self, numcosmo_init: bool) -> None:
+    def test_setup_models_without_priors(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _setup_models with parameters that have no priors.
 
         This test verifies that _setup_models does not add any priors
@@ -375,7 +381,7 @@ class TestSetupModels:
 
         # Create config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[model],
@@ -399,7 +405,9 @@ class TestSetupModels:
         # Verify no prior was added
         assert len(priors) == initial_priors_count
 
-    def test_setup_models_mixed_priors(self, numcosmo_init: bool) -> None:
+    def test_setup_models_mixed_priors(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _setup_models with multiple parameters, some with priors and some without.
 
         This test verifies that _setup_models correctly handles a model with
@@ -442,9 +450,9 @@ class TestSetupModels:
             parameters=[param_with_gauss, param_without_prior, param_with_uniform],
         )
 
-        # Create config options
+        # Create config options with model containing mixed priors
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[model],
@@ -470,7 +478,9 @@ class TestSetupModels:
         assert isinstance(priors[-2], Ncm.PriorGauss)
         assert isinstance(priors[-1], Ncm.PriorFlat)
 
-    def test_setup_models_multiple_models(self, numcosmo_init: bool) -> None:
+    def test_setup_models_multiple_models(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _setup_models with multiple models.
 
         This test verifies that _setup_models correctly handles multiple models,
@@ -512,9 +522,9 @@ class TestSetupModels:
             ],
         )
 
-        # Create config options with both models
+        # Create config options with empty models list
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[model1, model2],
@@ -540,7 +550,7 @@ class TestSetupModels:
         assert isinstance(priors[-2], Ncm.PriorGauss)
         assert isinstance(priors[-1], Ncm.PriorFlat)
 
-    def test_setup_models_no_models(self, numcosmo_init: bool) -> None:
+    def test_setup_models_no_models(self, numcosmo_init: bool, tmp_path: Path) -> None:
         """Test _setup_models with no models.
 
         This test verifies that _setup_models handles the case where
@@ -550,7 +560,7 @@ class TestSetupModels:
 
         # Create config options with no models
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],  # No models

@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 import matplotlib.pyplot as plt
 import pytest
+from _pytest.capture import CaptureFixture
 import numpy as np
 import sacc
 from firecrown.app.sacc import View
@@ -137,7 +138,9 @@ class TestViewDisplay:
             assert isinstance(key, tuple)
             assert len(key) == 4
 
-    def test_view_shows_summary(self, sacc_file: Path, capsys) -> None:
+    def test_view_shows_summary(
+        self, sacc_file: Path, capsys: CaptureFixture[str]
+    ) -> None:
         """Test that View displays a summary."""
         _ = View(sacc_file=sacc_file, plot_covariance=False)
 
@@ -145,7 +148,9 @@ class TestViewDisplay:
         # Check that output contains expected content
         assert "SACC Summary" in captured.out or "tracers" in captured.out.lower()
 
-    def test_view_shows_tracers_table(self, sacc_file: Path, capsys) -> None:
+    def test_view_shows_tracers_table(
+        self, sacc_file: Path, capsys: CaptureFixture[str]
+    ) -> None:
         """Test that View displays tracers table."""
         _ = View(sacc_file=sacc_file, plot_covariance=False)
 
@@ -153,7 +158,9 @@ class TestViewDisplay:
         # Check that tracers information is displayed
         assert "Tracers" in captured.out or "bin" in captured.out.lower()
 
-    def test_view_shows_harmonic_bins_table(self, sacc_file: Path, capsys) -> None:
+    def test_view_shows_harmonic_bins_table(
+        self, sacc_file: Path, capsys: CaptureFixture[str]
+    ) -> None:
         """Test that View displays harmonic bins table."""
         _ = View(sacc_file=sacc_file, plot_covariance=False)
 
@@ -448,3 +455,84 @@ class TestViewSpecialCases:
             view = View(sacc_file=sacc_file, check=True, plot_covariance=False)
             # Verify check completed without error
             assert view.check is True
+
+    def test_view_show_real_bins_with_data(self, tmp_path: Path) -> None:
+        """Test showing real-space bins when they exist."""
+        # Create SACC data with real-space measurements
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "src0", z, dndz)
+        s.add_tracer("NZ", "lens0", z, dndz)
+
+        # Add real-space data points with theta tag
+        thetas = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        for theta in thetas:
+            s.add_data_point(
+                "galaxy_shearDensity_xi_t", ("src0", "lens0"), 1.0, theta=theta
+            )
+
+        cov = np.eye(len(thetas)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "real_space.sacc"
+        s.save_fits(str(sacc_path))
+
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_path, plot_covariance=False)
+            # Verify real bins were extracted
+            assert len(view.bin_comb_real) > 0
+            # Verify the display method executes (covers lines 239-266)
+            view._show_real_bins()  # pylint: disable=protected-access
+
+    def test_view_quality_check_with_warnings(self, tmp_path: Path) -> None:
+        """Test quality check that captures warnings from SACC operations."""
+        # Create SACC data that might trigger warnings
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        # Use naming that doesn't follow conventions to trigger warnings
+        s.add_tracer("NZ", "tracer_1", z, dndz)
+        s.add_tracer("NZ", "tracer_2", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point(
+                "galaxy_shear_cl_ee", ("tracer_1", "tracer_2"), 1.0, ell=int(ell)
+            )
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_warnings.sacc"
+        s.save_fits(str(sacc_path))
+
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            # This should trigger the quality check logic (covers lines 360-379, 430-443)
+            assert view.check is True
+
+    def test_view_quality_check_with_validation_error(self, tmp_path: Path) -> None:
+        """Test quality check handling validation errors."""
+        # Create minimal SACC data
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_validation.sacc"
+        s.save_fits(str(sacc_path))
+
+        with patch("matplotlib.pyplot.show"):
+            # Run quality check - should complete without raising errors
+            # This covers lines 492-493, 505 in _capture_sacc_operations
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            assert view.sacc_file == sacc_path

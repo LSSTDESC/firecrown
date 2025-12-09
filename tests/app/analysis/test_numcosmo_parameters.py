@@ -44,7 +44,9 @@ def fixture_vanilla_cosmo() -> CCLCosmologySpec:
 class TestAmplitudeParameterHandling:
     """Tests for A_s and sigma8 amplitude parameter handling."""
 
-    def test_set_amplitude_a_s_no_prior(self, numcosmo_init: bool) -> None:
+    def test_set_amplitude_a_s_no_prior(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _set_amplitude_A_s when A_s parameter has no prior.
 
         This test verifies that _set_amplitude_A_s returns early (line 292-293)
@@ -71,7 +73,7 @@ class TestAmplitudeParameterHandling:
 
         # Create minimal config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],
@@ -201,7 +203,9 @@ class TestAmplitudeParametersGenerator:
 
         assert gen.cosmo_spec["A_s"].prior is not None
 
-    def test_set_amplitude_sigma8_missing_p_ml(self, numcosmo_init: bool) -> None:
+    def test_set_amplitude_sigma8_missing_p_ml(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _set_amplitude_sigma8 raises ValueError when p_ml is missing.
 
         This test verifies that _set_amplitude_sigma8 raises a ValueError
@@ -216,7 +220,7 @@ class TestAmplitudeParametersGenerator:
 
         # Create minimal config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],
@@ -290,7 +294,9 @@ class TestNeutrinoHandling:
 
         assert gen.cosmo_spec["m_nu"].prior is not None
 
-    def test_set_neutrino_masses_with_gaussian_prior(self, numcosmo_init: bool) -> None:
+    def test_set_neutrino_masses_with_gaussian_prior(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _set_neutrino_masses with Gaussian prior on m_nu.
 
         This test verifies that _set_neutrino_masses correctly:
@@ -309,7 +315,7 @@ class TestNeutrinoHandling:
 
         # Create minimal config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],
@@ -336,7 +342,9 @@ class TestNeutrinoHandling:
         assert len(priors) == initial_priors_count + 1
         assert isinstance(priors[-1], Ncm.PriorGauss)
 
-    def test_set_neutrino_masses_with_uniform_prior(self, numcosmo_init: bool) -> None:
+    def test_set_neutrino_masses_with_uniform_prior(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _set_neutrino_masses with uniform prior on m_nu.
 
         This test verifies that _set_neutrino_masses correctly adds
@@ -354,7 +362,7 @@ class TestNeutrinoHandling:
 
         # Create minimal config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],
@@ -378,7 +386,9 @@ class TestNeutrinoHandling:
         assert len(priors) == initial_priors_count + 1
         assert isinstance(priors[-1], Ncm.PriorFlat)
 
-    def test_set_neutrino_masses_no_prior(self, numcosmo_init: bool) -> None:
+    def test_set_neutrino_masses_no_prior(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test _set_neutrino_masses when m_nu has no prior.
 
         This test verifies that _set_neutrino_masses does not add a prior
@@ -391,7 +401,7 @@ class TestNeutrinoHandling:
 
         # Create minimal config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],
@@ -415,7 +425,7 @@ class TestNeutrinoHandling:
         assert len(priors) == initial_priors_count
 
     def test_set_neutrino_masses_no_massive_neutrinos(
-        self, numcosmo_init: bool
+        self, numcosmo_init: bool, tmp_path: Path
     ) -> None:
         """Test _set_neutrino_masses with no massive neutrinos.
 
@@ -429,7 +439,7 @@ class TestNeutrinoHandling:
 
         # Create minimal config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],

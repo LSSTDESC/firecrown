@@ -176,7 +176,9 @@ class TestNumCosmoConfigGenerator:
 class TestSetStandardParams:
     """Tests for _set_standard_params function error handling."""
 
-    def test_set_standard_params_unknown_parameter(self, numcosmo_init: bool) -> None:
+    def test_set_standard_params_unknown_parameter(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
         """Test that ValueError is raised when parameter is not found in models.
 
         This test patches NAME_MAP to point a parameter to a nonexistent NumCosmo
@@ -191,7 +193,7 @@ class TestSetStandardParams:
 
         # Create minimal config options
         config_opts = ConfigOptions(
-            output_path=Path("/tmp"),
+            output_path=tmp_path,
             factory_source=Path("factory.py"),
             build_parameters=NamedParameters({}),
             models=[],
