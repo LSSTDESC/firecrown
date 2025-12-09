@@ -5,7 +5,7 @@ in firecrown.app.analysis._numcosmo module.
 """
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import pytest
 
 from numcosmo_py import Ncm, Nc
@@ -129,6 +129,48 @@ class TestNumCosmoConfigGenerator:
         # Check that files were created
         expected_file = tmp_path / "numcosmo_my_analysis.yaml"
         assert expected_file.exists()
+
+    def test_generator_write_config_subprocess_failure(
+        self,
+        numcosmo_init: bool,
+        tmp_path: Path,
+        vanilla_cosmo: CCLCosmologySpec,
+        minimal_factory_file: Path,
+    ) -> None:
+        """Test that write_config raises RuntimeError when subprocess fails.
+
+        This test patches the multiprocessing.Process to simulate a subprocess
+        failure by setting exitcode to a non-zero value. This triggers the
+        RuntimeError at line 658 of _numcosmo.py.
+        """
+        assert numcosmo_init
+        gen = NumCosmoConfigGenerator(
+            output_path=tmp_path,
+            prefix="my_analysis",
+            use_absolute_path=True,
+            cosmo_spec=vanilla_cosmo,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+        )
+
+        gen.factory_source = minimal_factory_file
+        gen.build_parameters = NamedParameters({})
+
+        # Create a mock process that simulates a failure
+        mock_process = MagicMock()
+        mock_process.exitcode = 1  # Non-zero exit code
+
+        # Patch the Process class to return our mock
+        with patch("multiprocessing.get_context") as mock_get_context:
+            mock_ctx = MagicMock()
+            mock_ctx.Process.return_value = mock_process
+            mock_get_context.return_value = mock_ctx
+
+            # This should raise RuntimeError due to non-zero exit code
+            with pytest.raises(
+                RuntimeError,
+                match=r"write_config\(\) subprocess failed with exit code 1",
+            ):
+                gen.write_config()
 
 
 class TestSetStandardParams:

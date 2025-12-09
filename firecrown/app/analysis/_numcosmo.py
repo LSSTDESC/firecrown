@@ -530,8 +530,8 @@ def _create_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
     """
     dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
     firecrown_data = numcosmo_factory.get_data()
-    if isinstance(firecrown_data, Ncm.DataGaussCov):
-        firecrown_data.set_size(0)
+    assert isinstance(firecrown_data, Ncm.DataGaussCov)
+    firecrown_data.set_size(0)
     dataset.append_data(firecrown_data)
     return dataset
 
