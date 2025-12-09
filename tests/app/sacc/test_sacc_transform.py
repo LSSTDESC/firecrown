@@ -707,3 +707,71 @@ class TestTransformErrorHandling:
                 "src0",
                 "lens0",
             ), f"Expected (src0, lens0) but got {dp.tracers}"
+
+    def test_fix_ordering_with_corrections_real_space(self, tmp_path: Path) -> None:
+        """Test fix_ordering detects and corrects tracer ordering violations in real space.
+
+        This test verifies the SACC tracer ordering convention for real-space correlations:
+        - src0 has SHEAR_T (from auto-correlation src0 × src0 with xi_t)
+        - lens0 has COUNTS (from auto-correlation lens0 × lens0)
+        - Since SHEAR_T < COUNTS, cross-correlation must be (src0, lens0)
+        - Test creates data with WRONG order (lens0, src0) to trigger correction
+        """
+        s: sacc.Sacc = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+
+        # Create tracers with specific measurement types
+        s.add_tracer("NZ", "src0", z, dndz, quantity="galaxy_shear")
+        s.add_tracer("NZ", "lens0", z, dndz, quantity="galaxy_density")
+
+        thetas = np.array([1.0, 2.0, 3.0])
+        xis = np.zeros_like(thetas)
+
+        # Add auto-correlations to establish measurement types
+        # src0 × src0 → SHEAR_T
+        s.add_theta_xi("galaxy_shear_xi_t", "src0", "src0", thetas, xis)
+        # lens0 × lens0 → COUNTS
+        s.add_theta_xi("galaxy_density_xi", "lens0", "lens0", thetas, xis)
+        # Add cross-correlation with WRONG tracer order (lens0, src0)
+        # This violates convention: SHEAR_T < COUNTS means src0 must come first
+        s.add_theta_xi("galaxy_shearDensity_xi_t", "lens0", "src0", thetas, xis)
+
+        input_file: Path = tmp_path / "test_order_real.fits"
+        output_file: Path = tmp_path / "test_order_real_out.fits"
+        s.save_fits(str(input_file))
+
+        # Transform with fix_ordering should detect and fix the violation
+        transform_log: Path = tmp_path / "transform_real.log"
+        with pytest.warns(DeprecationWarning, match="AUTO-CORRECTION PERFORMED"):
+            Transform(
+                sacc_file=input_file,
+                output=output_file,
+                fix_ordering=True,
+                log_file=transform_log,
+            )
+
+        # Verify the transform completed successfully
+        assert output_file.exists()
+
+        # Extract output from transform, and remove all newlines for easier searching
+        captured = transform_log.read_text()
+        captured = captured.replace("\n", "")
+
+        assert "Fixing tracer ordering" in captured
+        assert "galaxy_shearDensity_xi_t" in captured
+        assert "data points were flipped" in captured
+
+        # Verify corrected file has proper ordering
+        s_fixed: sacc.Sacc = sacc.Sacc.load_fits(str(output_file))
+        cross_corr_points = [
+            dp
+            for dp in s_fixed.get_data_points()
+            if dp.data_type == "galaxy_shearDensity_xi_t"
+        ]
+        # After correction, all cross-correlations should be (src0, lens0)
+        for dp in cross_corr_points:
+            assert dp.tracers == (
+                "src0",
+                "lens0",
+            ), f"Expected (src0, lens0) but got {dp.tracers}"
