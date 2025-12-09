@@ -20,7 +20,7 @@ This tutorial focuses on generating two-point statistics from scratch using meta
 
 Two-point statistics are widely used in cosmological analyses.
 They provide a statistical summary of the distribution, in either real or harmonic space, of galaxies and the matter density field, or of other observables.
-In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood.two_point`.
+In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood`.
 
 **Note:** This tutorial demonstrates generating two-point statistics from scratch. If you have existing data in a SACC file, see [Loading SACC Data](two_point_sacc_data.qmd) for how to extract and use it.
 

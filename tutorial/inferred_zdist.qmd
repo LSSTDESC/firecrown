@@ -19,7 +19,7 @@ These dataclasses can be constructed directly, extracted from SACC objects, or g
 
 This document outlines the process of creating `InferredGalaxyZDist` objects directly and demonstrates their utilization in cosmological analyses.
 
-## Creating an InferredGalaxyZDist Object
+## Creating an `InferredGalaxyZDist` Object
 
 The `InferredGalaxyZDist` object serves as the cornerstone for representing the redshift distribution of galaxies within a designated photometric redshift bin. Each bin is identified by a string identifier, `bin_name`, utilized by theoretical models to specify parameters specific to the corresponding redshift bin.
 
@@ -42,7 +42,7 @@ This dataclass can be serialized, but the resulting object will not be human-rea
 To obtain a human-readable format, Firecrown introduces generators that describe the data layout in a more readable way.
 This is described in the [tutorial on inferred distribution serialization](inferred_zdist_serialization.qmd).
 
-## Creating a TwoPointHarmonic Object
+## Creating a `TwoPointHarmonic` Object
 
 The `TwoPointHarmonic` object is used to encapsulate the two-point correlation function in harmonic space.
 Using the `lens0` object created above, we can create a `TwoPointHarmonic` object as follows:
@@ -66,7 +66,7 @@ lens0_lens0_cell = TwoPointHarmonic(XY=lens0_lens0, ells=ells_generator.generate
 
 The `TwoPointHarmonic` is created by providing the `TwoPointXY` object and the ells array.
 The reason for separating the `TwoPointXY` and `TwoPointHarmonic` objects is to accommodate the creation of other types of two-point correlation functions.
-For example, from a `TwoPointXY`, one can also create a `TwoPointReal` object for the two-point correlation function in real space, or a `TwoPointCWindow` object for the two-point correlation function in harmonic space with a window function.
+For example, from a `TwoPointXY`, one can also create a `TwoPointReal` object for the two-point correlation function in real space, or a `TwoPointHarmonic` object for the two-point correlation function in harmonic space with an optional window function.
 
 ## Creating a TwoPoint Theory Object
 
