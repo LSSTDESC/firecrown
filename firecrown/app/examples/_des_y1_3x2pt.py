@@ -118,39 +118,39 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         """Copy DES Y1 3x2pt factory template or generate YAML config.
 
         :param output_path: Output directory
-        :param _sacc: SACC file path (unused)
+        :param sacc: SACC file path (unused)
         :return: Path to factory file or YAML config
         """
-        # YAML-based factories
-        if self.factory_type in (
-            DESY1FactoryType.YAML_DEFAULT,
-            DESY1FactoryType.YAML_PURE_CCL,
-            DESY1FactoryType.YAML_MU_SIGMA,
-        ):
-            output_file = output_path / f"{self.prefix}_experiment.yaml"
-            yaml_content = self._get_yaml_config(sacc)
-            output_file.write_text(yaml_content)
-            return "firecrown.likelihood.factories.build_two_point_likelihood"
-
-        # Python template-based factories
-        template: ModuleType
-        output_file = output_path / f"{self.prefix}_factory.py"
+        template_map: dict[DESY1FactoryType, ModuleType] = {
+            DESY1FactoryType.PT: _des_y1_3x2pt_pt_template,
+            DESY1FactoryType.TATT: _des_y1_cosmic_shear_tatt_template,
+            DESY1FactoryType.HMIA: _des_y1_cosmic_shear_hmia_template,
+            DESY1FactoryType.PK_MODIFIER: _des_y1_cosmic_shear_pk_modifier_template,
+            DESY1FactoryType.STANDARD: _des_y1_3x2pt_template,
+        }
         match self.factory_type:
-            case DESY1FactoryType.PT:
-                template = _des_y1_3x2pt_pt_template
-            case DESY1FactoryType.TATT:
-                template = _des_y1_cosmic_shear_tatt_template
-            case DESY1FactoryType.HMIA:
-                template = _des_y1_cosmic_shear_hmia_template
-            case DESY1FactoryType.PK_MODIFIER:
-                template = _des_y1_cosmic_shear_pk_modifier_template
-            case DESY1FactoryType.STANDARD:
-                template = _des_y1_3x2pt_template
-            case _:
-                raise ValueError(f"Unknown factory type: {self.factory_type}")
-
-        copy_template(template, output_file)
-        return output_file
+            case (
+                DESY1FactoryType.PT
+                | DESY1FactoryType.TATT
+                | DESY1FactoryType.HMIA
+                | DESY1FactoryType.PK_MODIFIER
+                | DESY1FactoryType.STANDARD
+            ):
+                output_file = output_path / f"{self.prefix}_factory.py"
+                template = template_map[self.factory_type]
+                copy_template(template, output_file)
+                return output_file
+            case (
+                DESY1FactoryType.YAML_DEFAULT
+                | DESY1FactoryType.YAML_PURE_CCL
+                | DESY1FactoryType.YAML_MU_SIGMA
+            ):
+                output_file = output_path / f"{self.prefix}_experiment.yaml"
+                yaml_content = self._get_yaml_config(sacc)
+                output_file.write_text(yaml_content)
+                return "firecrown.likelihood.factories.build_two_point_likelihood"
+            case _ as unreachable:
+                assert_never(unreachable)
 
     def _get_yaml_config(self, sacc: Path) -> str:
         """Generate YAML configuration content based on factory type.
