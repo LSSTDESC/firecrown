@@ -4,7 +4,7 @@ import dataclasses
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, assert_never
 
 import sacc
 import typer
@@ -197,8 +197,8 @@ data.h5
                 return input_path.parent / f"{stem}.fits"
             case SaccFormat.HDF5:
                 return input_path.parent / f"{stem}.hdf5"
-            case _:
-                raise ValueError(f"Unknown target format: {target_format}")
+            case _ as unreachable:
+                assert_never(unreachable)
 
     def _prepare_transform(self) -> tuple[Path, SaccFormat, SaccFormat]:
         """Prepare transformation.
@@ -286,8 +286,8 @@ data.h5
                     if self.overwrite and output_path.exists():
                         output_path.unlink()
                     sacc_data.save_hdf5(str(output_path))
-                case _:
-                    raise ValueError(f"Unknown output format: {target_format}")
+                case _ as unreachable:
+                    assert_never(unreachable)
         except OSError as e:
             self.console.print(
                 f"[bold red]ERROR: Failed to write SACC data to output file: "

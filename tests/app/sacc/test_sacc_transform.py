@@ -642,32 +642,68 @@ class TestTransformErrorHandling:
         assert "No tracer ordering issues detected" in captured.out
 
     def test_fix_ordering_with_corrections(self, tmp_path: Path) -> None:
-        """Test fix_ordering executes the correction reporting logic."""
-        # For this test, we just verify that the fix_ordering code path executes.
-        # Creating actual misordered data requires understanding the exact
-        # numeric ordering of Measurement enums, which is implementation-dependent.
-        # The important thing is that lines 365-397 and 423-426 are covered.
+        """Test fix_ordering detects and corrects actual tracer ordering violations.
 
+        This test verifies the SACC tracer ordering convention:
+        - src0 has SHEAR_E (from auto-correlation src0 × src0)
+        - lens0 has COUNTS (from auto-correlation lens0 × lens0)
+        - Since SHEAR_E < COUNTS, cross-correlation must be (src0, lens0)
+        - Test creates data with WRONG order (lens0, src0) to trigger correction
+        """
         s: sacc.Sacc = sacc.Sacc()
         z = np.linspace(0.0, 2.0, 50)
         dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+
+        # Create tracers with specific measurement types
         s.add_tracer("NZ", "src0", z, dndz, quantity="galaxy_shear")
         s.add_tracer("NZ", "lens0", z, dndz, quantity="galaxy_density")
 
-        # Add cross-correlation data
         ells = np.array([10, 20, 30])
-        for ell in ells:
-            s.add_data_point(
-                "galaxy_shearDensity_cl_e", ("src0", "lens0"), 1.0, ell=int(ell)
-            )
+        Cells = np.zeros_like(ells)
+
+        # Add auto-correlations to establish measurement types
+        # src0 × src0 → SHEAR_E
+        s.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
+        # lens0 × lens0 → COUNTS
+        s.add_ell_cl("galaxy_density_cl", "lens0", "lens0", ells, Cells)
+        # Add cross-correlation with WRONG tracer order (lens0, src0)
+        # This violates convention: SHEAR_E < COUNTS means src0 must come first
+        s.add_ell_cl("galaxy_shearDensity_cl_e", "lens0", "src0", ells, Cells)
 
         input_file: Path = tmp_path / "test_order.fits"
         output_file: Path = tmp_path / "test_order_out.fits"
         s.save_fits(str(input_file))
 
-        Transform(sacc_file=input_file, output=output_file, fix_ordering=True)
+        # Transform with fix_ordering should detect and fix the violation
+        transform_log: Path = tmp_path / "transform.log"
+        with pytest.warns(DeprecationWarning, match="AUTO-CORRECTION PERFORMED"):
+            Transform(
+                sacc_file=input_file,
+                output=output_file,
+                fix_ordering=True,
+                log_file=transform_log,
+            )
 
         # Verify the transform completed successfully
         assert output_file.exists()
-        # The _fix_ordering method was called (even if no issues found)
-        # This ensures lines 365-397, 423-426 are covered
+
+        # Extract output from transform, and remove all newlines for easier searching
+        captured = transform_log.read_text()
+        captured = captured.replace("\n", "")
+
+        assert "Fixing tracer ordering" in captured
+        assert "galaxy_shearDensity_cl_e" in captured
+        assert "data points were flipped" in captured
+        # Verify corrected file has proper ordering
+        s_fixed: sacc.Sacc = sacc.Sacc.load_fits(str(output_file))
+        cross_corr_points = [
+            dp
+            for dp in s_fixed.get_data_points()
+            if dp.data_type == "galaxy_shearDensity_cl_e"
+        ]
+        # After correction, all cross-correlations should be (src0, lens0)
+        for dp in cross_corr_points:
+            assert dp.tracers == (
+                "src0",
+                "lens0",
+            ), f"Expected (src0, lens0) but got {dp.tracers}"

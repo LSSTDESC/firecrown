@@ -66,6 +66,20 @@ def _sacc_convention_warning(
     convention, but this behavior is deprecated and will be removed in a future
     release.
 
+    **Understanding SACC Tracer Ordering:**
+
+    The SACC convention requires that in cross-correlations, the measurement type with
+    the lower enum value appears first in both:
+        1. The data type string (e.g., 'galaxy_shearDensity_cl_e')
+        2. The tracer pair (e.g., (src0, lens0))
+
+    Example violation:
+        - src0 has SHEAR_E (lower enum value)
+        - lens0 has COUNTS (higher enum value)
+        - Data type: 'galaxy_shearDensity_cl_e' correctly shows shear before density
+        - But data has tracers in order (lens0, src0) ← WRONG ORDER
+        - Correct order should be (src0, lens0) to match SHEAR_E < COUNTS
+
     :param tracer1: Name of the first tracer in the original SACC data.
     :param tracer2: Name of the second tracer in the original SACC data.
     :param data_type: The SACC data type string (e.g., 'galaxy_shear_xi_plus').
@@ -277,17 +291,34 @@ def extract_all_measured_types(
     galaxy shear, galaxy counts, or CMB convergence), as these represent distinct
     observational probes.
 
-    SACC Convention & Auto-Correction
-    ---------------------------------
-    SACC follows a strict naming convention for measurement types: the order of
-    measurement types in a data type string must match the order of the associated
-    tracers. This ensures unambiguous interpretation of two-point measurements.
+    **SACC Tracer Ordering Convention**
 
-    If your SACC file violates this convention (causing a tracer to have multiple
-    measurement types), this function will attempt to auto-correct it by swapping
-    tracer labels when allow_mixed_types=False. This auto-correction is provided as a
-    convenience for legacy SACC files but is **deprecated** and will be removed in a
-    future release.
+    SACC enforces a strict ordering convention for cross-correlations between different
+    measurement types. The measurement type with the lower enum value must appear first
+    in both:
+        1. The data type string (e.g., 'galaxy_shearDensity_cl_e')
+        2. The tracer pair order (e.g., (src0, lens0))
+
+    **Example - How Ordering is Determined:**
+
+    Consider two tracers: src0 and lens0
+
+    Step 1: Identify measurement types from auto-correlations
+        - src0 × src0 with 'galaxy_shear_cl_ee' → src0 has SHEAR_E
+        - lens0 × lens0 with 'galaxy_density_cl' → lens0 has COUNTS
+
+    Step 2: Check cross-correlation ordering
+        - Since SHEAR_E < COUNTS (enum ordering)
+        - The cross-correlation SACC string is 'galaxy_shearDensity_cl_e'
+        - Correct tracer order: (src0, lens0) ✓
+        - Incorrect tracer order: (lens0, src0) ✗ VIOLATION
+
+    **Auto-Correction (Deprecated)**
+
+    If your SACC file violates this convention, this function will attempt to
+    auto-correct it by swapping tracer labels when allow_mixed_types=False. This
+    auto-correction is provided as a convenience for legacy SACC files but is
+    **deprecated** and will be removed in a future release.
 
     Behavior Summary
     ----------------
