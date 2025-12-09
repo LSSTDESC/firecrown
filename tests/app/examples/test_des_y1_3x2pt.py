@@ -1,15 +1,23 @@
 """Unit tests for firecrown.app.examples._des_y1_3x2pt module.
 
-Tests ExampleDESY13x2pt example generator without executing likelihoods.
+Tests ExampleDESY13x2pt example generator and build_likelihood execution.
 """
 
+import sys
 from pathlib import Path
 from unittest.mock import patch
+import importlib.util
 
-from firecrown.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters, ConstGaussian
+from firecrown.modeling_tools import ModelingTools
 from firecrown.app.examples._des_y1_3x2pt import (
     ExampleDESY13x2pt,
     DESY1FactoryType,
+    _des_y1_3x2pt_template,
+    _des_y1_3x2pt_pt_template,
+    _des_y1_cosmic_shear_hmia_template,
+    _des_y1_cosmic_shear_pk_modifier_template,
+    _des_y1_cosmic_shear_tatt_template,
 )
 from firecrown.app.analysis import (
     Model,
@@ -321,3 +329,149 @@ class TestExampleDESY13x2pt:
         # Should have factory type info
         option_names = [name for name, _ in options]
         assert any("factory" in name.lower() for name in option_names)
+
+    def test_build_likelihood_execution_standard(self, tmp_path: Path) -> None:
+        """Test that build_likelihood from standard template executes."""
+        # Generate real SACC file and factory (downloads from GitHub)
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des",
+            factory_type=DESY1FactoryType.STANDARD,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        factory_file = builder.generate_factory(tmp_path, sacc_file)
+        params = NamedParameters({"sacc_file": str(sacc_file)})
+
+        # Test 1: Load and execute the ORIGINAL template module for coverage
+
+        likelihood_orig, modeling_tools_orig = _des_y1_3x2pt_template.build_likelihood(
+            params
+        )
+        assert isinstance(likelihood_orig, ConstGaussian)
+        assert isinstance(modeling_tools_orig, ModelingTools)
+        # DES Y1 has cosmic shear (xip/xim), galaxy-galaxy lensing, clustering
+        assert len(likelihood_orig.statistics) > 0
+        _ = len(likelihood_orig.statistics)
+
+        # Test 2: Load and execute the COPIED template module
+        spec = importlib.util.spec_from_file_location("test_des_factory", factory_file)
+        assert spec is not None
+        assert spec.loader is not None
+        factory_module = importlib.util.module_from_spec(spec)
+        sys.modules["test_des_factory"] = factory_module
+        spec.loader.exec_module(factory_module)
+
+        likelihood_copy, modeling_tools_copy = factory_module.build_likelihood(params)
+        assert isinstance(likelihood_copy, ConstGaussian)
+        assert isinstance(modeling_tools_copy, ModelingTools)
+        assert len(likelihood_copy.statistics) > 0
+
+        # Verify both produce equivalent results
+        assert len(likelihood_orig.statistics) == len(likelihood_copy.statistics)
+
+        # Clean up
+        del sys.modules["test_des_factory"]
+
+    def test_build_likelihood_execution_pt(self, tmp_path: Path) -> None:
+        """Test that build_likelihood from PT template executes."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_pt",
+            factory_type=DESY1FactoryType.PT,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        factory_file = builder.generate_factory(tmp_path, sacc_file)
+        params = NamedParameters({"sacc_file": str(sacc_file)})
+
+        # Test 1: Load and execute the ORIGINAL template module for coverage
+        likelihood_orig, modeling_tools_orig = (
+            _des_y1_3x2pt_pt_template.build_likelihood(params)
+        )
+        assert isinstance(likelihood_orig, ConstGaussian)
+        assert isinstance(modeling_tools_orig, ModelingTools)
+        assert len(likelihood_orig.statistics) > 0
+
+        # Test 2: Load and execute the COPIED template module
+        spec = importlib.util.spec_from_file_location(
+            "test_des_pt_factory", factory_file
+        )
+        assert spec is not None
+        assert spec.loader is not None
+        factory_module = importlib.util.module_from_spec(spec)
+        sys.modules["test_des_pt_factory"] = factory_module
+        spec.loader.exec_module(factory_module)
+
+        likelihood_copy, modeling_tools_copy = factory_module.build_likelihood(params)
+        assert isinstance(likelihood_copy, ConstGaussian)
+        assert isinstance(modeling_tools_copy, ModelingTools)
+        assert len(likelihood_copy.statistics) > 0
+
+        # Verify both produce equivalent results
+        assert len(likelihood_orig.statistics) == len(likelihood_copy.statistics)
+
+        # Clean up
+        del sys.modules["test_des_pt_factory"]
+
+    def test_build_likelihood_tatt_template(self, tmp_path: Path) -> None:
+        """Test that TATT template build_likelihood executes."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_tatt",
+            factory_type=DESY1FactoryType.TATT,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        params = NamedParameters({"sacc_file": str(sacc_file)})
+
+        # Load and execute the ORIGINAL TATT template module for coverage
+        likelihood, modeling_tools = (
+            _des_y1_cosmic_shear_tatt_template.build_likelihood(params)
+        )
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert len(likelihood.statistics) > 0
+
+    def test_build_likelihood_hmia_template(self, tmp_path: Path) -> None:
+        """Test that HMIA template build_likelihood executes."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_hmia",
+            factory_type=DESY1FactoryType.HMIA,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        params = NamedParameters({"sacc_file": str(sacc_file)})
+
+        # Load and execute the ORIGINAL HMIA template module for coverage
+        likelihood, modeling_tools = (
+            _des_y1_cosmic_shear_hmia_template.build_likelihood(params)
+        )
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert len(likelihood.statistics) > 0
+
+    def test_build_likelihood_pk_modifier_template(self, tmp_path: Path) -> None:
+        """Test that PK_MODIFIER template build_likelihood executes."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_pk",
+            factory_type=DESY1FactoryType.PK_MODIFIER,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        params = NamedParameters({"sacc_file": str(sacc_file)})
+
+        # Load and execute the ORIGINAL PK_MODIFIER template module for coverage
+        likelihood, modeling_tools = (
+            _des_y1_cosmic_shear_pk_modifier_template.build_likelihood(params)
+        )
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert len(likelihood.statistics) > 0

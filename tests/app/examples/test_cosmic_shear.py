@@ -1,12 +1,15 @@
 """Unit tests for firecrown.app.examples._cosmic_shear module.
 
-Tests ExampleCosmicShear example generator without executing likelihoods.
+Tests ExampleCosmicShear example generator and build_likelihood execution.
 """
 
+import sys
 from pathlib import Path
 from unittest.mock import patch
+import importlib.util
 
-from firecrown.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters, ConstGaussian
+from firecrown.modeling_tools import ModelingTools
 from firecrown.app.examples._cosmic_shear import ExampleCosmicShear
 from firecrown.app.analysis import (
     FrameworkCosmology,
@@ -152,3 +155,48 @@ class TestExampleCosmicShear:
         assert any(
             "noise" in name.lower() or "ell" in name.lower() for name in option_names
         )
+
+    def test_build_likelihood_execution(self, tmp_path: Path) -> None:
+        """Test that build_likelihood from template executes successfully."""
+        # Generate real SACC file and factory
+        builder = ExampleCosmicShear(
+            output_path=tmp_path,
+            prefix="test_cs",
+            n_bins=2,
+            seed=42,
+            n_ell_points=5,  # Small for speed
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        factory_file = builder.generate_factory(tmp_path, sacc_file)
+        params = NamedParameters({"sacc_file": str(sacc_file), "n_bins": 2})
+
+        # Test 1: Load and execute the ORIGINAL template module for coverage
+        from firecrown.app.examples import _cosmic_shear_template
+
+        likelihood_orig, modeling_tools_orig = _cosmic_shear_template.build_likelihood(
+            params
+        )
+        assert isinstance(likelihood_orig, ConstGaussian)
+        assert isinstance(modeling_tools_orig, ModelingTools)
+        assert len(likelihood_orig.statistics) == 3  # n_bins * (n_bins + 1) / 2
+
+        # Test 2: Load and execute the COPIED template module
+        spec = importlib.util.spec_from_file_location("test_factory", factory_file)
+        assert spec is not None
+        assert spec.loader is not None
+        factory_module = importlib.util.module_from_spec(spec)
+        sys.modules["test_factory"] = factory_module
+        spec.loader.exec_module(factory_module)
+
+        likelihood_copy, modeling_tools_copy = factory_module.build_likelihood(params)
+        assert isinstance(likelihood_copy, ConstGaussian)
+        assert isinstance(modeling_tools_copy, ModelingTools)
+        assert len(likelihood_copy.statistics) == 3
+
+        # Verify both produce equivalent results
+        assert len(likelihood_orig.statistics) == len(likelihood_copy.statistics)
+
+        # Clean up
+        del sys.modules["test_factory"]

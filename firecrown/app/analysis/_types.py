@@ -281,10 +281,10 @@ class CCLCosmologySpec(Model):
         :return: Dictionary of cosmological parameters for CCL
         """
         args: dict[str, Any] = {}
-        if self._param_dict is not None:
-            args.update(
-                {key: value.default_value for key, value in self._param_dict.items()}
-            )
+        assert self._param_dict is not None
+        args.update(  # pylint: disable-next=no-member
+            {key: value.default_value for key, value in self._param_dict.items()}
+        )
         if self.extra_parameters:
             args["extra_parameters"] = {"camb": self.extra_parameters.model_dump()}
         if self.matter_power_spectrum:

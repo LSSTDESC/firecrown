@@ -39,10 +39,8 @@ def build_likelihood(params: NamedParameters):
     :raises FileNotFoundError: If SACC file does not exist
     """
     # Validate required configuration parameters
-    if "sacc_file" not in params:
-        raise ValueError("sacc_file must be provided in the configuration")
-    if "n_bins" not in params:
-        raise ValueError("n_bins must be provided in the configuration")
+    assert "sacc_file" in params, "sacc_file must be provided in the configuration"
+    assert "n_bins" in params, "n_bins must be provided in the configuration"
 
     sacc_file = Path(params.get_string("sacc_file"))
     n_bins = params.get_int("n_bins")
@@ -72,8 +70,7 @@ def build_likelihood(params: NamedParameters):
     likelihood = ConstGaussian(statistics=stats)
 
     # Validate and load SACC data file
-    if not sacc_file.exists():
-        raise FileNotFoundError(f"SACC file not found: {sacc_file}")
+    assert sacc_file.is_file(), f"SACC file does not exist: {sacc_file}"
     sacc_data = load_sacc_data(sacc_file)
 
     # Initialize likelihood with SACC data
