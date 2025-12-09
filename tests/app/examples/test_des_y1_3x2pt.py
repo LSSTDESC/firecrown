@@ -8,8 +8,11 @@ from pathlib import Path
 from unittest.mock import patch
 import importlib.util
 
+import numpy as np
+import pyccl
+
 from firecrown.likelihood import NamedParameters, ConstGaussian
-from firecrown.modeling_tools import ModelingTools
+from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
 from firecrown.app.examples._des_y1_3x2pt import (
     ExampleDESY13x2pt,
     DESY1FactoryType,
@@ -24,6 +27,8 @@ from firecrown.app.analysis import (
     FrameworkCosmology,
     Frameworks,
 )
+from firecrown.likelihood.factories import build_two_point_likelihood
+from firecrown.parameters import ParamsMap
 
 
 class TestDESY1FactoryType:
@@ -472,6 +477,200 @@ class TestExampleDESY13x2pt:
         likelihood, modeling_tools = (
             _des_y1_cosmic_shear_pk_modifier_template.build_likelihood(params)
         )
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert len(likelihood.statistics) > 0
+
+    def test_pk_modifier_compute_p_of_k_z(self, tmp_path: Path) -> None:
+        """Test that PK_MODIFIER's compute_p_of_k_z method executes correctly."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_pk",
+            factory_type=DESY1FactoryType.PK_MODIFIER,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        params = NamedParameters({"sacc_file": str(sacc_file)})
+
+        # Build likelihood and get modeling tools with PK modifier
+        likelihood, modeling_tools = (
+            _des_y1_cosmic_shear_pk_modifier_template.build_likelihood(params)
+        )
+
+        # Verify that pk_modifiers are present
+        assert len(modeling_tools.pk_modifiers) == 1
+        # Hack to make pylint happy about the type of pk_modifier
+        pk_modifier: PowerspectrumModifier = next(iter(modeling_tools.pk_modifiers))
+        assert pk_modifier is not None
+        assert isinstance(pk_modifier, PowerspectrumModifier)
+
+        # Check that it's the right type
+        assert pk_modifier.__class__.__name__ == "vanDaalen19Baryonfication"
+        assert hasattr(pk_modifier, "compute_p_of_k_z")
+        assert hasattr(pk_modifier, "f_bar")
+
+        # Prepare modeling tools with a complete set of cosmological parameters
+        # CCLFactory requires: Omega_c, Omega_b, h, n_s, Omega_k, Neff, m_nu,
+        # w0, wa, T_CMB, and sigma8 (amplitude parameter)
+        test_params = ParamsMap(
+            {
+                "Omega_c": 0.27,
+                "Omega_b": 0.045,
+                "h": 0.67,
+                "n_s": 0.96,
+                "Omega_k": 0.0,
+                "Neff": 3.046,
+                "m_nu": 0.06,
+                "w0": -1.0,
+                "wa": 0.0,
+                "T_CMB": 2.7255,
+                "sigma8": 0.8,
+                "f_bar": 0.5,
+                "src0_delta_z": 0.0,
+            }
+        )
+        likelihood.update(test_params)
+        modeling_tools.update(test_params)
+        modeling_tools.prepare()
+
+        # Exercise compute_p_of_k_z method
+        pk_modified = pk_modifier.compute_p_of_k_z(modeling_tools)
+
+        # Verify the result is a valid Pk2D object
+        assert isinstance(pk_modified, pyccl.Pk2D)
+
+        # Test that we can evaluate the power spectrum at some k and z
+        k_test = np.array([0.1, 1.0, 10.0])
+        z_test = 0.5
+        pk_values = pk_modified(k_test, 1.0 / (1.0 + z_test))
+
+        # Check that we get valid power spectrum values
+        assert isinstance(pk_values, np.ndarray)
+        assert len(pk_values) == len(k_test)
+        assert np.all(np.isfinite(pk_values))
+        assert np.all(pk_values > 0)  # Power spectrum should be positive
+
+        # Verify that changing f_bar affects the result
+        test_params_2 = ParamsMap(
+            {
+                "Omega_c": 0.27,
+                "Omega_b": 0.045,
+                "h": 0.67,
+                "n_s": 0.96,
+                "Omega_k": 0.0,
+                "Neff": 3.046,
+                "m_nu": 0.06,
+                "w0": -1.0,
+                "wa": 0.0,
+                "T_CMB": 2.7255,
+                "sigma8": 0.8,
+                "f_bar": 0.8,  # Different f_bar value
+                "src0_delta_z": 0.0,
+            }
+        )
+        likelihood.reset()
+        modeling_tools.reset()
+        likelihood.update(test_params_2)
+        modeling_tools.update(test_params_2)
+        modeling_tools.prepare()
+
+        pk_modified_2 = pk_modifier.compute_p_of_k_z(modeling_tools)
+        pk_values_2 = pk_modified_2(k_test, 1.0 / (1.0 + z_test))
+
+        # Values should be different when f_bar changes
+        assert not np.allclose(pk_values, pk_values_2)
+
+    def test_build_likelihood_yaml_default(self, tmp_path: Path) -> None:
+        """Test that YAML_DEFAULT factory build_likelihood executes."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_yaml",
+            factory_type=DESY1FactoryType.YAML_DEFAULT,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        factory_result = builder.generate_factory(tmp_path, sacc_file)
+
+        # YAML factories return a string with the factory function path
+        assert isinstance(factory_result, str)
+        assert "build_two_point_likelihood" in factory_result
+
+        # Verify YAML file was created
+        yaml_file = tmp_path / "test_des_yaml_experiment.yaml"
+        assert yaml_file.exists()
+        yaml_content = yaml_file.read_text()
+        assert "sacc_data_file" in yaml_content
+        assert "two_point_factory" in yaml_content
+
+        # Execute build_likelihood using the YAML factory
+        params = builder.get_build_parameters(sacc_file)
+        assert "likelihood_config" in params.convert_to_basic_dict()
+
+        likelihood, modeling_tools = build_two_point_likelihood(params)
+
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert len(likelihood.statistics) > 0
+
+    def test_build_likelihood_yaml_pure_ccl(self, tmp_path: Path) -> None:
+        """Test that YAML_PURE_CCL factory build_likelihood executes."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_pure_ccl",
+            factory_type=DESY1FactoryType.YAML_PURE_CCL,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        factory_result = builder.generate_factory(tmp_path, sacc_file)
+
+        assert isinstance(factory_result, str)
+        assert "build_two_point_likelihood" in factory_result
+
+        # Verify YAML file contains pure_ccl_mode
+        yaml_file = tmp_path / "test_des_pure_ccl_experiment.yaml"
+        assert yaml_file.exists()
+        yaml_content = yaml_file.read_text()
+        assert "pure_ccl_mode" in yaml_content
+        assert "ccl_factory" in yaml_content
+
+        # Execute build_likelihood using the YAML factory
+        params = builder.get_build_parameters(sacc_file)
+        likelihood, modeling_tools = build_two_point_likelihood(params)
+
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert len(likelihood.statistics) > 0
+
+    def test_build_likelihood_yaml_mu_sigma(self, tmp_path: Path) -> None:
+        """Test that YAML_MU_SIGMA factory build_likelihood executes."""
+        builder = ExampleDESY13x2pt(
+            output_path=tmp_path,
+            prefix="test_des_mu_sigma",
+            factory_type=DESY1FactoryType.YAML_MU_SIGMA,
+            target_framework=Frameworks.COSMOSIS,
+        )
+
+        sacc_file = builder.generate_sacc(tmp_path)
+        factory_result = builder.generate_factory(tmp_path, sacc_file)
+
+        assert isinstance(factory_result, str)
+        assert "build_two_point_likelihood" in factory_result
+
+        # Verify YAML file contains mu_sigma_isitgr
+        yaml_file = tmp_path / "test_des_mu_sigma_experiment.yaml"
+        assert yaml_file.exists()
+        yaml_content = yaml_file.read_text()
+        assert "mu_sigma_isitgr" in yaml_content
+        assert "ccl_factory" in yaml_content
+
+        # Execute build_likelihood using the YAML factory
+        params = builder.get_build_parameters(sacc_file)
+
+        likelihood, modeling_tools = build_two_point_likelihood(params)
+
         assert isinstance(likelihood, ConstGaussian)
         assert isinstance(modeling_tools, ModelingTools)
         assert len(likelihood.statistics) > 0
