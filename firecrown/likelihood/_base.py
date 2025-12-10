@@ -318,6 +318,14 @@ class NamedParameters:
                 raise ValueError(f"Invalid type for value: {value}")
         return basic_dict
 
+    def __contains__(self, key: str) -> bool:
+        """Check if a key is in the NamedParameters object.
+
+        :param key: the key to check
+        :return: True if the key is in the NamedParameters object, False otherwise
+        """
+        return key in self.data
+
 
 # ============================================================================
 # Classes from _statistic.py

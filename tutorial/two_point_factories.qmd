@@ -395,7 +395,7 @@ print(f"Loglike from filtered TwoPointExperiment: {likelihood_tpe_filtered.compu
 The example below shows how to create a [[likelihood|TwoPointFactory]] with integration options that reproduce the default behavior.
 We also create additional [[likelihood|TwoPointFactory]] objects with alternative integration configurations: [[utils|ClIntegrationMethod.LIMBER]] with [[utils|ClLimberMethod.GSL_SPLINE]], [[utils|ClIntegrationMethod.FKEM_AUTO]], and [[utils|ClIntegrationMethod.FKEM_L_LIMBER]].
 
-The lens and source redshift bin collections used for the computations are imported from the `firecrown.generators.inferred_galaxy_zdist` module:
+The lens and source redshift bin collections used for the computations are imported from the `firecrown.generators` module:
 [[generators|LSST_Y1_LENS_HARMONIC_BIN_COLLECTION]] and [[generators|LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION]].
 
 ```{python}
@@ -474,7 +474,7 @@ two_points_fkem_l_limber_max = tpf_fkem_l_limber_max.from_metadata(all_two_point
 
 ```
 
-Now we plot the relative differences between each integration method and the most accurate (`FKEM` applied to all ells), highlighting the impact of different integration choices on the two-point functions.
+Now we plot the relative differences between each integration method and the most accurate (FKEM applied to all ells), highlighting the impact of different integration choices on the two-point functions.
 
 ```{python}
 # | label: fig-fz

@@ -16,7 +16,12 @@ from firecrown.parameters import (
     InternalParameter,
     SamplerParameter,
 )
-from firecrown.updatable import UpdatableUsageRecord
+from firecrown.updatable import (
+    Updatable,
+    UpdatableUsageRecord,
+    get_default_params,
+    get_default_params_map,
+)
 
 
 def test_register_new_updatable_parameter_with_no_arg():
@@ -41,6 +46,176 @@ def test_register_new_updatable_parameter_with_wrong_arg():
         _ = register_new_updatable_parameter(
             value="cow", default_value="moo"  # type: ignore
         )
+
+
+def test_register_new_updatable_parameter_with_shared_true():
+    """Calling parameters.create() with shared=True should return a SamplerParameter
+    with shared=True, meaning the parameter is shared across instances."""
+    a_parameter = register_new_updatable_parameter(default_value=1.0, shared=True)
+    assert isinstance(a_parameter, SamplerParameter)
+    assert a_parameter.shared is True
+
+
+def test_register_new_updatable_parameter_with_shared_false():
+    """Calling parameters.create() with shared=False (default) should return a
+    SamplerParameter with shared=False, meaning each instance has its own parameter."""
+    a_parameter = register_new_updatable_parameter(default_value=1.0, shared=False)
+    assert isinstance(a_parameter, SamplerParameter)
+    assert a_parameter.shared is False
+
+    # Also test the default behavior
+    a_parameter_default = register_new_updatable_parameter(default_value=1.0)
+    assert a_parameter_default.shared is False
+
+
+def test_sampler_parameter_shared_ignores_prefix():
+    """When shared=True, the SamplerParameter should ignore the prefix in
+    set_fullname, making it shared across all instances."""
+    sp = SamplerParameter(default_value=1.0, shared=True)
+    sp.set_fullname("my_prefix", "my_name")
+
+    # With shared=True, prefix should be ignored
+    assert sp.prefix is None
+    assert sp.name == "my_name"
+    assert sp.fullname == "my_name"
+
+
+def test_sampler_parameter_not_shared_uses_prefix():
+    """When shared=False (default), the SamplerParameter should use the prefix
+    in set_fullname, making each instance have its own parameter."""
+    sp = SamplerParameter(default_value=1.0, shared=False)
+    sp.set_fullname("my_prefix", "my_name")
+
+    # With shared=False, prefix should be used
+    assert sp.prefix == "my_prefix"
+    assert sp.name == "my_name"
+    assert sp.fullname == "my_prefix_my_name"
+
+
+def test_sampler_parameter_equality_with_shared():
+    """Test that SamplerParameter equality considers the shared attribute."""
+    sp1 = SamplerParameter(default_value=1.0, name="a", shared=True)
+    sp2 = SamplerParameter(default_value=1.0, name="a", shared=True)
+    sp3 = SamplerParameter(default_value=1.0, name="a", shared=False)
+
+    assert sp1 == sp2
+    assert sp1 != sp3
+
+
+def test_shared_parameter_across_updatable_instances():
+    """Test that shared=True parameters are consistent across multiple
+    instances of the same Updatable class.
+
+    When shared=True, the parameter should not receive a prefix, making it
+    the same across all instances. Both instances should receive the same
+    value from the ParamsMap when updated.
+    """
+
+    class UpdatableWithSharedParam(Updatable):
+        """An Updatable with a shared (non-prefixed) parameter."""
+
+        def __init__(self, prefix: str | None = None):
+            super().__init__(prefix)
+            # This parameter IS shared (shared=True), so it won't get a prefix
+            self.global_param = register_new_updatable_parameter(
+                default_value=1.0, shared=True
+            )
+            # This parameter is NOT shared (default), so it will get a prefix
+            self.local_param = register_new_updatable_parameter(default_value=2.0)
+
+    # Create two instances with different prefixes
+    instance1 = UpdatableWithSharedParam("inst1")
+    instance2 = UpdatableWithSharedParam("inst2")
+
+    # Verify that the shared parameter has no prefix in both instances
+    # pylint: disable=protected-access
+    assert instance1._sampler_parameters[0].fullname == "global_param"
+    assert instance2._sampler_parameters[0].fullname == "global_param"
+
+    # Verify that the non-shared parameter has different prefixes
+    assert instance1._sampler_parameters[1].fullname == "inst1_local_param"
+    assert instance2._sampler_parameters[1].fullname == "inst2_local_param"
+    # pylint: enable=protected-access
+
+    # Create a ParamsMap with a single value for global_param and different
+    # values for each instance's local_param
+    params = ParamsMap(
+        {
+            "global_param": 42.0,
+            "inst1_local_param": 10.0,
+            "inst2_local_param": 20.0,
+        }
+    )
+
+    # Update both instances
+    instance1.update(params)
+    instance2.update(params)
+
+    # Both instances should have the same value for global_param
+    assert instance1.global_param == 42.0
+    assert instance2.global_param == 42.0
+    assert instance1.global_param == instance2.global_param
+
+    # But different values for local_param
+    assert instance1.local_param == 10.0
+    assert instance2.local_param == 20.0
+
+
+def test_get_default_params_with_shared_parameters():
+    """Test that get_default_params and get_default_params_map work correctly
+    when two instances of the same Updatable class share a parameter.
+
+    When shared=True, both instances will have the same parameter name without
+    a prefix. The get_default_params should return a single entry for the shared
+    parameter and separate entries for the prefixed parameters.
+    """
+
+    class UpdatableWithSharedParam(Updatable):
+        """An Updatable with a shared (non-prefixed) parameter."""
+
+        def __init__(self, prefix: str | None = None):
+            super().__init__(prefix)
+            # This parameter IS shared (shared=True), so it won't get a prefix
+            self.global_param = register_new_updatable_parameter(
+                default_value=1.0, shared=True
+            )
+            # This parameter is NOT shared (default), so it will get a prefix
+            self.local_param = register_new_updatable_parameter(default_value=2.0)
+
+    # Create two instances with different prefixes
+    instance1 = UpdatableWithSharedParam("inst1")
+    instance2 = UpdatableWithSharedParam("inst2")
+
+    # Get default parameters from both instances
+    default_params = get_default_params(instance1, instance2)
+
+    # Should have 3 entries:
+    # - "global_param" (shared, appears once)
+    # - "inst1_local_param"
+    # - "inst2_local_param"
+    assert len(default_params) == 3
+    assert "global_param" in default_params
+    assert "inst1_local_param" in default_params
+    assert "inst2_local_param" in default_params
+
+    # Check default values
+    assert default_params["global_param"] == 1.0
+    assert default_params["inst1_local_param"] == 2.0
+    assert default_params["inst2_local_param"] == 2.0
+
+    # Test get_default_params_map as well
+    params_map = get_default_params_map(instance1, instance2)
+    assert params_map.get_from_full_name("global_param") == 1.0
+    assert params_map.get_from_full_name("inst1_local_param") == 2.0
+    assert params_map.get_from_full_name("inst2_local_param") == 2.0
+
+    # Verify we can update both instances with the default params map
+    instance1.update(params_map)
+    instance2.update(params_map)
+
+    # Both should have the same value for global_param
+    assert instance1.global_param == 1.0
+    assert instance2.global_param == 1.0
 
 
 def test_required_parameters_length():

@@ -2,8 +2,7 @@
 
 import os
 
-import sacc
-
+from firecrown.likelihood.factories import load_sacc_data
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood import TwoPoint, ConstGaussian
 
@@ -44,7 +43,7 @@ def build_likelihood(_):
     saccfile = os.path.expanduser(
         os.path.expandvars("${FIRECROWN_DIR}/examples/cosmicshear/cosmicshear.fits")
     )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    sacc_data = load_sacc_data(saccfile)
 
     # two-point functions will receive the appropriated sections of the SACC
     # file and the sources their respective dndz.

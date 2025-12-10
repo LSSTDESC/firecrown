@@ -944,6 +944,33 @@ def test_make_two_point_xy_valid_cmb_galaxy_needs_swap():
     assert xy.y_measurement == Galaxies.COUNTS
 
 
+def test_make_two_point_xy_missing_tracer_zdist():
+    """Test make_two_point_xy raises exception when tracer zdist not found.
+
+    Verifies that make_two_point_xy raises a ValueError with informative message
+    when a requested tracer name is not in the inferred galaxy z distributions
+    dictionary.
+    """
+    x = InferredGalaxyZDist(
+        bin_name="shear_bin_0",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},
+    )
+    # Only provide one tracer in the dictionary
+    inferred_dict = {"shear_bin_0": x}
+    # But request two tracers (second one doesn't exist)
+    tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
+    data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
+
+    with pytest.raises(ValueError) as exc_info:
+        make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    error_msg = str(exc_info.value)
+    assert "shear_bin_1" in error_msg
+    assert "not found in inferred galaxy z distributions" in error_msg
+
+
 def test_make_two_point_xy_missing_x_measurement():
     """Test make_two_point_xy when first tracer lacks required measurement."""
     x = InferredGalaxyZDist(

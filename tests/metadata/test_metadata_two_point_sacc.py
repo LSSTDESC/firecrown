@@ -1,8 +1,9 @@
-"""Tests for the modules firecrown.metata_types and firecrown.metadata_functions.
+"""Tests for the modules firecrown.metadata_types and firecrown.metadata_functions.
 
 In this module, we test the functions and classes involved SACC extraction tools.
 """
 
+import warnings
 import re
 import pytest
 import numpy as np
@@ -47,6 +48,8 @@ from firecrown.likelihood._two_point import (
     TwoPointFactory,
     use_source_factory,
 )
+
+# pylint: disable=too-many-lines
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
@@ -302,6 +305,44 @@ def test_extract_all_tracers_invalid_data_type(
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
 
+def test_extract_all_tracers_skips_non_nztracer() -> None:
+    """Test that extract_all_tracers_inferred_galaxy_zdists skips non-NZTracer types.
+
+    Verifies that when a SACC object contains both NZTracer and non-NZTracer types
+    (e.g., WeakLensingTracer, DeltaFunctionTracer), only the NZTracer instances are
+    extracted and returned. This tests the filtering logic on line 37-45 in
+    extract_all_tracers_inferred_galaxy_zdists.
+    """
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add NZTracer (should be included)
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    # Add a DeltaFunctionTracer (non-NZTracer, should be skipped)
+    sacc_data.add_tracer("misc", "sample")
+
+    # Add measurement data using only the NZTracer
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    # Extract tracers - should only get the NZTracer, skipping DeltaFunctionTracer
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+
+    # Verify only the NZTracer was extracted
+    assert len(all_tracers) == 1
+    assert all_tracers[0].bin_name == "src0"
+    assert_array_equal(all_tracers[0].z, z)
+    assert_array_equal(all_tracers[0].dndz, dndz)
+    assert all_tracers[0].measurements == {Galaxies.SHEAR_E}
+
+
 def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
@@ -358,7 +399,10 @@ def test_extract_no_window(
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
     indices = np.array([0, 1, 2], dtype=np.int64)
 
-    with pytest.warns(UserWarning):
+    with warnings.catch_warnings():
+        # Ensure no warning is emitted by this call. If one appears, treat it as an
+        # error.
+        warnings.simplefilter("error")  # turn warnings into exceptions
         window = extract_window_function(sacc_data, indices=indices)
         assert window[0] is None
         assert window[1] is None

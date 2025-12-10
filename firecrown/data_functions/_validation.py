@@ -43,6 +43,7 @@ def check_consistence(
     """
     seen_indices: set[int] = set()
     index_sets = []
+    measurements_names = []
     cov_name: None | str = None
 
     for measurement in measurements:
@@ -66,7 +67,7 @@ def check_consistence(
                 f"The indices of the {type_name} {measurement} are not unique."
             )
 
-        measurements_names = [f"{m}" for m in measurements]
+        measurements_names.append(f"{measurement}")
         if seen_indices & index_set:
             ensure_no_overlaps(
                 f"{measurement}", index_set, index_sets, measurements_names
