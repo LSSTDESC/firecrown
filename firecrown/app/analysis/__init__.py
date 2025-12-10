@@ -28,13 +28,11 @@ from ._types import (
     COSMO_DESC,
     CCL_COSMOLOGY_MINIMAL_SET,
 )
-from ._config_generator import (
-    get_generator,
-    CosmosisConfigGenerator,
-    NumCosmoConfigGenerator,
-    CobayaConfigGenerator,
-)
+from ._config_generator import get_generator
 from ._download import download_from_url, copy_template
+from ._cosmosis import CosmosisConfigGenerator
+from ._numcosmo import NumCosmoConfigGenerator
+from ._cobaya import CobayaConfigGenerator
 
 __all__ = [
     "AnalysisBuilder",
