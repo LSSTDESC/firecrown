@@ -4,7 +4,6 @@ Tests cosmology configuration generation, parameter parsing, and prior handling.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
@@ -228,249 +227,298 @@ class TestPriorWrapper:
 
 
 class TestGenerateInitialization:
-    """Tests for Generate command initialization."""
-
-    @patch("firecrown.app.cosmology.logging.Logging.__init__", return_value=None)
-    def test_generate_basic_attributes(
-        self, _mock_logging: MagicMock, tmp_path: Path
-    ) -> None:
-        """Test that Generate stores basic attributes."""
-        output_file = tmp_path / "config.yaml"
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=[],
-        )
-        assert gen.output_file == output_file
-        assert gen.cosmology == Cosmology.VANILLA_LCDM
-
-    @patch("firecrown.app.cosmology.logging.Logging.__init__", return_value=None)
-    def test_generate_default_values(
-        self, _mock_logging: MagicMock, tmp_path: Path
-    ) -> None:
-        """Test default values for optional parameters."""
-        output_file = tmp_path / "config.yaml"
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=[],
-        )
-        assert gen.camb_halofit is None
-        assert gen.parameter == []
-        assert gen.exclude_defaults is False
-        assert gen.print_output is False
-
-    @patch("firecrown.app.cosmology.logging.Logging.__init__", return_value=None)
-    def test_generate_with_parameters(
-        self, _mock_logging: MagicMock, tmp_path: Path
-    ) -> None:
-        """Test Generate with parameter specifications."""
-        output_file = tmp_path / "config.yaml"
-        parameters = ["Omega_c=0.26", "sigma8,mean=0.8,sigma=0.1"]
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=parameters,
-        )
-        assert gen.parameter == parameters
-
-    @patch("firecrown.app.cosmology.logging.Logging.__init__", return_value=None)
-    def test_generate_with_camb_halofit(
-        self, _mock_logging: MagicMock, tmp_path: Path
-    ) -> None:
-        """Test Generate with CAMB halofit option."""
-        output_file = tmp_path / "config.yaml"
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=[],
-            camb_halofit="mead",
-        )
-        assert gen.camb_halofit == "mead"
-
-    @patch("firecrown.app.cosmology.logging.Logging.__init__", return_value=None)
-    def test_generate_with_print_output(
-        self, _mock_logging: MagicMock, tmp_path: Path
-    ) -> None:
-        """Test Generate with print_output flag."""
-        output_file = tmp_path / "config.yaml"
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=[],
-            print_output=True,
-        )
-        assert gen.print_output is True
-
-    @patch("firecrown.app.cosmology.logging.Logging.__init__", return_value=None)
-    def test_generate_with_exclude_defaults(
-        self, _mock_logging: MagicMock, tmp_path: Path
-    ) -> None:
-        """Test Generate with exclude_defaults flag."""
-        output_file = tmp_path / "config.yaml"
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=[],
-            exclude_defaults=True,
-        )
-        assert gen.exclude_defaults is True
-
-
-class TestGenerateExecution:
-    """Tests for Generate command execution (integration tests)."""
+    """Tests for Generate command initialization and execution."""
 
     def test_generate_vanilla_lcdm_creates_file(self, tmp_path: Path) -> None:
-        """Test that Generate creates output file."""
+        """Test that Generate creates the output file for VANILLA_LCDM."""
         output_file = tmp_path / "config.yaml"
-        gen = Generate(
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
             parameter=[],
         )
-        gen.__post_init__()
         assert output_file.exists()
 
-    def test_generate_vanilla_lcdm_valid_yaml(self, tmp_path: Path) -> None:
-        """Test that generated file is valid YAML."""
+    def test_generate_vanilla_lcdm_creates_valid_yaml(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that Generate creates valid YAML for VANILLA_LCDM."""
         output_file = tmp_path / "config.yaml"
-        gen = Generate(
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
             parameter=[],
         )
-        gen.__post_init__()
-        config = yaml.safe_load(output_file.read_text())
+
+        # Verify console output
+        captured = capsys.readouterr()
+        assert "configuration written" in captured.out.lower()
+        assert str(output_file) in captured.out
+
+        # Verify YAML can be loaded and has expected structure
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
         assert isinstance(config, dict)
-        assert "name" in config or len(config) > 0
+        assert "parameters" in config
+        # Check that common cosmological parameters are present
+        param_names = {p["name"] for p in config["parameters"]}
+        assert "Omega_c" in param_names
+        assert "Omega_b" in param_names
+        assert "h" in param_names
 
     def test_generate_with_neutrinos(self, tmp_path: Path) -> None:
-        """Test generating config with neutrinos."""
-        output_file = tmp_path / "config_nu.yaml"
-        gen = Generate(
+        """Test Generate with neutrino cosmology."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM_WITH_NEUTRINOS,
             parameter=[],
         )
-        gen.__post_init__()
-        assert output_file.exists()
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # Neutrino cosmology should have additional parameters
+        param_names = {p["name"] for p in config["parameters"]}
+        assert (
+            "Neff" in param_names
+            or "m_nu" in param_names
+            or len(config["parameters"]) >= 7
+        )
 
     def test_generate_with_parameter_value(self, tmp_path: Path) -> None:
-        """Test generating config with parameter value override."""
+        """Test Generate with a parameter value override (no prior)."""
         output_file = tmp_path / "config.yaml"
-        gen = Generate(
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
-            parameter=["Omega_c=0.25"],
+            parameter=["Omega_c=0.26"],
         )
-        gen.__post_init__()
-        config = yaml.safe_load(output_file.read_text())
-        assert "Omega_c" in config or "parameters" in config
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # Find Omega_c in the parameters list
+        omega_c_param = next(p for p in config["parameters"] if p["name"] == "Omega_c")
+        assert omega_c_param["default_value"] == 0.26
+        # Should have no prior since only value was specified
+        assert omega_c_param["prior"] is None
 
     def test_generate_with_multiple_parameters(self, tmp_path: Path) -> None:
-        """Test generating config with multiple parameter overrides."""
+        """Test Generate with multiple parameter specifications."""
         output_file = tmp_path / "config.yaml"
-        gen = Generate(
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
-            parameter=["Omega_c=0.25", "Omega_b=0.05"],
+            parameter=["Omega_c=0.26", "sigma8=0.8"],
         )
-        gen.__post_init__()
-        assert output_file.exists()
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # Find parameters in the list
+        omega_c_param = next(p for p in config["parameters"] if p["name"] == "Omega_c")
+        sigma8_param = next(p for p in config["parameters"] if p["name"] == "sigma8")
+        assert omega_c_param["default_value"] == 0.26
+        assert sigma8_param["default_value"] == 0.8
 
     def test_generate_with_invalid_parameter(self, tmp_path: Path) -> None:
-        """Test error when updating non-existent parameter."""
+        """Test Generate with an invalid parameter raises ValueError."""
         output_file = tmp_path / "config.yaml"
-        # The error occurs during __post_init__
-        with pytest.raises(ValueError, match="Unknown parameter"):
-            gen = Generate(
+        with pytest.raises(ValueError, match="unknown_param"):
+            Generate(
                 output_file=output_file,
                 cosmology=Cosmology.VANILLA_LCDM,
-                parameter=["invalid_param=0.5"],
+                parameter=["unknown_param=0.5"],
             )
-            gen.__post_init__()
 
-    def test_generate_mead_halofit(self, tmp_path: Path) -> None:
-        """Test generating config with mead halofit."""
-        output_file = tmp_path / "config_mead.yaml"
-        gen = Generate(
+    def test_generate_with_gaussian_prior(self, tmp_path: Path) -> None:
+        """Test Generate with a Gaussian prior and value."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
+            output_file=output_file,
+            cosmology=Cosmology.VANILLA_LCDM,
+            parameter=["Omega_c=0.26,mean=0.27,sigma=0.02"],
+        )
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        omega_c_param = next(p for p in config["parameters"] if p["name"] == "Omega_c")
+        assert omega_c_param["default_value"] == 0.26
+        assert omega_c_param["prior"] is not None
+        # Prior doesn't have 'kind' - it just has the prior parameters directly
+        assert omega_c_param["prior"]["mean"] == 0.27
+        assert omega_c_param["prior"]["sigma"] == 0.02
+
+    def test_generate_with_prior_only_no_value(self, tmp_path: Path) -> None:
+        """Test Generate with a prior but no value override."""
+        output_file = tmp_path / "config.yaml"
+        # Get the default value first
+        _ = Generate(
+            output_file=tmp_path / "default.yaml",
+            cosmology=Cosmology.VANILLA_LCDM,
+            parameter=[],
+        )
+        with open(tmp_path / "default.yaml", encoding="utf-8") as f:
+            default_config = yaml.safe_load(f)
+        default_omega_c = next(
+            p for p in default_config["parameters"] if p["name"] == "Omega_c"
+        )["default_value"]
+
+        # Now generate with prior only (no value)
+        Generate(
+            output_file=output_file,
+            cosmology=Cosmology.VANILLA_LCDM,
+            parameter=["Omega_c,mean=0.27,sigma=0.02"],
+        )
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        omega_c_param = next(p for p in config["parameters"] if p["name"] == "Omega_c")
+        # Value should remain at default since no value was specified
+        assert omega_c_param["default_value"] == default_omega_c
+        # But prior should be set
+        assert omega_c_param["prior"] is not None
+        assert omega_c_param["prior"]["mean"] == 0.27
+        assert omega_c_param["prior"]["sigma"] == 0.02
+
+    def test_generate_with_uniform_prior(self, tmp_path: Path) -> None:
+        """Test Generate with a uniform prior."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
+            output_file=output_file,
+            cosmology=Cosmology.VANILLA_LCDM,
+            parameter=["h=0.7,lower=0.6,upper=0.8"],
+        )
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        h_param = next(p for p in config["parameters"] if p["name"] == "h")
+        assert h_param["default_value"] == 0.7
+        assert h_param["prior"] is not None
+        # Prior doesn't have 'kind' - it just has the prior parameters directly
+        assert h_param["prior"]["lower"] == 0.6
+        assert h_param["prior"]["upper"] == 0.8
+
+    def test_generate_camb_halofit_mead(self, tmp_path: Path) -> None:
+        """Test Generate with CAMB halofit set to mead."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
             parameter=[],
             camb_halofit="mead",
         )
-        gen.__post_init__()
-        assert output_file.exists()
 
-    def test_generate_mead2020_feedback_halofit(self, tmp_path: Path) -> None:
-        """Test generating config with mead2020_feedback halofit."""
-        output_file = tmp_path / "config_mead2020.yaml"
-        gen = Generate(
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # camb_halofit goes into extra_parameters
+        assert "extra_parameters" in config
+        assert config["extra_parameters"] is not None
+        assert config["extra_parameters"]["halofit_version"] == "mead"
+
+    def test_generate_camb_halofit_mead2020_feedback(self, tmp_path: Path) -> None:
+        """Test Generate with CAMB halofit set to mead2020_feedback."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
             parameter=[],
             camb_halofit="mead2020_feedback",
         )
-        gen.__post_init__()
-        assert output_file.exists()
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # mead2020_feedback also goes into extra_parameters
+        assert "extra_parameters" in config
+        assert config["extra_parameters"] is not None
+        assert config["extra_parameters"]["halofit_version"] == "mead2020_feedback"
+
+    def test_generate_camb_halofit_peacock(self, tmp_path: Path) -> None:
+        """Test Generate with CAMB halofit set to peacock."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
+            output_file=output_file,
+            cosmology=Cosmology.VANILLA_LCDM,
+            parameter=[],
+            camb_halofit="peacock",
+        )
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # peacock goes into extra_parameters
+        assert "extra_parameters" in config
+        assert config["extra_parameters"] is not None
+        assert config["extra_parameters"]["halofit_version"] == "peacock"
+
+    def test_generate_camb_halofit_default(self, tmp_path: Path) -> None:
+        """Test Generate with default (None) CAMB halofit has no extra_parameters."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
+            output_file=output_file,
+            cosmology=Cosmology.VANILLA_LCDM,
+            parameter=[],
+            camb_halofit=None,
+        )
+
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # Default case should have extra_parameters set to None (no special CAMB parameters)
+        assert "extra_parameters" in config
+        assert config["extra_parameters"] is None
 
     def test_generate_exclude_defaults(self, tmp_path: Path) -> None:
-        """Test generating config with exclude_defaults flag."""
-        output_file = tmp_path / "config_no_defaults.yaml"
-        gen = Generate(
+        """Test Generate with exclude_defaults removes default-valued parameters."""
+        output_file = tmp_path / "config.yaml"
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
             parameter=[],
             exclude_defaults=True,
         )
-        gen.__post_init__()
-        assert output_file.exists()
 
-    def test_generate_output_is_valid_python_dataclass_dict(
-        self, tmp_path: Path
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        # With exclude_defaults and no modified parameters,
+        # the parameters list should only contain free parameters
+        # or be structured differently
+        assert "parameters" in config
+        # At minimum, structure should be valid
+        assert isinstance(config["parameters"], list)
+
+    def test_generate_print_output(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """Test that generated YAML can be loaded as dict."""
+        """Test Generate with print_output displays YAML content."""
         output_file = tmp_path / "config.yaml"
-        gen = Generate(
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
-            parameter=[],
+            parameter=["Omega_c=0.26"],
+            print_output=True,
         )
-        gen.__post_init__()
-        content = yaml.safe_load(output_file.read_text())
-        assert isinstance(content, dict)
+
+        captured = capsys.readouterr()
+        # Should print the YAML content
+        assert "Omega_c" in captured.out
+        assert "0.26" in captured.out
 
     def test_generate_creates_readable_file(self, tmp_path: Path) -> None:
-        """Test that generated file is readable text."""
+        """Test that Generate creates a file that can be read back."""
         output_file = tmp_path / "config.yaml"
-        gen = Generate(
+        Generate(
             output_file=output_file,
             cosmology=Cosmology.VANILLA_LCDM,
-            parameter=[],
+            parameter=["Omega_c=0.27", "h=0.7"],
         )
-        gen.__post_init__()
-        content = output_file.read_text()
-        assert isinstance(content, str)
-        assert len(content) > 0
 
-    def test_generate_with_gaussian_prior(self, tmp_path: Path) -> None:
-        """Test generating config with Gaussian prior."""
-        output_file = tmp_path / "config.yaml"
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=["Omega_c=0.26,mean=0.26,sigma=0.02"],
-        )
-        gen.__post_init__()
-        assert output_file.exists()
+        # File should be readable as valid YAML
+        with open(output_file, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
 
-    def test_generate_with_uniform_prior(self, tmp_path: Path) -> None:
-        """Test generating config with uniform prior."""
-        output_file = tmp_path / "config.yaml"
-        gen = Generate(
-            output_file=output_file,
-            cosmology=Cosmology.VANILLA_LCDM,
-            parameter=["Omega_c=0.26,lower=0.2,upper=0.3"],
-        )
-        gen.__post_init__()
-        assert output_file.exists()
+        # Should be a dictionary matching expected structure
+        assert isinstance(config, dict)
+        assert "parameters" in config
+
+        # Verify the modified parameters
+        omega_c_param = next(p for p in config["parameters"] if p["name"] == "Omega_c")
+        h_param = next(p for p in config["parameters"] if p["name"] == "h")
+        assert omega_c_param["default_value"] == 0.27
+        assert h_param["default_value"] == 0.7

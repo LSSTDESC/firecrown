@@ -44,7 +44,7 @@ You may:
 3. Use configuration in parameter estimation pipeline
 """
 
-from typing import Annotated
+from typing import Annotated, assert_never
 import dataclasses
 from pathlib import Path
 from enum import StrEnum
@@ -242,8 +242,8 @@ class Generate(logging.Logging):
                 spec = CCLCosmologySpec.vanilla_lcdm()
             case Cosmology.VANILLA_LCDM_WITH_NEUTRINOS:
                 spec = CCLCosmologySpec.vanilla_lcdm_with_neutrinos()
-            case _:
-                raise ValueError(f"Unknown cosmology: {self.cosmology}")
+            case _ as unreachable:
+                assert_never(unreachable)
 
         if self.camb_halofit:
             match self.camb_halofit.lower():
@@ -266,7 +266,6 @@ class Generate(logging.Logging):
                     )
                 case _:
                     spec.extra_parameters = CAMBExtraParams(
-                        HMCode_logT_AGN=7.8,
                         dark_energy_model="ppf",
                         halofit_version=self.camb_halofit,
                         kmax=10.0,
