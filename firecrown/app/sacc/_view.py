@@ -340,7 +340,7 @@ class View(Load):
         self.console.rule("[bold blue]SACC Quality Checks[/bold blue]")
 
         # Step 1: Capture all output and warnings during SACC operations
-        stdout_buffer, stderr_buffer, captured_warnings, validation_error = (
+        stdout_buffer, stderr_buffer, captured_warnings = (
             self._capture_sacc_operations()
         )
 
@@ -392,7 +392,7 @@ class View(Load):
 
         # Report quality check results
         self._report_quality_check_results(
-            warning_handlers, stdout_handlers, stderr_handlers, validation_error
+            warning_handlers, stdout_handlers, stderr_handlers
         )
 
     def _report_quality_check_results(
@@ -400,7 +400,6 @@ class View(Load):
         warning_handlers: list[MessageHandler],
         stdout_handlers: list[StreamHandler],
         stderr_handlers: list[StreamHandler],
-        validation_error: str | None,
     ) -> None:
         """Report quality check results to console.
 
@@ -432,31 +431,22 @@ class View(Load):
         all_handlers.extend(stdout_handlers)
         all_handlers.extend(stderr_handlers)
         total_issues = sum(h.count() for h in all_handlers)
-        has_validation_error = validation_error is not None
 
-        if total_issues == 0 and not has_validation_error:
+        if total_issues == 0:
             self.console.print("[bold green]✅ All quality checks passed![/bold green]")
             return
 
-        # Step 7: Report validation error if present
-        if has_validation_error:
-            self.console.print(
-                f"[bold red]❌ Validation Error:[/bold red] {validation_error}"
-            )
-            self.console.print()
-
-        # Step 8: Report all issues from handlers
+        # Step 7: Report all issues from handlers
         for handler in all_handlers:
             if handler.count() > 0:
                 self.console.print(f"[yellow]{handler.get_title()}[/yellow]")
                 details = handler.get_details()
-                if details:
-                    self.console.print(details)
+                self.console.print(details)
                 self.console.print()
 
     def _capture_sacc_operations(
         self,
-    ) -> tuple[str, str, list[warnings.WarningMessage], str | None]:
+    ) -> tuple[str, str, list[warnings.WarningMessage]]:
         """Capture stdout, stderr, and warnings from SACC operations.
 
         This method loads the SACC file and extracts tracers in a controlled
@@ -474,8 +464,7 @@ class View(Load):
             - stdout_content: Captured standard output as string
             - stderr_content: Captured standard error as string
             - warnings_list: List of warning messages captured during operations
-            - validation_error: Error message if validation failed, None otherwise
-        :rtype: tuple[str, str, list[warnings.WarningMessage], str | None]
+        :rtype: tuple[str, str, list[warnings.WarningMessage]]
 
         .. note::
             This method uses context managers to safely redirect streams and
@@ -484,7 +473,6 @@ class View(Load):
         stdout_buffer = io.StringIO()
         stderr_buffer = io.StringIO()
         captured_warnings: list[warnings.WarningMessage] = []
-        validation_error: str | None = None
 
         with (
             contextlib.redirect_stdout(stdout_buffer),
@@ -492,24 +480,16 @@ class View(Load):
             warnings.catch_warnings(record=True) as w,
         ):
             warnings.simplefilter("always")
-            try:
-                # Load SACC data
-                sacc_data_raw = factories.load_sacc_data(str(self.sacc_file))
+            # Load SACC data
+            sacc_data_raw = factories.load_sacc_data(str(self.sacc_file))
 
-                # Extract tracers (this may trigger warnings about naming conventions)
-                _ = mdf.extract_all_tracers_inferred_galaxy_zdists(
-                    sacc_data_raw, allow_mixed_types=False
-                )
-                captured_warnings = list(w)
-            except ValueError as e:
-                validation_error = str(e)
+            # Extract tracers (this may trigger warnings about naming conventions)
+            _ = mdf.extract_all_tracers_inferred_galaxy_zdists(
+                sacc_data_raw, allow_mixed_types=False
+            )
+            captured_warnings = list(w)
 
-        return (
-            stdout_buffer.getvalue(),
-            stderr_buffer.getvalue(),
-            captured_warnings,
-            validation_error,
-        )
+        return (stdout_buffer.getvalue(), stderr_buffer.getvalue(), captured_warnings)
 
     def _plot_covariance(self) -> None:
         """Plot the covariance matrix with annotations for harmonic and real bins."""

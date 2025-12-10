@@ -531,8 +531,8 @@ class TestViewSpecialCases:
     ) -> None:
         """Test quality check when all checks pass (line 147 condition false).
 
-        This test specifically covers the case where total_issues == 0 and
-        has_validation_error is False, triggering the success message on line 148.
+        This test specifically covers the case where total_issues == 0, triggering the
+        success message on line 148.
         """
         # Create compliant SACC data that will pass all quality checks
         s = sacc.Sacc()
@@ -673,27 +673,25 @@ class TestViewSpecialCases:
         s.save_fits(str(sacc_path))
 
         # Patch _capture_sacc_operations to inject stdout messages
-        with patch("matplotlib.pyplot.show"):
-            with patch.object(
-                View,
-                "_capture_sacc_operations",
-                return_value=(
-                    "Some unhandled stdout message line 1\n"
-                    "Another unhandled stdout message line 2\n"
-                    "INFO: This is an informational message\n",
-                    "",  # stderr
-                    [],  # warnings
-                    None,  # validation_error
-                ),
-            ):
-                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
-                assert view.check is True
+        with patch.object(
+            View,
+            "_capture_sacc_operations",
+            return_value=(
+                "Some unhandled stdout message line 1\n"
+                "Another unhandled stdout message line 2\n"
+                "INFO: This is an informational message\n",
+                "",  # stderr
+                [],  # warnings
+            ),
+        ):
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            assert view.check is True
 
-                # Verify the quality check completed without errors
-                # Unhandled messages should be silently ignored or logged
-                captured = capsys.readouterr()
-                # Should still show quality checks header
-                assert "SACC Quality Checks" in captured.out
+            # Verify the quality check completed without errors
+            # Unhandled messages should be silently ignored or logged
+            captured = capsys.readouterr()
+            # Should still show quality checks header
+            assert "SACC Quality Checks" in captured.out
 
     def test_view_quality_check_with_unhandled_stderr_messages(
         self, tmp_path: Path, capsys: CaptureFixture[str]
@@ -722,25 +720,23 @@ class TestViewSpecialCases:
         s.save_fits(str(sacc_path))
 
         # Patch _capture_sacc_operations to inject stderr messages
-        with patch("matplotlib.pyplot.show"):
-            with patch.object(
-                View,
-                "_capture_sacc_operations",
-                return_value=(
-                    "",  # stdout
-                    "ERROR: Some unhandled error message\n"
-                    "WARNING: Unhandled warning in stderr\n"
-                    "DEBUG: Debug information\n",
-                    [],  # warnings
-                    None,  # validation_error
-                ),
-            ):
-                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
-                assert view.check is True
+        with patch.object(
+            View,
+            "_capture_sacc_operations",
+            return_value=(
+                "",  # stdout
+                "ERROR: Some unhandled error message\n"
+                "WARNING: Unhandled warning in stderr\n"
+                "DEBUG: Debug information\n",
+                [],  # warnings
+            ),
+        ):
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            assert view.check is True
 
-                # Verify the quality check completed without errors
-                captured = capsys.readouterr()
-                assert "SACC Quality Checks" in captured.out
+            # Verify the quality check completed without errors
+            captured = capsys.readouterr()
+            assert "SACC Quality Checks" in captured.out
 
     def test_view_quality_check_with_mixed_unhandled_messages(
         self, tmp_path: Path, capsys: CaptureFixture[str]
@@ -768,24 +764,21 @@ class TestViewSpecialCases:
         s.save_fits(str(sacc_path))
 
         # Patch _capture_sacc_operations to inject both stdout and stderr messages
-        with patch("matplotlib.pyplot.show"):
-            with patch.object(
-                View,
-                "_capture_sacc_operations",
-                return_value=(
-                    "STDOUT: Unhandled stdout message\n"
-                    "INFO: Information on stdout\n",
-                    "STDERR: Unhandled stderr message\nERROR: Error on stderr\n",
-                    [],  # warnings
-                    None,  # validation_error
-                ),
-            ):
-                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
-                assert view.check is True
+        with patch.object(
+            View,
+            "_capture_sacc_operations",
+            return_value=(
+                "STDOUT: Unhandled stdout message\nINFO: Information on stdout\n",
+                "STDERR: Unhandled stderr message\nERROR: Error on stderr\n",
+                [],  # warnings
+            ),
+        ):
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            assert view.check is True
 
-                # Verify the quality check completed
-                captured = capsys.readouterr()
-                assert "SACC Quality Checks" in captured.out
+            # Verify the quality check completed
+            captured = capsys.readouterr()
+            assert "SACC Quality Checks" in captured.out
 
     def test_view_quality_check_handlers_consume_all_lines(
         self, tmp_path: Path, capsys: CaptureFixture[str]
@@ -825,7 +818,6 @@ class TestViewSpecialCases:
                 "Line 5: Fifth message\n",
                 "StdErr Line 1\nStdErr Line 2\nStdErr Line 3\n",
                 [],  # warnings
-                None,  # validation_error
             ),
         ):
             view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
@@ -874,7 +866,6 @@ class TestViewSpecialCases:
                     "",  # stdout
                     "",  # stderr
                     [my_warning],  # warnings (will be unhandled)
-                    None,  # validation_error
                 ),
             ):
                 with pytest.raises(
@@ -924,7 +915,6 @@ class TestViewSpecialCases:
                     "Third stdout line\n",
                     "",  # stderr
                     [],  # warnings
-                    None,  # validation_error
                 ),
             ):
                 with pytest.raises(
@@ -978,7 +968,6 @@ class TestViewSpecialCases:
                     "Another stderr warning\n"
                     "Third stderr line\n",
                     [],  # warnings
-                    None,  # validation_error
                 ),
             ):
                 with pytest.raises(
@@ -1028,7 +1017,6 @@ class TestViewSpecialCases:
                     "Unhandled stdout message 1\nUnhandled stdout message 2\n",
                     "Unhandled stderr message 1\nUnhandled stderr message 2\n",
                     [],  # warnings
-                    None,  # validation_error
                 ),
             ):
                 with pytest.raises(
