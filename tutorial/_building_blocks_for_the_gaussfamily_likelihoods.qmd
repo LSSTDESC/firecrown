@@ -9,11 +9,11 @@ This is an abstract class that provides several features:
 For any `GaussFamily` likelihood, one must have one or more `Statistic`s.
 `Statistic` is an abstract base class for `TwoPoint` and `Supernova`.
 A `Statistic` provides access to observations (a *data vector*) and calculates predictions (a *theory vector*) based on a set of parameters (a *cosmology*).
-A `Statistic` is responsible for reading its data from a `sacc.SACC` object.
-A `Statistic` also has indices that are used to identify what blocks of covariance matrices in the `SACC` object will be read.
-A given `SACC` object may contain information from observations in many bins, but only those indicated by the indices in a `Statistic` will be read.
+A `Statistic` is responsible for reading its data from a `sacc.Sacc` object.
+A `Statistic` also has indices that are used to identify what blocks of covariance matrices in the `sacc.Sacc` object will be read.
+A given `sacc.Sacc` object may contain information from observations in many bins, but only those indicated by the indices in a `Statistic` will be read.
 `Statistic`s may also contain *systematics* that modify the theory vector it calculates.
-All `GaussFamily` likelihoods have an implementation of the `read` method that reads data covariance information from the provided `sacc.SACC` object.
+All `GaussFamily` likelihoods have an implementation of the `read` method that reads data covariance information from the provided `sacc.Sacc` object.
 These likelihoods use the indices from all of its (possibly many) `Statistic`s to build the covariance matrix for the likelihood.
 
 The class `firecrown.likelihood.TwoPoint` is a statistic that represents a two-point function.

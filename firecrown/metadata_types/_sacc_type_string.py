@@ -1,4 +1,45 @@
-"""Functions for converting between measurement types and SACC strings."""
+"""Functions for converting between measurement types and SACC strings.
+
+SACC Tracer Ordering Convention
+================================
+
+When SACC stores a cross-correlation between two tracers with different measurement
+types, the ordering of tracers must match the ordering of measurement types in the
+data type string. This convention ensures unambiguous interpretation of two-point
+measurements.
+
+The ordering is based on the numeric values of the Measurement enums:
+    - CMB comes before Clusters comes before Galaxies (by class)
+    - Within each class, measurements are ordered by their enum values
+
+**Auto-correlations (same measurement type):**
+    - Example: src0 × src0 with SHEAR_E × SHEAR_E → 'galaxy_shear_cl_ee'
+    - Both tracers have SHEAR_E, so tracer order doesn't matter
+    - SACC string: 'galaxy_shear_cl_ee' (single measurement type)
+
+**Cross-correlations (different measurement types):**
+    - Example: src0 has SHEAR_E, lens0 has COUNTS
+    - Since SHEAR_E < COUNTS (enum ordering), SHEAR_E must come first
+    - SACC string: 'galaxy_shearDensity_cl_e' (shear before density)
+    - Tracer order: (src0, lens0) ✓ CORRECT
+    - Tracer order: (lens0, src0) ✗ VIOLATION
+
+**How to detect violations:**
+    1. From auto-correlations, determine each tracer's measurement type
+       - src0 × src0 with 'galaxy_shear_cl_ee' → src0 is SHEAR_E
+       - lens0 × lens0 with 'galaxy_density_cl' → lens0 is COUNTS
+    2. For cross-correlations, verify tracer order matches type order
+       - 'galaxy_shearDensity_cl_e' maps to (SHEAR_E, COUNTS)
+       - If data has (lens0, src0) but lens0 is COUNTS and src0 is SHEAR_E,
+         this is a violation because COUNTS > SHEAR_E
+       - Correct order should be (src0, lens0)
+
+See Also
+--------
+- extract_all_measured_types() for type extraction logic
+- Transform._fix_ordering() for automated correction
+- MEASURED_TYPE_STRING_MAP for type string → measurement mapping
+"""
 
 from itertools import product
 

@@ -2,10 +2,15 @@
 Tests for the module firecrown.modeling_tools
 """
 
+import numpy as np
 import pytest
 import pyccl
 from firecrown.updatable import get_default_params_map
-from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
+from firecrown.modeling_tools import (
+    ModelingTools,
+    PowerspectrumModifier,
+)
+from firecrown.ccl_factory import Background, CCLCalculatorArgs
 from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 
 
@@ -146,6 +151,36 @@ def test_modeling_tools_add_pk_modifiers() -> None:
 
     assert tools.get_pk("dummy:dummy") is not None
     assert isinstance(tools.get_pk("dummy:dummy"), pyccl.Pk2D)
+
+
+def test_modeling_tools_get_pk_nonlinear_fails() -> None:
+    """Test get_pk raises RuntimeError when CCL fails to compute nonlinear Pk (line 88).
+
+    This test verifies that when ccl_cosmo.get_nonlin_power raises an
+    UnboundLocalError (which happens when using 'calculator' mode without
+    providing an explicit nonlinear Pk), the get_pk method raises a
+    RuntimeError with an informative message.
+    """
+    # Create a cosmology in calculator mode without nonlinear Pk
+    # This will cause get_nonlin_power to raise UnboundLocalError
+    tools = ModelingTools()
+    params = get_default_params_map(tools)
+    tools.update(params)
+    cosmo = pyccl.CosmologyVanillaLCDM()
+
+    z = np.linspace(0.0, 10.0, 200)
+    a = np.flip(1.0 / (1.0 + z))
+    chi = pyccl.comoving_radial_distance(cosmo, a)
+    h_over_h0 = pyccl.h_over_h0(cosmo, a)
+    tools.prepare(
+        calculator_args=CCLCalculatorArgs(
+            background=Background(a=a, chi=chi, h_over_h0=h_over_h0)
+        )
+    )
+
+    # Attempting to get a nonlinear power spectrum should raise RuntimeError
+    with pytest.raises(RuntimeError, match="CCL failed to compute the nonlinear"):
+        tools.get_pk("delta_matter:delta_matter")
 
 
 def test_get_pk_fallback_to_ccl_cosmology() -> None:

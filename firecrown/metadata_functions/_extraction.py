@@ -19,6 +19,7 @@ from firecrown.metadata_functions._combination_utils import (
 
 def extract_all_tracers_inferred_galaxy_zdists(
     sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
 ) -> list[mdt.InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
 
@@ -29,13 +30,18 @@ def extract_all_tracers_inferred_galaxy_zdists(
     and returns it in a list.
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
-    tracer_types = extract_all_measured_types(sacc_data)
-    for tracer0, tracer_types0 in tracer_types.items():
-        if len(tracer_types0) == 0:
-            raise ValueError(
-                f"Tracer {tracer0} does not have data points associated with it. "
-                f"Inconsistent SACC object."
-            )
+    tracer_types, _ = extract_all_measured_types(
+        sacc_data, allow_mixed_types=allow_mixed_types
+    )
+    for tracer in tracers:
+        if isinstance(tracer, sacc.tracers.NZTracer):
+            if (tracer.name not in tracer_types) or (
+                len(tracer_types[tracer.name]) == 0
+            ):
+                raise ValueError(
+                    f"Tracer {tracer.name} does not have data points "
+                    f"associated with it. Inconsistent SACC object."
+                )
 
     return [
         mdt.InferredGalaxyZDist(
@@ -45,6 +51,7 @@ def extract_all_tracers_inferred_galaxy_zdists(
             measurements=tracer_types[tracer.name],
         )
         for tracer in tracers
+        if isinstance(tracer, sacc.tracers.NZTracer)
     ]
 
 
@@ -58,6 +65,20 @@ def _sacc_convention_warning(
     match the tracer order). The auto-correction swaps tracer labels to conform to the
     convention, but this behavior is deprecated and will be removed in a future
     release.
+
+    **Understanding SACC Tracer Ordering:**
+
+    The SACC convention requires that in cross-correlations, the measurement type with
+    the lower enum value appears first in both:
+        1. The data type string (e.g., 'galaxy_shearDensity_cl_e')
+        2. The tracer pair (e.g., (src0, lens0))
+
+    Example violation:
+        - src0 has SHEAR_E (lower enum value)
+        - lens0 has COUNTS (higher enum value)
+        - Data type: 'galaxy_shearDensity_cl_e' correctly shows shear before density
+        - But data has tracers in order (lens0, src0) ← WRONG ORDER
+        - Correct order should be (src0, lens0) to match SHEAR_E < COUNTS
 
     :param tracer1: Name of the first tracer in the original SACC data.
     :param tracer2: Name of the second tracer in the original SACC data.
@@ -107,48 +128,51 @@ def _extract_data_types_from_sacc(
     :return: Set of (data_type, tracer1, tracer2) tuples.
     """
     data_points = sacc_data.get_data_points()
-    return {(d.data_type, d.tracers[0], d.tracers[1]) for d in data_points}
+    return {
+        (d.data_type, d.tracers[0], d.tracers[1])
+        for d in data_points
+        if d.data_type in mdt.MEASURED_TYPE_STRING_MAP
+    }
 
 
 def _initialize_tracer_types(
     all_data_types: set[tuple[str, str, str]],
 ) -> dict[str, set[mdt.Measurement]]:
-    """Initialize detected_types dictionary with empty sets for all tracers.
+    """Initialize tracer_types dictionary with empty sets for all tracers.
 
     :param all_data_types: Set of (data_type, tracer1, tracer2) tuples.
     :return: Dictionary mapping tracer names to empty measurement sets.
     """
-    detected_types: dict[str, set[mdt.Measurement]] = {}
+    tracer_types: dict[str, set[mdt.Measurement]] = {}
     for _, tracer1, tracer2 in all_data_types:
-        detected_types.setdefault(tracer1, set())
-        detected_types.setdefault(tracer2, set())
-    return detected_types
+        tracer_types.setdefault(tracer1, set())
+        tracer_types.setdefault(tracer2, set())
+    return tracer_types
 
 
 def _process_single_type_measurements(
     all_data_types: set[tuple[str, str, str]],
-    detected_types: dict[str, set[mdt.Measurement]],
+    tracer_types: dict[str, set[mdt.Measurement]],
 ) -> None:
     """Process measurements where both tracers have the same measurement type.
 
-    Modifies detected_types in place.
+    Modifies tracer_types in place.
 
     :param all_data_types: Set of (data_type, tracer1, tracer2) tuples.
-    :param detected_types: Dictionary to update with detected measurement types.
+    :param tracer_types: Dictionary to update with detected measurement types.
     """
     for data_type, tracer1, tracer2 in all_data_types:
-        if data_type not in mdt.MEASURED_TYPE_STRING_MAP:
-            continue
+        assert data_type in mdt.MEASURED_TYPE_STRING_MAP
         a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
         if a == b:
-            detected_types[tracer1].update({a})
-            detected_types[tracer2].update({b})
+            tracer_types[tracer1].update({a})
+            tracer_types[tracer2].update({b})
 
 
 def _should_swap_tracers_for_convention(
     a: mdt.Measurement,
     b: mdt.Measurement,
-    detected_types: dict[str, set[mdt.Measurement]],
+    tracer_types: dict[str, set[mdt.Measurement]],
     tracer1: str,
     tracer2: str,
 ) -> bool:
@@ -156,45 +180,44 @@ def _should_swap_tracers_for_convention(
 
     :param a: First measurement type.
     :param b: Second measurement type.
-    :param detected_types: Current detected types for all tracers.
+    :param tracer_types: Current detected types for all tracers.
     :param tracer1: Name of first tracer.
     :param tracer2: Name of second tracer.
     :return: True if swapping would reduce mixing, False otherwise.
     """
     # Count new types in original configuration
-    n_original = len({a} | detected_types[tracer1]) + len({b} | detected_types[tracer2])
+    n_original = len({a} | tracer_types[tracer1]) + len({b} | tracer_types[tracer2])
     # Count new types in swapped configuration
-    n_swapped = len({a} | detected_types[tracer2]) + len({b} | detected_types[tracer1])
+    n_swapped = len({a} | tracer_types[tracer2]) + len({b} | tracer_types[tracer1])
     return n_original > n_swapped
 
 
 def _process_two_type_measurements(
     all_data_types: set[tuple[str, str, str]],
-    detected_types: dict[str, set[mdt.Measurement]],
+    tracer_types: dict[str, set[mdt.Measurement]],
     allow_mixed_types: bool,
 ) -> None:
     """Process measurements where tracers have different measurement types.
 
     Attempts auto-correction if allow_mixed_types=False and convention violations
-    are detected. Modifies detected_types in place.
+    are detected. Modifies tracer_types in place.
 
     :param all_data_types: Set of (data_type, tracer1, tracer2) tuples.
-    :param detected_types: Dictionary to update with detected measurement types.
+    :param tracer_types: Dictionary to update with detected measurement types.
     :param allow_mixed_types: Whether to allow mixed-type measurements.
     """
     for data_type, tracer1, tracer2 in all_data_types:
-        if data_type not in mdt.MEASURED_TYPE_STRING_MAP:
-            continue
+        assert data_type in mdt.MEASURED_TYPE_STRING_MAP
         a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
         if a != b:
             # Skip if types are already correctly assigned
-            if (a in detected_types[tracer1]) and (b in detected_types[tracer2]):
+            if (a in tracer_types[tracer1]) and (b in tracer_types[tracer2]):
                 continue
 
             # Attempt auto-correction for convention violations
             if not allow_mixed_types:
                 if _should_swap_tracers_for_convention(
-                    a, b, detected_types, tracer1, tracer2
+                    a, b, tracer_types, tracer1, tracer2
                 ):
                     warnings.warn(
                         _sacc_convention_warning(tracer1, tracer2, data_type, a, b),
@@ -202,22 +225,22 @@ def _process_two_type_measurements(
                     )
                     a, b = b, a
 
-            detected_types[tracer1].update({a})
-            detected_types[tracer2].update({b})
+            tracer_types[tracer1].update({a})
+            tracer_types[tracer2].update({b})
 
 
 def _validate_tracer_types(
-    detected_types: dict[str, set[mdt.Measurement]],
+    tracer_types: dict[str, set[mdt.Measurement]],
     allow_mixed_types: bool,
 ) -> None:
     """Validate that mixed-type measurements comply with allow_mixed_types setting.
 
-    :param detected_types: Dictionary mapping tracer names to measurement types.
+    :param tracer_types: Dictionary mapping tracer names to measurement types.
     :param allow_mixed_types: Whether to allow mixed-type measurements.
     :raises ValueError: If a tracer has multiple measurement types and
         allow_mixed_types=False.
     """
-    for tracer, measurements in detected_types.items():
+    for tracer, measurements in tracer_types.items():
         has_mixed, list_types = mdt.measurements_types(measurements)
         if has_mixed and not allow_mixed_types:
             raise ValueError(
@@ -231,9 +254,35 @@ def _validate_tracer_types(
             )
 
 
+def _check_tracer_swap_needed(
+    a: mdt.Measurement,
+    b: mdt.Measurement,
+    tracer_types: dict[str, set[mdt.Measurement]],
+    combo: tuple[str, str],
+    allow_mixed_types: bool,
+) -> bool:
+    """Check if tracers need to be swapped to follow SACC convention.
+
+    This function determines if the assignment of measurement types to tracers
+    violates the SACC naming convention and whether swapping would fix it.
+
+    :param a: First measurement type from data type string.
+    :param b: Second measurement type from data type string.
+    :param tracer_types: Dictionary mapping tracer names to their measurement types.
+    :param combo: Tuple of (tracer1_name, tracer2_name).
+    :param allow_mixed_types: Whether to allow mixed-type measurements.
+    :return: True if tracers should be swapped, False otherwise.
+    """
+    return (
+        (not allow_mixed_types)
+        and ((a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]]))
+        and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]]))
+    )
+
+
 def extract_all_measured_types(
     sacc_data: sacc.Sacc, allow_mixed_types: bool = False
-) -> dict[str, set[mdt.Measurement]]:
+) -> tuple[dict[str, set[mdt.Measurement]], list[str]]:
     """Extract all Measurement types associated with each tracer from a SACC object.
 
     This function analyzes the SACC data points to determine which Measurement types
@@ -242,17 +291,35 @@ def extract_all_measured_types(
     galaxy shear, galaxy counts, or CMB convergence), as these represent distinct
     observational probes.
 
-    SACC Convention & Auto-Correction
-    ---------------------------------
-    SACC follows a strict naming convention for measurement types: the order of
-    measurement types in a data type string must match the order of the associated
-    tracers. This ensures unambiguous interpretation of two-point measurements.
+    **SACC Tracer Ordering Convention**
 
-    If your SACC file violates this convention (causing a tracer to have multiple
-    measurement types), this function will attempt to auto-correct it by swapping
-    tracer labels when allow_mixed_types=False. This auto-correction is provided as a
-    convenience for legacy SACC files but is **deprecated** and will be removed in a
-    future release.
+    SACC enforces a strict ordering convention for cross-correlations between different
+    measurement types. The measurement type with the lower enum value must appear first
+    in both:
+
+        1. The data type string (e.g., 'galaxy_shearDensity_cl_e')
+        2. The tracer pair order (e.g., (src0, lens0))
+
+    **Example - How Ordering is Determined:**
+
+    Consider two tracers: src0 and lens0
+
+    Step 1: Identify measurement types from auto-correlations
+        - src0 × src0 with 'galaxy_shear_cl_ee' → src0 has SHEAR_E
+        - lens0 × lens0 with 'galaxy_density_cl' → lens0 has COUNTS
+
+    Step 2: Check cross-correlation ordering
+        - Since SHEAR_E < COUNTS (enum ordering)
+        - The cross-correlation SACC string is 'galaxy_shearDensity_cl_e'
+        - Correct tracer order: (src0, lens0) ✓
+        - Incorrect tracer order: (lens0, src0) ✗ VIOLATION
+
+    **Auto-Correction (Deprecated)**
+
+    If your SACC file violates this convention, this function will attempt to
+    auto-correct it by swapping tracer labels when allow_mixed_types=False. This
+    auto-correction is provided as a convenience for legacy SACC files but is
+    **deprecated** and will be removed in a future release.
 
     Behavior Summary
     ----------------
@@ -279,24 +346,32 @@ def extract_all_measured_types(
     """
     # Extract data type information from SACC
     all_data_types = _extract_data_types_from_sacc(sacc_data)
+    data_types = sacc_data.get_data_types()
 
     # Initialize measurement type tracking
-    detected_types = _initialize_tracer_types(all_data_types)
+    tracer_types = _initialize_tracer_types(all_data_types)
 
     # Process single-type measurements (a == b)
-    _process_single_type_measurements(all_data_types, detected_types)
+    _process_single_type_measurements(all_data_types, tracer_types)
 
     # Process two-type measurements (a != b) with auto-correction if needed
-    _process_two_type_measurements(all_data_types, detected_types, allow_mixed_types)
+    _process_two_type_measurements(all_data_types, tracer_types, allow_mixed_types)
 
     # Validate result
-    _validate_tracer_types(detected_types, allow_mixed_types)
+    _validate_tracer_types(tracer_types, allow_mixed_types)
 
-    return detected_types
+    # Filter all data types in data_types and keep only in all_data_types
+    data_types_in_all = {data_type for data_type, _, _ in all_data_types}
+    data_types = [
+        data_type for data_type in data_types if data_type in data_types_in_all
+    ]
+
+    return tracer_types, data_types
 
 
 def extract_all_real_metadata_indices(
     sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
     allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointRealIndex]:
     """Extract all two-point function metadata from a sacc file.
@@ -305,9 +380,7 @@ def extract_all_real_metadata_indices(
     made in real space  from a Sacc object.
     """
     tag_name = "theta"
-
-    data_types = sacc_data.get_data_types()
-    tracer_types = extract_all_measured_types(sacc_data)
+    tracer_types, data_types = extract_all_measured_types(sacc_data, allow_mixed_types)
 
     data_types_reals = [
         data_type for data_type in data_types if tag_name in required_tags[data_type]
@@ -318,7 +391,6 @@ def extract_all_real_metadata_indices(
             for data_type in data_types_reals
             if data_type in allowed_data_type
         ]
-
     all_real_indices: list[TwoPointRealIndex] = []
     for data_type in data_types_reals:
         a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
@@ -327,12 +399,9 @@ def extract_all_real_metadata_indices(
                 raise ValueError(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
-            if (
-                (a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]])
-            ) and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]])):
+            if _check_tracer_swap_needed(a, b, tracer_types, combo, allow_mixed_types):
                 # Swap the order of the tracer types due to the convention
                 a, b = b, a
-
             all_real_indices.append(
                 {
                     "data_type": data_type,
@@ -345,13 +414,13 @@ def extract_all_real_metadata_indices(
 
 
 def extract_all_harmonic_metadata_indices(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
+    allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointHarmonicIndex]:
     """Extracts the two-point function metadata from a sacc file."""
     tag_name = "ell"
-
-    data_types = sacc_data.get_data_types()
-    tracer_types = extract_all_measured_types(sacc_data)
+    tracer_types, data_types = extract_all_measured_types(sacc_data, allow_mixed_types)
 
     data_types_cells = [
         data_type for data_type in data_types if tag_name in required_tags[data_type]
@@ -372,9 +441,7 @@ def extract_all_harmonic_metadata_indices(
                 raise ValueError(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
-            if (
-                (a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]])
-            ) and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]])):
+            if _check_tracer_swap_needed(a, b, tracer_types, combo, allow_mixed_types):
                 # Swap the order of the tracer types due to the convention
                 a, b = b, a
 
@@ -392,6 +459,7 @@ def extract_all_harmonic_metadata_indices(
 def extract_all_harmonic_metadata(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
+    allow_mixed_types: bool = False,
     bin_pair_selector: None | mdt.BinPairSelector = None,
 ) -> list[mdt.TwoPointHarmonic]:
     """Extract two-point harmonic-space metadata and data from a SACC file.
@@ -405,12 +473,14 @@ def extract_all_harmonic_metadata(
     """
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+        for igz in extract_all_tracers_inferred_galaxy_zdists(
+            sacc_data, allow_mixed_types
+        )
     }
 
     result: list[mdt.TwoPointHarmonic] = []
     for cell_index in extract_all_harmonic_metadata_indices(
-        sacc_data, allowed_data_type
+        sacc_data, allow_mixed_types, allowed_data_type
     ):
         tracer_names = cell_index["tracer_names"]
         dt = cell_index["data_type"]
@@ -448,6 +518,7 @@ def extract_all_harmonic_metadata(
 def extract_all_real_metadata(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
+    allow_mixed_types: bool = False,
     bin_pair_selector: None | mdt.BinPairSelector = None,
 ) -> list[mdt.TwoPointReal]:
     """Extract two-point real-space metadata and data from a SACC file.
@@ -461,11 +532,15 @@ def extract_all_real_metadata(
     """
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+        for igz in extract_all_tracers_inferred_galaxy_zdists(
+            sacc_data, allow_mixed_types
+        )
     }
 
     tprs: list[mdt.TwoPointReal] = []
-    for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
+    for real_index in extract_all_real_metadata_indices(
+        sacc_data, allow_mixed_types, allowed_data_type
+    ):
         tracer_names = real_index["tracer_names"]
         dt = real_index["data_type"]
 
@@ -489,7 +564,9 @@ def extract_all_real_metadata(
 
 
 def extract_all_photoz_bin_combinations(
-    sacc_data: sacc.Sacc, bin_pair_selector: None | mdt.BinPairSelector = None
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False, 
+    bin_pair_selector: None | mdt.BinPairSelector = None,
 ) -> list[mdt.TwoPointXY]:
     """Extract all two-point bin pair combinations from a SACC file.
 
@@ -498,7 +575,9 @@ def extract_all_photoz_bin_combinations(
         If None, all valid bin pairs are returned.
     :return: List of TwoPointXY objects representing valid bin pair combinations.
     """
-    inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(
+        sacc_data, allow_mixed_types
+    )
     bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
 
     if bin_pair_selector is not None:
@@ -525,7 +604,12 @@ def extract_window_function(
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
     """
-    bandpower_window = sacc_data.get_bandpower_windows(indices)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="No bandpower windows associated with these data",
+        )
+        bandpower_window = sacc_data.get_bandpower_windows(indices)
     if bandpower_window is None:
         return None, None
     ells = bandpower_window.values

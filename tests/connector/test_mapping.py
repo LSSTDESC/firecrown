@@ -18,7 +18,52 @@ from firecrown.parameters import ParamsMap
 
 
 # TODO: Refactor these test functions to use a sensible fixture.
-def test_conversion_from_cosmosis_camb():
+def test_conversion_from_cosmosis_camb_as():
+    cosmosis_params = {
+        "a_s": 2.1e-09,
+        "baryon_fraction": 0.13333333333333333,
+        "cs2_de": 1.0,
+        "h0": 0.72,
+        "hubble": 72.0,
+        "k": -0.01,
+        "k_s": 0.05000000074505806,
+        "n_run": 0.01,
+        "n_s": 0.96,
+        "ombh2": 0.020735999999999997,
+        "omch2": 0.134784,
+        "omega_b": 0.04,
+        "omega_c": 0.26,
+        "omega_k": 0.01,
+        "omega_lambda": 0.7,
+        "omega_m": 0.3,
+        "omega_nu": 0.00624525169,
+        "ommh2": 0.15552,
+        "omnuh2": 0.01,
+        "r_t": 0.01,
+        "tau": 0.08,
+        "w": -1.0,
+        "wa": 0.01,
+        "yhe": 0.23999999463558197,
+    }
+    named_params = NamedParameters(cosmosis_params)
+    p = mapping.mapping_builder(input_style="CosmoSIS")
+    assert isinstance(p, MappingCosmoSIS)
+    p.set_params_from_cosmosis(named_params)
+    assert p.Omega_c == cosmosis_params["omega_c"]
+    assert p.Omega_b == cosmosis_params["omega_b"]
+    assert p.h == cosmosis_params["h0"]
+    assert p.A_s == cosmosis_params["a_s"]
+    assert p.sigma8 is None
+    assert p.n_s == cosmosis_params["n_s"]
+    assert p.Omega_k == cosmosis_params["omega_k"]
+    assert p.Neff == pytest.approx(3.046)
+    assert p.m_nu == pytest.approx(0.3015443336635814)
+    assert p.w0 == cosmosis_params["w"]
+    assert p.wa == cosmosis_params["wa"]
+    assert p.T_CMB == 2.7255  # currently hard-wired
+
+
+def test_conversion_from_cosmosis_camb_sigma8():
     cosmosis_params = {
         "a_s": 2.1e-09,
         "baryon_fraction": 0.13333333333333333,
@@ -376,21 +421,21 @@ def test_mapping_camb_setting_sigma8():
 
 
 def test_mapping_m_nu_list_asdict():
-    mapping = Mapping()
-    mapping.Omega_c = 0.26
-    mapping.Omega_b = 0.04
-    mapping.h = 0.72
-    mapping.A_s = 1.0e-9
-    mapping.sigma8 = None
-    mapping.n_s = 0.96
-    mapping.Omega_k = 0.0
-    mapping.Neff = 3.046
-    mapping.m_nu_type = "list"
-    mapping.w0 = -1.0
-    mapping.wa = 0.0
-    mapping.T_CMB = 2.7255
-    mapping.m_nu = [1.0, 2.0, 3.0]
-    d = mapping.asdict()
+    mapping0 = Mapping()
+    mapping0.Omega_c = 0.26
+    mapping0.Omega_b = 0.04
+    mapping0.h = 0.72
+    mapping0.A_s = 1.0e-9
+    mapping0.sigma8 = None
+    mapping0.n_s = 0.96
+    mapping0.Omega_k = 0.0
+    mapping0.Neff = 3.046
+    mapping0.m_nu_type = "list"
+    mapping0.w0 = -1.0
+    mapping0.wa = 0.0
+    mapping0.T_CMB = 2.7255
+    mapping0.m_nu = [1.0, 2.0, 3.0]
+    d = mapping0.asdict()
     assert d["m_nu"] == 1.0
     assert d["m_nu_2"] == 2.0
     assert d["m_nu_3"] == 3.0
