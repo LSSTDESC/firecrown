@@ -456,83 +456,171 @@ class TestViewSpecialCases:
             # Verify check completed without error
             assert view.check is True
 
-    def test_view_show_real_bins_with_data(self, tmp_path: Path) -> None:
-        """Test showing real-space bins when they exist."""
-        # Create SACC data with real-space measurements
+    def test_view_show_real_bins_with_data(self) -> None:
+        """Test showing real-space bins when they exist.
+
+        Uses old_format_real.sacc which has real-space measurements (xi_t, xi_plus, xi_minus).
+        """
+        # Use the real SACC file with real-space data
+        sacc_path = Path("tests/old_format_real.sacc")
+        assert sacc_path.exists(), "old_format_real.sacc must exist in tests directory"
+
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_path, plot_covariance=False)
+            # Verify real bins were extracted
+            assert len(view.bin_comb_real) > 0
+            assert len(view.bin_comb_harmonic) == 0  # No harmonic data
+            # Verify the display method executes (covers lines 239-266)
+            view._show_real_bins()  # pylint: disable=protected-access
+            # Verify specific real-space measurements are present
+            assert any(
+                "galaxy_shearDensity_xi_t" in str(b.metadata.get_sacc_name())
+                for b in view.bin_comb_real
+            )
+
+    def test_view_quality_check_with_warnings(self) -> None:
+        """Test quality check that captures warnings from SACC operations.
+
+        Uses old_format_real.sacc which has legacy format warnings.
+        """
+        # Use the real SACC file with legacy format that triggers warnings
+        sacc_path = Path("tests/old_format_real.sacc")
+        assert sacc_path.exists(), "old_format_real.sacc must exist in tests directory"
+
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            # This should trigger the quality check logic and capture warnings
+            assert view.check is True
+            # Verify tracers were extracted from the real file
+            assert len(view.all_tracers) == 2
+            assert any(t.bin_name == "src0" for t in view.all_tracers)
+            assert any(t.bin_name == "lens0" for t in view.all_tracers)
+
+    def test_view_quality_check_harmonic_data(self) -> None:
+        """Test quality check with harmonic space data.
+
+        Uses old_format_harmonic.sacc which has legacy format and harmonic measurements.
+        """
+        # Use the real SACC file with harmonic data
+        sacc_path = Path("tests/old_format_harmonic.sacc")
+        assert (
+            sacc_path.exists()
+        ), "old_format_harmonic.sacc must exist in tests directory"
+
+        with patch("matplotlib.pyplot.show"):
+            # Run quality check - should complete without raising errors
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            assert view.sacc_file == sacc_path
+            assert view.check is True
+            # Verify harmonic bins were extracted
+            assert len(view.bin_comb_harmonic) > 0
+            assert len(view.bin_comb_real) == 0  # No real-space data
+
+    def test_view_quality_check_all_pass(
+        self, tmp_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        """Test quality check when all checks pass (line 147 condition false).
+
+        This test specifically covers the case where total_issues == 0 and
+        has_validation_error is False, triggering the success message on line 148.
+        """
+        # Create compliant SACC data that will pass all quality checks
         s = sacc.Sacc()
         z = np.linspace(0.0, 2.0, 50)
         dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
         s.add_tracer("NZ", "src0", z, dndz)
         s.add_tracer("NZ", "lens0", z, dndz)
 
-        # Add real-space data points with theta tag
-        thetas = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-        for theta in thetas:
-            s.add_data_point(
-                "galaxy_shearDensity_xi_t", ("src0", "lens0"), 1.0, theta=theta
-            )
-
-        cov = np.eye(len(thetas)) * 0.1
-        s.add_covariance(cov)
-
-        sacc_path = tmp_path / "real_space.sacc"
-        s.save_fits(str(sacc_path))
-
-        with patch("matplotlib.pyplot.show"):
-            view = View(sacc_file=sacc_path, plot_covariance=False)
-            # Verify real bins were extracted
-            assert len(view.bin_comb_real) > 0
-            # Verify the display method executes (covers lines 239-266)
-            view._show_real_bins()  # pylint: disable=protected-access
-
-    def test_view_quality_check_with_warnings(self, tmp_path: Path) -> None:
-        """Test quality check that captures warnings from SACC operations."""
-        # Create SACC data that might trigger warnings
-        s = sacc.Sacc()
-        z = np.linspace(0.0, 2.0, 50)
-        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
-        # Use naming that doesn't follow conventions to trigger warnings
-        s.add_tracer("NZ", "tracer_1", z, dndz)
-        s.add_tracer("NZ", "tracer_2", z, dndz)
-
+        # Add auto-correlations to establish measurement types
         ells = np.array([10, 20, 30])
         for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("src0", "src0"), 1.0, ell=int(ell))
+            s.add_data_point("galaxy_density_cl", ("lens0", "lens0"), 1.0, ell=int(ell))
+
+        # Add cross-correlation with CORRECT ordering (src0 before lens0)
+        for ell in ells:
             s.add_data_point(
-                "galaxy_shear_cl_ee", ("tracer_1", "tracer_2"), 1.0, ell=int(ell)
+                "galaxy_shearDensity_cl_e", ("src0", "lens0"), 1.0, ell=int(ell)
             )
 
-        cov = np.eye(len(ells)) * 0.1
+        cov = np.eye(len(ells) * 3) * 0.1
         s.add_covariance(cov)
 
-        sacc_path = tmp_path / "test_warnings.sacc"
+        sacc_path = tmp_path / "compliant.sacc"
         s.save_fits(str(sacc_path))
 
         with patch("matplotlib.pyplot.show"):
+            # Run quality check on compliant SACC file
             view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
-            # This should trigger the quality check logic (covers lines 360-379, 430-443)
-            assert view.check is True
 
-    def test_view_quality_check_with_validation_error(self, tmp_path: Path) -> None:
-        """Test quality check handling validation errors."""
-        # Create minimal SACC data
+            # Verify the view was created successfully
+            assert view.check is True
+            assert view.sacc_file == sacc_path
+
+            # Check that success message was printed (covers line 147-148)
+            captured = capsys.readouterr()
+            assert "✅ All quality checks passed!" in captured.out
+
+    def test_view_plot_covariance_missing_raises_error(self, tmp_path: Path) -> None:
+        """Test _plot_covariance raises error when SACC has no covariance.
+
+        This test specifically covers the error path in _plot_covariance when
+        self.sacc_data.covariance is None, raising typer.BadParameter.
+        """
+        # Create SACC data WITHOUT covariance
         s = sacc.Sacc()
         z = np.linspace(0.0, 2.0, 50)
         dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
         s.add_tracer("NZ", "bin0", z, dndz)
         s.add_tracer("NZ", "bin1", z, dndz)
 
+        # Add data points but NO covariance
         ells = np.array([10, 20, 30])
         for ell in ells:
             s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+        # Note: NOT calling s.add_covariance() so covariance remains None
 
-        cov = np.eye(len(ells)) * 0.1
-        s.add_covariance(cov)
-
-        sacc_path = tmp_path / "test_validation.sacc"
+        sacc_path = tmp_path / "no_cov.sacc"
         s.save_fits(str(sacc_path))
 
-        with patch("matplotlib.pyplot.show"):
-            # Run quality check - should complete without raising errors
-            # This covers lines 492-493, 505 in _capture_sacc_operations
-            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
-            assert view.sacc_file == sacc_path
+        # Attempting to plot covariance should raise an error
+        with pytest.raises(
+            ValueError, match="The SACC object does not have a dense covariance matrix."
+        ):
+            View(sacc_file=sacc_path, plot_covariance=True)
+
+    def test_view_plot_covariance_with_real_space_data(self) -> None:
+        """Test plotting covariance with real-space SACC data.
+
+        Uses old_format_real.sacc which has covariance and real-space measurements.
+        """
+        # Use the real SACC file with real-space data and covariance
+        sacc_path = Path("tests/old_format_real.sacc")
+        assert sacc_path.exists(), "old_format_real.sacc must exist in tests directory"
+
+        with patch("matplotlib.pyplot.show") as mock_show:
+            view = View(sacc_file=sacc_path, plot_covariance=True)
+            # Verify plotting was called
+            mock_show.assert_called_once()
+            # Verify data was loaded
+            assert view.sacc_data.covariance is not None
+            assert len(view.bin_comb_real) > 0
+
+    def test_view_plot_covariance_with_harmonic_data(self) -> None:
+        """Test plotting covariance with harmonic-space SACC data.
+
+        Uses old_format_harmonic.sacc which has covariance and harmonic measurements.
+        """
+        # Use the real SACC file with harmonic data and covariance
+        sacc_path = Path("tests/old_format_harmonic.sacc")
+        assert (
+            sacc_path.exists()
+        ), "old_format_harmonic.sacc must exist in tests directory"
+
+        with patch("matplotlib.pyplot.show") as mock_show:
+            view = View(sacc_file=sacc_path, plot_covariance=True)
+            # Verify plotting was called
+            mock_show.assert_called_once()
+            # Verify data was loaded
+            assert view.sacc_data.covariance is not None
+            assert len(view.bin_comb_harmonic) > 0

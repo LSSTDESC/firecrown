@@ -501,11 +501,9 @@ class View(Load):
 
     def _plot_covariance(self) -> None:
         """Plot the covariance matrix with annotations for harmonic and real bins."""
-        if self.sacc_data.covariance is None:
-            raise typer.BadParameter(
-                f"No covariance found in SACC file: {self.sacc_file}"
-            )
-
+        assert (
+            self.sacc_data.covariance is not None
+        ), "Covariance matrix is not available."
         all_bins = self.bin_comb_harmonic + self.bin_comb_real
 
         cor_ordered = self._get_ordered_correlation(all_bins)
