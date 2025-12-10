@@ -44,6 +44,12 @@ firecrown = "firecrown.app:app"
 firecrown-link-checker = "firecrown.fctools.link_checker:app"
 
 # Coverage configuration
+[tool.coverage.run]
+branch = true
+parallel = true
+concurrency = ["multiprocessing"]
+source = ["firecrown"]
+
 [tool.coverage.report]
 exclude_also = [
    # Don't complain about unreachable code
