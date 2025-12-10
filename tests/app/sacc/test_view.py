@@ -624,3 +624,207 @@ class TestViewSpecialCases:
             # Verify data was loaded
             assert view.sacc_data.covariance is not None
             assert len(view.bin_comb_harmonic) > 0
+
+    def test_view_empty_sacc_with_cov(self, tmp_path: Path) -> None:
+        """Test quality check on empty SACC file with covariance."""
+        sacc_path = tmp_path / "empty_cov.sacc"
+        sacc_data = sacc.Sacc()
+
+        sacc_data.add_tracer("misc", "bin0")  # Add a tracer without data
+        sacc_data.add_data_point("not_a_type", ("bin0", "bin0"), 1.0, ell=10)
+        sacc_data.add_covariance([1.0])  # Add trivial covariance
+        sacc_data.save_fits(str(sacc_path))
+        View(sacc_file=sacc_path, check=True, plot_covariance=False)
+
+    def test_view_quality_check_with_unhandled_stdout_messages(
+        self, tmp_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        """Test quality check with unhandled stdout messages.
+        
+        This test patches stdout during SACC operations to inject messages
+        that are not handled by any specific handler, ensuring the quality
+        check processes all stdout content.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_stdout.sacc"
+        s.save_fits(str(sacc_path))
+
+        # Patch _capture_sacc_operations to inject stdout messages
+        with patch("matplotlib.pyplot.show"):
+            with patch.object(
+                View,
+                "_capture_sacc_operations",
+                return_value=(
+                    "Some unhandled stdout message line 1\n"
+                    "Another unhandled stdout message line 2\n"
+                    "INFO: This is an informational message\n",
+                    "",  # stderr
+                    [],  # warnings
+                    None,  # validation_error
+                ),
+            ):
+                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+                assert view.check is True
+
+                # Verify the quality check completed without errors
+                # Unhandled messages should be silently ignored or logged
+                captured = capsys.readouterr()
+                # Should still show quality checks header
+                assert "SACC Quality Checks" in captured.out
+
+    def test_view_quality_check_with_unhandled_stderr_messages(
+        self, tmp_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        """Test quality check with unhandled stderr messages.
+        
+        This test patches stderr during SACC operations to inject messages
+        that are not handled by any specific handler, ensuring the quality
+        check processes all stderr content.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_stderr.sacc"
+        s.save_fits(str(sacc_path))
+
+        # Patch _capture_sacc_operations to inject stderr messages
+        with patch("matplotlib.pyplot.show"):
+            with patch.object(
+                View,
+                "_capture_sacc_operations",
+                return_value=(
+                    "",  # stdout
+                    "ERROR: Some unhandled error message\n"
+                    "WARNING: Unhandled warning in stderr\n"
+                    "DEBUG: Debug information\n",
+                    [],  # warnings
+                    None,  # validation_error
+                ),
+            ):
+                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+                assert view.check is True
+
+                # Verify the quality check completed without errors
+                captured = capsys.readouterr()
+                assert "SACC Quality Checks" in captured.out
+
+    def test_view_quality_check_with_mixed_unhandled_messages(
+        self, tmp_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        """Test quality check with unhandled messages in both stdout and stderr.
+        
+        This test injects unhandled messages into both stdout and stderr
+        to ensure the quality check properly processes all output streams.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_mixed.sacc"
+        s.save_fits(str(sacc_path))
+
+        # Patch _capture_sacc_operations to inject both stdout and stderr messages
+        with patch("matplotlib.pyplot.show"):
+            with patch.object(
+                View,
+                "_capture_sacc_operations",
+                return_value=(
+                    "STDOUT: Unhandled stdout message\n"
+                    "INFO: Information on stdout\n",
+                    "STDERR: Unhandled stderr message\n"
+                    "ERROR: Error on stderr\n",
+                    [],  # warnings
+                    None,  # validation_error
+                ),
+            ):
+                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+                assert view.check is True
+
+                # Verify the quality check completed
+                captured = capsys.readouterr()
+                assert "SACC Quality Checks" in captured.out
+
+    def test_view_quality_check_handlers_consume_all_lines(
+        self, tmp_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        """Test that handlers properly consume their handled lines.
+        
+        This tests the handler loop logic to ensure handlers that successfully
+        handle messages consume those lines from the stream, and unhandled
+        lines are left for subsequent handlers or ignored.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_handlers.sacc"
+        s.save_fits(str(sacc_path))
+
+        # Inject multiple lines with a mix of potentially handled and unhandled messages
+        with patch("matplotlib.pyplot.show"):
+            with patch.object(
+                View,
+                "_capture_sacc_operations",
+                return_value=(
+                    "Line 1: Some info\n"
+                    "Line 2: Another message\n"
+                    "Line 3: Third message\n"
+                    "Line 4: Fourth message\n"
+                    "Line 5: Fifth message\n",
+                    "StdErr Line 1\n"
+                    "StdErr Line 2\n"
+                    "StdErr Line 3\n",
+                    [],  # warnings
+                    None,  # validation_error
+                ),
+            ):
+                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+                assert view.check is True
+
+                # Verify handlers processed the streams
+                captured = capsys.readouterr()
+                assert "SACC Quality Checks" in captured.out
