@@ -408,10 +408,12 @@ class TestSetupModels:
     def test_setup_models_mixed_priors(
         self, numcosmo_init: bool, tmp_path: Path
     ) -> None:
-        """Test _setup_models with multiple parameters, some with priors and some without.
+        """Test _setup_models with multiple parameters.
 
-        This test verifies that _setup_models correctly handles a model with
-        multiple parameters where only some have priors.
+        The model has some with priors and some without.
+
+        This test verifies that _setup_models correctly handles a model with multiple
+        parameters where only some have priors.
         """
         assert numcosmo_init
 

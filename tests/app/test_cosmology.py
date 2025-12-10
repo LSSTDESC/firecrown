@@ -460,7 +460,8 @@ class TestGenerateInitialization:
 
         with open(output_file, encoding="utf-8") as f:
             config = yaml.safe_load(f)
-        # Default case should have extra_parameters set to None (no special CAMB parameters)
+        # Default case should have extra_parameters set to None (no special CAMB
+        # parameters)
         assert "extra_parameters" in config
         assert config["extra_parameters"] is None
 

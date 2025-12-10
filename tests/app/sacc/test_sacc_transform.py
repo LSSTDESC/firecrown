@@ -576,7 +576,8 @@ class TestTransformErrorHandling:
         input_file: Path = tmp_path / "invalid"
         input_file.write_text("not a SACC file")
 
-        # Should exit with sys.exit(1) when format detection fails (covers lines 220-222)
+        # Should exit with sys.exit(1) when format detection fails (covers lines
+        # 220-222)
         with pytest.raises(SystemExit) as exc_info:
             Transform(sacc_file=input_file)
         assert exc_info.value.code == 1
@@ -709,9 +710,13 @@ class TestTransformErrorHandling:
             ), f"Expected (src0, lens0) but got {dp.tracers}"
 
     def test_fix_ordering_with_corrections_real_space(self, tmp_path: Path) -> None:
-        """Test fix_ordering detects and corrects tracer ordering violations in real space.
+        """Test fix_ordering.
 
-        This test verifies the SACC tracer ordering convention for real-space correlations:
+        This test detects and corrects tracer ordering violations in real space.
+
+        This test verifies the SACC tracer ordering convention for real-space
+        correlations:
+
         - src0 has SHEAR_T (from auto-correlation src0 × src0 with xi_t)
         - lens0 has COUNTS (from auto-correlation lens0 × lens0)
         - Since SHEAR_T < COUNTS, cross-correlation must be (src0, lens0)

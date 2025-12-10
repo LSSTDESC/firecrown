@@ -247,7 +247,13 @@ class TestAmplitudeParametersGenerator:
             p_ml = None
 
         with pytest.raises(ValueError, match="Mapping must have p_ml set for sigma8"):
-            _set_amplitude_sigma8(config_opts, cosmo, prim, MockMapping(), priors)  # type: ignore[arg-type]
+            _set_amplitude_sigma8(
+                config_opts,
+                cosmo,
+                prim,
+                MockMapping(),  # type: ignore[arg-type]
+                priors,
+            )
 
 
 class TestNeutrinoHandling:

@@ -323,6 +323,7 @@ class TestViewPlotting:
         plt.close(fig)
 
 
+# pylint: disable-next=too-many-public-methods
 class TestViewSpecialCases:
     """Tests for View special cases and edge conditions."""
 
@@ -469,7 +470,8 @@ class TestViewSpecialCases:
     def test_view_show_real_bins_with_data(self) -> None:
         """Test showing real-space bins when they exist.
 
-        Uses old_format_real.sacc which has real-space measurements (xi_t, xi_plus, xi_minus).
+        Uses old_format_real.sacc which has real-space measurements (xi_t, xi_plus,
+        xi_minus).
         """
         # Use the real SACC file with real-space data
         sacc_path = Path("tests/old_format_real.sacc")

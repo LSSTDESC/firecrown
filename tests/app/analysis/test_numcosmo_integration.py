@@ -367,6 +367,7 @@ class TestWriteConfigSerialization:
         assert builders_file.exists()
 
         # Deserialize and check structure
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
         assert experiment is not None
@@ -394,6 +395,7 @@ class TestWriteConfigSerialization:
         gen.write_config()
 
         yaml_file = tmp_path / "numcosmo_test_mset.yaml"
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 
@@ -427,6 +429,7 @@ class TestWriteConfigSerialization:
         gen.write_config()
 
         yaml_file = tmp_path / "numcosmo_test_cosmo_params.yaml"
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 
@@ -478,6 +481,7 @@ class TestWriteConfigSerialization:
         gen.write_config()
 
         yaml_file = tmp_path / "numcosmo_test_priors.yaml"
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 
@@ -511,6 +515,7 @@ class TestWriteConfigSerialization:
         gen.write_config()
 
         yaml_file = tmp_path / "numcosmo_test_neutrinos_ser.yaml"
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 
@@ -545,6 +550,7 @@ class TestWriteConfigSerialization:
         gen.write_config()
 
         yaml_file = tmp_path / "numcosmo_test_as_ser.yaml"
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 
@@ -579,6 +585,7 @@ class TestWriteConfigSerialization:
         gen.write_config()
 
         yaml_file = tmp_path / "numcosmo_test_linear.yaml"
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 
@@ -610,6 +617,7 @@ class TestWriteConfigSerialization:
         gen.write_config()
 
         yaml_file = tmp_path / "numcosmo_test_eval.yaml"
+        # pylint: disable-next=no-member
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
 

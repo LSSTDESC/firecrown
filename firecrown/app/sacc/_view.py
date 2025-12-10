@@ -345,6 +345,29 @@ class View(Load):
         )
 
         # Step 2: Create handler instances for each stream
+        warning_handlers, stdout_handlers, stderr_handlers = self._create_handlers()
+
+        # Step 3-5: Process all captured output through handlers
+        self._process_warnings(captured_warnings, warning_handlers)
+        self._process_stdout(stdout_buffer, stdout_handlers)
+        self._process_stderr(stderr_buffer, stderr_handlers)
+
+        # Step 6-8: Report quality check results
+        self._report_quality_check_results(
+            warning_handlers, stdout_handlers, stderr_handlers
+        )
+
+    def _create_handlers(
+        self,
+    ) -> tuple[list[MessageHandler], list[StreamHandler], list[StreamHandler]]:
+        """Create handler instances for processing warnings and output streams.
+
+        :returns: Tuple containing:
+            - warning_handlers: List of message handlers for warnings
+            - stdout_handlers: List of stream handlers for stdout
+            - stderr_handlers: List of stream handlers for stderr
+        :rtype: tuple[list[MessageHandler], list[StreamHandler], list[StreamHandler]]
+        """
         warning_handlers: list[MessageHandler] = [
             handler_cls() for handler_cls in WARNING_HANDLERS
         ]
@@ -354,8 +377,25 @@ class View(Load):
         stderr_handlers: list[StreamHandler] = [
             handler_cls() for handler_cls in STDERR_HANDLERS
         ]
+        return warning_handlers, stdout_handlers, stderr_handlers
 
-        # Step 3: Process warnings through warning handlers
+    def _process_warnings(
+        self,
+        captured_warnings: list[warnings.WarningMessage],
+        warning_handlers: list[MessageHandler],
+    ) -> None:
+        """Process captured warnings through warning handlers.
+
+        Each warning is passed through the handler chain until one handler
+        successfully processes it. If no handler accepts a warning, a RuntimeError
+        is raised.
+
+        :param captured_warnings: List of captured warning messages
+        :type captured_warnings: list[warnings.WarningMessage]
+        :param warning_handlers: List of message handlers to process warnings
+        :type warning_handlers: list[MessageHandler]
+        :raises RuntimeError: If a warning cannot be processed by any handler
+        """
         for warning_msg in captured_warnings:
             message_str = str(warning_msg.message)
             for msg_handler in warning_handlers:
@@ -364,7 +404,21 @@ class View(Load):
             else:
                 raise RuntimeError(f"Failed to process warning: {warning_msg.message}")
 
-        # Step 4: Process stdout lines through stdout handlers
+    def _process_stdout(
+        self, stdout_buffer: str, stdout_handlers: list[StreamHandler]
+    ) -> None:
+        """Process captured stdout through stdout handlers.
+
+        Lines are passed through the handler chain until all lines are consumed
+        or no handler can process the remaining lines. If lines remain unhandled,
+        a RuntimeError is raised.
+
+        :param stdout_buffer: Captured stdout content
+        :type stdout_buffer: str
+        :param stdout_handlers: List of stream handlers for stdout
+        :type stdout_handlers: list[StreamHandler]
+        :raises RuntimeError: If stdout lines cannot be processed by any handler
+        """
         stdout_lines = stdout_buffer.splitlines()
         for stream_handler in stdout_handlers:
             if stdout_lines:
@@ -374,10 +428,25 @@ class View(Load):
         else:
             if stdout_lines:
                 raise RuntimeError(
-                    f"Failed to process stdout lines, lines left unhandled: {stdout_lines}"
+                    f"Failed to process stdout lines, lines left unhandled: "
+                    f"{stdout_lines}"
                 )
 
-        # Step 5: Process stderr lines through stderr handlers
+    def _process_stderr(
+        self, stderr_buffer: str, stderr_handlers: list[StreamHandler]
+    ) -> None:
+        """Process captured stderr through stderr handlers.
+
+        Lines are passed through the handler chain until all lines are consumed
+        or no handler can process the remaining lines. If lines remain unhandled,
+        a RuntimeError is raised.
+
+        :param stderr_buffer: Captured stderr content
+        :type stderr_buffer: str
+        :param stderr_handlers: List of stream handlers for stderr
+        :type stderr_handlers: list[StreamHandler]
+        :raises RuntimeError: If stderr lines cannot be processed by any handler
+        """
         stderr_lines = stderr_buffer.splitlines()
         for stream_handler in stderr_handlers:
             if stderr_lines:
@@ -387,13 +456,9 @@ class View(Load):
         else:
             if stderr_lines:
                 raise RuntimeError(
-                    f"Failed to process stderr lines, lines left unhandled: {stderr_lines}"
+                    f"Failed to process stderr lines, lines left unhandled: "
+                    f"{stderr_lines}"
                 )
-
-        # Report quality check results
-        self._report_quality_check_results(
-            warning_handlers, stdout_handlers, stderr_handlers
-        )
 
     def _report_quality_check_results(
         self,
