@@ -775,3 +775,28 @@ class TestTransformErrorHandling:
                 "src0",
                 "lens0",
             ), f"Expected (src0, lens0) but got {dp.tracers}"
+
+    def test_read_sacc_data_with_unknown_format(self, tmp_path: Path) -> None:
+        """Test _read_sacc_data raises ValueError for unknown format string.
+
+        This test verifies that passing an unknown format string to _read_sacc_data
+        triggers the default case in the match statement and raises a ValueError.
+        """
+        # Create a valid SACC file
+        s: sacc.Sacc = sacc.Sacc()
+        s.add_tracer("misc", "tracer1")
+        input_file: Path = tmp_path / "test.fits"
+        s.save_fits(str(input_file))
+
+        # Create Transform instance
+        transform = Transform(
+            sacc_file=input_file,
+            output=tmp_path / "test_out.fits",
+        )
+
+        # Call _read_sacc_data with an unknown format string
+        # This should raise ValueError from the default case in the match statement
+        with pytest.raises(ValueError, match="Unknown input format: unknown_format"):
+            transform._read_sacc_data(  # pylint: disable=protected-access
+                "unknown_format"
+            )
