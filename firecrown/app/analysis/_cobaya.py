@@ -232,6 +232,7 @@ class CobayaConfigGenerator(ConfigGenerator):
     """Cobaya configuration generator.
 
     Generates a single YAML file for Cobaya parameter estimation:
+
     - cobaya_{prefix}.yaml: Complete configuration with theory (CAMB),
       likelihood (Firecrown), parameters, and sampler settings
     """

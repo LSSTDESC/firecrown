@@ -616,6 +616,7 @@ class NumCosmoConfigGenerator(ConfigGenerator):
     """NumCosmo configuration generator.
 
     Generates NumCosmo YAML files for parameter estimation:
+
     - numcosmo_{prefix}.yaml: Experiment configuration with cosmology,
       dataset, likelihood, and priors
     - numcosmo_{prefix}.builders.yaml: Model builder definitions for

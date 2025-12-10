@@ -4,6 +4,7 @@ Provides base classes and utilities for building complete analysis setups
 with data files, factory files, and framework-specific configurations.
 
 Public API (backward compatibility guaranteed):
+
     - AnalysisBuilder: Base class for building analyses
     - Frameworks: Enum of supported frameworks
     - Model: Model parameter definition

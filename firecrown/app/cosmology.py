@@ -3,45 +3,6 @@
 This module provides a CLI command to generate cosmology configuration files for
 parameter estimation and inference. The generated YAML contains cosmological
 parameter specifications with default values and optional prior constraints.
-
-**Supported Prior Types:**
-
-The configuration supports two types of priors that constrain parameter values
-during inference:
-
-1. **Gaussian Prior**: Constrains parameter around a mean with sigma (standard
-   deviation) ```yaml parameter_name:
-     default_value: 0.06
-     prior:
-       mean: 0.06
-       sigma: 0.01
-   ```
-
-2. **Uniform Prior**: Constrains parameter between lower and upper bounds
-   ```yaml
-   parameter_name:
-     default_value: 0.25
-     prior:
-       lower: 0.2
-       upper: 0.3
-   ```
-
-**Editing Generated Configurations:**
-
-The generated YAML can be manually edited to refine parameter values and priors.
-You may:
-- Modify ``default_value`` to change initial parameter values
-- Adjust ``mean`` and ``sigma`` for Gaussian priors
-- Adjust ``lower`` and ``upper`` bounds for Uniform priors
-- Add new priors to parameters that initially have none
-- Change prior type (Gaussian ↔ Uniform) by modifying the ``prior`` section
-
-**Example workflow:**
-
-1. Generate base configuration: ``firecrown cosmology --cosmology vanilla_lcdm
-   config.yaml``
-2. Edit ``config.yaml`` to add priors or adjust parameter values
-3. Use configuration in parameter estimation pipeline
 """
 
 from typing import Annotated, assert_never
@@ -131,6 +92,7 @@ def _parse_prior(prior_arg: str) -> tuple[str, float | None, Prior | None]:
     """Parse cosmology parameter prior specification from command-line argument.
 
     Parses arguments in the format:
+
     - 'key=value' → Fixed parameter value, no prior
     - 'key=value,mean=...,sigma=...' → Value with Gaussian prior
     - 'key=value,lower=...,upper=...' → Value with uniform prior

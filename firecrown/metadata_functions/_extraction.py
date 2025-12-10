@@ -296,6 +296,7 @@ def extract_all_measured_types(
     SACC enforces a strict ordering convention for cross-correlations between different
     measurement types. The measurement type with the lower enum value must appear first
     in both:
+
         1. The data type string (e.g., 'galaxy_shearDensity_cl_e')
         2. The tracer pair order (e.g., (src0, lens0))
 
