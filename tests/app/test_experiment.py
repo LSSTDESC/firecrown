@@ -156,7 +156,8 @@ class TestLoadExperiment:
         with patch("firecrown.likelihood.factories.TwoPointExperiment.load_from_yaml"):
             Load(experiment_file=exp_file)
             captured = capsys.readouterr()
-            assert str(exp_file) in captured.out
+            one_line_output = captured.out.replace("\n", " ")
+            assert str(exp_file) in one_line_output
 
 
 class TestViewInitialization:

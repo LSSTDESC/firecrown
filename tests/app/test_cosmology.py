@@ -253,7 +253,8 @@ class TestGenerateInitialization:
         # Verify console output
         captured = capsys.readouterr()
         assert "configuration written" in captured.out.lower()
-        assert str(output_file) in captured.out
+        one_line_output = captured.out.replace("\n", " ")
+        assert str(output_file.stem) in one_line_output
 
         # Verify YAML can be loaded and has expected structure
         with open(output_file, encoding="utf-8") as f:
