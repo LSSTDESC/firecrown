@@ -9,9 +9,8 @@ from firecrown.updatable import get_default_params_map
 from firecrown.modeling_tools import (
     ModelingTools,
     PowerspectrumModifier,
-    CCLCalculatorArgs,
 )
-from firecrown.ccl_factory import Background
+from firecrown.ccl_factory import Background, CCLCalculatorArgs
 from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 
 
