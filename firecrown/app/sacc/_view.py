@@ -361,6 +361,8 @@ class View(Load):
             for msg_handler in warning_handlers:
                 if msg_handler.try_handle(message_str):
                     break
+            else:
+                raise RuntimeError(f"Failed to process warning: {warning_msg.message}")
 
         # Step 4: Process stdout lines through stdout handlers
         stdout_lines = stdout_buffer.splitlines()
@@ -369,6 +371,11 @@ class View(Load):
                 handled, stdout_lines = stream_handler.try_handle(stdout_lines)
                 if handled and not stdout_lines:
                     break  # All lines consumed
+        else:
+            if stdout_lines:
+                raise RuntimeError(
+                    f"Failed to process stdout lines, lines left unhandled: {stdout_lines}"
+                )
 
         # Step 5: Process stderr lines through stderr handlers
         stderr_lines = stderr_buffer.splitlines()
@@ -377,6 +384,11 @@ class View(Load):
                 handled, stderr_lines = stream_handler.try_handle(stderr_lines)
                 if handled and not stderr_lines:
                     break  # All lines consumed
+        else:
+            if stderr_lines:
+                raise RuntimeError(
+                    f"Failed to process stderr lines, lines left unhandled: {stderr_lines}"
+                )
 
         # Report quality check results
         self._report_quality_check_results(

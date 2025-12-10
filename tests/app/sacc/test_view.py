@@ -3,6 +3,8 @@
 Tests for viewing and displaying SACC file contents and quality checks.
 """
 
+import warnings
+import re
 from pathlib import Path
 from unittest.mock import Mock, patch
 import matplotlib.pyplot as plt
@@ -11,6 +13,14 @@ from _pytest.capture import CaptureFixture
 import numpy as np
 import sacc
 from firecrown.app.sacc import View
+from firecrown.app.sacc._handlers import (
+    UnknownStderrHandler,
+    UnknownStdoutHandler,
+    UnknownWarningHandler,
+)
+
+
+# pylint: disable=too-many-lines
 
 
 @pytest.fixture(name="mock_sacc_data")
@@ -640,7 +650,7 @@ class TestViewSpecialCases:
         self, tmp_path: Path, capsys: CaptureFixture[str]
     ) -> None:
         """Test quality check with unhandled stdout messages.
-        
+
         This test patches stdout during SACC operations to inject messages
         that are not handled by any specific handler, ensuring the quality
         check processes all stdout content.
@@ -689,7 +699,7 @@ class TestViewSpecialCases:
         self, tmp_path: Path, capsys: CaptureFixture[str]
     ) -> None:
         """Test quality check with unhandled stderr messages.
-        
+
         This test patches stderr during SACC operations to inject messages
         that are not handled by any specific handler, ensuring the quality
         check processes all stderr content.
@@ -736,7 +746,7 @@ class TestViewSpecialCases:
         self, tmp_path: Path, capsys: CaptureFixture[str]
     ) -> None:
         """Test quality check with unhandled messages in both stdout and stderr.
-        
+
         This test injects unhandled messages into both stdout and stderr
         to ensure the quality check properly processes all output streams.
         """
@@ -765,8 +775,7 @@ class TestViewSpecialCases:
                 return_value=(
                     "STDOUT: Unhandled stdout message\n"
                     "INFO: Information on stdout\n",
-                    "STDERR: Unhandled stderr message\n"
-                    "ERROR: Error on stderr\n",
+                    "STDERR: Unhandled stderr message\nERROR: Error on stderr\n",
                     [],  # warnings
                     None,  # validation_error
                 ),
@@ -782,7 +791,7 @@ class TestViewSpecialCases:
         self, tmp_path: Path, capsys: CaptureFixture[str]
     ) -> None:
         """Test that handlers properly consume their handled lines.
-        
+
         This tests the handler loop logic to ensure handlers that successfully
         handle messages consume those lines from the stream, and unhandled
         lines are left for subsequent handlers or ignored.
@@ -805,26 +814,229 @@ class TestViewSpecialCases:
         s.save_fits(str(sacc_path))
 
         # Inject multiple lines with a mix of potentially handled and unhandled messages
-        with patch("matplotlib.pyplot.show"):
+        with patch.object(
+            View,
+            "_capture_sacc_operations",
+            return_value=(
+                "Line 1: Some info\n"
+                "Line 2: Another message\n"
+                "Line 3: Third message\n"
+                "Line 4: Fourth message\n"
+                "Line 5: Fifth message\n",
+                "StdErr Line 1\nStdErr Line 2\nStdErr Line 3\n",
+                [],  # warnings
+                None,  # validation_error
+            ),
+        ):
+            view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
+            assert view.check is True
+
+            # Verify handlers processed the streams
+            captured = capsys.readouterr()
+            assert "SACC Quality Checks" in captured.out
+
+    def test_view_quality_check_with_no_catch_all_warning_handlers(
+        self, tmp_path: Path
+    ) -> None:
+        """Test quality check with unhandled warning messages.
+
+        This patches UnknownWarningHandler to always return False (not handled),
+        causing all warnings to fall through unhandled, testing the edge case where no
+        warning handlers are available.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_no_warning_handlers.sacc"
+        s.save_fits(str(sacc_path))
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.warn("Unhandled warning", UserWarning)
+        my_warning = w[0]
+
+        # Patch capture_sacc_operations to inject a warning that won't be handled
+        with patch.object(UnknownWarningHandler, "try_handle", return_value=False):
             with patch.object(
                 View,
                 "_capture_sacc_operations",
                 return_value=(
-                    "Line 1: Some info\n"
-                    "Line 2: Another message\n"
-                    "Line 3: Third message\n"
-                    "Line 4: Fourth message\n"
-                    "Line 5: Fifth message\n",
-                    "StdErr Line 1\n"
-                    "StdErr Line 2\n"
-                    "StdErr Line 3\n",
+                    "",  # stdout
+                    "",  # stderr
+                    [my_warning],  # warnings (will be unhandled)
+                    None,  # validation_error
+                ),
+            ):
+                with pytest.raises(
+                    RuntimeError,
+                    match=re.escape("Failed to process warning: Unhandled warning"),
+                ):
+                    View(sacc_file=sacc_path, check=True, plot_covariance=False)
+
+    def test_view_quality_check_with_no_catch_all_stdout_handlers(
+        self, tmp_path: Path
+    ) -> None:
+        """Test quality check with unhandled stdout messages.
+
+        This patches UnknownStdoutHandler to always return False (not handled), causing
+        all stdout messages to fall through unhandled, testing the edge case where no
+        stdout handlers are available.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_no_stdout_handlers.sacc"
+        s.save_fits(str(sacc_path))
+
+        # Patch UnknownStdoutHandler to always return False (not handled)
+        with patch.object(
+            UnknownStdoutHandler,
+            "try_handle",
+            side_effect=lambda lines: (False, lines),
+        ):
+            with patch.object(
+                View,
+                "_capture_sacc_operations",
+                return_value=(
+                    "Some stdout message that won't be handled\n"
+                    "Another stdout line\n"
+                    "Third stdout line\n",
+                    "",  # stderr
                     [],  # warnings
                     None,  # validation_error
                 ),
             ):
-                view = View(sacc_file=sacc_path, check=True, plot_covariance=False)
-                assert view.check is True
+                with pytest.raises(
+                    RuntimeError,
+                    match=re.escape(
+                        "Failed to process stdout lines, lines left unhandled: "
+                        '["Some stdout message that won\'t be handled", '
+                        "'Another stdout line', 'Third stdout line']"
+                    ),
+                ):
+                    View(sacc_file=sacc_path, check=True, plot_covariance=False)
 
-                # Verify handlers processed the streams
-                captured = capsys.readouterr()
-                assert "SACC Quality Checks" in captured.out
+    def test_view_quality_check_with_no_catch_all_stderr_handlers(
+        self, tmp_path: Path
+    ) -> None:
+        """Test quality check with unhandled stderr messages.
+
+        This patches UnknownStderrHandler to always return False (not handled),
+        causing all stderr messages to fall through unhandled, testing the edge case
+        where no stderr handlers are available.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_no_stderr_handlers.sacc"
+        s.save_fits(str(sacc_path))
+
+        # Patch catch-all UnknownStderrHandler to always return False (not handled)
+        with patch.object(
+            UnknownStderrHandler,
+            "try_handle",
+            side_effect=lambda lines: (False, lines),
+        ):
+            with patch.object(
+                View,
+                "_capture_sacc_operations",
+                return_value=(
+                    "Some stdout message",  # stdout
+                    "Some stderr error message\n"
+                    "Another stderr warning\n"
+                    "Third stderr line\n",
+                    [],  # warnings
+                    None,  # validation_error
+                ),
+            ):
+                with pytest.raises(
+                    RuntimeError,
+                    match=re.escape(
+                        "Failed to process stderr lines, "
+                        "lines left unhandled: ['Some stderr error message', "
+                        "'Another stderr warning', 'Third stderr line']"
+                    ),
+                ):
+                    View(sacc_file=sacc_path, check=True, plot_covariance=False)
+
+    def test_view_quality_check_with_all_handlers_empty(self, tmp_path: Path) -> None:
+        """Test quality check with all handler lists empty.
+
+        This patches WARNING_HANDLERS, STDOUT_HANDLERS, and STDERR_HANDLERS
+        to all be empty, causing all messages to fall through unhandled,
+        testing the complete edge case where no handlers are available at all.
+        """
+        # Create a simple SACC file
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_all_handlers_empty.sacc"
+        s.save_fits(str(sacc_path))
+
+        # Patch all handler lists to be empty
+        with (
+            patch("firecrown.app.sacc._view.WARNING_HANDLERS", []),
+            patch("firecrown.app.sacc._view.STDOUT_HANDLERS", []),
+            patch("firecrown.app.sacc._view.STDERR_HANDLERS", []),
+        ):
+            with patch.object(
+                View,
+                "_capture_sacc_operations",
+                return_value=(
+                    "Unhandled stdout message 1\nUnhandled stdout message 2\n",
+                    "Unhandled stderr message 1\nUnhandled stderr message 2\n",
+                    [],  # warnings
+                    None,  # validation_error
+                ),
+            ):
+                with pytest.raises(
+                    RuntimeError,
+                    match=re.escape(
+                        "Failed to process stdout lines, lines left unhandled: "
+                        "['Unhandled stdout message 1', "
+                        "'Unhandled stdout message 2']"
+                    ),
+                ):
+                    View(sacc_file=sacc_path, check=True, plot_covariance=False)
