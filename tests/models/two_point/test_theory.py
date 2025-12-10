@@ -14,9 +14,11 @@ from firecrown.utils import ClIntegrationOptions
 from firecrown.models.two_point import ApplyInterpolationWhen
 from firecrown.likelihood import Source
 
+# pylint: disable=protected-access
 
-@pytest.fixture
-def mock_source():
+
+@pytest.fixture(name="mock_source")
+def fixture_mock_source():
     """Create a mock source that behaves like a real Updatable Source."""
     source = Mock(spec=Source)
     source.sacc_tracer = "tracer_1"
@@ -35,8 +37,8 @@ def mock_source():
     return source
 
 
-@pytest.fixture
-def mock_source_pair(mock_source):
+@pytest.fixture(name="mock_source_pair")
+def fixture_mock_source_pair(mock_source):
     """Create a pair of mock sources."""
     source2 = Mock(spec=Source)
     source2.sacc_tracer = "tracer_2"

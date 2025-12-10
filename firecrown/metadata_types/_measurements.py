@@ -18,6 +18,26 @@ def _compare_enums(a, b) -> int:
 
     This function is defined before the enum classes to avoid circular imports.
     The order checking is deferred until runtime.
+
+    **Ordering Convention for SACC Cross-Correlations:**
+
+    The ordering of Measurement types is critical for interpreting SACC data files.
+    When cross-correlating two tracers with different measurement types, the SACC
+    convention requires that the measurement type with the lower enum value appears
+    first in both:
+
+    1. The SACC data type string (e.g., 'galaxy_shearDensity_cl_e')
+    2. The tracer order in data points (e.g., (src0, lens0))
+
+    For example:
+        - If src0 has SHEAR_E (enum value 1) and lens0 has COUNTS (enum value 5)
+        - SHEAR_E < COUNTS numerically
+        - The SACC string must be 'galaxy_shearDensity_cl_e' (shear before density)
+        - The tracer order must be (src0, lens0), NOT (lens0, src0)
+        - The reverse order (lens0, src0) would violate the SACC convention
+
+    This ordering is enforced by the __lt__ method implementation in each
+    Measurement enum class and is validated during SACC file processing.
     """
     # Get the order dynamically to avoid forward references
     # We know CMB, Clusters, Galaxies will be defined in this module
