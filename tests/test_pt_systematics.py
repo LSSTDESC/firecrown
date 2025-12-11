@@ -64,7 +64,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     stats = [
         TwoPoint("galaxy_shear_xi_plus", weak_lensing_source, weak_lensing_source),
         TwoPoint("galaxy_shear_xi_minus", weak_lensing_source, weak_lensing_source),
-        TwoPoint("galaxy_shearDensity_xi_t", number_counts_source, weak_lensing_source),
+        TwoPoint("galaxy_shearDensity_xi_t", weak_lensing_source, number_counts_source),
         TwoPoint("galaxy_density_xi", number_counts_source, number_counts_source),
     ]
 
@@ -179,9 +179,9 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
     assert isinstance(s2, TwoPoint)
-    cells_gG = s2.cells[TracerNames("galaxies", "shear")]
-    cells_gI = s2.cells[TracerNames("galaxies", "intrinsic_pt")]
-    cells_mI = s2.cells[TracerNames("magnification+rsd", "intrinsic_pt")]
+    cells_gG = s2.cells[TracerNames("shear", "galaxies")]
+    cells_gI = s2.cells[TracerNames("intrinsic_pt", "galaxies")]
+    cells_mI = s2.cells[TracerNames("intrinsic_pt", "magnification+rsd")]
 
     # print(list(likelihood.statistics[3].cells.keys()))
     s3 = likelihood.statistics[3].statistic
@@ -267,8 +267,8 @@ def test_pt_mixed_systematics(sacc_data):
     )
 
     stat = TwoPoint(
-        source0=nc_source,
-        source1=wl_source,
+        source0=wl_source,
+        source1=nc_source,
         sacc_data_type="galaxy_shearDensity_xi_t",
     )
 
@@ -354,8 +354,8 @@ def test_pt_mixed_systematics(sacc_data):
     ells = s0.ells_for_xi
 
     # print(list(likelihood.statistics[2].cells.keys()))
-    cells_gG = s0.cells[TracerNames("galaxies+magnification+rsd", "shear")]
-    cells_gI = s0.cells[TracerNames("galaxies+magnification+rsd", "intrinsic_pt")]
+    cells_gG = s0.cells[TracerNames("shear", "galaxies+magnification+rsd")]
+    cells_gI = s0.cells[TracerNames("intrinsic_pt", "galaxies+magnification+rsd")]
     # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object
@@ -399,8 +399,8 @@ def test_pt_mixed_systematics_zdep(sacc_data):
     )
 
     stat = TwoPoint(
-        source0=nc_source,
-        source1=wl_source,
+        source0=wl_source,
+        source1=nc_source,
         sacc_data_type="galaxy_shearDensity_xi_t",
     )
 
@@ -494,8 +494,8 @@ def test_pt_mixed_systematics_zdep(sacc_data):
     ells = s0.ells_for_xi
 
     # print(list(likelihood.statistics[2].cells.keys()))
-    cells_gG = s0.cells[TracerNames("galaxies+magnification+rsd", "shear")]
-    cells_gI = s0.cells[TracerNames("galaxies+magnification+rsd", "intrinsic_pt")]
+    cells_gG = s0.cells[TracerNames("shear", "galaxies+magnification+rsd")]
+    cells_gI = s0.cells[TracerNames("intrinsic_pt", "galaxies+magnification+rsd")]
     # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object
@@ -533,7 +533,7 @@ def test_pt_systematics_zdep(weak_lensing_source, number_counts_source, sacc_dat
     stats = [
         TwoPoint("galaxy_shear_xi_plus", weak_lensing_source, weak_lensing_source),
         TwoPoint("galaxy_shear_xi_minus", weak_lensing_source, weak_lensing_source),
-        TwoPoint("galaxy_shearDensity_xi_t", number_counts_source, weak_lensing_source),
+        TwoPoint("galaxy_shearDensity_xi_t", weak_lensing_source, number_counts_source),
         TwoPoint("galaxy_density_xi", number_counts_source, number_counts_source),
     ]
 
@@ -656,9 +656,9 @@ def test_pt_systematics_zdep(weak_lensing_source, number_counts_source, sacc_dat
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
     assert isinstance(s2, TwoPoint)
-    cells_gG = s2.cells[TracerNames("galaxies", "shear")]
-    cells_gI = s2.cells[TracerNames("galaxies", "intrinsic_pt")]
-    cells_mI = s2.cells[TracerNames("magnification+rsd", "intrinsic_pt")]
+    cells_gG = s2.cells[TracerNames("shear", "galaxies")]
+    cells_gI = s2.cells[TracerNames("intrinsic_pt", "galaxies")]
+    cells_mI = s2.cells[TracerNames("intrinsic_pt", "magnification+rsd")]
 
     # print(list(likelihood.statistics[3].cells.keys()))
     s3 = likelihood.statistics[3].statistic
