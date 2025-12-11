@@ -214,9 +214,11 @@ def test_compute_chisq_fails_before_read(trivial_stats):
     """Note that the error message from the direct call to compute_chisq notes
     that update() must be called; this can only be called after read()."""
     likelihood = ConstGaussianPM(statistics=trivial_stats)
-    with pytest.raises(
-        AssertionError,
-        match=re.escape("update() must be called before compute_chisq()"),
+    with (
+        pytest.raises(
+            AssertionError,
+            match=re.escape("update() must be called before compute_chisq()"),
+        ),
     ):
         _ = likelihood.compute_chisq(ModelingTools())
 
@@ -225,7 +227,11 @@ def test_compute_chisq(trivial_stats, sacc_data_for_trivial_stat, trivial_params
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
-    assert likelihood.compute_chisq(ModelingTools()) == 2.0
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        assert likelihood.compute_chisq(ModelingTools()) == 2.0
 
 
 def test_deprecated_compute(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
@@ -256,7 +262,11 @@ def test_chisquared_compute_vector_not_implemented(
     likelihood.compute_theory_vector = compute_theory_vector  # type: ignore
     likelihood.compute = compute  # type: ignore
 
-    assert likelihood.compute_chisq(ModelingTools()) == 2.0
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        assert likelihood.compute_chisq(ModelingTools()) == 2.0
 
 
 def test_required_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
@@ -282,7 +292,11 @@ def test_reset(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
     assert not trivial_stats[0].computed_theory_vector
-    assert likelihood.compute_loglike(ModelingTools()) == -1.0
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        assert likelihood.compute_loglike(ModelingTools()) == -1.0
     assert trivial_stats[0].computed_theory_vector
     likelihood.reset()
     assert not trivial_stats[0].computed_theory_vector
@@ -307,7 +321,11 @@ def test_using_good_sacc(
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.parameters.ParamsMap(mean=10.5)
     likelihood.update(params)
-    chisq = likelihood.compute_chisq(tools_with_vanilla_cosmology)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        chisq = likelihood.compute_chisq(tools_with_vanilla_cosmology)
     assert isinstance(chisq, float)
     assert chisq > 0.0
 
@@ -331,7 +349,11 @@ def test_make_realization_chisq(
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.parameters.ParamsMap(mean=10.5)
     likelihood.update(params)
-    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
     new_sacc = likelihood.make_realization(sacc_data_for_trivial_stat)
 
@@ -339,7 +361,11 @@ def test_make_realization_chisq(
     new_likelihood.read(new_sacc)
     params = firecrown.parameters.ParamsMap(mean=10.5)
     new_likelihood.update(params)
-    chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
     # The new likelihood chisq is distributed as a chi-squared with 3 degrees of
     # freedom. We want to check that the new chisq is within the 1-10^-6 quantile
@@ -358,7 +384,11 @@ def test_make_realization_chisq_mean(
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.parameters.ParamsMap(mean=10.5)
     likelihood.update(params)
-    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
     chisq_list = []
     for _ in range(1000):
@@ -368,7 +398,11 @@ def test_make_realization_chisq_mean(
         new_likelihood.read(new_sacc)
         params = firecrown.parameters.ParamsMap(mean=10.5)
         new_likelihood.update(params)
-        chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
+        with pytest.warns(
+            UserWarning,
+            match=re.escape("inverse covariance correction has not yet been computed."),
+        ):
+            chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
         chisq_list.append(chisq)
 
     # The new likelihood chisq is distributed as a chi-squared with 3 degrees of
@@ -387,7 +421,11 @@ def test_make_realization_data_vector(
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.parameters.ParamsMap(mean=10.5)
     likelihood.update(params)
-    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
     data_vector_list = []
     for _ in range(1000):
@@ -430,7 +468,11 @@ def test_make_realization_no_noise(
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.parameters.ParamsMap(mean=10.5)
     likelihood.update(params)
-    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("inverse covariance correction has not yet been computed."),
+    ):
+        likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
     new_sacc = likelihood.make_realization(sacc_data_for_trivial_stat, add_noise=False)
 
@@ -561,8 +603,8 @@ class MockStatisticContainer:
         self.statistic = statistic
 
 
-@pytest.fixture
-def minimal_const_gaussian_PM():
+@pytest.fixture(name="minimal_const_gaussian_PM")
+def fixture_minimal_const_gaussian_PM() -> ConstGaussianPM:
     # Create minimal valid statistics for the class.
     z = np.array([0.1, 0.2, 0.3])
     dndz = np.array([1.0, 2.0, 3.0])
@@ -599,6 +641,9 @@ def minimal_const_gaussian_PM():
         likelihood, "compute_theory_vector", lambda tools: np.array([1.0, 2.0, 3.0])
     )
     return likelihood
+
+
+# pylint: disable=protected-access
 
 
 def test_precomputed_warning(minimal_const_gaussian_PM):
@@ -818,3 +863,6 @@ def test_collect_data_vectors_missing_attributes():
 
     with pytest.raises(StopIteration, match="missing attributes"):
         likelihood._collect_data_vectors()
+
+
+# pylint enable=protected-access

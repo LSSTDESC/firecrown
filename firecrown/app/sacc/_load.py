@@ -1,6 +1,9 @@
 """Load command for SACC files."""
 
 import dataclasses
+import contextlib
+import io
+import warnings
 from pathlib import Path
 from typing import Annotated
 
@@ -41,7 +44,14 @@ class Load(Logging):
         try:
             if not self.sacc_file.exists():
                 raise typer.BadParameter(f"SACC file not found: {self.sacc_file}")
-            self.sacc_data = factories.load_sacc_data(self.sacc_file.as_posix())
+
+            with (
+                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stderr(io.StringIO()),
+                warnings.catch_warnings(),
+            ):
+                warnings.simplefilter("ignore")
+                self.sacc_data = factories.load_sacc_data(self.sacc_file.as_posix())
         except Exception as e:
             self.console.print(f"[bold red]Failed to load SACC file:[/bold red] {e}")
             raise
