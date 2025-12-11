@@ -78,8 +78,8 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
     for j in range(5):
         for i in range(4):
             stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
-                source0=sources[f"lens{j}"],
-                source1=sources[f"src{i}"],
+                source0=sources[f"src{i}"],
+                source1=sources[f"lens{j}"],
                 sacc_data_type="galaxy_shearDensity_xi_t",
             )
 
