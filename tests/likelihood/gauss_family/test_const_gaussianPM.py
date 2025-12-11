@@ -705,8 +705,8 @@ def test_PM_correction_matrix(sacc_data):
         sacc_data_type="galaxy_shear_xi_plus",
     )
     stats["gammat_lens0_src0"] = TwoPoint(
-        source0=nc.NumberCounts(sacc_tracer="lens0"),
-        source1=wl.WeakLensing(sacc_tracer="src0"),
+        source0=wl.WeakLensing(sacc_tracer="src0"),
+        source1=nc.NumberCounts(sacc_tracer="lens0"),
         sacc_data_type="galaxy_shearDensity_xi_t",
     )
     stats["wtheta_lens0_lens0"] = TwoPoint(
@@ -731,8 +731,8 @@ def test_compute_chisq_with_correction(sacc_data):
     # This tests the truthy branch of the if statement at line 50
     stats = {}
     stats["gammat_lens0_src0"] = TwoPoint(
-        source0=nc.NumberCounts(sacc_tracer="lens0"),
-        source1=wl.WeakLensing(sacc_tracer="src0"),
+        source0=wl.WeakLensing(sacc_tracer="src0"),
+        source1=nc.NumberCounts(sacc_tracer="lens0"),
         sacc_data_type="galaxy_shearDensity_xi_t",
     )
     likelihood = ConstGaussianPM(statistics=list(stats.values()))
@@ -759,8 +759,8 @@ def test_get_lens_statistic_not_found(sacc_data):
     # Test that _get_lens_statistic raises StopIteration when lens tracer not found
     stats = {}
     stats["gammat_lens0_src0"] = TwoPoint(
-        source0=nc.NumberCounts(sacc_tracer="lens0"),
-        source1=wl.WeakLensing(sacc_tracer="src0"),
+        source0=wl.WeakLensing(sacc_tracer="src0"),
+        source1=nc.NumberCounts(sacc_tracer="lens0"),
         sacc_data_type="galaxy_shearDensity_xi_t",
     )
     likelihood = ConstGaussianPM(statistics=list(stats.values()))
@@ -775,8 +775,8 @@ def test_get_src_statistic_not_found(sacc_data):
     # Test that _get_src_statistic raises StopIteration when source tracer not found
     stats = {}
     stats["gammat_lens0_src0"] = TwoPoint(
-        source0=nc.NumberCounts(sacc_tracer="lens0"),
-        source1=wl.WeakLensing(sacc_tracer="src0"),
+        source0=wl.WeakLensing(sacc_tracer="src0"),
+        source1=nc.NumberCounts(sacc_tracer="lens0"),
         sacc_data_type="galaxy_shearDensity_xi_t",
     )
     likelihood = ConstGaussianPM(statistics=list(stats.values()))
