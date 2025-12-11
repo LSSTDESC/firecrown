@@ -11,7 +11,6 @@ from firecrown.modeling_tools import (
     PowerspectrumModifier,
 )
 from firecrown.ccl_factory import Background, CCLCalculatorArgs
-from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 
 
 @pytest.fixture(name="dummy_powerspectrum", scope="session")
