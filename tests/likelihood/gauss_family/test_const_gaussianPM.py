@@ -865,4 +865,4 @@ def test_collect_data_vectors_missing_attributes():
         likelihood._collect_data_vectors()
 
 
-# pylint enable=protected-access
+# pylint: enable=protected-access
