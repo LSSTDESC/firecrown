@@ -57,7 +57,7 @@ def _build_two_point_statistics(
         TwoPoint(source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_plus"),
         TwoPoint(source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_minus"),
         TwoPoint(
-            source0=lens0, source1=src0, sacc_data_type="galaxy_shearDensity_xi_t"
+            source0=src0, source1=lens0, sacc_data_type="galaxy_shearDensity_xi_t"
         ),
         TwoPoint(source0=lens0, source1=lens0, sacc_data_type="galaxy_density_xi"),
     ]
