@@ -1,7 +1,5 @@
 """Demonstration of the use of the :class:`Supernova` statistics object."""
 
-import sys
-
 from firecrown.likelihood.factories import load_sacc_data
 import firecrown.likelihood.supernova as sn
 from firecrown.likelihood import ConstGaussian, NamedParameters
