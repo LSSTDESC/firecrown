@@ -19,49 +19,12 @@ from firecrown.fctools.print_code import (
 )
 
 from . import match_wrapped, strip_rich_markup
+from ..conftest import _make_class_def
 
 # Check Python version for type_params support (added in 3.12)
 _SUPPORTS_TYPE_PARAMS = sys.version_info >= (3, 12)
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
-
-
-if sys.version_info >= (3, 12):
-
-    def _make_class_def(
-        name: str,
-        bases: list[ast.expr],
-        keywords: list[ast.keyword],
-        body: list[ast.stmt],
-        decorator_list: list[ast.expr],
-    ) -> ast.ClassDef:
-        """Create a ClassDef node with type_params (Python 3.12+)."""
-        return ast.ClassDef(
-            name=name,
-            bases=bases,
-            keywords=keywords,
-            body=body,
-            decorator_list=decorator_list,
-            type_params=[],
-        )
-
-else:
-
-    def _make_class_def(
-        name: str,
-        bases: list[ast.expr],
-        keywords: list[ast.keyword],
-        body: list[ast.stmt],
-        decorator_list: list[ast.expr],
-    ) -> ast.ClassDef:
-        """Create a ClassDef node without type_params (Python 3.11)."""
-        return ast.ClassDef(
-            name=name,
-            bases=bases,
-            keywords=keywords,
-            body=body,
-            decorator_list=decorator_list,
-        )
 
 
 def _get_subprocess_env():
