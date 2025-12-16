@@ -9,7 +9,7 @@ import numpy.typing as npt
 from pydantic_core import core_schema
 
 from firecrown.metadata_types._compatibility import measurement_is_compatible
-from firecrown.metadata_types._inferred_galaxy_zdist import Tracer
+from firecrown.metadata_types._two_point_tracers import Tracer
 from firecrown.metadata_types._measurements import (
     HARMONIC_ONLY_MEASUREMENTS,
     REAL_ONLY_MEASUREMENTS,

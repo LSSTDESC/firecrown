@@ -8,7 +8,7 @@ from firecrown.metadata_types._compatibility import (
     measurement_is_compatible,
     measurements_types,
 )
-from firecrown.metadata_types._inferred_galaxy_zdist import (
+from firecrown.metadata_types._two_point_tracers import (
     TomographicBin,
     Tracer,
     CMBLensing,
