@@ -37,7 +37,6 @@ from firecrown.metadata_types import (
     CMB_TYPES,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
-    InferredGalaxyZDist,
     Measurement,
     TracerNames,
     TwoPointCorrelationSpace,
@@ -278,6 +277,20 @@ class TwoPoint(Statistic):
 
         :return: A TwoPoint statistic.
         """
+        # metadata.XY.x/Y are typed as Tracer (protocol). In this code path we
+        # expect concrete TomographicBin instances (with redshift arrays). Use
+        # runtime isinstance checks and raise an informative error if this is
+        # not the case — this both documents the assumption and narrows the
+        # type for the type checker.
+        if not isinstance(metadata.XY.x, mdt.TomographicBin):
+            raise TypeError(
+                f"Expected metadata.XY.x to be TomographicBin, got {type(metadata.XY.x)!r}"
+            )
+        if not isinstance(metadata.XY.y, mdt.TomographicBin):
+            raise TypeError(
+                f"Expected metadata.XY.y to be TomographicBin, got {type(metadata.XY.y)!r}"
+            )
+
         source0 = use_source_factory(
             metadata.XY.x, metadata.XY.x_measurement, tp_factory
         )
@@ -858,7 +871,7 @@ class TwoPointFactory(BaseModel):
 
 
 def use_source_factory(
-    inferred_galaxy_zdist: InferredGalaxyZDist,
+    inferred_galaxy_zdist: mdt.TomographicBin,
     measurement: Measurement,
     tp_factory: TwoPointFactory,
 ) -> WeakLensing | NumberCounts | CMBConvergence:
