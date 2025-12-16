@@ -19,6 +19,10 @@ from firecrown.fctools.print_code import (
 )
 
 from . import match_wrapped, strip_rich_markup
+from ..conftest import _make_class_def
+
+# Check Python version for type_params support (added in 3.12)
+_SUPPORTS_TYPE_PARAMS = sys.version_info >= (3, 12)
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
@@ -69,7 +73,7 @@ class ClassNoDocstring:
 def test_render_attributes_simple():
     """Test _render_attributes with simple attributes."""
     # Create a simple ClassDef with attributes
-    class_def = ast.ClassDef(
+    class_def = _make_class_def(
         name="TestClass",
         bases=[],
         keywords=[],
@@ -88,7 +92,6 @@ def test_render_attributes_simple():
             ),
         ],
         decorator_list=[],
-        type_params=[],
     )
     result = _render_attributes(class_def)
     assert any("attr1: int" in line for line in result)
@@ -97,13 +100,12 @@ def test_render_attributes_simple():
 
 def test_render_attributes_empty():
     """Test _render_attributes with empty class body."""
-    class_def = ast.ClassDef(
+    class_def = _make_class_def(
         name="EmptyClass",
         bases=[],
         keywords=[],
         body=[],
         decorator_list=[],
-        type_params=[],
     )
     result = _render_attributes(class_def)
     assert not result
@@ -116,13 +118,12 @@ def test_render_attributes_no_annotation():
     )
     # Need to add line number for ast.unparse to work
     ast.fix_missing_locations(assign_node)
-    class_def = ast.ClassDef(
+    class_def = _make_class_def(
         name="TestClass",
         bases=[],
         keywords=[],
         body=[assign_node],
         decorator_list=[],
-        type_params=[],
     )
     result = _render_attributes(class_def)
     assert any("attr = 42" in line for line in result)
@@ -130,7 +131,7 @@ def test_render_attributes_no_annotation():
 
 def test_render_attributes_complex_value():
     """Test _render_attributes with complex attribute value."""
-    class_def = ast.ClassDef(
+    class_def = _make_class_def(
         name="TestClass",
         bases=[],
         keywords=[],
@@ -143,7 +144,6 @@ def test_render_attributes_complex_value():
             )
         ],
         decorator_list=[],
-        type_params=[],
     )
     result = _render_attributes(class_def)
     assert any("attr: list = [1, 2]" in line for line in result)

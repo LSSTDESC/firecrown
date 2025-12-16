@@ -1,0 +1,25 @@
+# External symbols allowed in Firecrown tutorials
+# Format: one symbol per line, # for comments
+# This file lists symbols from external libraries and Python built-ins
+# that are referenced in tutorials but are not part of Firecrown
+
+# Python built-ins
+None
+True
+False
+
+# sacc library (https://github.com/LSSTDESC/sacc)
+SACC
+
+# 
+
+# Generic/common programming terms that may appear in documentation
+Factory
+Statistics
+
+# Environment variables (not Python symbols but may appear in code spans)
+CSL_DIR
+FIRECROWN_DIR
+
+# Type variables and generic terms
+T
