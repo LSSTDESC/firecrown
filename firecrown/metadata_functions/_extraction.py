@@ -565,7 +565,7 @@ def extract_all_real_metadata(
 
 def extract_all_photoz_bin_combinations(
     sacc_data: sacc.Sacc,
-    allow_mixed_types: bool = False, 
+    allow_mixed_types: bool = False,
     bin_pair_selector: None | mdt.BinPairSelector = None,
 ) -> list[mdt.TwoPointXY]:
     """Extract all two-point bin pair combinations from a SACC file.

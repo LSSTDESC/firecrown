@@ -372,7 +372,7 @@ class CrossNameBinPairSelector(CompositeSelector):
     kind: str = "cross-name"
 
     def model_post_init(self, _: Any, /) -> None:
-        # Invert AutoNameBinPairSelector
+        """Invert AutoNameBinPairSelector."""
         self._impl = ~AutoNameBinPairSelector()
 
 
@@ -407,7 +407,7 @@ class CrossMeasurementBinPairSelector(CompositeSelector):
     kind: str = "cross-measurement"
 
     def model_post_init(self, _: Any, /) -> None:
-        # Invert AutoMeasurementBinPairSelector
+        """Invert AutoMeasurementBinPairSelector."""
         self._impl = ~AutoMeasurementBinPairSelector()
 
 
@@ -423,6 +423,7 @@ class AutoBinPairSelector(CompositeSelector):
     kind: str = "auto-bin"
 
     def model_post_init(self, _: Any, /) -> None:
+        """Initialize as composite of auto-name and auto-measurement selectors."""
         self._impl = AutoNameBinPairSelector() & AutoMeasurementBinPairSelector()
 
 
@@ -437,7 +438,7 @@ class CrossBinPairSelector(CompositeSelector):
     kind: str = "cross-bin"
 
     def model_post_init(self, _: Any, /) -> None:
-        # Invert AutoBinPairSelector
+        """Invert AutoBinPairSelector."""
         self._impl = ~AutoBinPairSelector()
 
 
@@ -653,6 +654,7 @@ class AutoNameDiffBinPairSelector(CompositeSelector):
     neighbors_diff: int | list[int] = 1
 
     def model_post_init(self, _: Any, /) -> None:
+        """Initialize as NameDiffBinPairSelector with same_name_prefix=True."""
         self._impl = NameDiffBinPairSelector(
             same_name_prefix=True, neighbors_diff=self.neighbors_diff
         )
@@ -683,6 +685,7 @@ class CrossNameDiffBinPairSelector(CompositeSelector):
     neighbors_diff: int | list[int] = 1
 
     def model_post_init(self, _: Any, /) -> None:
+        """Initialize as NameDiffBinPairSelector with same_name_prefix=False."""
         self._impl = NameDiffBinPairSelector(
             same_name_prefix=False, neighbors_diff=self.neighbors_diff
         )
@@ -729,6 +732,7 @@ class ThreeTwoBinPairSelector(CompositeSelector):
     source_lens_dist: int = 5
 
     def model_post_init(self, _: Any, /) -> None:
+        """Initialize as composite of source, lens, and source-lens selectors."""
         self._impl = (
             (
                 SourceBinPairSelector()
