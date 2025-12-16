@@ -8,7 +8,9 @@ from firecrown.metadata_types import CMB, Galaxies
 def make_tomobin() -> TomographicBin:
     z = np.array([0.0, 0.5, 1.0])
     dndz = np.array([0.1, 0.2, 0.7])
-    return TomographicBin(bin_name="src0", z=z, dndz=dndz, measurements={Galaxies.COUNTS})
+    return TomographicBin(
+        bin_name="src0", z=z, dndz=dndz, measurements={Galaxies.COUNTS}
+    )
 
 
 def test_cmblensing_basic():
