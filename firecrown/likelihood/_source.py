@@ -6,6 +6,7 @@ from __future__ import annotations
 from firecrown.likelihood._base import (
     SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z,
     SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z,
+    SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_V,
     PhotoZShift,
     PhotoZShiftFactory,
     PhotoZShiftandStretch,
