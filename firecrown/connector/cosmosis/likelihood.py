@@ -9,6 +9,9 @@ likelihood.
 """
 
 import warnings
+from collections.abc import Mapping
+from typing import cast
+import numpy as np
 import cosmosis.datablock
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
@@ -38,6 +41,126 @@ def extract_section(sample: cosmosis.datablock, section: str) -> NamedParameters
         raise RuntimeError(f"Datablock section `{section}' does not exist.")
     sec_dict = {name: sample[section, name] for _, name in sample.keys(section=section)}
     return NamedParameters(sec_dict)
+
+
+def _canonicalize_cosmological_parameters(
+    named: NamedParameters,
+) -> dict[str, float | list[float]]:
+    """Convert common CosmoSIS cosmology names to Firecrown canonical names.
+
+    This accepts a NamedParameters (from `extract_section`) and returns a dict
+    mapping Firecrown canonical parameter names to values. It performs a
+    conservative mapping for common aliases (e.g., `omega_c` -> `Omega_c`,
+    `h0` -> `h`, `sigma_8` -> `sigma8`, `nnu` -> `Neff`, `mnu` -> `m_nu`).
+    """
+    mapping: dict[str, str] = {
+        "omega_c": "Omega_c",
+        "omega_b": "Omega_b",
+        "omega_k": "Omega_k",
+        "n_s": "n_s",
+        "ns": "n_s",
+        "sigma_8": "sigma8",
+        "sigma8": "sigma8",
+        "h0": "h",
+        "h": "h",
+        "w": "w0",
+        "w0": "w0",
+        "wa": "wa",
+        "mnu": "m_nu",
+        "m_nu": "m_nu",
+        "nnu": "Neff",
+        "neff": "Neff",
+        "tcmb": "T_CMB",
+        "t_cmb": "T_CMB",
+    }
+
+    result: dict[str, float | list[float]] = {}
+    # Build a lowercase lookup for incoming keys
+    lower_map = {k.lower(): v for k, v in named.data.items()}
+
+    for src_key, tgt_key in mapping.items():
+        if src_key in lower_map:
+            v = lower_map[src_key]
+            # accept numeric scalars (int/float) and numpy arrays of numerics
+            if isinstance(v, (int, float)):
+                result[tgt_key] = float(v)
+            elif isinstance(v, np.ndarray) and v.dtype in (np.int64, np.float64):
+                # numpy arrays with numeric dtypes -> convert to list of floats
+                result[tgt_key] = [float(x) for x in v.ravel()]
+            # skip booleans, strings, and other non-numeric types
+
+    return result
+
+
+def _compare_cosmology_values(
+    param_name: str,
+    merged_val: float | list[float],
+    canonical_val: float | list[float],
+) -> None:
+    """Compare two cosmological parameter values and raise if they conflict.
+
+    :param param_name: Name of the parameter being compared
+    :param merged_val: Value from sampling sections
+    :param canonical_val: Value from canonical cosmological_parameters
+    :raises RuntimeError: If values conflict (different values or incompatible types)
+    """
+
+    def _raise_conflict(cause: Exception | None = None) -> None:
+        """Helper to raise conflict error with consistent message."""
+        msg = (
+            f"Conflicting cosmological parameter '{param_name}' found in "
+            f"sampling sections and 'cosmological_parameters'."
+        )
+        if cause is not None:
+            raise RuntimeError(msg) from cause
+        raise RuntimeError(msg)
+
+    match (merged_val, canonical_val):
+        case (list() | tuple(), list() | tuple()):
+            # Both are sequences - compare as lists of floats
+            try:
+                merged_floats = [float(x) for x in merged_val]
+                canonical_floats = [float(x) for x in canonical_val]
+                if merged_floats != canonical_floats:
+                    _raise_conflict()
+            except (TypeError, ValueError) as exc:
+                _raise_conflict(exc)
+
+        case (list() | tuple(), _) | (_, list() | tuple()):
+            # Mixed types (one scalar, one sequence) - always conflicts
+            _raise_conflict()
+
+        case _:
+            # Both are scalars - compare as floats
+            try:
+                if float(merged_val) != float(canonical_val):
+                    _raise_conflict()
+            except (TypeError, ValueError) as exc:
+                _raise_conflict(exc)
+
+
+def _check_cosmology_conflicts(
+    merged: Mapping[str, float | list[float]],
+    canonical: Mapping[str, float | list[float]],
+) -> None:
+    """Check for conflicts between sampling parameters and canonical cosmology.
+
+    Compares keys case-insensitively and handles both scalar and list values.
+    Raises RuntimeError if the same parameter exists with different values.
+
+    :param merged: Dictionary of parameters from sampling sections
+    :param canonical: Dictionary of canonical cosmological parameters
+    :raises RuntimeError: If a parameter conflict is detected
+    """
+    # CosmoSIS/DataBlock lower-cases keys, while canonical mapping
+    # uses Firecrown's capitalized names. Compare case-insensitively.
+    existing_keys_lower = {mk.lower(): mk for mk in merged.keys()}
+    for param_name, canonical_val in canonical.items():
+        key_lower = param_name.lower()
+        if key_lower in existing_keys_lower:
+            merged_key = existing_keys_lower[key_lower]
+            merged_val = merged[merged_key]
+            _compare_cosmology_values(param_name, merged_val, canonical_val)
 
 
 class FirecrownLikelihood:
@@ -140,10 +263,33 @@ class FirecrownLikelihood:
         firecrown_params = calculate_firecrown_params(
             self.sampling_sections, self.firecrown_module_name, sample
         )
+
         if use_cosmosis_cosmology:
+            # When CosmoSIS provides calculator-mode cosmology, merge mapped CCL
+            # args produced by the mapping.
             firecrown_params = ParamsMap(firecrown_params.params | self.map.asdict())
         else:
-            firecrown_params = ParamsMap(firecrown_params.params)
+            # For PURE_CCL_MODE (and other non-DEFAULT modes), accept cosmology
+            # from the CosmoSIS `cosmological_parameters` section if present and
+            # merge canonicalized keys into the ParamsMap so Firecrown's CCL
+            # factory can be updated from sampler parameters without duplicating
+            # them in a separate section.
+            merged: dict[str, float | list[float]] = dict(firecrown_params.params)
+            if sample.has_section("cosmological_parameters"):
+                cosmo_params_for_merge: NamedParameters = extract_section(
+                    sample, "cosmological_parameters"
+                )
+                canonical = _canonicalize_cosmological_parameters(
+                    cosmo_params_for_merge
+                )
+                _check_cosmology_conflicts(
+                    cast(Mapping[str, float | list[float]], merged),
+                    cast(Mapping[str, float | list[float]], canonical),
+                )
+                merged.update(canonical)
+
+            firecrown_params = ParamsMap(merged)
+
         firecrown_params.use_lower_case_keys(True)
         updated_records = self.update_likelihood_and_tools(firecrown_params)
 
