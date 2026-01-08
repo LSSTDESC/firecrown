@@ -125,6 +125,15 @@ def test_linear_alignment_systematic_apply(
     mock_growth_factor.assert_called()
 
 
+def test_massdep_linear_alignment_systematic_init_default():
+    """Test MassDependentLinearAlignmentSystematic default initialization."""
+    systematic = wl.MassDependentLinearAlignmentSystematic()
+    assert hasattr(systematic, "ia_amplitude")
+    assert hasattr(systematic, "ia_mass_scaling")
+    assert hasattr(systematic, "red_fraction")
+    assert hasattr(systematic, "average_halo_mass")
+
+
 def test_tatt_alignment_systematic_init_default():
     """Test TattAlignmentSystematic default initialization."""
     systematic = wl.TattAlignmentSystematic()

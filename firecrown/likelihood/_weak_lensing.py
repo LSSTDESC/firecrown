@@ -37,10 +37,10 @@ class WeakLensingArgs(SourceGalaxyArgs):
 
     ia_bias: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
 
-    ia_amplitude: None | tuple[npt.NDArray[np.float64]] = None
-    ia_mass_scaling: None | tuple[npt.NDArray[np.float64]] = None
-    red_fraction: None | tuple[npt.NDArray[np.float64]] = None
-    average_halo_mass: None | tuple[npt.NDArray[np.float64]] = None
+    ia_amplitude: None | np.float64 = None
+    ia_mass_scaling: None | np.float64 = None
+    red_fraction: None | np.float64 = None
+    average_halo_mass: None | np.float64 = None
 
     has_pt: bool = False
     has_hm: bool = False
@@ -187,10 +187,39 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         )
 
 
-class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
+MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_BIAS = 5.74
+MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_SCALING = 0.44
+MASSDEP_LINEAR_ALIGNMENT_DEFAULT_RED_FRACTION = 1.0
+MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS = 10**13.5
 
-    def __init__(self, sacc_tracer: None | str = None, alphag: None | float = 1.0):
-        """Create a LinearAlignmentSystematic object, using the specified tracer name.
+
+class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
+    """Mass-dependent linear alignment systematic.
+
+    Adds a linear intrinsic alignment model systematic
+    the amplitude of which depends on the assumed model mass scaling,
+    red fraction, and average halo mass of the tracer. Blue galaxies are
+    assumed to have zero intrinsic alignment amplitude.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar ia_amplitude: the intrinsic alignment amplitude at the pivot halo mass.
+    :ivar ia_mass_scaling: the power-law index of the model's mass scaling.
+    :ivar red_fraction: the red galaxy fraction of the tracer sample.
+    :ivar average_halo_mass: the average halo mass of the tracer sample (in units of
+        solar mass / h).
+
+    The following parameter is an InternalParameter that will not be provided
+    by the sampler, instead the value given will be used throughout all
+    calculations:
+
+    :ivar pivot_halo_mass: the pivot halo mass of the model (default=10^(13.5) M_sun/h).
+    """
+
+    def __init__(self, sacc_tracer: None | str = None):
+        """Create a MassDependentLinearAlignmentSystematic object.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
@@ -199,31 +228,35 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
         super().__init__(parameter_prefix=sacc_tracer)
 
         self.ia_amplitude = parameters.register_new_updatable_parameter(
-            default_value=LINEAR_ALIGNMENT_DEFAULT_IA_BIAS, shared=True
+            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_BIAS, shared=True
         )
         self.ia_mass_scaling = parameters.register_new_updatable_parameter(
-            default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAZ, shared=True
+            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_SCALING, shared=True
         )
         self.red_fraction = parameters.register_new_updatable_parameter(
-            default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAG
+            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_RED_FRACTION
         )
         self.average_halo_mass = parameters.register_new_updatable_parameter(
-            default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS
         )
         self.pivot_halo_mass = parameters.register_new_updatable_parameter(
             value=10**13.5,
-            default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS,
         )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        """Return a new linear alignment systematic.
+        """Return a mass-dependent linear alignment systematic.
 
         This choice is based on the given tracer_arg, in the context of the given
         cosmology.
         """
-        pref = self.ia_amplitude * self.red_fraction * (self.average_halo_mass/self.pivot_halo_mass)**self.ia_mass_scaling
+        pref = (
+            self.ia_amplitude
+            * self.red_fraction
+            * (self.average_halo_mass / self.pivot_halo_mass) ** self.ia_mass_scaling
+        )
 
         ia_bias_array = np.full_like(tracer_arg.z, pref)
 
