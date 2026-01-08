@@ -9,6 +9,13 @@ from firecrown.likelihood.number_counts._systematics import (
     MagnificationBiasSystematic,
     PhotoZShift,
     PTNonLinearBiasSystematic,
+    PhotoZShiftandStretch,
+)
+
+# Re-export shared factories from base module
+from firecrown.likelihood._base import (
+    SpecZStretch,
+    SpecZStretchFactory,
 )
 
 __all__ = [
@@ -18,4 +25,7 @@ __all__ = [
     "ConstantMagnificationBiasSystematic",
     "PTNonLinearBiasSystematic",
     "MagnificationBiasSystematic",
+    "PhotoZShiftandStretch",
+    "SpecZStretch",
+    "SpecZStretchFactory",
 ]
