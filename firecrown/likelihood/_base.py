@@ -1028,7 +1028,7 @@ def dndz_stretch_fog_gaussian(
 
     if sigma_v < 0.0:
         raise ValueError("Stretch Parameter (sigma_v) must be positive")
-    elif sigma_v == 0.0:
+    if sigma_v == 0.0:
         return z, dndz
 
     n = z.shape[0]
@@ -1068,7 +1068,7 @@ def dndz_stretch_fog_lorentzian(
 
     if sigma_v < 0.0:
         raise ValueError("Stretch Parameter (sigma_v) must be positive")
-    elif sigma_v == 0.0:
+    if sigma_v == 0.0:
         return z, dndz
 
     n = z.shape[0]
