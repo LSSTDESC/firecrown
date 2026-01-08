@@ -190,7 +190,7 @@ def test_extract_all_tracers_types_cells(
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    tracers = extract_all_measured_types(sacc_data)
+    tracers, _ = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -206,7 +206,7 @@ def test_extract_all_tracers_types_cwindows(
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
-    tracers = extract_all_measured_types(sacc_data)
+    tracers, _ = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -220,7 +220,7 @@ def test_extract_all_tracers_types_cwindows(
 def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    tracers = extract_all_measured_types(sacc_data)
+    tracers, _ = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -240,7 +240,7 @@ def test_extract_all_tracers_types_reals_inverted(
     sacc_data, _, _ = sacc_galaxy_xis_inverted
 
     with pytest.warns(DeprecationWarning, match="AUTO-CORRECTION PERFORMED"):
-        tracers = extract_all_measured_types(sacc_data)
+        tracers, _ = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -638,7 +638,7 @@ def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
 
     # This should NOT raise an error even though src/lens tracers may have
     # mixed types from different measurement combinations
-    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+    result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
     # Verify we got a result for all tracers
     assert len(result) > 0
@@ -657,7 +657,7 @@ def test_extract_all_measured_mixed_types_galaxy_only(
     """
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+    result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
     assert "src0" in result
     assert result["src0"] == {Galaxies.SHEAR_E}
@@ -673,7 +673,7 @@ def test_extract_all_measured_mixed_types_density_only(
     """
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+    result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
     assert "lens0" in result
     assert result["lens0"] == {Galaxies.COUNTS}
@@ -689,7 +689,7 @@ def test_extract_all_measured_mixed_types_mixed_real_space(
     """
     sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0
 
-    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+    result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
     # src0 should have SHEAR_T (from galaxy_shearDensity_xi_t)
     assert "src0" in result
@@ -731,7 +731,7 @@ def test_extract_all_measured_mixed_types_no_auto_correction():
     # With allow_mixed_types=True, this should NOT trigger deprecation warning
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+        result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
         # Verify no DeprecationWarning about SACC convention was raised
         deprecation_warnings = [
@@ -778,7 +778,7 @@ def test_extract_all_measured_mixed_types_different_tracer_types():
     sacc_data.add_covariance(cov)
 
     # This should work without raising an error
-    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+    result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
     assert "source_bin" in result
     assert "lens_bin" in result
@@ -814,7 +814,7 @@ def test_extract_all_measured_mixed_types_multiple_measurements_same_tracer():
     sacc_data.add_covariance(cov)
 
     # With allow_mixed_types=True, this should work
-    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+    result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
     assert "galaxy" in result
     # Tracer should have both SHEAR_E and COUNTS

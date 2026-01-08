@@ -12,6 +12,9 @@ py-version=3.11
 # Discover python modules and packages in the file system subtree.
 recursive=yes
 
+# List of packages with C extensions.
+extension-pkg-allow-list=gi._gi
+
 [MESSAGES CONTROL]
 
 # Enable the message, report, category or checker with the given id(s). You can
@@ -71,7 +74,7 @@ ignore-none=false
 
 # List of members which are set dynamically and missed by pylint inference system,
 # and so shouldn't trigger E1101 when accessed.
-generated-members=GObject.ParamFlags.*
+generated-members=GObject.ParamFlags.*, Ncm.*, Nc.*
 
 [FORMAT]
 

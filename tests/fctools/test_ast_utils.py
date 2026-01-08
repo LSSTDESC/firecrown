@@ -15,6 +15,7 @@ from firecrown.fctools.ast_utils import (
     get_function_names,
     get_module_docstring,
 )
+from ..conftest import _make_class_def
 
 
 class TestGetModuleDocstring:
@@ -402,7 +403,7 @@ class MyClass:
         """Test formatting when docstring is an empty string."""
         # Create a ClassDef node with empty docstring manually
         # This is an edge case that's hard to create via parsing
-        class_def = ast.ClassDef(
+        class_def = _make_class_def(
             name="TestClass",
             bases=[],
             keywords=[],

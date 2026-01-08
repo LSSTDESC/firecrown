@@ -1,6 +1,6 @@
 """Demonstration of the use of the :class:`Supernova` statistics object."""
 
-import sacc
+from firecrown.likelihood.factories import load_sacc_data
 import firecrown.likelihood.supernova as sn
 from firecrown.likelihood import ConstGaussian, NamedParameters
 
@@ -19,7 +19,7 @@ def build_likelihood(params: NamedParameters):
 
     #    We load the correct SACC file.
     saccfile = params.get_string("sacc_file")
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    sacc_data = load_sacc_data(saccfile)
 
     # The read likelihood method is called passing the loaded SACC file, the
     # statistic functions will receive the appropriated sections of the SACC

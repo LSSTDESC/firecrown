@@ -8,7 +8,7 @@ Before creating the statistics, we have to create the sources, then the statisti
 One typically creates several sources, both weak lensing sources and number count sources.
 
 Once all the sources are created, we create a `TwoPoint` statistic for each pair of source combinations that we want to use. 
-Naturally, these combinations must be present in the `SACC` object.
+Naturally, these combinations must be present in the `sacc.Sacc` object.
 One is free to use just a subset of the available combinations.
 
 Note that, each source has a list of systematics that are applied to it. 

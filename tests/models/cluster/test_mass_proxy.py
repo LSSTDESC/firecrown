@@ -179,6 +179,7 @@ def test_cluster_distribution_unimodal_property(
     # Skip if mass2 is out of range
     assume(mass2 <= 26.0)
 
+    # pylint: disable=unreachable
     mass1_array = np.atleast_1d(mass1)
     mass2_array = np.atleast_1d(mass2)
     z_array = np.atleast_1d(z)
@@ -189,6 +190,7 @@ def test_cluster_distribution_unimodal_property(
     # Both probabilities should be non-negative
     assert prob1 >= 0, f"Probability at mass1={mass1} must be non-negative"
     assert prob2 >= 0, f"Probability at mass2={mass2} must be non-negative"
+    # pylint: enable=unreachable
 
 
 def test_cluster_murata_binned_mean(murata_binned_relation: MurataBinned):

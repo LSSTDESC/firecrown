@@ -85,11 +85,16 @@ jobs:
       - name: Quick setup and linting
         shell: bash -l {0}
         run: |
+          set -e
           pip install --no-deps -e .
           # Fast parallel linting for immediate feedback
           black --check firecrown tests examples &
+          BLACK_PID=$!
           flake8 firecrown examples tests &
-          wait
+          FLAKE8_PID=$!
+
+          wait $BLACK_PID
+          wait $FLAKE8_PID
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
 
@@ -172,14 +177,27 @@ jobs:
       - name: Code quality checks
         shell: bash -l {0}
         run: |
+          set -e
           # Parallel linting and type checking
           black --check firecrown tests examples &
+          BLACK_PID=$!
           flake8 firecrown examples tests &
+          FLAKE8_PID=$!
           mypy -p firecrown -p examples -p tests &
+          MYPY_PID=$!
           pylint firecrown &
+          PYLINT1_PID=$!
           pylint --rcfile tests/pylintrc tests &
+          PYLINT2_PID=$!
           pylint --rcfile examples/pylintrc examples &
-          wait
+          PYLINT3_PID=$!
+
+          wait $BLACK_PID
+          wait $FLAKE8_PID
+          wait $MYPY_PID
+          wait $PYLINT1_PID
+          wait $PYLINT2_PID
+          wait $PYLINT3_PID
       - name: Run unit tests with smart execution
         shell: bash -l {0}
         run: |
@@ -193,7 +211,7 @@ jobs:
           fi
       - name: Running example tests
         shell: bash -l {0}
-        run: python -m pytest -vv -s --example -m example tests/example
+        run: python -m pytest -vv -s --example tests/example -n auto
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v5
