@@ -12,6 +12,8 @@ It is intended to provide a high-level overview of how measurements, binning sch
 The focus is on the rationale behind each abstraction and the motivation for the chosen hierarchy.
 Detailed descriptions of each component are provided in the following sections.
 
+If you are looking for practical instructions on how to use the system, you may go directly to the workflow tutorial: [Two-Point Workflow](two_point_workflow.qmd).
+
 ## Introduction
 
 Firecrown’s two-point likelihood framework is built around a structured hierarchy of metadata types that describe the configuration and organization of cosmological measurements.
@@ -34,7 +36,7 @@ To compute theoretical predictions or build likelihoods, a [[likelihood|TwoPoint
 This object requires a measurement layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) or a full [[data_types|TwoPointMeasurement]], and includes all modeling assumptions—such as galaxy bias, shot noise, intrinsic alignment, and systematics.
 Multiple [[likelihood|TwoPoint]] instances can be constructed from the same layout with different model choices.
 While this can be done manually, the [[likelihood|TwoPointFactory]] automates the creation of [[likelihood|TwoPoint]] objects from either layout or measurement objects.
-See [Two-Point Factories](#sec-two-point-factories) for details.
+See [Two-Point Factories](two_point_factory_basics.qmd) for details.
 
 The complete hierarchy is visualized in @fig-framework-hierarchy.
 
@@ -77,7 +79,7 @@ It is valid to include multiple measurement types for the same bin, such as gala
 To further differentiate among subpopulations, each bin may be tagged with a [[metadata_types|InferredGalaxyZDist.type_source]].
 This identifier, while typically a simple string[^type_source], distinguishes between subsets within the same measurement category.
 For example, in galaxy surveys, [[metadata_types|InferredGalaxyZDist.type_source]] might refer to red vs. blue galaxies, or in CMB lensing, to Planck vs. SPT data.
-This tag allows the modeling framework to apply different theoretical treatments or nuisance parameterizations to distinct subcomponents while keeping the overall bin structure unified.
+This tag allows the modeling framework to apply different theoretical treatments or nuisance parametrization to distinct subcomponents while keeping the overall bin structure unified.
 
 [^type_source]: More precisely, `type_source` is actually of type `TypeSource`, which is a subclass of `str`.
   This type has some additional functionality used by the metadata system for validation, and which is usually transparent to users of Firecrown.
@@ -212,27 +214,7 @@ Where:
 
 This final level completes the description by connecting the theoretical and structural metadata with real or simulated observations, enabling their use in likelihood evaluations, consistency checks, or other statistical analyses.
 
-## Two-Point Factories {#sec-two-point-factories}
-
-The [[metadata_types|TwoPointHarmonic]] and [[metadata_types|TwoPointReal]] classes describe the layout of two-point measurements in harmonic and real space, respectively. They specify **what** is being measured and **how**, but do not include actual data. These layout objects can be used in two distinct contexts:
-
-- To build a [[data_types|TwoPointMeasurement]], which includes data and indices into a covariance matrix.
-- To initialize a [[likelihood|TwoPoint]] object, which encapsulates all modeling choices and can be used to compute theoretical predictions and/or contribute to a likelihood.
-
-A [[likelihood|TwoPoint]] object can be constructed from either a layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) or a measurement ([[data_types|TwoPointMeasurement]]). In both cases, it computes a [[data_types|TheoryVector]]. If the object includes data (i.e., initialized from a [[data_types|TwoPointMeasurement]]), it also contains a [[data_types|DataVector]]. As a subclass of Firecrown's [[likelihood|Statistic]], a [[likelihood|TwoPoint]] can be included in a [[likelihood|Likelihood]]; see [Introduction](intro_article.qmd) for further details.
-
-To simplify the construction of [[likelihood|TwoPoint]] objects from layouts, Firecrown provides the [[likelihood|TwoPointFactory]]. This factory automates source creation based on metadata found in the layout description. Specifically, it inspects the measurement types in each [[metadata_types|TwoPointXY]] (i.e., the [[metadata_types|TwoPointXY.x_measurement]] and [[metadata_types|TwoPointXY.y_measurement]] fields) and delegates to appropriate source factories—such as [[likelihood.weak_lensing|WeakLensingFactory]] or [[likelihood.number_counts|NumberCountsFactory]].
-
-A subset of [[metadata_types|Measurement]] types is associated with each source factory. For example:
-
-- [[metadata_types|Galaxies.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
-- [[metadata_types|Galaxies.SHEAR_E]] `|` [[metadata_types|Galaxies.SHEAR_T]] `| ...` → [[likelihood.weak_lensing|WeakLensingFactory]]
-
-The [[likelihood|TwoPointFactory]] can hold multiple instances of the same source factory, each tied to a different [[metadata_types|TypeSource]]. This allows distinct modeling choices for different subpopulations (e.g., red vs. blue galaxies), even when the measurement type is the same. By default, both basic bins and factories use [[metadata_types|TypeSource.DEFAULT]], so in simpler analyses the [[metadata_types|TypeSource]] distinction can be ignored.
-
-See [Two-Point Factories](two_point_factories.qmd) for implementation and usage details.
-
-## Summary
+# Summary {#sec-summary}
 
 This framework provides a structured approach for managing two-point correlation measurements in cosmology.
 It separates concerns into different components, each with a specific role, and supports both theoretical predictions and actual observational data.

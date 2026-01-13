@@ -1,0 +1,622 @@
+---
+title: "Bin Pair Selectors: Filtering Two-Point Correlations"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+This tutorial explains how to use **[[metadata_types|BinPairSelector]]** objects to control which pairs of tomographic bins are included in two-point analyses. Selectors provide a powerful way to filter correlations based on bin names, measurement types, or custom criteria.
+
+## Why Use Bin Pair Selectors?
+
+When working with two-point statistics, you often need to include only specific subsets of all possible bin pair combinations:
+
+- **Auto-correlations only**: Same bin correlated with itself
+- **Cross-correlations only**: Different bins correlated together
+- **Source measurements only**: Weak lensing (shear) correlations
+- **Lens measurements only**: Galaxy counts correlations
+- **Specific bin pairs**: Explicitly named combinations
+- **Custom criteria**: Combine multiple conditions with logical operators
+
+Bin pair selectors let you express these requirements declaratively, making your code clearer and more maintainable.
+
+## Basic Concepts
+
+A [[metadata_types|BinPairSelector]] is applied when creating [[metadata_types|TwoPointXY]] combinations from [[metadata_types|InferredGalaxyZDist]] bins. It determines whether to keep or discard each potential pair.
+
+### The `keep()` Method
+
+Every selector implements a `keep()` method that takes:
+- **`zdist`**: A pair of [[metadata_types|InferredGalaxyZDist]] objects `(bin1, bin2)`
+- **`m`**: A pair of [[metadata_types|Measurement]] types `(measurement1, measurement2)`
+
+The method returns `True` to keep the pair, `False` to discard it.
+
+## Common Selector Types
+
+Below are some common selectors you might use in your code. Note that we show only a fraction of their output for brevity.
+
+### Auto-Correlation Selectors
+
+Select only pairs where both bins are the same:
+
+```{python}
+from firecrown.metadata_types import AutoNameBinPairSelector
+from firecrown.generators import (
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
+)
+from firecrown.metadata_functions import make_binned_two_point_filtered
+
+# Generate LSST Y1 bins
+count_bins = LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.generate()
+shear_bins = LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.generate()
+all_bins = count_bins + shear_bins
+
+# Select only auto-correlations (same bin name)
+auto_name_selector = AutoNameBinPairSelector()
+auto_name_pairs = make_binned_two_point_filtered(all_bins, auto_name_selector)
+
+print(f"Total bins: {len(all_bins)}")
+print(f"Auto-correlation pairs (by name): {len(auto_name_pairs)}")
+```
+
+If you also want matching measurement types only, use [[metadata_types|AutoMeasurementBinPairSelector]].
+Note that this selector requires only the measurement types to match, not the bin names:
+
+```{python}
+from firecrown.metadata_types import AutoMeasurementBinPairSelector
+
+# Select pairs with same measurement type
+auto_measurement_selector = AutoMeasurementBinPairSelector()
+auto_measurement_pairs = make_binned_two_point_filtered(
+    all_bins, auto_measurement_selector
+)
+
+print(f"Auto-correlation pairs (by measurement): {len(auto_measurement_pairs)}")
+```
+
+Display the auto-correlation pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+auto_measurement_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in auto_measurement_pairs[::3]  # Show every 3rd pair
+]
+
+df = pd.DataFrame(auto_measurement_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+### Cross-Correlation Selectors
+
+Select only pairs where bins are different:
+
+```{python}
+from firecrown.metadata_types import CrossNameBinPairSelector
+
+# Select only cross-correlations (different bin names)
+cross_selector = CrossNameBinPairSelector()
+cross_pairs = make_binned_two_point_filtered(all_bins, cross_selector)
+
+print(f"Cross-correlation pairs: {len(cross_pairs)}")
+```
+
+Display the cross-correlation pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+cross_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in cross_pairs[::5]  # Show every 5th pair
+]
+
+df = pd.DataFrame(cross_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+### Measurement Type Selectors
+
+Select based on the type of measurement:
+
+```{python}
+from firecrown.metadata_types import SourceBinPairSelector, LensBinPairSelector
+
+# Source measurements (weak lensing shear)
+source_selector = SourceBinPairSelector()
+source_pairs = make_binned_two_point_filtered(all_bins, source_selector)
+
+# Lens measurements (galaxy counts)
+lens_selector = LensBinPairSelector()
+lens_pairs = make_binned_two_point_filtered(all_bins, lens_selector)
+
+print(f"Source (shear) pairs: {len(source_pairs)}")
+print(f"Lens (counts) pairs: {len(lens_pairs)}")
+```
+
+Source-lens cross-correlations:
+
+```{python}
+from firecrown.metadata_types import SourceLensBinPairSelector
+
+# Source × Lens cross-correlations
+source_lens_selector = SourceLensBinPairSelector()
+source_lens_pairs = make_binned_two_point_filtered(all_bins, source_lens_selector)
+
+print(f"Source × Lens pairs: {len(source_lens_pairs)}")
+```
+
+Display source-lens pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+source_lens_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in source_lens_pairs[::5]  # Show every 5th pair
+]
+
+df = pd.DataFrame(source_lens_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+### Named Pair Selectors
+
+Select specific bin name combinations explicitly:
+
+```{python}
+from firecrown.metadata_types import NamedBinPairSelector
+
+# Select specific pairs by name
+named_selector = NamedBinPairSelector(
+    names=[
+        ("lsst_y1_lens0", "lsst_y1_lens1"),
+        ("lsst_y1_source0", "lsst_y1_source0"),
+        ("lsst_y1_source0", "lsst_y1_lens0"),
+    ]
+)
+named_pairs = make_binned_two_point_filtered(all_bins, named_selector)
+
+print(f"Named pairs: {len(named_pairs)}")
+```
+
+**Note**: Matching is order-dependent. `("bin0", "bin1")` is different from `("bin1", "bin0")`. Include both if you want symmetric matching.
+
+Display named pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+named_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in named_pairs
+]
+
+df = pd.DataFrame(named_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+## Logical Combinations
+
+Selectors support logical operations to build complex criteria:
+
+### AND Operator (`&`)
+
+Keep pairs that satisfy **both** conditions:
+
+```{python}
+# Auto-correlations that are also source measurements
+auto_source_selector = AutoNameBinPairSelector() & SourceBinPairSelector()
+auto_source_pairs = make_binned_two_point_filtered(all_bins, auto_source_selector)
+
+print(f"Auto-correlation source pairs: {len(auto_source_pairs)}")
+```
+
+Display auto-correlation source pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+auto_source_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in auto_source_pairs
+]
+
+df = pd.DataFrame(auto_source_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+### OR Operator (`|`)
+
+Keep pairs that satisfy **either** condition:
+
+```{python}
+# Either auto-correlations OR source-lens cross-correlations
+mixed_selector = AutoNameBinPairSelector() | SourceLensBinPairSelector()
+mixed_pairs = make_binned_two_point_filtered(all_bins, mixed_selector)
+
+print(f"Auto OR source-lens pairs: {len(mixed_pairs)}")
+```
+
+Display mixed pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+mixed_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in mixed_pairs[::5]  # Show every 5th pair
+]
+
+df = pd.DataFrame(mixed_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+### NOT Operator (`~`)
+
+Keep pairs that **do not** satisfy the condition:
+
+```{python}
+# Everything except auto-correlations (i.e., cross-correlations)
+not_auto_selector = ~AutoNameBinPairSelector()
+not_auto_pairs = make_binned_two_point_filtered(all_bins, not_auto_selector)
+
+print(f"Non-auto (cross) pairs: {len(not_auto_pairs)}")
+```
+
+Display non-auto pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+not_auto_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in not_auto_pairs[::5]  # Show every 5th pair
+]
+
+df = pd.DataFrame(not_auto_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+### Complex Combinations
+
+Combine multiple operators:
+
+```{python}
+# (Auto-correlations AND source measurements) OR (lens auto-correlations)
+complex_selector = (
+    (AutoNameBinPairSelector() & SourceBinPairSelector()) |
+    (AutoNameBinPairSelector() & LensBinPairSelector())
+)
+complex_pairs = make_binned_two_point_filtered(all_bins, complex_selector)
+
+print(f"Complex selection: {len(complex_pairs)}")
+```
+
+Display complex pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+complex_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in complex_pairs[::2]  # Show every 2nd pair
+]
+df = pd.DataFrame(complex_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+## Composite Selectors
+
+Composite selectors are specialized selectors that combine multiple simpler selectors according to specific logic. 
+Unlike using logical operators (`&`, `|`, `~`) directly, composite selectors implement domain-specific selection patterns as reusable classes.
+
+### Understanding Composite Selectors
+
+A [[metadata_types|CompositeSelector]] is a base class for selectors that internally manage a list of other selectors. When you use composite selectors, you benefit from:
+
+- **Encapsulation**: Complex logic is packaged into a single, named selector
+- **Reusability**: Common patterns (like "auto-correlations", "3×2pt") can be used consistently
+- **Clarity**: Code intent is clearer with descriptive selector names
+
+### Example: The ThreeTwoBinPairSelector
+
+The [[metadata_types|ThreeTwoBinPairSelector]] is a composite selector designed for "3×2pt" analyses, which combine three types of two-point correlations:
+
+1. **Cosmic shear** (source × source)
+2. **Galaxy-galaxy lensing** (source × lens) 
+3. **Galaxy clustering** (lens × lens)
+
+This is a standard observable combination in weak lensing surveys like DES, HSC, and LSST.
+
+```{python}
+from firecrown.metadata_types import ThreeTwoBinPairSelector
+
+# Create a 3×2pt selector
+three_two_selector = ThreeTwoBinPairSelector(
+    source_dist=1, lens_dist=1, source_lens_dist=5
+)
+
+# Apply to our bins
+three_two_pairs = make_binned_two_point_filtered(all_bins, three_two_selector)
+
+print(f"3×2pt pairs: {len(three_two_pairs)}")
+```
+
+The 3×2pt selector includes:
+
+- All cosmic shear auto-correlations and cross-correlations (source × source)
+- All galaxy-galaxy lensing (source × lens, in both orders)
+- All galaxy clustering auto-correlations and cross-correlations (lens × lens)
+
+Display 3×2pt pairs:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+three_two_pairs_table = [
+    {
+        "bin-x": pair.x.bin_name,
+        "bin-y": pair.y.bin_name,
+        "measurement-x": str(pair.x_measurement),
+        "measurement-y": str(pair.y_measurement),
+    }
+    for pair in three_two_pairs
+]
+
+df = pd.DataFrame(three_two_pairs_table)
+Markdown(df.to_markdown(index=False))
+```
+
+### Creating Custom Composite Selectors
+
+You can create your own composite selectors for domain-specific patterns. Here's how to implement one:
+
+```{python}
+from typing import Any
+from firecrown.metadata_types import CompositeSelector, BinPairSelector
+from firecrown.metadata_types import register_bin_pair_selector
+from pydantic import Field
+
+
+@register_bin_pair_selector
+class CustomTwoTwoBinPairSelector(CompositeSelector):
+    """Select 2×2pt: cosmic shear + galaxy clustering (no galaxy-galaxy lensing)."""
+
+    kind: str = "custom_2x2pt"
+
+    def model_post_init(self, _: Any, /) -> None:
+        self._impl = SourceBinPairSelector() | LensBinPairSelector()
+
+
+# Use the custom selector
+two_two_selector = CustomTwoTwoBinPairSelector()
+two_two_pairs = make_binned_two_point_filtered(all_bins, two_two_selector)
+
+print(f"Custom 2×2pt pairs (no galaxy-galaxy lensing): {len(two_two_pairs)}")
+```
+
+### When to Use Composite Selectors
+
+Use composite selectors when:
+
+- You have a well-defined, reusable selection pattern
+- The pattern combines multiple criteria in a specific way
+- You want to give the pattern a meaningful name (like "3×2pt")
+- You need to serialize and share the pattern across analyses
+
+Use direct logical operators (`&`, `|`, `~`) when:
+
+- You need a one-off combination
+- The logic is simple and self-explanatory
+- You're experimenting with different criteria
+
+### Combining Composite Selectors with Logical Operators
+
+Composite selectors can be combined with other selectors using logical operators:
+
+```{python}
+# 3×2pt but remove (lsst_y1_source4, lsst_y1_lens3) pair
+three_two_rm = ThreeTwoBinPairSelector() & ~NamedBinPairSelector(
+    names=[("lsst_y1_source4", "lsst_y1_lens3")]
+)
+
+# Use the combined selector
+three_two_rm_pairs = make_binned_two_point_filtered(all_bins, three_two_rm)
+
+print(
+    f"3×2pt pairs with (lsst_y1_source4, lsst_y1_lens3) removed: {len(three_two_rm_pairs)}"
+)
+```
+
+
+This flexibility allows you to start with standard patterns (like 3×2pt) and refine them as needed for your specific analysis.
+
+When generating metadata from scratch, apply selectors to control which pairs are created:
+
+```{python}
+import numpy as np
+from firecrown.metadata_types import TwoPointHarmonic, AutoBinPairSelector
+
+# Create selector for auto-correlations (name AND measurement)
+auto_both_selector = AutoBinPairSelector()
+
+# Filter pairs during generation
+auto_both_pairs = make_binned_two_point_filtered(all_bins, auto_both_selector)
+
+# Create harmonic-space metadata
+ells = np.unique(np.geomspace(2, 2000, 128).astype(int))
+auto_harmonic_metadata = [TwoPointHarmonic(XY=xy, ells=ells) for xy in auto_both_pairs]
+
+print(f"Auto-correlation harmonic metadata: {len(auto_harmonic_metadata)}")
+```
+
+## Using Selectors with SACC Extraction
+
+When extracting from SACC files, apply selectors to filter which correlations are loaded:
+
+```{python}
+from firecrown.likelihood.factories import load_sacc_data
+from firecrown.metadata_functions import extract_all_real_metadata
+
+# Load SACC file
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
+
+# Extract only source auto-correlations
+source_auto_selector = SourceBinPairSelector() & AutoNameBinPairSelector()
+source_auto_metadata = extract_all_real_metadata(
+    sacc_data, bin_pair_selector=source_auto_selector
+)
+
+print(f"Source auto-correlations from SACC: {len(source_auto_metadata)}")
+```
+
+Display the source auto-correlations:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+source_auto_table = [
+    {
+        "bin-x": real.XY.x.bin_name,
+        "bin-y": real.XY.y.bin_name,
+        "measurement-x": str(real.XY.x_measurement),
+        "measurement-y": str(real.XY.y_measurement),
+    }
+    for real in source_auto_metadata
+]
+
+df = pd.DataFrame(source_auto_table)
+Markdown(df.to_markdown(index=False))
+```
+
+Compare with extracting all data:
+
+```{python}
+# Extract everything (no selector)
+all_metadata = extract_all_real_metadata(sacc_data)
+
+print(f"All correlations in SACC: {len(all_metadata)}")
+print(f"Filtered to source auto: {len(source_auto_metadata)}")
+```
+
+## Serialization
+
+Selectors can be serialized to YAML for reuse:
+
+```{python}
+from firecrown.utils import base_model_to_yaml, base_model_from_yaml
+
+# Create a complex selector
+selector = (AutoNameBinPairSelector() & SourceBinPairSelector()) | LensBinPairSelector()
+
+# Serialize to YAML
+selector_yaml = base_model_to_yaml(selector)
+print("Serialized selector:")
+print(selector_yaml)
+```
+
+Load from YAML:
+
+```{python}
+from firecrown.metadata_types import BinPairSelector
+
+# Deserialize
+loaded_selector = base_model_from_yaml(BinPairSelector, selector_yaml)
+
+# Use the loaded selector
+loaded_pairs = make_binned_two_point_filtered(all_bins, loaded_selector)
+print(f"Pairs from loaded selector: {len(loaded_pairs)}")
+```
+
+## Summary
+
+Bin pair selectors provide a declarative way to control which bin pairs are included in your analysis:
+
+- **Atomic selectors**: Auto, cross, source, lens, named pairs
+- **Logical operators**: AND (`&`), OR (`|`), NOT (`~`)
+- **Integration**: Works with both generators and SACC extraction
+- **Serialization**: Save and load selector configurations
+
+### Key Functions
+
+| Function | Purpose | Selector Parameter |
+|----------|---------|-------------------|
+| `make_binned_two_point_filtered()` | Filter generated bins | Required |
+| `extract_all_photoz_bin_combinations()` | Filter SACC bin combinations | Optional |
+| `extract_all_harmonic_metadata()` | Filter SACC harmonic data | Optional |
+| `extract_all_real_metadata()` | Filter SACC real-space data | Optional |
+
+## Next Steps
+
+Now that you understand bin pair selectors:
+
+- **[Generators](two_point_generators.qmd)**: Apply selectors when generating metadata
+- **[Loading SACC Data](two_point_sacc_data.qmd)**: Apply selectors when extracting from SACC
+- **[Workflow Guide](two_point_workflow.qmd)**: See selectors in the complete analysis workflow
+- **[Factory Basics](two_point_factory_basics.qmd)**: Construct TwoPoint objects from filtered data

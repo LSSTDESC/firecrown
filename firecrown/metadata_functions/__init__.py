@@ -27,6 +27,7 @@ from firecrown.metadata_functions._extraction import (
     maybe_enforce_window,
 )
 from firecrown.metadata_functions._combination_utils import (
+    make_binned_two_point_filtered,
     make_all_photoz_bin_combinations,
     make_all_photoz_bin_combinations_with_cmb,
     make_cmb_galaxy_combinations_only,
@@ -53,6 +54,7 @@ __all__ = [
     "extract_all_photoz_bin_combinations",
     "extract_window_function",
     "maybe_enforce_window",
+    "make_binned_two_point_filtered",
     "make_all_photoz_bin_combinations",
     "make_all_photoz_bin_combinations_with_cmb",
     "make_cmb_galaxy_combinations_only",

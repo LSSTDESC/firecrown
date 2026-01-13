@@ -1,0 +1,159 @@
+---
+title: "Loading SACC Data with TwoPointFactory"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+This tutorial demonstrates how to load data from `SACC` files and construct **[[likelihood|TwoPoint]]** objects using the **[[likelihood|TwoPointFactory]]**. 
+
+For an overview of the factory system, see [Two-Point Factory Basics](two_point_factory_basics.qmd).
+
+## Working with `SACC` Objects
+
+A `SACC` object provides all components needed for a statistical analysis in Firecrown:
+
+- **Metadata**: Layout, data types, binning, tracer names.
+- **Calibration data**: Redshift distributions $\mathrm{d}n/\mathrm{d}z$ for each bin.
+- **Data**: Measurements (e.g., power spectra).
+- **Covariance**: Uncertainties and correlations.
+
+Firecrown supports two workflows: the **recommended full extraction approach**, and a **legacy indices-only approach**, now deprecated.
+
+### Recommended: Full Metadata + Data Extraction
+
+In the current interface, Firecrown extracts everything from a `SACC` object — layout, calibration, and measurements. These are passed directly to constructors that build ready-to-use likelihoods.
+
+```{python}
+from firecrown.data_functions import (
+    extract_all_real_data,
+    check_two_point_consistence_real,
+)
+from firecrown.likelihood.factories import load_sacc_data
+
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
+
+two_point_reals = extract_all_real_data(sacc_data)
+check_two_point_consistence_real(two_point_reals)
+```
+
+**Filtering with Bin Pair Selectors**: If you only need specific subsets of correlations from the SACC file (e.g., only auto-correlations, only source measurements, or custom combinations), you can pass a [[metadata_types|BinPairSelector]] to the extraction functions. See [Bin Pair Selectors](two_point_bin_selectors.qmd) for details on how to control which bin pairs are extracted.
+
+Use a factory to build the `TwoPoint` objects in the **ready** state:
+
+```{python}
+from firecrown.likelihood import TwoPoint, TwoPointFactory
+from firecrown.utils import base_model_from_yaml
+
+two_point_yaml = """
+correlation_space: real
+weak_lensing_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: MultiplicativeShearBiasFactory
+    - type: PhotoZShiftFactory
+    global_systematics:
+    - type: LinearAlignmentSystematicFactory
+      alphag: 1.0
+number_counts_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: PhotoZShiftFactory
+    global_systematics: []
+"""
+
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_points_ready = TwoPoint.from_measurement(two_point_reals, tp_factory)
+```
+
+Create a `Likelihood` object in the ready state using the covariance matrix:
+
+```{python}
+from firecrown.likelihood import ConstGaussian
+
+likelihood_ready = ConstGaussian.create_ready(
+    two_points_ready, sacc_data.covariance.dense
+)
+```
+
+### Deprecated: Indices-Only Extraction
+
+This approach was used in Firecrown $\leq 1.7$. Users needed to know the structure of the `SACC` file a priori and create [[likelihood|TwoPoint]] objects manually.
+
+To reduce this burden, Firecrown introduced a helper to extract tracer pairs and data types from a `SACC` file:
+
+```{python}
+from firecrown.metadata_functions import extract_all_real_metadata_indices
+from firecrown.likelihood.factories import load_sacc_data
+
+# Load the SACC file
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
+# Extract all metadata indices
+all_meta = extract_all_real_metadata_indices(sacc_data)
+```
+
+The extracted metadata describes the following two-point correlations:
+
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+all_meta_table = [
+    {
+        "bin-x": str(meta["tracer_names"].name1),
+        "bin-y": str(meta["tracer_names"].name2),
+        "SACC data-type": meta["data_type"],
+    }
+    for meta in all_meta
+]
+
+df = pd.DataFrame(all_meta_table)
+Markdown(df.to_markdown(index=False))
+```
+
+Construct the [[likelihood|TwoPoint]] objects using the extracted layout and the factory:
+
+```{python}
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_point_list = TwoPoint.from_metadata_index(all_meta, tp_factory)
+```
+
+At this stage, the [[likelihood|TwoPoint]] objects contain only structural metadata (e.g., tracer combinations, data types). They are not yet in the **ready** state, as no metadata or measurement data has been attached. To complete the construction, you must call the [[likelihood|Statistic.read]] method on each object. Alternatively, if the [[likelihood|TwoPoint]] objects are part of a [[likelihood|Likelihood]] instance, calling its [[likelihood|Likelihood.read]] method will internally propagate to each contained statistic:
+
+```{python}
+likelihood = ConstGaussian(two_point_list)
+likelihood.read(sacc_data)
+```
+
+> Each [[likelihood|TwoPoint]] object is a subclass of [[likelihood|Statistic]], and the `Likelihood.read` method delegates to `Statistic.read` for each of its components.
+
+> **Note:** This indices-only method is deprecated and kept for compatibility with older code. For new projects, prefer the full extraction interface above.
+
+## Summary
+
+You've learned two methods for extracting data from SACC files:
+
+1. **Full Extraction (Recommended)**: Extract complete measurements with `extract_all_real_data()` and construct ready-state TwoPoint objects directly
+2. **Indices-Only (Deprecated)**: Extract metadata indices with `extract_all_real_metadata_indices()`, construct TwoPoint objects, then load data separately
+
+Both produce the same fundamental components:
+- **Metadata layouts** describing measurement structure
+- **TwoPoint objects** (via TwoPointFactory) ready for analysis
+- **Likelihood objects** combining predictions with data
+
+The key outputs from this tutorial are:
+- **`two_point_reals`**: Measurements extracted from SACC
+- **`two_points_ready`**: TwoPoint objects in ready state
+- **`likelihood_ready`**: Complete likelihood with covariance
+
+## Next Steps
+
+To compute predictions and evaluate likelihoods:
+
+- **[Bin Pair Selectors](two_point_bin_selectors.qmd)**: Learn how to filter which bin pair combinations are extracted (optional)
+- **[Factory Basics](two_point_factory_basics.qmd)**: Detailed examples of setting up parameters, computing theory vectors, and evaluating likelihoods
+- **[Scale Cuts](two_point_scale_cuts.qmd)**: Apply physical scale cuts to your data
+- **[Integration Methods](two_point_integration.qmd)**: Control computation accuracy and speed

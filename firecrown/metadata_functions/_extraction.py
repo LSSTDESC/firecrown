@@ -458,10 +458,19 @@ def extract_all_harmonic_metadata_indices(
 
 def extract_all_harmonic_metadata(
     sacc_data: sacc.Sacc,
-    allow_mixed_types: bool = False,
     allowed_data_type: None | list[str] = None,
+    allow_mixed_types: bool = False,
+    bin_pair_selector: None | mdt.BinPairSelector = None,
 ) -> list[mdt.TwoPointHarmonic]:
-    """Extract the two-point function metadata and data from a sacc file."""
+    """Extract two-point harmonic-space metadata and data from a SACC file.
+
+    :param sacc_data: The SACC object containing tracers and data points.
+    :param allowed_data_type: Optional list of SACC data type strings to include.
+        If None, all harmonic-space data types are extracted.
+    :param bin_pair_selector: Optional selector to filter which bin pairs to include.
+        If None, all valid bin pairs are returned.
+    :return: List of TwoPointHarmonic objects with metadata and ell values.
+    """
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
         for igz in extract_all_tracers_inferred_galaxy_zdists(
@@ -477,6 +486,13 @@ def extract_all_harmonic_metadata(
         dt = cell_index["data_type"]
 
         XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
+
+        # Apply bin pair selector if provided
+        if bin_pair_selector is not None:
+            if not bin_pair_selector.keep(
+                (XY.x, XY.y), (XY.x_measurement, XY.y_measurement)
+            ):
+                continue
 
         ells, _, indices = sacc_data.get_ell_cl(
             data_type=dt,
@@ -501,10 +517,19 @@ def extract_all_harmonic_metadata(
 
 def extract_all_real_metadata(
     sacc_data: sacc.Sacc,
-    allow_mixed_types: bool = False,
     allowed_data_type: None | list[str] = None,
+    allow_mixed_types: bool = False,
+    bin_pair_selector: None | mdt.BinPairSelector = None,
 ) -> list[mdt.TwoPointReal]:
-    """Extract the two-point function metadata and data from a sacc file."""
+    """Extract two-point real-space metadata and data from a SACC file.
+
+    :param sacc_data: The SACC object containing tracers and data points.
+    :param allowed_data_type: Optional list of SACC data type strings to include.
+        If None, all real-space data types are extracted.
+    :param bin_pair_selector: Optional selector to filter which bin pairs to include.
+        If None, all valid bin pairs are returned.
+    :return: List of TwoPointReal objects with metadata and theta values.
+    """
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
         for igz in extract_all_tracers_inferred_galaxy_zdists(
@@ -521,6 +546,13 @@ def extract_all_real_metadata(
 
         XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
 
+        # Apply bin pair selector if provided
+        if bin_pair_selector is not None:
+            if not bin_pair_selector.keep(
+                (XY.x, XY.y), (XY.x_measurement, XY.y_measurement)
+            ):
+                continue
+
         t1, t2 = tracer_names
         thetas, _, _ = sacc_data.get_theta_xi(
             data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
@@ -532,13 +564,30 @@ def extract_all_real_metadata(
 
 
 def extract_all_photoz_bin_combinations(
-    sacc_data: sacc.Sacc, allow_mixed_types: bool = False
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
+    bin_pair_selector: None | mdt.BinPairSelector = None,
 ) -> list[mdt.TwoPointXY]:
-    """Extracts the two-point function metadata from a sacc file."""
+    """Extract all two-point bin pair combinations from a SACC file.
+
+    :param sacc_data: The SACC object containing tracers and data points.
+    :param bin_pair_selector: Optional selector to filter which bin pairs to include.
+        If None, all valid bin pairs are returned.
+    :return: List of TwoPointXY objects representing valid bin pair combinations.
+    """
     inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(
         sacc_data, allow_mixed_types
     )
     bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
+
+    if bin_pair_selector is not None:
+        bin_combinations = [
+            xy
+            for xy in bin_combinations
+            if bin_pair_selector.keep(
+                (xy.x, xy.y), (xy.x_measurement, xy.y_measurement)
+            )
+        ]
 
     return bin_combinations
 

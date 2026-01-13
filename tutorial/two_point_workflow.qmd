@@ -1,0 +1,146 @@
+---
+title: "Two-Point Workflow Guide"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+This guide shows you how to work with two-point statistics in Firecrown, from obtaining data to computing predictions. Use this as a roadmap to navigate the detailed tutorials based on your specific needs.
+
+# Quick Start {#sec-quick-start}
+
+Choose your starting point:
+
+## I Have a SACC File
+
+If you're working with existing data or simulations in SACC format:
+
+1. **[Loading SACC Data](two_point_sacc_data.qmd)** — Extract metadata and measurements
+2. **[Factory Basics](two_point_factory_basics.qmd)** — Construct TwoPoint objects with modeling choices
+3. **[Scale Cuts](two_point_scale_cuts.qmd)** *(optional)* — Restrict to valid physical ranges
+4. **[Integration Methods](two_point_integration.qmd)** *(optional)* — Tune computation accuracy/speed
+
+## I'm Generating Data from Scratch
+
+If you're creating forecasts or simulated analyses:
+
+1. **[Two-Point Generators](two_point_generators.qmd)** — Create metadata and data programmatically
+2. **[Factory Basics](two_point_factory_basics.qmd)** — Construct TwoPoint objects with modeling choices
+3. **[Scale Cuts](two_point_scale_cuts.qmd)** *(optional)* — Restrict to valid physical ranges
+4. **[Integration Methods](two_point_integration.qmd)** *(optional)* — Tune computation accuracy/speed
+
+## I'm New to Firecrown
+
+Start with **[Two-Point Framework](two_point_framework.qmd)** for conceptual foundations, then follow one of the workflows above.
+
+# Complete Workflow {#sec-workflow-overview}
+
+All two-point analyses in Firecrown follow this general pattern:
+
+```{mermaid}
+%%| label: fig-workflow
+%%| fig-align: center
+%%| fig-cap: "Complete two-point analysis workflow"
+graph TD
+  A["Start: Choose Data Source"]
+  A --> B1["Generate from Scratch<br/>(Two-Point Generators)"]
+  A --> B2["Extract from SACC<br/>(Loading SACC Data)"]
+  B1 --> B1F["Optional: Filter with<br/>Bin Pair Selectors"]
+  B2 --> B2F["Optional: Filter with<br/>Bin Pair Selectors"]
+  B1F --> C["Metadata + Optional Data"]
+  B2F --> C
+  C --> D["Apply Scale Cuts<br/>(Optional)"]
+  D --> E["TwoPointFactory<br/>(Factory Basics)"]
+  E --> F["TwoPoint Objects"]
+  F --> G["Compute Theory<br/>(Integration Methods)"]
+  G --> H["Theory Vector / Likelihood"]
+```
+
+# Detailed Steps {#sec-detailed-steps}
+
+## Step 1: Obtain Metadata and Data {#sec-step-1}
+
+**Choose one approach based on your data source:**
+
+### From Generators ([Tutorial](two_point_generators.qmd))
+
+Create metadata and data programmatically for forecasts or simulations:
+
+- Generate LSST-SRD compliant redshift distributions
+- Define measurement types (galaxy counts, weak lensing, etc.)
+- Configure systematics models upfront
+- **Optional:** Apply [[metadata_types|BinPairSelector]] to include only specific bin pair combinations
+- **Output:** Metadata layouts (TwoPointHarmonic/TwoPointReal) with optional data
+
+**When to use:** Creating forecasts, Fisher forecasts, synthetic analyses, or testing new models.
+
+### From SACC Files ([Tutorial](two_point_sacc_data.qmd))
+
+Extract both metadata and measurements from standardized SACC files:
+
+- Full extraction (recommended) gets metadata + data together
+- Legacy approach extracts metadata only, loads data separately
+- **Optional:** Apply [[metadata_types|BinPairSelector]] to extract only specific bin pair combinations
+- Validates consistency of extracted components
+- **Output:** Metadata layouts with optional measurements (TwoPointMeasurement)
+
+**When to use:** Analyzing real observations, working with pre-existing simulations, or integrating with other analysis pipelines.
+
+### Filtering with Bin Pair Selectors ([Tutorial](two_point_bin_selectors.qmd))
+
+Both workflows support optional filtering to control which bin pair combinations are included:
+
+- **Auto-correlations only**: Same bin correlated with itself
+- **Cross-correlations only**: Different bins correlated together
+- **Measurement-specific**: Only source (shear) or lens (counts) measurements
+- **Custom combinations**: Use logical operators (AND, OR, NOT) to build complex criteria
+
+See [Bin Pair Selectors](two_point_bin_selectors.qmd) for detailed examples and available selector types.
+
+## Step 2: Construct TwoPoint Objects ([Tutorial](two_point_factory_basics.qmd))
+
+The [[likelihood|TwoPointFactory]] builds [[likelihood|TwoPoint]] objects by:
+
+1. Inspecting measurement types in your metadata
+2. Delegating to appropriate source factories:
+   - [[metadata_types|Galaxies.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
+   - [[metadata_types|Galaxies.SHEAR_E]] / [[metadata_types|Galaxies.SHEAR_T]] / ... → [[likelihood.weak_lensing|WeakLensingFactory]]
+3. Applying modeling choices (systematics, tracers, scales)
+
+Each TwoPoint object can be constructed from:
+
+- **Layout only** (metadata) → Theory predictions for forecasts
+- **Measurement** (metadata + data) → Theory + data for likelihood evaluation
+
+**Key feature:** Multiple instances of the same source factory can be tied to different [[metadata_types|TypeSource]] values, enabling distinct modeling choices for subpopulations (e.g., red vs. blue galaxies).
+
+## Step 3: Apply Scale Cuts *(Optional)* ([Tutorial](two_point_scale_cuts.qmd))
+
+Restrict analysis to physically valid ranges where your models are accurate:
+
+- Define valid scale ranges per tracer combination
+- Use [[data_functions|TwoPointBinFilterCollection]] for flexible filtering
+# Tutorial Reference {#sec-tutorial-reference}
+
+| Tutorial | Purpose | Use When |
+|----------|---------|----------|
+| [Framework](two_point_framework.qmd) | Conceptual foundations | Learning Firecrown concepts |
+| [Bin Selectors](two_point_bin_selectors.qmd) | Filter bin pair combinations | Selecting specific correlations |
+| [Generators](two_point_generators.qmd) | Create data from scratch | Forecasts, simulations, testing |
+| [Loading SACC](two_point_sacc_data.qmd) | Extract from SACC files | Real data, existing simulations |
+| [Factory Basics](two_point_factory_basics.qmd) | Construct TwoPoint objects | **All analyses** (required) |
+| [Scale Cuts](two_point_scale_cuts.qmd) | Filter by physical scales | Limited model validity |
+| [Integration](two_point_integration.qmd) | Tune computation methods | Accuracy/speed optimization |
+
+**When to tune:** High-precision requirements, large-scale analyses, or computational optimization.
+
+# Tutorial Reference {#sec-tutorial-reference}
+
+| Tutorial | Purpose | Use When |
+|----------|---------|----------|
+| [Framework](two_point_framework.qmd) | Conceptual foundations | Learning Firecrown concepts |
+| [Generators](two_point_generators.qmd) | Create data from scratch | Forecasts, simulations, testing |
+| [Loading SACC](two_point_sacc_data.qmd) | Extract from SACC files | Real data, existing simulations |
+| [Factory Basics](two_point_factory_basics.qmd) | Construct TwoPoint objects | **All analyses** (required) |
+| [Scale Cuts](two_point_scale_cuts.qmd) | Filter by physical scales | Limited model validity |
+| [Integration](two_point_integration.qmd) | Tune computation methods | Accuracy/speed optimization |
