@@ -14,9 +14,12 @@ def test_cluster_number_counts_cosmosis():
                 set -e
                 cd examples/cluster_number_counts
                 python generate_rich_mean_mass_sacc_data.py
+                python generate_rich_mean_mass_sacc_data_withshear.py
                 cosmosis cluster_counts_redshift_richness.ini
                 cosmosis cluster_mean_mass_redshift_richness.ini
                 cosmosis cluster_counts_mean_mass_redshift_richness.ini
+                cosmosis cluster_counts_mean_mass_redshift_richness_delta_sigma.ini
+                cosmosis cluster_counts_mean_mass_redshift_richness_shear.ini
             """,
         ],
         capture_output=True,
