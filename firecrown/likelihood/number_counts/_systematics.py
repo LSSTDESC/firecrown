@@ -13,6 +13,7 @@ from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood._base import (
     SourceGalaxyPhotoZShift,
     SourceGalaxyPhotoZShiftandStretch,
+    SourceGalaxySpecZStretch,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
 )
@@ -47,6 +48,10 @@ class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
 
 class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch[NumberCountsArgs]):
     """Photo-z shift systematic."""
+
+
+class SpecZStretch(SourceGalaxySpecZStretch[NumberCountsArgs]):
+    """Spec-z stretch systematic."""
 
 
 class SelectField(SourceGalaxySelectField[NumberCountsArgs]):
