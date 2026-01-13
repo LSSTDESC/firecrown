@@ -5,7 +5,9 @@ Fixtures defined here are available to any test in Firecrown.
 """
 
 # pylint: disable=too-many-lines
+import ast
 from itertools import product
+import sys
 import pytest
 
 import pyccl
@@ -42,6 +44,45 @@ import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._cmb as cmb
 from firecrown.metadata_types import Clusters, CMB
+
+
+# Helper function for creating AST ClassDef nodes across Python versions
+if sys.version_info >= (3, 12):
+
+    def _make_class_def(
+        name: str,
+        bases: list[ast.expr],
+        keywords: list[ast.keyword],
+        body: list[ast.stmt],
+        decorator_list: list[ast.expr],
+    ) -> ast.ClassDef:
+        """Create a ClassDef node with type_params (Python 3.12+)."""
+        return ast.ClassDef(
+            name=name,
+            bases=bases,
+            keywords=keywords,
+            body=body,
+            decorator_list=decorator_list,
+            type_params=[],
+        )
+
+else:
+
+    def _make_class_def(
+        name: str,
+        bases: list[ast.expr],
+        keywords: list[ast.keyword],
+        body: list[ast.stmt],
+        decorator_list: list[ast.expr],
+    ) -> ast.ClassDef:
+        """Create a ClassDef node without type_params (Python 3.11)."""
+        return ast.ClassDef(
+            name=name,
+            bases=bases,
+            keywords=keywords,
+            body=body,
+            decorator_list=decorator_list,
+        )
 
 
 def pytest_addoption(parser):
@@ -242,7 +283,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     name="all_harmonic_bins",
 )
 def fixture_all_harmonic_bins() -> list[InferredGalaxyZDist]:
-    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    """Generate a list of InferredGalaxyZDist objects with 4 bins."""
     z = np.linspace(0.0, 1.0, 256)
     dndzs = [
         np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
@@ -250,10 +291,33 @@ def fixture_all_harmonic_bins() -> list[InferredGalaxyZDist]:
     ]
     return [
         InferredGalaxyZDist(
-            bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
+            bin_name=f"bin_{i + 1}",
+            z=z,
+            dndz=dndzs[i],
+            measurements={Galaxies.COUNTS, Galaxies.SHEAR_E},
         )
         for i in range(2)
-        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
+    ]
+
+
+@pytest.fixture(
+    name="many_harmonic_bins",
+)
+def make_many_harmonic_bins() -> list[InferredGalaxyZDist]:
+    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    z = np.linspace(0.0, 1.0, 256)
+    dndzs = [
+        np.exp(-0.5 * (z - mu) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05)
+        for mu in np.linspace(0.5, 0.9, 5)
+    ]
+    return [
+        InferredGalaxyZDist(
+            bin_name=f"bin_{i + 1}",
+            z=z,
+            dndz=dndzs[i],
+            measurements={Galaxies.COUNTS, Galaxies.SHEAR_E},
+        )
+        for i in range(5)
     ]
 
 
@@ -309,15 +373,14 @@ def fixture_all_real_bins() -> list[InferredGalaxyZDist]:
             bin_name=f"bin_{i + 1}",
             z=np.linspace(0, 1, 5),
             dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-            measurements={m},
+            measurements={
+                Galaxies.COUNTS,
+                Galaxies.SHEAR_T,
+                Galaxies.PART_OF_XI_MINUS,
+                Galaxies.PART_OF_XI_PLUS,
+            },
         )
         for i in range(2)
-        for m in [
-            Galaxies.COUNTS,
-            Galaxies.SHEAR_T,
-            Galaxies.PART_OF_XI_MINUS,
-            Galaxies.PART_OF_XI_PLUS,
-        ]
     ]
 
 

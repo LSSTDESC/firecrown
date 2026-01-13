@@ -74,7 +74,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
 
     data_url: ClassVar[str] = (
         "https://github.com/LSSTDESC/"
-        "firecrown/releases/download/files-v1.0.0/des_y1_3x2pt.sacc"
+        "firecrown/releases/download/files-v1.1.0/des_y1_3x2pt.sacc"
     )
 
     prefix: Annotated[

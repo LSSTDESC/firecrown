@@ -53,3 +53,8 @@ class InferredGalaxyZDist(YAMLSerializable):
             and np.array_equal(self.dndz, other.dndz)
             and self.measurements == other.measurements
         )
+
+    @property
+    def measurement_list(self) -> list[Measurement]:
+        """Get the measurements as a sorted list."""
+        return sorted(self.measurements)

@@ -29,7 +29,7 @@ dependencies:
   - more-itertools
   - mypy
   - numcosmo >= 0.21.1
-  - numpy >= 2.0
+  - numpy >= 2.0, < 2.4
   - pip >= 20.1  # pip is needed as dependency
   - pip:
     - cobaya
