@@ -43,7 +43,7 @@ bin0 = ZDistLSSTSRDBin(
 bin0_yaml = base_model_to_yaml(bin0)
 ```
 
-When serilized, the `ZDistLSSTSRDBin` object produces a human-readable YAML file.
+When serialized, the `ZDistLSSTSRDBin` object produces a human-readable YAML file.
 ```{python}
 # | code-fold: true
 import yaml
@@ -115,7 +115,7 @@ assert bin_collection.bins[0].measurements == bin_collection_read.bins[0].measur
 assert bin_collection.bins[0].z == bin_collection_read.bins[0].z
 ```
 
-Calling `generate` on the read object will generate the redshift distribution dataclasses `InferredGalaxyZDist`.
+Calling `generate()` on the read object will generate the `InferredGalaxyZDist` redshift distribution dataclasses.
 ```{python}
 from pprint import pprint
 
@@ -128,7 +128,7 @@ pprint(zdist)
 
 The LSST SRD provides the parameters used to generate the redshift distributions.
 Firecrown includes dataclass instances `LSST_Y1_LENS_HARMONIC_BIN_COLLECTION` and `LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION`, which store the parameters for generating redshift distributions for the Y1 lens and source samples, respectively.
-Similar collections, `LSST_Y10_LENS_HARMONIC_BIN_COLLECTION` and `LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION`, exist for the Y10 samples.
+Similar collections exist for the Y10 samples: `LSST_Y10_LENS_HARMONIC_BIN_COLLECTION` and `LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION`.
 
 Below is a code snippet demonstrating how to serialize and read back these dataclasses:
 ```{python}
