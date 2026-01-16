@@ -5,11 +5,11 @@ import numpy as np
 
 import sacc
 
-import firecrown.parameters
+import firecrown.updatable
 from firecrown.likelihood._student_t import StudentT
 from firecrown.likelihood._gaussfamily import Statistic
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import (
+from firecrown.updatable import (
     RequiredParameters,
     DerivedParameterCollection,
     ParamsMap,
@@ -110,7 +110,7 @@ def test_using_good_sacc(
 ):
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5, nu=5.0)
+    params = firecrown.updatable.ParamsMap(mean=10.5, nu=5.0)
     likelihood.update(params)
     chisq = likelihood.compute_chisq(tools_with_vanilla_cosmology)
     assert isinstance(chisq, float)

@@ -17,7 +17,7 @@ from firecrown.connector.numcosmo.numcosmo import (
     helpers,
     create_params_map,
 )
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
+from firecrown.modeling_tools import PoweSpecAmplitudeParameter
 
 Ncm.cfg_init()
 

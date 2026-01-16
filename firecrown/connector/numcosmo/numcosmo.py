@@ -9,7 +9,7 @@ import warnings
 import numpy as np
 from numcosmo_py import GObject, Nc, Ncm, dict_to_var_dict, var_dict_to_dict
 
-from firecrown.ccl_factory import (
+from firecrown.modeling_tools import (
     CCLCalculatorArgs,
     CCLCreationMode,
     PoweSpecAmplitudeParameter,
@@ -23,7 +23,7 @@ from firecrown.likelihood import (
     load_likelihood,
 )
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap, handle_unused_params
+from firecrown.updatable import ParamsMap, handle_unused_params
 from firecrown.updatable import UpdatableUsageRecord
 
 

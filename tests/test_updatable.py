@@ -12,15 +12,13 @@ from firecrown.updatable import (
     UpdatableUsageRecord,
     get_default_params,
     get_default_params_map,
-)
-from firecrown import parameters
-from firecrown.parameters import (
     RequiredParameters,
     ParamsMap,
     DerivedParameter,
     DerivedParameterCollection,
     SamplerParameter,
 )
+from firecrown import parameters
 
 
 class MinimalUpdatable(Updatable):

@@ -3,7 +3,7 @@ Provides a trivial likelihood factory function for testing purposes.
 """
 
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
 
 # Support both relative import (when used as package) and absolute import
 # (when lkdir is in sys.path)

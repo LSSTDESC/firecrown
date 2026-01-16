@@ -3,7 +3,7 @@
 from numcosmo_py import Nc
 from typing_extensions import assert_never
 
-import firecrown.ccl_factory as fac
+import firecrown.modeling_tools as fac
 
 
 def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:

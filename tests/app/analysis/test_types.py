@@ -23,7 +23,7 @@ from firecrown.app.analysis._types import (
 )
 from firecrown.app.analysis._cobaya import CobayaConfigGenerator
 from firecrown.likelihood import NamedParameters
-from firecrown.ccl_factory import CAMBExtraParams
+from firecrown.modeling_tools import CAMBExtraParams
 
 
 class TestFrameworksEnum:

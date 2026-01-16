@@ -12,7 +12,7 @@ from numpy.testing import assert_array_equal
 
 import sacc
 
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.metadata_types import (
     AutoMeasurementBinPairSelector,
     AutoNameBinPairSelector,

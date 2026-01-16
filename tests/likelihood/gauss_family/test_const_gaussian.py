@@ -10,12 +10,12 @@ from scipy.stats import chi2
 
 import sacc
 
-import firecrown.parameters
+import firecrown.updatable
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._gaussfamily import Statistic
 from firecrown.likelihood._statistic import TrivialStatistic
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import (
+from firecrown.updatable import (
     RequiredParameters,
     DerivedParameterCollection,
     SamplerParameter,
@@ -122,7 +122,7 @@ def test_compute_theory_vector_works_after_read_and_update(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     assert np.all(
         likelihood.compute_theory_vector(ModelingTools())
         == np.array([10.5, 10.5, 10.5])
@@ -132,7 +132,7 @@ def test_compute_theory_vector_works_after_read_and_update(
 def test_compute_theory_vector_called_twice(trivial_stats, sacc_data_for_trivial_stat):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     res_1 = likelihood.compute_theory_vector(ModelingTools())
     res_2 = likelihood.compute_theory_vector(ModelingTools())
     assert np.all(res_1 == res_2)
@@ -168,7 +168,7 @@ def test_get_theory_vector_fails_before_compute_theory_vector(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     with pytest.raises(
         AssertionError,
         match=re.escape(
@@ -183,7 +183,7 @@ def test_get_theory_vector_works_after_read_update_and_compute_theory_vector(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     likelihood.compute_theory_vector(ModelingTools())
     assert np.all(likelihood.get_theory_vector() == np.array([10.5, 10.5, 10.5]))
 
@@ -193,7 +193,7 @@ def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_res
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     likelihood.compute_theory_vector(ModelingTools())
     likelihood.reset()
     with pytest.raises(
@@ -300,7 +300,7 @@ def test_using_good_sacc(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     chisq = likelihood.compute_chisq(tools_with_vanilla_cosmology)
     assert isinstance(chisq, float)
@@ -324,7 +324,7 @@ def test_make_realization_chisq(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
@@ -332,7 +332,7 @@ def test_make_realization_chisq(
 
     new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
     new_likelihood.read(new_sacc)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     new_likelihood.update(params)
     chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
@@ -351,7 +351,7 @@ def test_make_realization_chisq_mean(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
@@ -361,7 +361,7 @@ def test_make_realization_chisq_mean(
 
         new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
         new_likelihood.read(new_sacc)
-        params = firecrown.parameters.ParamsMap(mean=10.5)
+        params = firecrown.updatable.ParamsMap(mean=10.5)
         new_likelihood.update(params)
         chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
         chisq_list.append(chisq)
@@ -380,7 +380,7 @@ def test_make_realization_data_vector(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
@@ -390,7 +390,7 @@ def test_make_realization_data_vector(
 
         new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
         new_likelihood.read(new_sacc)
-        params = firecrown.parameters.ParamsMap(mean=10.5)
+        params = firecrown.updatable.ParamsMap(mean=10.5)
         new_likelihood.update(params)
         data_vector = new_likelihood.get_data_vector()
         data_vector_list.append(data_vector)
@@ -423,7 +423,7 @@ def test_make_realization_no_noise(
 ):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
@@ -431,7 +431,7 @@ def test_make_realization_no_noise(
 
     new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
     new_likelihood.read(new_sacc)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     new_likelihood.update(params)
 
     assert_allclose(new_likelihood.get_data_vector(), likelihood.get_theory_vector())

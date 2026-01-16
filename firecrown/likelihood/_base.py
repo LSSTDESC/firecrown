@@ -33,15 +33,16 @@ import sacc
 from pydantic import BaseModel, ConfigDict, Field
 from scipy.interpolate import Akima1DInterpolator
 
-from firecrown import parameters
 from firecrown.data_types import DataVector, TheoryVector
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import (
+from firecrown.updatable import (
     DerivedParameterCollection,
     ParamsMap,
     RequiredParameters,
+    Updatable,
+    UpdatableCollection,
+    register_new_updatable_parameter,
 )
-from firecrown.updatable import Updatable, UpdatableCollection
 
 
 # ============================================================================
@@ -528,7 +529,7 @@ class TrivialStatistic(Statistic):
         # Data and theory will both be of length self.count
         self.count = 3
         self.data_vector: None | DataVector = None
-        self.mean = parameters.register_new_updatable_parameter(default_value=0.0)
+        self.mean = register_new_updatable_parameter(default_value=0.0)
         self.computed_theory_vector = False
 
     def read(self, sacc_data: sacc.Sacc) -> None:
@@ -896,7 +897,7 @@ class SourceGalaxyPhotoZShift(
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.delta_z = parameters.register_new_updatable_parameter(
+        self.delta_z = register_new_updatable_parameter(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
         )
         if active:
@@ -965,7 +966,7 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         """
         super().__init__(sacc_tracer)
 
-        self.sigma_z = parameters.register_new_updatable_parameter(
+        self.sigma_z = register_new_updatable_parameter(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
         )
 

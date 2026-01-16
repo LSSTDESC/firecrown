@@ -27,6 +27,17 @@ from ._utils import (
     assert_updatable_interface,
 )
 
+# Import parameter-related classes (formerly from firecrown.parameters)
+from ._parameters_derived import DerivedParameter, DerivedParameterCollection
+from ._parameters_map import ParamsMap, handle_unused_params
+from ._parameters_names import parameter_get_full_name
+from ._parameters_required import RequiredParameters
+from ._parameters_types import (
+    InternalParameter,
+    SamplerParameter,
+    register_new_updatable_parameter,
+)
+
 __all__ = [
     # Exceptions
     "MissingSamplerParameterError",
@@ -41,4 +52,14 @@ __all__ = [
     "assert_updatable_interface",
     # Usage records
     "UpdatableUsageRecord",
+    # Parameter classes (formerly from firecrown.parameters)
+    "DerivedParameter",
+    "DerivedParameterCollection",
+    "InternalParameter",
+    "ParamsMap",
+    "RequiredParameters",
+    "SamplerParameter",
+    "handle_unused_params",
+    "parameter_get_full_name",
+    "register_new_updatable_parameter",
 ]

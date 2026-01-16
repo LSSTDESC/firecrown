@@ -3,7 +3,7 @@
 from __future__ import annotations
 from collections.abc import Iterable, Iterator
 
-from ._types import SamplerParameter
+from ._parameters_types import SamplerParameter
 
 
 class RequiredParameters:

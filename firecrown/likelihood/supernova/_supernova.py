@@ -8,7 +8,7 @@ import pyccl
 import sacc
 from sacc.tracers import MiscTracer
 
-from firecrown import parameters
+from firecrown.updatable import register_new_updatable_parameter
 from firecrown.data_types import DataVector, TheoryVector
 from firecrown.likelihood._base import Statistic
 from firecrown.modeling_tools import ModelingTools
@@ -34,9 +34,7 @@ class Supernova(Statistic):
         self.sacc_tracer = sacc_tracer
         self.data_vector: None | DataVector = None
         self.a: None | npt.NDArray[np.float64] = None
-        self.M = parameters.register_new_updatable_parameter(
-            default_value=SNIA_DEFAULT_M
-        )
+        self.M = register_new_updatable_parameter(default_value=SNIA_DEFAULT_M)
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.

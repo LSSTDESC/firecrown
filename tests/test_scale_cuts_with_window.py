@@ -20,7 +20,7 @@ from firecrown.data_functions import (
 )
 from firecrown.metadata_types import Galaxies, TwoPointFilterMethod
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.updatable import get_default_params
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 

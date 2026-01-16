@@ -3,7 +3,7 @@ Provides a trivial likelihood factory function with PURE_CCL_MODE for testing pu
 """
 
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import (
+from firecrown.modeling_tools import (
     CCLFactory,
     PoweSpecAmplitudeParameter,
     CCLCreationMode,

@@ -9,7 +9,7 @@ from firecrown.models.two_point import TwoPointTheory
 from firecrown.generators import LogLinearElls, EllOrThetaConfig
 from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.utils import ClIntegrationOptions
 from firecrown.models.two_point import ApplyInterpolationWhen
 from firecrown.likelihood import Source

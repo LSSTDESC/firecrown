@@ -12,7 +12,7 @@ from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 import firecrown.likelihood._statistic as stat
-import firecrown.ccl_factory as ccl_factory
+import firecrown.modeling_tools as ccl_factory
 
 
 def test_cobaya_ccl_initialize():

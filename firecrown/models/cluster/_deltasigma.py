@@ -10,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 import pyccl
 
-from firecrown import parameters
+from firecrown.updatable import register_new_updatable_parameter
 from firecrown.models.cluster._abundance import ClusterAbundance
 
 
@@ -33,9 +33,7 @@ class ClusterDeltaSigma(ClusterAbundance):
         super().__init__(mass_interval, z_interval, halo_mass_function)
         self.conc_parameter = conc_parameter
         if conc_parameter:
-            self.cluster_conc = parameters.register_new_updatable_parameter(
-                default_value=4.0
-            )
+            self.cluster_conc = register_new_updatable_parameter(default_value=4.0)
 
     def delta_sigma(
         self,

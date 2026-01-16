@@ -7,9 +7,9 @@ import pyccl.nl_pt
 from firecrown.likelihood.factories import load_sacc_data
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood import TwoPoint, ConstGaussian, Likelihood
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
+from firecrown.modeling_tools import CCLFactory
 from firecrown.updatable import get_default_params_map
 from firecrown.metadata_types import TracerNames, TRACER_NAMES_TOTAL
 

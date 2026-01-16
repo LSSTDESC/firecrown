@@ -23,7 +23,7 @@ from firecrown.likelihood._two_point import TwoPoint
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood._likelihood import Likelihood, NamedParameters
-from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
 
 
 def build_likelihood(

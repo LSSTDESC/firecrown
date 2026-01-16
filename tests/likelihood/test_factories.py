@@ -978,7 +978,7 @@ def test_build_two_point_likelihood_harmonic_filters_result_empty(
 
 def test_two_point_experiment_with_ccl_factory() -> None:
     """Test TwoPointExperiment with custom CCLFactory."""
-    from firecrown.ccl_factory import CCLFactory
+    from firecrown.modeling_tools import CCLFactory
 
     custom_ccl_factory = CCLFactory()
     two_point_experiment = TwoPointExperiment(

@@ -1,6 +1,6 @@
 """Parameter types and creation functions."""
 
-from ._names import parameter_get_full_name
+from ._parameters_names import parameter_get_full_name
 
 
 class SamplerParameter:

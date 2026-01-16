@@ -3,7 +3,7 @@
 import copy
 import warnings
 
-from ._names import _validate_params_map_value, parameter_get_full_name
+from ._parameters_names import _validate_params_map_value, parameter_get_full_name
 
 
 class ParamsMap:

@@ -7,7 +7,7 @@ import numpy.typing as npt
 
 import firecrown.likelihood.number_counts._systematics as nc_sys
 import firecrown.likelihood.number_counts._args as nc_args
-import firecrown.parameters as fp
+import firecrown.updatable as fp
 import firecrown.modeling_tools as mt
 
 

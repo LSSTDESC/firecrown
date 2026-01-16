@@ -7,13 +7,13 @@ from typing import Any, final
 
 from typing_extensions import assert_never
 
-from firecrown.parameters import (
+from firecrown.updatable._parameters_types import (
     InternalParameter,
-    ParamsMap,
-    RequiredParameters,
     SamplerParameter,
-    DerivedParameterCollection,
 )
+from firecrown.updatable._parameters_map import ParamsMap
+from firecrown.updatable._parameters_required import RequiredParameters
+from firecrown.updatable._parameters_derived import DerivedParameterCollection
 from firecrown.updatable._exceptions import MissingSamplerParameterError
 from firecrown.updatable._records import UpdatableUsageRecord
 from firecrown.updatable._types import UpdatableProtocol

@@ -11,7 +11,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy import special
 
-from firecrown import parameters
+from firecrown.updatable import register_new_updatable_parameter
 from firecrown.updatable import Updatable
 
 
@@ -122,22 +122,22 @@ class MurataBinned(MassRichnessGaussian):
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
-        self.mu_p0 = parameters.register_new_updatable_parameter(
+        self.mu_p0 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_MU_P0
         )
-        self.mu_p1 = parameters.register_new_updatable_parameter(
+        self.mu_p1 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_MU_P1
         )
-        self.mu_p2 = parameters.register_new_updatable_parameter(
+        self.mu_p2 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_MU_P2
         )
-        self.sigma_p0 = parameters.register_new_updatable_parameter(
+        self.sigma_p0 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_SIGMA_P0
         )
-        self.sigma_p1 = parameters.register_new_updatable_parameter(
+        self.sigma_p1 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_SIGMA_P1
         )
-        self.sigma_p2 = parameters.register_new_updatable_parameter(
+        self.sigma_p2 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_SIGMA_P2
         )
 
@@ -195,22 +195,22 @@ class MurataUnbinned(MassRichnessGaussian):
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
-        self.mu_p0 = parameters.register_new_updatable_parameter(
+        self.mu_p0 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_MU_P0
         )
-        self.mu_p1 = parameters.register_new_updatable_parameter(
+        self.mu_p1 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_MU_P1
         )
-        self.mu_p2 = parameters.register_new_updatable_parameter(
+        self.mu_p2 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_MU_P2
         )
-        self.sigma_p0 = parameters.register_new_updatable_parameter(
+        self.sigma_p0 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_SIGMA_P0
         )
-        self.sigma_p1 = parameters.register_new_updatable_parameter(
+        self.sigma_p1 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_SIGMA_P1
         )
-        self.sigma_p2 = parameters.register_new_updatable_parameter(
+        self.sigma_p2 = register_new_updatable_parameter(
             default_value=MURATA_DEFAULT_SIGMA_P2
         )
 
