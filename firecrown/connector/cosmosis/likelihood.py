@@ -23,7 +23,7 @@ from firecrown.likelihood import (
     load_likelihood,
     TwoPoint,
 )
-from firecrown.parameters import ParamsMap, handle_unused_params
+from firecrown.updatable import ParamsMap, handle_unused_params
 from firecrown.updatable import MissingSamplerParameterError, UpdatableUsageRecord
 
 

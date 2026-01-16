@@ -398,7 +398,7 @@ def test_create_params_map_with_mapping():
     """Test create_params_map function when mapping is provided."""
     from firecrown.connector.numcosmo.numcosmo import create_params_map
     from firecrown.connector.mapping import Mapping
-    from firecrown.parameters import ParamsMap
+    from firecrown.updatable import ParamsMap
 
     # Create a simple mock model and mset
     model_name = "test_model"
@@ -462,7 +462,7 @@ def test_create_params_map_with_mapping():
 def test_create_params_map_without_mapping():
     """Test create_params_map function when mapping is None."""
     from firecrown.connector.numcosmo.numcosmo import create_params_map
-    from firecrown.parameters import ParamsMap
+    from firecrown.updatable import ParamsMap
 
     # Create a simple mock model and mset
     model_name = "test_model2"

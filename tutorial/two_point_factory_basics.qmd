@@ -192,7 +192,7 @@ all_two_point_functions = TwoPoint.from_metadata(
 from firecrown.modeling_tools import ModelingTools
 from firecrown.modeling_tools import CCLFactory
 from firecrown.updatable import get_default_params
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 # Setup modeling tools and parameters
 tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))

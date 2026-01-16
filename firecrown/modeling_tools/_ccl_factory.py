@@ -29,12 +29,12 @@ from firecrown.modeling_tools._ccl_models import (
     MuSigmaModel,
 )
 from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
-from firecrown.parameters import (
+from firecrown.updatable import (
     ParamsMap,
     SamplerParameter,
     register_new_updatable_parameter,
+    Updatable,
 )
-from firecrown.updatable import Updatable
 
 
 def _validate_neutrino_mass_splits(value):

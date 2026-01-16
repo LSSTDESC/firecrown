@@ -28,7 +28,7 @@ from firecrown.app.analysis import (
     Frameworks,
 )
 from firecrown.likelihood.factories import build_two_point_likelihood
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 
 class TestDESY1FactoryType:

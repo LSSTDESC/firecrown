@@ -13,7 +13,7 @@ from firecrown.likelihood._cmb import (
 )
 from firecrown.metadata_types import InferredGalaxyZDist, CMB
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 
 def test_cmb_convergence_args():

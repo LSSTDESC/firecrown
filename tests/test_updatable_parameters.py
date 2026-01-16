@@ -1,11 +1,11 @@
 """
-Tests for the module firecrown.parameters.
+Tests for the parameter classes in firecrown.updatable.
 """
 
 import re
 import pytest
 import numpy as np
-from firecrown.parameters import (
+from firecrown.updatable import (
     RequiredParameters,
     parameter_get_full_name,
     ParamsMap,
@@ -15,8 +15,6 @@ from firecrown.parameters import (
     register_new_updatable_parameter,
     InternalParameter,
     SamplerParameter,
-)
-from firecrown.updatable import (
     Updatable,
     UpdatableUsageRecord,
     get_default_params,

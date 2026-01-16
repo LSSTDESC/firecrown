@@ -21,7 +21,7 @@ from firecrown.modeling_tools import (
     CCLSplineParams,
 )
 from firecrown.updatable import get_default_params_map
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 from firecrown.modeling_tools import ModelingTools
 

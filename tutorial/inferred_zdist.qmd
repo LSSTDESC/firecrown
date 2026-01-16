@@ -98,7 +98,7 @@ Depending on the theoretical model, the `TwoPoint` object may require additional
 To obtain a list of required parameters, one can use the following commands:
 
 ```{python}
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 req_params = two_point_lens0_lens0.required_parameters()
 default_values = req_params.get_default_values()
@@ -131,7 +131,7 @@ Now, we must configure the cosmology and prepare the two-point statistics for an
 from firecrown.modeling_tools import ModelingTools
 from firecrown.modeling_tools import CCLFactory
 from firecrown.updatable import get_default_params_map
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
 params = get_default_params_map(tools, two_point_lens0_lens0)
