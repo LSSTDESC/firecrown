@@ -18,17 +18,17 @@ from pydantic import (
 # To be moved to the import from typing when migrating to Python 3.11
 from typing_extensions import assert_never
 
-from firecrown.ccl_factory._enums import (
+from firecrown.modeling_tools._ccl_enums import (
     CCLCreationMode,
     CCLPureModeTransferFunction,
     PoweSpecAmplitudeParameter,
 )
-from firecrown.ccl_factory._models import (
+from firecrown.modeling_tools._ccl_models import (
     CAMBExtraParams,
     CCLSplineParams,
     MuSigmaModel,
 )
-from firecrown.ccl_factory._types import CCLCalculatorArgs
+from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
 from firecrown.parameters import (
     ParamsMap,
     SamplerParameter,

@@ -13,7 +13,7 @@ import pyccl
 from cobaya.likelihood import Likelihood
 from pyccl.cosmology import Pk2D
 
-from firecrown.ccl_factory import (
+from firecrown.modeling_tools import (
     CCLCalculatorArgs,
     CCLCreationMode,
     PoweSpecAmplitudeParameter,

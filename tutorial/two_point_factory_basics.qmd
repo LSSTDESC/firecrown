@@ -190,7 +190,7 @@ all_two_point_functions = TwoPoint.from_metadata(
 
 ```{python}
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
+from firecrown.modeling_tools import CCLFactory
 from firecrown.updatable import get_default_params
 from firecrown.parameters import ParamsMap
 

@@ -17,7 +17,7 @@ from pyccl import physical_constants as physics
 from typing_extensions import assert_never
 
 from firecrown import parameters
-from firecrown.ccl_factory import (
+from firecrown.modeling_tools import (
     Background,
     CCLCalculatorArgs,
     PowerSpec,

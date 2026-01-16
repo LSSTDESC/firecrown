@@ -13,7 +13,7 @@ from firecrown.likelihood.number_counts import (
     NumberCounts,
 )
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import (
+from firecrown.modeling_tools import (
     CCLFactory,
     PoweSpecAmplitudeParameter,
     CCLCreationMode,

@@ -8,7 +8,7 @@ from firecrown.likelihood import TwoPoint, ConstGaussian, Likelihood
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.factories import load_sacc_data
-from firecrown.ccl_factory import CCLFactory
+from firecrown.modeling_tools import CCLFactory
 from firecrown.updatable import get_default_params_map
 from firecrown.metadata_types import TracerNames
 

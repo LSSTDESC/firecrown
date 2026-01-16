@@ -520,7 +520,7 @@ def test_numcosmo_data_pure_ccl_mode():
     assert isinstance(nc_data, NumCosmoData)
 
     # Verify that the CCL factory is in PURE_CCL_MODE
-    from firecrown.ccl_factory import CCLCreationMode
+    from firecrown.modeling_tools import CCLCreationMode
 
     assert nc_data.tools.ccl_factory.creation_mode == CCLCreationMode.PURE_CCL_MODE
 
@@ -626,7 +626,7 @@ def test_numcosmo_gauss_cov_pure_ccl_mode():
     assert isinstance(nc_data, NumCosmoGaussCov)
 
     # Verify that the CCL factory is in PURE_CCL_MODE
-    from firecrown.ccl_factory import CCLCreationMode
+    from firecrown.modeling_tools import CCLCreationMode
 
     assert nc_data.tools.ccl_factory.creation_mode == CCLCreationMode.PURE_CCL_MODE
 

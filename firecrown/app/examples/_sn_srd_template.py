@@ -11,7 +11,7 @@ import firecrown.likelihood.supernova as sn
 from firecrown.likelihood import NamedParameters, ConstGaussian
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
 
 
 def build_likelihood(params: NamedParameters):

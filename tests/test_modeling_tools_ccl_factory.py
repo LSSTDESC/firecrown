@@ -10,7 +10,7 @@ import pyccl.modified_gravity
 from pyccl.neutrinos import NeutrinoMassSplits
 import pydantic
 
-from firecrown.ccl_factory import (
+from firecrown.modeling_tools import (
     CAMBExtraParams,
     CCLCalculatorArgs,
     CCLCreationMode,
