@@ -15,7 +15,7 @@ For background on the factory system, see [Two-Point Factory Basics](two_point_f
 
 [[likelihood|TwoPointFactory]] objects can include integration options, allowing control over how two-point functions are computed. The example below shows how to create a [[likelihood|TwoPointFactory]] with integration options that reproduce the default behavior. We also create additional [[likelihood|TwoPointFactory]] objects with alternative integration configurations: [[utils|ClIntegrationMethod.LIMBER]] with [[utils|ClLimberMethod.GSL_SPLINE]], [[utils|ClIntegrationMethod.FKEM_AUTO]], and [[utils|ClIntegrationMethod.FKEM_L_LIMBER]].
 
-The lens and source redshift bin collections used for the computations are imported from the `firecrown.generators.inferred_galaxy_zdist` module: [[generators|LSST_Y1_LENS_HARMONIC_BIN_COLLECTION]] and [[generators|LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION]].
+The lens and source redshift bin collections used for the computations are imported from the `firecrown.generators` module: [[generators|LSST_Y1_LENS_HARMONIC_BIN_COLLECTION]] and [[generators|LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION]].
 
 ## Setting Up Test Data
 
