@@ -10,6 +10,7 @@ from crow.recipes.binned_exact import ExactBinnedClusterRecipe
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood import (
     BinnedClusterNumberCounts,
+    BinnedClusterShearProfile,
     ConstGaussian,
     Likelihood,
     NamedParameters,
@@ -18,11 +19,7 @@ from firecrown.modeling_tools import ModelingTools
 
 
 def get_cluster_shear_profile() -> ClusterShearProfile:
-    """
-    Creates and returns a ClusterShearProfile object with the same
-    configuration as in your previous code snippet.
-    """
-
+    """Creates and returns a ClusterShearProfile object."""
     cluster_theory = ClusterShearProfile(
         cosmo=pyccl.CosmologyVanillaLCDM(),
         halo_mass_function=pyccl.halos.MassFuncTinker08(mass_def="200c"),
@@ -41,8 +38,8 @@ def get_cluster_recipe(
     mass_interval=(12, 17),
     true_z_interval=(0.1, 2.0),
 ):
-    """
-    Creates and returns an ExactBinnedClusterRecipe.
+    """Creates and returns an ExactBinnedClusterRecipe.
+
     Parameters
     ----------
     cluster_theory : ClusterShearProfile or None
@@ -52,7 +49,6 @@ def get_cluster_recipe(
     -------
     ExactBinnedClusterRecipe
     """
-
     if cluster_theory is None:
         cluster_theory = get_cluster_shear_profile()
 

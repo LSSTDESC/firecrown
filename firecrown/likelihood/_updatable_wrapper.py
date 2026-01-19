@@ -17,7 +17,8 @@ class UpdatableParameters(Updatable):
     """
 
     def __init__(self, recipe_attribute_name, updatable_parameters):
-        """
+        """Class parameters.
+
         Parameters
         ----------
         updatable_parameters: list
@@ -31,8 +32,7 @@ class UpdatableParameters(Updatable):
         return f"{self.recipe_attribute_name}_{par_name}"
 
     def init_parameters(self, cluster_object):
-        """
-        Instanciate all parameters (uses parameters.register_new_updatable_parameter)
+        """Instanciate all updatable parameters.
 
         Parameters
         ----------
@@ -49,8 +49,7 @@ class UpdatableParameters(Updatable):
             )
 
     def export_parameters(self, cluster_object):
-        """
-        Passes internal parameters to cluster object.
+        """Passes internal parameters to cluster object.
 
         Parameters
         ----------
@@ -64,9 +63,10 @@ class UpdatableParameters(Updatable):
 
 
 class UpdatableClusterObjects(Updatable):
-    """
-    Class to store and pass updatable parameters of all to cluster objects
-    in a cluster recipe.
+    """Class to store updatable parameters for cluster objects.
+
+    This class passes updatable parameters to all objects within
+    a cluster recipe.
 
     Attributes
     ----------
@@ -77,7 +77,6 @@ class UpdatableClusterObjects(Updatable):
 
     Examples
     --------
-
     cluster_objects_configs = (
         {
             "recipe_attribute_name": "mass_distribution",
@@ -100,7 +99,8 @@ class UpdatableClusterObjects(Updatable):
     """
 
     def __init__(self, cluster_objects_configs):
-        """
+        """Class parameters.
+
         Parameters
         ----------
         cluster_objects_configs: tuple
@@ -128,8 +128,7 @@ class UpdatableClusterObjects(Updatable):
             self.my_updatables.append(getattr(self, conf["recipe_attribute_name"]))
 
     def init_all_parameters(self, cluster_recipe):
-        """
-        Instanciate all parameters (uses parameters.register_new_updatable_parameter)
+        """Instanciate all updatables parameiters.
 
         Parameters
         ----------
@@ -143,8 +142,7 @@ class UpdatableClusterObjects(Updatable):
             )
 
     def export_all_parameters(self, cluster_recipe, cosmo):
-        """
-        Passes internal parameters to cluster object.
+        """Passes internal parameters to cluster object.
 
         Parameters
         ----------

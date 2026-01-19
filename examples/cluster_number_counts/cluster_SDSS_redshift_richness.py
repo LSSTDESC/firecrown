@@ -21,11 +21,7 @@ from firecrown.modeling_tools import ModelingTools
 
 
 def get_cluster_abundance() -> ClusterAbundance:
-    """
-    Creates and returns a ClusterShearProfile object with the same
-    configuration as in your previous code snippet.
-    """
-
+    """Creates and returns a ClusterShearProfile object."""
     cluster_theory = ClusterAbundance(
         cosmo=ccl.CosmologyVanillaLCDM(),
         halo_mass_function=ccl.halos.MassFuncTinker08(mass_def="200c"),
@@ -41,18 +37,16 @@ def get_cluster_recipe(
     mass_interval=(12, 17),
     true_z_interval=(0.1, 2.0),
 ):
-    """
-    Creates and returns an ExactBinnedClusterRecipe.
+    """Creates and returns an ExactBinnedClusterRecipe.
+
     Parameters
     ----------
     cluster_theory : ClusterShearProfile or None
         If None, uses get_cluster_shear_profile()
-
     Returns
     -------
     ExactBinnedClusterRecipe
     """
-
     if cluster_theory is None:
         cluster_theory = get_cluster_abundance()
     redshift_distribution = kernel.SpectroscopicRedshift()

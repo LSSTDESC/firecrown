@@ -74,7 +74,6 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param cluster_counts: The number of clusters in each bin.
         :param cluster_properties: The cluster observables to use.
         """
-
         mean_values = []
         for this_bin, counts in zip(self.bins, cluster_counts):
             total_observable = self.cluster_recipe.evaluate_theory_prediction_counts(
@@ -98,7 +97,6 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param tools: The modeling tools used to compute the statistic.
         :return: The number of clusters in each bin.
         """
-
         cluster_counts = []
         for this_bin in self.bins:
             counts = self.cluster_recipe.evaluate_theory_prediction_counts(
