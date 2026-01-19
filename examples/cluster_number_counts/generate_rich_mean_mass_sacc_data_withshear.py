@@ -302,7 +302,7 @@ def compute_profiles(N_z: int, N_rich: int, cosmo_ccl, z, richness, logM):
 ####################################################################
 
 
-def build_tracers(s, survey, z_edges, r_edges, R_edges):
+def build_tracers(s, z_edges, r_edges, R_edges):
     """Add all tracers to SACC and return label lists."""
     z_labels, r_labels, R_labels = [], [], []
 
@@ -347,9 +347,9 @@ def fill_counts_and_mass(
         mean_logM.flatten(), itertools.product(z_labels, r_labels)
     )
 
-    for counts, (bin_z_label, bin_richness_label) in counts_and_edges:
+    for _counts, (bin_z_label, bin_richness_label) in counts_and_edges:
         s.add_data_point(
-            t_counts, (survey, bin_z_label, bin_richness_label), int(counts)
+            t_counts, (survey, bin_z_label, bin_richness_label), int(_counts)
         )
 
     for bin_mean_logM, (bin_z_label, bin_richness_label) in mean_logM_and_edges:
@@ -421,14 +421,15 @@ def generate_sacc_file():
     s.add_tracer("survey", survey, area)
 
     # Add tracers
-    z_labels, r_labels, R_labels = build_tracers(s, survey, z_edges, r_edges, R_edges)
+    z_labels, r_labels, R_labels = build_tracers(s, z_edges, r_edges, R_edges)
 
     # Data types
+    # pylint: disable=no-member
     t_counts = sacc.standard_types.cluster_counts
     t_logmass = sacc.standard_types.cluster_mean_log_mass
     t_dsigma = sacc.standard_types.cluster_delta_sigma
     t_shear = sacc.standard_types.cluster_shear
-
+    # pylint: enable=no-member
     # Fill data blocks
     fill_counts_and_mass(
         s, survey, counts, mean_logM, z_labels, r_labels, t_counts, t_logmass
@@ -444,6 +445,6 @@ def generate_sacc_file():
 
 
 ####################################################################
-
-Ncm.cfg_init()
-generate_sacc_file()
+if __name__ == "__main__":
+    Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
+    generate_sacc_file()
