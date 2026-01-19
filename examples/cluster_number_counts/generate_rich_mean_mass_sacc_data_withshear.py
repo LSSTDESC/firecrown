@@ -34,7 +34,6 @@ from clmm.utils.beta_lens import (  # noqa: E402
     compute_beta_s_square_mean_from_distribution,
 )
 
-
 ####################################################################
 # Cosmology
 ####################################################################
@@ -210,7 +209,7 @@ def compute_profiles(N_z: int, N_rich: int, cosmo_ccl, z, richness, logM):
     )  # 6 radial bins log-spaced between 0.3 and 6 Mpc
 
     radius_centers = [
-        np.mean(radius_edges[i: i + 2]) for i in range(len(radius_edges) - 1)
+        np.mean(radius_edges[i : i + 2]) for i in range(len(radius_edges) - 1)
     ]
 
     all_dsigma_list = []
@@ -319,7 +318,7 @@ def build_tracers(s, survey, z_edges, r_edges, R_edges):
         r_labels.append(name)
 
     # Radius bins
-    R_centers = [np.mean(R_edges[i: i + 2]) for i in range(len(R_edges) - 1)]
+    R_centers = [np.mean(R_edges[i : i + 2]) for i in range(len(R_edges) - 1)]
     for i, (lo, hi) in enumerate(zip(R_edges[:-1], R_edges[1:])):
         name = f"bin_radius_{i}"
         s.add_tracer("bin_radius", name, float(lo), float(hi), float(R_centers[i]))
@@ -409,7 +408,7 @@ def generate_sacc_file():
     cosmo, cosmo_ccl = generate_cosmo(H0, Ob0, Odm0, n_s, sigma8)
     z, richness, logM = generate_cluster_data(cosmo, area, M0, z0, lnRl, lnRu, zl, zu)
 
-    (counts, mean_logM, mean_dsigma, mean_gt, z_edges, r_edges, R_edges, cov) = (
+    counts, mean_logM, mean_dsigma, mean_gt, z_edges, r_edges, R_edges, cov = (
         compute_profiles(N_z, N_richness, cosmo_ccl, z, richness, logM)
     )
 
@@ -419,7 +418,7 @@ def generate_sacc_file():
     s.add_tracer("survey", survey, area)
 
     # Add tracers
-    (z_labels, r_labels, R_labels) = build_tracers(s, survey, z_edges, r_edges, R_edges)
+    z_labels, r_labels, R_labels = build_tracers(s, survey, z_edges, r_edges, R_edges)
 
     # Data types
     t_counts = sacc.standard_types.cluster_counts
