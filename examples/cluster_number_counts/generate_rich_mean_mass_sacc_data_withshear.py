@@ -209,7 +209,8 @@ def compute_profiles(N_z: int, N_rich: int, cosmo_ccl, z, richness, logM):
     )  # 6 radial bins log-spaced between 0.3 and 6 Mpc
 
     radius_centers = [
-        np.mean(radius_edges[i : i + 2]) for i in range(len(radius_edges) - 1) # noqa: E203
+        np.mean(radius_edges[i : i + 2])  # noqa: E203
+        for i in range(len(radius_edges) - 1)
     ]
 
     all_dsigma_list = []
@@ -318,7 +319,9 @@ def build_tracers(s, survey, z_edges, r_edges, R_edges):
         r_labels.append(name)
 
     # Radius bins
-    R_centers = [np.mean(R_edges[i : i + 2]) for i in range(len(R_edges) - 1)] # noqa: E203
+    R_centers = [
+        np.mean(R_edges[i : i + 2]) for i in range(len(R_edges) - 1)  # noqa: E203
+    ]
     for i, (lo, hi) in enumerate(zip(R_edges[:-1], R_edges[1:])):
         name = f"bin_radius_{i}"
         s.add_tracer("bin_radius", name, float(lo), float(hi), float(R_centers[i]))
