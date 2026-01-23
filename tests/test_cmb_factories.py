@@ -11,7 +11,7 @@ from firecrown.likelihood._cmb import (
     CMBConvergenceFactory,
     CMBConvergenceArgs,
 )
-from firecrown.metadata_types import InferredGalaxyZDist, CMB
+from firecrown.metadata_types import TomographicBin, CMB
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
@@ -136,8 +136,8 @@ def test_cmb_convergence_factory_create():
     """Test CMBConvergenceFactory create method."""
     factory = CMBConvergenceFactory(z_source=1090.0, scale=1.5)
 
-    # Create a mock InferredGalaxyZDist with CMB measurements
-    mock_zdist = InferredGalaxyZDist(
+    # Create a mock TomographicBin with CMB measurements
+    mock_zdist = TomographicBin(
         bin_name="cmb_bin",
         z=np.linspace(0, 2, 100),
         dndz=np.ones(100),
@@ -155,7 +155,7 @@ def test_cmb_convergence_factory_create_caching():
     """Test that CMBConvergenceFactory caches created objects."""
     factory = CMBConvergenceFactory()
 
-    mock_zdist = InferredGalaxyZDist(
+    mock_zdist = TomographicBin(
         bin_name="cmb_bin",
         z=np.linspace(0, 2, 100),
         dndz=np.ones(100),
@@ -223,7 +223,7 @@ def test_cmb_convergence_factory_different_params():
     factory1 = CMBConvergenceFactory(z_source=1090.0, scale=1.0)
     factory2 = CMBConvergenceFactory(z_source=1100.0, scale=2.0)
 
-    mock_zdist = InferredGalaxyZDist(
+    mock_zdist = TomographicBin(
         bin_name="cmb_bin",
         z=np.linspace(0, 2, 100),
         dndz=np.ones(100),

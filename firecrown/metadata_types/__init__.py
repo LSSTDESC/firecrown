@@ -10,12 +10,12 @@ from firecrown.metadata_types._compatibility import (
 )
 from firecrown.metadata_types._two_point_tracers import (
     TomographicBin,
-    Tracer,
+    ProjectedField,
     CMBLensing,
+    InferredGalaxyZDist,
 )
 
 # Backwards compatibility: expose the legacy name
-InferredGalaxyZDist = TomographicBin
 from firecrown.metadata_types._measurements import (
     ALL_MEASUREMENTS,
     ALL_MEASUREMENT_TYPES,
@@ -89,7 +89,7 @@ __all__ = [
     # Tomographic bin / legacy name
     "TomographicBin",
     "InferredGalaxyZDist",
-    "Tracer",
+    "ProjectedField",
     "CMBLensing",
     # Two-point types
     "TwoPointXY",

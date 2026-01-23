@@ -7,7 +7,7 @@ from firecrown import parameters
 
 
 def test_get_derived_parameters(
-    harmonic_bin_1: mt.InferredGalaxyZDist,
+    harmonic_bin_1: mt.TomographicBin,
     tools_with_vanilla_cosmology: mtools.ModelingTools,
 ):
     ncs = nc.NumberCounts.create_ready(harmonic_bin_1, derived_scale=True)

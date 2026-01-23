@@ -39,7 +39,7 @@ from firecrown.generators._two_point import (
 )
 from firecrown.metadata_types import (
     Galaxies,
-    InferredGalaxyZDist,
+    TomographicBin,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
 )
@@ -449,7 +449,7 @@ def test_two_point_lens0_lens0_data_and_conf_warn(sacc_galaxy_xis_lens0_lens0) -
 
 
 def test_use_source_factory(
-    harmonic_bin_1: InferredGalaxyZDist, tp_factory: TwoPointFactory
+    harmonic_bin_1: TomographicBin, tp_factory: TwoPointFactory
 ) -> None:
     measurement = list(harmonic_bin_1.measurements)[0]
     source = use_source_factory(harmonic_bin_1, measurement, tp_factory)
@@ -466,7 +466,7 @@ def test_use_source_factory(
 
 
 def test_use_source_factory_invalid_measurement(
-    harmonic_bin_1: InferredGalaxyZDist, tp_factory: TwoPointFactory
+    harmonic_bin_1: TomographicBin, tp_factory: TwoPointFactory
 ) -> None:
     with pytest.raises(
         ValueError,

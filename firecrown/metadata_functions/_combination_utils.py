@@ -39,7 +39,7 @@ def _validate_list_of_inferred_galaxy_zdists(
 
 
 def make_all_photoz_bin_combinations(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    inferred_galaxy_zdists: list[mdt.TomographicBin],
 ) -> list[mdt.TwoPointXY]:
     """Create all possible two-point correlation combinations for galaxy bins.
 
@@ -83,7 +83,7 @@ def make_all_photoz_bin_combinations(
 
 
 def make_all_photoz_bin_combinations_with_cmb(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    inferred_galaxy_zdists: list[mdt.TomographicBin],
     cmb_tracer_name: str = "cmb_convergence",
     include_cmb_auto: bool = False,
 ) -> list[mdt.TwoPointXY]:
@@ -113,7 +113,7 @@ def make_all_photoz_bin_combinations_with_cmb(
 
 
 def make_cmb_galaxy_combinations_only(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    inferred_galaxy_zdists: list[mdt.TomographicBin],
     cmb_tracer_name: str = "cmb_convergence",
     include_cmb_auto: bool = False,
 ) -> list[mdt.TwoPointXY]:
@@ -136,7 +136,7 @@ def make_cmb_galaxy_combinations_only(
     """
     _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
     # Create a mock mdt.CMB "bin"
-    cmb_bin = mdt.InferredGalaxyZDist(
+    cmb_bin = mdt.TomographicBin(
         bin_name=cmb_tracer_name,
         z=np.array([1100.0]),
         dndz=np.array([1.0]),

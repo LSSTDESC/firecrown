@@ -282,15 +282,6 @@ class TwoPoint(Statistic):
         # runtime isinstance checks and raise an informative error if this is
         # not the case — this both documents the assumption and narrows the
         # type for the type checker.
-        if not isinstance(metadata.XY.x, mdt.TomographicBin):
-            raise TypeError(
-                f"Expected metadata.XY.x to be TomographicBin, got {type(metadata.XY.x)!r}"
-            )
-        if not isinstance(metadata.XY.y, mdt.TomographicBin):
-            raise TypeError(
-                f"Expected metadata.XY.y to be TomographicBin, got {type(metadata.XY.y)!r}"
-            )
-
         source0 = use_source_factory(
             metadata.XY.x, metadata.XY.x_measurement, tp_factory
         )
@@ -871,21 +862,19 @@ class TwoPointFactory(BaseModel):
 
 
 def use_source_factory(
-    inferred_galaxy_zdist: mdt.TomographicBin,
+    tomographic_bin: mdt.ProjectedField,
     measurement: Measurement,
     tp_factory: TwoPointFactory,
 ) -> WeakLensing | NumberCounts | CMBConvergence:
     """Apply the factory to the inferred galaxy redshift distribution."""
-    if measurement not in inferred_galaxy_zdist.measurements:
+    if measurement not in tomographic_bin.measurements:
         raise ValueError(
             f"Measurement {measurement} not found in inferred galaxy redshift "
-            f"distribution {inferred_galaxy_zdist.bin_name}!"
+            f"distribution {tomographic_bin.bin_name}!"
         )
 
-    source_factory = tp_factory.get_factory(
-        measurement, inferred_galaxy_zdist.type_source
-    )
-    source = source_factory.create(inferred_galaxy_zdist)
+    source_factory = tp_factory.get_factory(measurement, tomographic_bin.type_source)
+    source = source_factory.create(tomographic_bin)
     return source
 
 

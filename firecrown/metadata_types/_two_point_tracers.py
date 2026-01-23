@@ -1,8 +1,8 @@
 """Tomographic bin / tracer types.
 
 This module defines a Protocol for generic tracers and a concrete
-implementation previously known as ``InferredGalaxyZDist``. The concrete
-class has been renamed to ``TomographicBin``; an alias ``InferredGalaxyZDist``
+implementation previously known as ``TomographicBin``. The concrete
+class has been renamed to ``TomographicBin``; an alias ``TomographicBin``
 is provided for backwards compatibility.
 """
 
@@ -11,38 +11,38 @@ from typing import Protocol, runtime_checkable
 
 import numpy as np
 
-from firecrown.metadata_types._measurements import ALL_MEASUREMENT_TYPES, Measurement
-from firecrown.metadata_types._measurements import CMB
+from firecrown.metadata_types._measurements import Galaxies, CMB, Measurement
 from firecrown.metadata_types._utils import TypeSource
 from firecrown.utils import YAMLSerializable
 
 
 @runtime_checkable
-class Tracer(Protocol):
+class ProjectedField(Protocol):
     """Protocol describing the minimal tracer interface used across Firecrown.
 
-    Implementations must provide these read-only attributes so code can operate on
+    Implementations must provide these attributes so that code can operate on
     different kinds of tracers (not only galaxy redshift distributions).
 
-    The attributes are declared as read-only properties to remain compatible with
-    frozen dataclasses such as ``TomographicBin``.
+    The protocol is intentionally defined in terms of instance attributes,
+    which makes it directly compatible with frozen dataclasses such as
+    ``TomographicBin`` and other simple data containers.
 
-    :var bin_name: string identifier for the tracer/bin
-    :var measurements: set of Measurement values supported by the tracer
-    :var type_source: TypeSource describing the source of the tracer
+    :var bin_name: String identifier for the tracer or tomographic bin.
+    :var measurements: Set of Measurement values supported by the tracer.
+    :var type_source: TypeSource describing how the tracer was obtained.
     """
 
     @property
     def bin_name(self) -> str:  # pragma: no cover - Protocol stub
-        ...
+        """The name of the tracer or tomographic bin."""
 
     @property
     def measurements(self) -> set[Measurement]:  # pragma: no cover - Protocol stub
-        ...
+        """The set of Measurement types supported by the tracer."""
 
     @property
     def type_source(self) -> TypeSource:  # pragma: no cover - Protocol stub
-        ...
+        """The source of the tracer type information."""
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -50,7 +50,7 @@ class TomographicBin(YAMLSerializable):
     """Concrete tomographic bin holding redshift distribution arrays.
 
     This class is the renamed replacement for the legacy
-    ``InferredGalaxyZDist`` type. It is intentionally frozen and lightweight.
+    ``TomographicBin`` type. It is intentionally frozen and lightweight.
     """
 
     bin_name: str
@@ -70,8 +70,8 @@ class TomographicBin(YAMLSerializable):
             raise ValueError("The z and dndz arrays should have the same shape.")
 
         for measurement in self.measurements:
-            if not isinstance(measurement, ALL_MEASUREMENT_TYPES):
-                raise ValueError("The measurement should be a Measurement.")
+            if not isinstance(measurement, Galaxies):
+                raise ValueError("The measurement should be a Galaxies Measurement.")
 
         if self.bin_name == "":
             raise ValueError("The bin_name should not be empty.")
@@ -98,7 +98,7 @@ class TomographicBin(YAMLSerializable):
 
         # Another object that satisfies the Tracer protocol: intentionally
         # considered not equal to this concrete TomographicBin implementation.
-        if isinstance(other, Tracer):
+        if isinstance(other, ProjectedField):
             return False
 
         # Allow Python to attempt other.__eq__(self)
@@ -149,8 +149,8 @@ class CMBLensing(YAMLSerializable):
             raise ValueError("z_lss must be non-negative.")
 
         for measurement in self.measurements:
-            if not isinstance(measurement, ALL_MEASUREMENT_TYPES):
-                raise ValueError("The measurement should be a Measurement.")
+            if not isinstance(measurement, CMB):
+                raise ValueError("The measurement should be a CMB Measurement.")
 
     def __eq__(self, other: object) -> bool:
         """Equality semantics for CMBLensing.
@@ -168,7 +168,7 @@ class CMBLensing(YAMLSerializable):
                 and self.type_source == other.type_source
             )
 
-        if isinstance(other, Tracer):
+        if isinstance(other, ProjectedField):
             return False
 
         return NotImplemented

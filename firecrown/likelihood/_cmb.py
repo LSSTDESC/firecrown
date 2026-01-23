@@ -7,7 +7,7 @@ import sacc
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from firecrown.likelihood._base import Source, Tracer
-from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
+from firecrown.metadata_types import ProjectedField, CMBLensing, TypeSource
 from firecrown.modeling_tools import ModelingTools
 
 
@@ -113,14 +113,15 @@ class CMBConvergenceFactory(BaseModel):
         """Initialize the CMBConvergenceFactory."""
         self._cache: dict[int, CMBConvergence] = {}
 
-    def create(self, inferred_galaxy_zdist: InferredGalaxyZDist) -> CMBConvergence:
+    def create(self, cmb_tracer: ProjectedField) -> CMBConvergence:
         """Create a CMBConvergence object with the given inferred galaxy z distribution.
 
-        :param inferred_galaxy_zdist: the inferred galaxy redshift distribution
+        :param cmb_tracer: the inferred galaxy redshift distribution
         :return: a fully initialized CMBConvergence object
         """
+        assert isinstance(cmb_tracer, CMBLensing)
         # Use the bin_name as the tracer identifier
-        sacc_tracer = inferred_galaxy_zdist.bin_name
+        sacc_tracer = cmb_tracer.bin_name
         tracer_id = hash(sacc_tracer)
 
         if tracer_id in self._cache:

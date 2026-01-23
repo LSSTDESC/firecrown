@@ -26,7 +26,7 @@ from firecrown.likelihood._base import (
     SourceGalaxySystematic,
     Tracer,
 )
-from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
+from firecrown.metadata_types import ProjectedField, TomographicBin, TypeSource
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
@@ -376,14 +376,17 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     @classmethod
     def create_ready(
         cls,
-        inferred_zdist: InferredGalaxyZDist,
+        tomographic_bin: TomographicBin,
         systematics: None | list[SourceGalaxySystematic[WeakLensingArgs]] = None,
     ) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-        obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)
+        obj = cls(sacc_tracer=tomographic_bin.bin_name, systematics=systematics)
         # pylint: disable=unexpected-keyword-arg
         obj.tracer_args = WeakLensingArgs(
-            scale=obj.scale, z=inferred_zdist.z, dndz=inferred_zdist.dndz, ia_bias=None
+            scale=obj.scale,
+            z=tomographic_bin.z,
+            dndz=tomographic_bin.dndz,
+            ia_bias=None,
         )
         # pylint: enable=unexpected-keyword-arg
 
@@ -494,7 +497,7 @@ class MultiplicativeShearBiasFactory(BaseModel):
     def create(self, bin_name: str) -> MultiplicativeShearBias:
         """Create a MultiplicativeShearBias object.
 
-        :param inferred_zdist: The inferred galaxy redshift distribution for
+        :param tomographic_bin: The inferred galaxy redshift distribution for
             the created MultiplicativeShearBias object.
         :return: The created MultiplicativeShearBias object.
         """
@@ -523,7 +526,7 @@ class LinearAlignmentSystematicFactory(BaseModel):
     def create(self, bin_name: str) -> LinearAlignmentSystematic:
         """Create a LinearAlignmentSystematic object.
 
-        :param inferred_zdist: The inferred galaxy redshift distribution for
+        :param tomographic_bin: The inferred galaxy redshift distribution for
             the created LinearAlignmentSystematic object.
         :return: The created LinearAlignmentSystematic object.
         """
@@ -551,7 +554,7 @@ class TattAlignmentSystematicFactory(BaseModel):
     def create(self, bin_name: str) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
 
-        :param inferred_zdist: The inferred galaxy redshift distribution for
+        :param tomographic_bin: The inferred galaxy redshift distribution for
             the created TattAlignmentSystematic object.
         :return: The created TattAlignmentSystematic object.
         """
@@ -601,19 +604,20 @@ class WeakLensingFactory(BaseModel):
             for wl_systematic_factory in self.global_systematics
         ]
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensing:
+    def create(self, tomographic_bin: ProjectedField) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-        inferred_zdist_id = id(inferred_zdist)
+        assert isinstance(tomographic_bin, TomographicBin)
+        inferred_zdist_id = id(tomographic_bin)
         if inferred_zdist_id in self._cache:
             return self._cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
-            systematic_factory.create(inferred_zdist.bin_name)
+            systematic_factory.create(tomographic_bin.bin_name)
             for systematic_factory in self.per_bin_systematics
         ]
         systematics.extend(self._global_systematics_instances)
 
-        wl = WeakLensing.create_ready(inferred_zdist, systematics)
+        wl = WeakLensing.create_ready(tomographic_bin, systematics)
         self._cache[inferred_zdist_id] = wl
 
         return wl

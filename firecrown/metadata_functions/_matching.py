@@ -12,8 +12,8 @@ def _make_two_point_xy_error_message(
     a: mdt.Measurement,
     b: mdt.Measurement,
     tracer_names: mdt.TracerNames,
-    igz1: mdt.InferredGalaxyZDist,
-    igz2: mdt.InferredGalaxyZDist,
+    pf1: mdt.ProjectedField,
+    pf2: mdt.ProjectedField,
 ) -> str:
     """Generate a detailed error message for SACC naming convention violations.
 
@@ -30,8 +30,8 @@ Tracer measurements do not match the SACC naming convention:
 
   Data type: {data_type}
   Expected measurements: ({a}, {b})
-  Tracer '{tracer_names[0]}' has measurements: {igz1.measurements}
-  Tracer '{tracer_names[1]}' has measurements: {igz2.measurements}
+  Tracer '{tracer_names[0]}' has measurements: {pf1.measurements}
+  Tracer '{tracer_names[1]}' has measurements: {pf2.measurements}
 
 According to the SACC convention, the order of measurement types in the data type
 string must match the order of tracers. The measurement type '{a}' should be associated
@@ -44,7 +44,7 @@ For detailed information about fixing this issue, see:
 
 
 def make_two_point_xy(
-    inferred_galaxy_zdists_dict: dict[str, mdt.InferredGalaxyZDist],
+    projected_fields_dict: dict[str, mdt.ProjectedField],
     tracer_names: mdt.TracerNames,
     data_type: str,
 ) -> mdt.TwoPointXY:
@@ -53,8 +53,7 @@ def make_two_point_xy(
     The mdt.TwoPointXY object is built from the inferred galaxy z distributions,
     the data type, and the tracer names.
 
-    :param inferred_galaxy_zdists_dict: a dictionary of inferred galaxy z
-        distributions.
+    :param projected_fields_dict: a dictionary of projected fields.
     :param tracer_names: a tuple of tracer names.
     :param data_type: the data type.
 
@@ -65,8 +64,8 @@ def make_two_point_xy(
     a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
 
     try:
-        igz1 = inferred_galaxy_zdists_dict[tracer_names[0]]
-        igz2 = inferred_galaxy_zdists_dict[tracer_names[1]]
+        igz1 = projected_fields_dict[tracer_names[0]]
+        igz2 = projected_fields_dict[tracer_names[1]]
     except KeyError as e:
         raise ValueError(
             f"Tracer '{e.args[0]}' not found in inferred galaxy z distributions."
