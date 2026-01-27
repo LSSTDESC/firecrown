@@ -11,7 +11,6 @@ from firecrown.models.cluster import (
     MassRichnessGaussian,
 )
 
-
 PIVOT_Z = 0.6
 PIVOT_MASS = 14.625862906
 

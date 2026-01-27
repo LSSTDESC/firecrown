@@ -12,7 +12,6 @@ from firecrown.updatable._base import Updatable
 from firecrown.updatable._records import UpdatableUsageRecord
 from firecrown.updatable._types import UpdatableProtocol
 
-
 T = TypeVar("T", bound=Updatable)
 
 

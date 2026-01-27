@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Example factory function for DES Y1 3x2pt likelihood."""
+
 from dataclasses import dataclass
 import os
 
@@ -18,7 +19,6 @@ from firecrown.updatable import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.modeling_tools import CCLFactory
 from firecrown.updatable import get_default_params_map
-
 
 saccfile = os.path.expanduser(
     os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.hdf5")

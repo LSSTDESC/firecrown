@@ -6,7 +6,6 @@ future release of pyccl.
 import pytest
 import pyccl
 
-
 # Both sets of cosmological parameters are silly, but they are sufficient to initialize
 # a pyccl.Cosmology object.
 

@@ -44,7 +44,6 @@ from firecrown.updatable import (
     register_new_updatable_parameter,
 )
 
-
 # ============================================================================
 # Classes from _likelihood.py
 # ============================================================================

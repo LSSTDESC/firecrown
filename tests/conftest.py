@@ -45,7 +45,6 @@ import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._cmb as cmb
 from firecrown.metadata_types import Clusters, CMB
 
-
 # Helper function for creating AST ClassDef nodes across Python versions
 if sys.version_info >= (3, 12):
 

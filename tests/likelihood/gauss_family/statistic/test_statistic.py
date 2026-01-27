@@ -12,7 +12,6 @@ import firecrown.likelihood._statistic as stat
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
-
 VECTOR_CLASSES = (firecrown.data_types.TheoryVector, firecrown.data_types.DataVector)
 
 

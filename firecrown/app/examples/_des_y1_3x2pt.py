@@ -183,31 +183,22 @@ two_point_factory:
 """
 
         if self.factory_type == DESY1FactoryType.YAML_PURE_CCL:
-            return (
-                base_config
-                + """
+            return base_config + """
 ccl_factory:
   creation_mode: 'pure_ccl_mode'
   require_nonlinear_pk: true
 """
-            )
         if self.factory_type == DESY1FactoryType.YAML_MU_SIGMA:
-            return (
-                base_config
-                + """
+            return base_config + """
 ccl_factory:
   creation_mode: 'mu_sigma_isitgr'
   require_nonlinear_pk: true
 """
-            )
 
-        return (
-            base_config
-            + """
+        return base_config + """
 ccl_factory:
   require_nonlinear_pk: true
 """
-        )
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
         """Return build parameters for likelihood construction.
