@@ -48,7 +48,8 @@ def fixture_minimal_factory_file(tmp_path: Path) -> Path:
     - Mock SACC data with 3 data points
     """
     factory_file = tmp_path / "factory.py"
-    factory_file.write_text("""
+    factory_file.write_text(
+        """
 import sacc
 import numpy as np
 from firecrown.likelihood.number_counts import NumberCounts
@@ -76,7 +77,8 @@ def build_likelihood(_):
     likelihood = ConstGaussian(statistics=statistics)
     likelihood.read(sacc_data)
     return likelihood
-""".strip())
+""".strip()
+    )
     return factory_file
 
 

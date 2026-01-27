@@ -47,11 +47,13 @@ def test_check_qmd_file_valid_symbols(tmp_path):
     """Test checking a file with valid symbol references."""
     # Create a test .qmd file
     qmd_file = tmp_path / "test.qmd"
-    qmd_file.write_text("""
+    qmd_file.write_text(
+        """
 # Test file
 
 This mentions `firecrown.parameters.Parameter` and `Updatable`.
-""")
+"""
+    )
 
     # Create a symbol map with these symbols
     symbol_map = {
@@ -66,9 +68,11 @@ This mentions `firecrown.parameters.Parameter` and `Updatable`.
 def test_check_qmd_file_invalid_fully_qualified(tmp_path):
     """Test checking a file with invalid fully-qualified symbol."""
     qmd_file = tmp_path / "test.qmd"
-    qmd_file.write_text("""
+    qmd_file.write_text(
+        """
 This mentions `firecrown.parameters.Paramater` (typo).
-""")
+"""
+    )
 
     symbol_map = {
         "firecrown.parameters.Parameter": "api/...",
@@ -83,9 +87,11 @@ This mentions `firecrown.parameters.Paramater` (typo).
 def test_check_qmd_file_invalid_unqualified(tmp_path):
     """Test checking a file with invalid unqualified symbol."""
     qmd_file = tmp_path / "test.qmd"
-    qmd_file.write_text("""
+    qmd_file.write_text(
+        """
 This mentions `Updateable` (typo, should be Updatable).
-""")
+"""
+    )
 
     symbol_map = {
         "firecrown.updatable.Updatable": "api/...",
@@ -99,11 +105,13 @@ This mentions `Updateable` (typo, should be Updatable).
 def test_check_qmd_file_multiple_errors(tmp_path):
     """Test that all errors are reported, not just the first."""
     qmd_file = tmp_path / "test.qmd"
-    qmd_file.write_text("""
+    qmd_file.write_text(
+        """
 Line 1 has `firecrown.invalid.Class1`
 Line 2 has `firecrown.invalid.Class2`
 Line 3 has `InvalidClass3`
-""")
+"""
+    )
 
     symbol_map = {
         "firecrown.valid.Something": "api/...",
@@ -119,10 +127,12 @@ Line 3 has `InvalidClass3`
 def test_check_qmd_file_with_exclude_pattern(tmp_path):
     """Test that exclude pattern works."""
     qmd_file = tmp_path / "test.qmd"
-    qmd_file.write_text("""
+    qmd_file.write_text(
+        """
 This has `firecrown.example.ExampleClass` which should be excluded.
 This has `firecrown.real.RealClass` which should be checked.
-""")
+"""
+    )
 
     symbol_map = {
         "firecrown.real.RealClass": "api/...",
@@ -141,9 +151,11 @@ This has `firecrown.real.RealClass` which should be checked.
 def test_check_qmd_file_lowercase_code_not_checked(tmp_path):
     """Test that lowercase code spans are not checked as symbols."""
     qmd_file = tmp_path / "test.qmd"
-    qmd_file.write_text("""
+    qmd_file.write_text(
+        """
 This has `some_function` and `another_var` which are lowercase.
-""")
+"""
+    )
 
     symbol_map: dict[str, str] = {}  # Empty symbol map
 
@@ -155,9 +167,11 @@ This has `some_function` and `another_var` which are lowercase.
 def test_check_qmd_file_partial_module_path(tmp_path):
     """Test validation of partial module paths."""
     qmd_file = tmp_path / "test.qmd"
-    qmd_file.write_text("""
+    qmd_file.write_text(
+        """
 Reference to `firecrown.likelihood` module.
-""")
+"""
+    )
 
     symbol_map = {
         "firecrown.likelihood": "api/...",

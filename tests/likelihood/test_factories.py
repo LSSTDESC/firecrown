@@ -411,7 +411,8 @@ def test_build_two_point_likelihood_real(
         tmp_path, absolute_sacc_path
     )
 
-    tmp_experiment_file.write_text(f"""
+    tmp_experiment_file.write_text(
+        f"""
 two_point_factory:
   correlation_space: real
   weak_lensing_factories:
@@ -427,7 +428,8 @@ two_point_factory:
     limber_method: gsl_spline
 data_source:
     sacc_data_file: {sacc_path_relative_to_tmp_path}
-""")
+"""
+    )
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
     with pytest.warns(
@@ -449,7 +451,8 @@ def test_build_two_point_likelihood_harmonic(
         tmp_path, absolute_sacc_path
     )
 
-    tmp_experiment_file.write_text(f"""
+    tmp_experiment_file.write_text(
+        f"""
 two_point_factory:
   correlation_space: harmonic
   weak_lensing_factories:
@@ -465,7 +468,8 @@ two_point_factory:
     limber_method: gsl_spline
 data_source:
     sacc_data_file: {sacc_path_relative_to_tmp_path}
-""")
+"""
+    )
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
     likelihood, tools = build_two_point_likelihood(build_parameters)
@@ -483,7 +487,8 @@ def test_build_two_point_likelihood_real_no_real_data(
         tmp_path, absolute_sacc_path
     )
 
-    tmp_experiment_file.write_text(f"""
+    tmp_experiment_file.write_text(
+        f"""
 two_point_factory:
   correlation_space: real
   weak_lensing_factories:
@@ -499,7 +504,8 @@ two_point_factory:
     limber_method: gsl_spline
 data_source:
     sacc_data_file: {sacc_path_relative_to_tmp_path}
-""")
+"""
+    )
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
     with pytest.raises(
@@ -521,7 +527,8 @@ def test_build_two_point_likelihood_harmonic_no_harmonic_data(
         tmp_path, absolute_sacc_path
     )
 
-    tmp_experiment_file.write_text(f"""
+    tmp_experiment_file.write_text(
+        f"""
 two_point_factory:
   correlation_space: harmonic
   weak_lensing_factories:
@@ -537,7 +544,8 @@ two_point_factory:
     limber_method: gsl_spline
 data_source:
   sacc_data_file: {sacc_path_relative_to_tmp_path}
-""")
+"""
+    )
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
     with pytest.warns(
