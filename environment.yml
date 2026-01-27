@@ -4,7 +4,7 @@ channels:
 dependencies:
   - alabaster
   - babel
-  - black
+  - black=25
   - charset-normalizer
   - clmm
   - compilers
