@@ -20,7 +20,7 @@ import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
+from firecrown.modeling_tools import CCLFactory
 
 
 def _build_sources() -> tuple[wl.WeakLensing, nc.NumberCounts]:

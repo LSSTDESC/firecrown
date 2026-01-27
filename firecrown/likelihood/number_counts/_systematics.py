@@ -8,7 +8,7 @@ from dataclasses import replace
 import numpy as np
 import pyccl
 
-from firecrown import parameters
+from firecrown.updatable import register_new_updatable_parameter
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood._base import (
     SourceGalaxyPhotoZShift,
@@ -82,13 +82,13 @@ class LinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.alphaz = parameters.register_new_updatable_parameter(
+        self.alphaz = register_new_updatable_parameter(
             default_value=LINEAR_BIAS_DEFAULT_ALPHAZ
         )
-        self.alphag = parameters.register_new_updatable_parameter(
+        self.alphag = register_new_updatable_parameter(
             default_value=LINEAR_BIAS_DEFAULT_ALPHAG
         )
-        self.z_piv = parameters.register_new_updatable_parameter(
+        self.z_piv = register_new_updatable_parameter(
             default_value=LINEAR_BIAS_DEFAULT_Z_PIV
         )
 
@@ -146,10 +146,10 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
-        self.b_2 = parameters.register_new_updatable_parameter(
+        self.b_2 = register_new_updatable_parameter(
             default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_2
         )
-        self.b_s = parameters.register_new_updatable_parameter(
+        self.b_s = register_new_updatable_parameter(
             default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_S
         )
 
@@ -200,11 +200,11 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.r_lim = parameters.register_new_updatable_parameter(default_value=24.0)
-        self.sig_c = parameters.register_new_updatable_parameter(default_value=9.83)
-        self.eta = parameters.register_new_updatable_parameter(default_value=19.0)
-        self.z_c = parameters.register_new_updatable_parameter(default_value=0.39)
-        self.z_m = parameters.register_new_updatable_parameter(default_value=0.055)
+        self.r_lim = register_new_updatable_parameter(default_value=24.0)
+        self.sig_c = register_new_updatable_parameter(default_value=9.83)
+        self.eta = register_new_updatable_parameter(default_value=19.0)
+        self.z_c = register_new_updatable_parameter(default_value=0.39)
+        self.z_m = register_new_updatable_parameter(default_value=0.055)
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -261,7 +261,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mag_bias = parameters.register_new_updatable_parameter(
+        self.mag_bias = register_new_updatable_parameter(
             default_value=CONSTANT_MAGNIFICATION_BIAS_DEFAULT_MAG_BIAS
         )
 

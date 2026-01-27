@@ -13,8 +13,8 @@ from firecrown.connector.mapping import (
     MappingCAMB,
 )
 from firecrown.likelihood._likelihood import NamedParameters
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
-from firecrown.parameters import ParamsMap
+from firecrown.modeling_tools import PoweSpecAmplitudeParameter
+from firecrown.updatable import ParamsMap
 
 
 # TODO: Refactor these test functions to use a sensible fixture.

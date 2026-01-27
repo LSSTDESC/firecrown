@@ -398,7 +398,7 @@ def test_create_params_map_with_mapping():
     """Test create_params_map function when mapping is provided."""
     from firecrown.connector.numcosmo.numcosmo import create_params_map
     from firecrown.connector.mapping import Mapping
-    from firecrown.parameters import ParamsMap
+    from firecrown.updatable import ParamsMap
 
     # Create a simple mock model and mset
     model_name = "test_model"
@@ -462,7 +462,7 @@ def test_create_params_map_with_mapping():
 def test_create_params_map_without_mapping():
     """Test create_params_map function when mapping is None."""
     from firecrown.connector.numcosmo.numcosmo import create_params_map
-    from firecrown.parameters import ParamsMap
+    from firecrown.updatable import ParamsMap
 
     # Create a simple mock model and mset
     model_name = "test_model2"
@@ -520,7 +520,7 @@ def test_numcosmo_data_pure_ccl_mode():
     assert isinstance(nc_data, NumCosmoData)
 
     # Verify that the CCL factory is in PURE_CCL_MODE
-    from firecrown.ccl_factory import CCLCreationMode
+    from firecrown.modeling_tools import CCLCreationMode
 
     assert nc_data.tools.ccl_factory.creation_mode == CCLCreationMode.PURE_CCL_MODE
 
@@ -626,7 +626,7 @@ def test_numcosmo_gauss_cov_pure_ccl_mode():
     assert isinstance(nc_data, NumCosmoGaussCov)
 
     # Verify that the CCL factory is in PURE_CCL_MODE
-    from firecrown.ccl_factory import CCLCreationMode
+    from firecrown.modeling_tools import CCLCreationMode
 
     assert nc_data.tools.ccl_factory.creation_mode == CCLCreationMode.PURE_CCL_MODE
 
