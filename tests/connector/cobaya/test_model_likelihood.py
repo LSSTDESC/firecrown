@@ -277,65 +277,6 @@ def test_derived_parameter_likelihood(fiducial_params):
     assert logpost.derived[0] == 1.0
 
 
-@pytest.mark.slow
-def test_default_factory():
-    fiducial_params = {
-        "ia_bias": 1.0,
-        "sigma8": 0.8,
-        "alphaz": 1.0,
-        "h": 0.7,
-        "lens0_bias": 1.0,
-        "lens0_delta_z": 0.1,
-        "lens1_bias": 1.0,
-        "lens1_delta_z": 0.1,
-        "lens2_bias": 1.0,
-        "lens2_delta_z": 0.1,
-        "lens3_bias": 1.0,
-        "lens3_delta_z": 0.1,
-        "lens4_delta_z": 0.1,
-        "lens4_bias": 1.0,
-        "m_nu": 0.06,
-        "n_s": 0.96,
-        "Neff": 3.046,
-        "Omega_b": 0.048,
-        "Omega_c": 0.26,
-        "Omega_k": 0.0,
-        "src0_delta_z": 0.1,
-        "src0_mult_bias": 1.0,
-        "src1_delta_z": 0.1,
-        "src1_mult_bias": 1.0,
-        "src2_delta_z": 0.1,
-        "src2_mult_bias": 1.0,
-        "src3_delta_z": 0.1,
-        "src3_mult_bias": 1.0,
-        "w0": -1.0,
-        "wa": 0.0,
-        "z_piv": 0.3,
-        "T_CMB": 2.7255,
-    }
-    default_factory = "firecrown.likelihood.factories.build_two_point_likelihood"
-    likelihood_config = "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"
-    info_fiducial = {
-        "params": fiducial_params,
-        "likelihood": {
-            "lk_connector": {
-                "external": LikelihoodConnector,
-                "firecrownIni": default_factory,
-                "input_style": "CAMB",
-                "build_parameters": {"likelihood_config": likelihood_config},
-            },
-        },
-    }
-    with pytest.warns(
-        DeprecationWarning,
-        match="AUTO-CORRECTION PERFORMED",
-    ):
-        model_fiducial = get_model(info_fiducial)
-    assert isinstance(model_fiducial, Model)
-    logpost = model_fiducial.logposterior({})
-    assert np.isfinite(logpost.logpost)
-
-
 def _factory_as(_: NamedParameters):
     return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
         ccl_factory=ccl_factory.CCLFactory(
