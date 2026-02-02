@@ -42,7 +42,7 @@ class BinnedClusterNumberCounts(BinnedCluster):
         cluster_counts = []
 
         cluster_counts = self.get_binned_cluster_counts()
-
+        self.cluster_recipe.setup()
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
             if not include_prop:
