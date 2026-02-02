@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import sacc
+from crow.properties import ClusterProperty
 
 from firecrown.data_types import TheoryVector
-from firecrown.likelihood._binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster import AbundanceData, ClusterProperty
+from firecrown.models.cluster import AbundanceData
+
+from firecrown.likelihood._binned_cluster import BinnedCluster
 
 
 class BinnedClusterNumberCounts(BinnedCluster):
@@ -32,13 +34,15 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param tools: The modeling tools used to compute the statistic.
         :return: The computed statistic.
         """
-        assert tools.cluster_abundance is not None
+        self.updatable_parameters.export_all_parameters(
+            self.cluster_recipe, tools.get_ccl_cosmology()
+        )
 
         theory_vector_list: list[float] = []
         cluster_counts = []
 
-        cluster_counts = self.get_binned_cluster_counts(tools)
-
+        cluster_counts = self.get_binned_cluster_counts()
+        self.cluster_recipe.setup()
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
             if not include_prop:
@@ -49,14 +53,15 @@ class BinnedClusterNumberCounts(BinnedCluster):
                 continue
             if cl_property == ClusterProperty.DELTASIGMA:
                 continue
+            if cl_property == ClusterProperty.SHEAR:
+                continue
             theory_vector_list += self.get_binned_cluster_property(
-                tools, cluster_counts, cl_property
+                cluster_counts, cl_property
             )
         return TheoryVector.from_list(theory_vector_list)
 
     def get_binned_cluster_property(
         self,
-        tools: ModelingTools,
         cluster_counts: list[float],
         cluster_properties: ClusterProperty,
     ) -> list[float]:
@@ -69,19 +74,20 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param cluster_counts: The number of clusters in each bin.
         :param cluster_properties: The cluster observables to use.
         """
-        assert tools.cluster_abundance is not None
-
         mean_values = []
-        for this_bin, counts in zip(self.bins, cluster_counts, strict=False):
-            total_observable = self.cluster_recipe.evaluate_theory_prediction(
-                tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
+        for this_bin, counts in zip(self.bins, cluster_counts):
+            total_observable = self.cluster_recipe.evaluate_theory_prediction_counts(
+                this_bin.z_edges,
+                this_bin.mass_proxy_edges,
+                self.sky_area,
+                cluster_properties,
             )
             mean_observable = total_observable / counts
             mean_values.append(mean_observable)
 
         return mean_values
 
-    def get_binned_cluster_counts(self, tools: ModelingTools) -> list[float]:
+    def get_binned_cluster_counts(self) -> list[float]:
         """Computes the number of clusters in each bin.
 
         Using the data from the sacc file, this function evaluates the likelihood for
@@ -91,12 +97,10 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param tools: The modeling tools used to compute the statistic.
         :return: The number of clusters in each bin.
         """
-        assert tools.cluster_abundance is not None
-
         cluster_counts = []
         for this_bin in self.bins:
-            counts = self.cluster_recipe.evaluate_theory_prediction(
-                tools.cluster_abundance, this_bin, self.sky_area
+            counts = self.cluster_recipe.evaluate_theory_prediction_counts(
+                this_bin.z_edges, this_bin.mass_proxy_edges, self.sky_area
             )
             cluster_counts.append(counts)
 

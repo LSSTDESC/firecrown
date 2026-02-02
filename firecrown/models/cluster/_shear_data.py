@@ -1,13 +1,13 @@
 """The module responsible for extracting cluster data from a sacc file."""
 
 import sacc
+from crow.properties import ClusterProperty
 
 from firecrown.models.cluster._binning import SaccBin
 from firecrown.models.cluster._cluster_data import ClusterData
-from firecrown.models.cluster._properties import ClusterProperty
 
 
-class DeltaSigmaData(ClusterData):
+class ShearData(ClusterData):
     """The class used to wrap a sacc file and return the cluster deltasigma data.
 
     The sacc file is a complicated set of tracers (bins) and surveys.  This class
@@ -30,10 +30,18 @@ class DeltaSigmaData(ClusterData):
         For example if the caller has enabled DELTASIGMA then the observed
         cluster profile within each N dimensional bin will be returned.
         """
+        shear_props = ClusterProperty.DELTASIGMA | ClusterProperty.SHEAR
+        if (properties & shear_props) == shear_props:
+            raise ValueError(
+                "ShearData cannot handle both DELTASIGMA and SHEAR at the same time."
+            )
         data_types = []
         for cluster_property in ClusterProperty:
             include_prop = cluster_property & properties
             if include_prop == ClusterProperty.DELTASIGMA:
+                # pylint: disable=no-member
+                data_types.append(sacc.standard_types.cluster_delta_sigma)
+            elif include_prop == ClusterProperty.SHEAR:
                 # pylint: disable=no-member
                 data_types.append(sacc.standard_types.cluster_shear)
         if not data_types:
@@ -55,10 +63,20 @@ class DeltaSigmaData(ClusterData):
         """Returns the limits for all z, mass bins for the shear data type."""
         bins = []
         data_type = None
-        if ClusterProperty.DELTASIGMA not in properties:
-            raise ValueError(f"The property must be {ClusterProperty.DELTASIGMA}.")
-        # pylint: disable=no-member
-        data_type = sacc.standard_types.cluster_shear
+        for cluster_property in ClusterProperty:
+            include_prop = cluster_property & properties
+            if include_prop == ClusterProperty.DELTASIGMA:
+                # pylint: disable=no-member
+                data_type = sacc.standard_types.cluster_delta_sigma
+            elif include_prop == ClusterProperty.SHEAR:
+                # pylint: disable=no-member
+                data_type = sacc.standard_types.cluster_shear
+        if data_type is None:
+            # pylint: disable=no-member
+            raise ValueError(
+                f"The property must be {ClusterProperty.SHEAR} or"
+                f"{ClusterProperty.DELTASIGMA}."
+            )
         bin_combinations_for_survey = (
             self._all_bin_combinations_for_data_type_and_survey(survey_nm, data_type, 4)
         )

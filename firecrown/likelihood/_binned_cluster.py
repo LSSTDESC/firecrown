@@ -4,9 +4,19 @@ from __future__ import annotations
 
 import numpy as np
 
+from crow.properties import ClusterProperty
+from crow.recipes.binned_parent import (
+    BinnedClusterRecipe,
+)
+
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
+
+from firecrown.models.cluster import ClusterData, SaccBin
 from firecrown.data_types import DataVector, TheoryVector
 from firecrown.likelihood._base import SourceSystematic, Statistic
-from firecrown.models.cluster import ClusterData, ClusterProperty, SaccBin
+from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
 
 
 class BinnedCluster(Statistic):
@@ -16,7 +26,7 @@ class BinnedCluster(Statistic):
         self,
         cluster_properties: ClusterProperty,
         survey_name: str,
-        cluster_recipe,
+        cluster_recipe: BinnedClusterRecipe,
         systematics: None | list[SourceSystematic] = None,
     ):
         """Initialize this statistic.
@@ -35,6 +45,22 @@ class BinnedCluster(Statistic):
         self.data_vector = DataVector.from_list([])
         self.sky_area = 0.0
         self.bins: list[SaccBin] = []
+        self._create_updatable_parameters()
+        self.updatable_parameters.init_all_parameters(self.cluster_recipe)
+
+    def _create_updatable_parameters(self):
+        cluster_objects_configs = []
+        for name in ("cluster_theory", "mass_distribution", "completeness", "purity"):
+            _rec_attr = getattr(self.cluster_recipe, name)
+            if _rec_attr is not None:
+                cluster_objects_configs.append(
+                    {
+                        "recipe_attribute_name": name,
+                        "parameters": _rec_attr.parameters.keys(),
+                        "has_cosmo": hasattr(_rec_attr, "cosmo"),
+                    }
+                )
+        self.updatable_parameters = UpdatableClusterObjects(cluster_objects_configs)
 
     def _read(self, cluster_data: ClusterData) -> None:
         sacc_adapter = cluster_data

@@ -11,7 +11,6 @@ from firecrown.modeling_tools import (
     PowerspectrumModifier,
 )
 from firecrown.ccl_factory import Background, CCLCalculatorArgs
-from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 
 
 @pytest.fixture(name="dummy_powerspectrum", scope="session")
@@ -26,7 +25,6 @@ def test_default_constructed_state() -> None:
     # Default constructed state is pretty barren...
     assert tools.ccl_cosmo is None
     assert tools.pt_calculator is None
-    assert tools.cluster_abundance is None
     assert len(tools.powerspectra) == 0
 
 
@@ -305,53 +303,3 @@ def test_prepare_with_pt_calculator_updates_ingredients() -> None:
 
     # After prepare, verify the cosmology was set and PT calculator was updated
     assert tools.ccl_cosmo is not None
-
-
-def test_prepare_with_cluster_abundance_updates_ingredients() -> None:
-    """Test prepare() calls update_ingredients on cluster_abundance when set."""
-    # Create a real ClusterAbundance object
-    hmf = pyccl.halos.MassFuncTinker08(mass_def="200c")
-    min_mass, max_mass = 13.0, 16.0
-    min_z, max_z = 0.2, 0.8
-    cluster_abundance = ClusterAbundance((min_mass, max_mass), (min_z, max_z), hmf)
-
-    tools = ModelingTools(cluster_abundance=cluster_abundance)
-    params = get_default_params_map(tools)
-    tools.update(params)
-
-    # Before prepare, cluster_abundance should not have cosmology set
-    assert cluster_abundance.cosmo is None
-
-    # Call prepare - this should call update_ingredients on cluster_abundance
-    tools.prepare()
-
-    # After prepare, verify the cosmology was set on cluster_abundance
-    assert tools.ccl_cosmo is not None
-    assert cluster_abundance.cosmo is not None
-    assert cluster_abundance.cosmo is tools.ccl_cosmo
-
-
-def test_prepare_with_cluster_deltasigma_updates_ingredients() -> None:
-    """Test prepare() calls update_ingredients on cluster_deltasigma when set."""
-    # Create a real ClusterDeltaSigma object
-    hmf = pyccl.halos.MassFuncTinker08(mass_def="200c")
-    min_mass, max_mass = 13.0, 16.0
-    min_z, max_z = 0.2, 0.8
-    cluster_deltasigma = ClusterDeltaSigma(
-        (min_mass, max_mass), (min_z, max_z), hmf, conc_parameter=True
-    )
-
-    tools = ModelingTools(cluster_deltasigma=cluster_deltasigma)
-    params = get_default_params_map(tools)
-    tools.update(params)
-
-    # Before prepare, cluster_deltasigma should not have cosmology set
-    assert cluster_deltasigma.cosmo is None
-
-    # Call prepare - this should call update_ingredients on cluster_deltasigma
-    tools.prepare()
-
-    # After prepare, verify the cosmology was set on cluster_deltasigma
-    assert tools.ccl_cosmo is not None
-    assert cluster_deltasigma.cosmo is not None
-    assert cluster_deltasigma.cosmo is tools.ccl_cosmo

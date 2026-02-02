@@ -1,15 +1,26 @@
 #!/usr/bin/env python
 
-"""Function to generate a SACC file for cluster number counts and cluster DeltaSigma."""
+"""
+Generate a single SACC file.
+
+The file contains:
+ - cluster_counts
+ - cluster_mean_log_mass
+ - cluster_delta_sigma
+ - cluster_shear  (reduced tangential shear, g_t)
+
+All computed from the same simulated data.
+"""
+
 import os
 from typing import Tuple
-
 import math
 import itertools
 import numpy as np
+
 from numcosmo_py import Nc, Ncm
-from astropy.table import Table
 from astropy.io import fits
+from astropy.table import Table
 from scipy import stats
 import sacc
 import pyccl as ccl
@@ -18,6 +29,14 @@ os.environ["CLMM_MODELING_BACKEND"] = "ccl"
 # pylint: disable=C0413
 import clmm  # noqa: E402
 from clmm import Cosmology  # noqa: E402
+from clmm.utils.beta_lens import (  # noqa: E402
+    compute_beta_s_mean_from_distribution,
+    compute_beta_s_square_mean_from_distribution,
+)
+
+####################################################################
+# Cosmology
+####################################################################
 
 
 def generate_cosmo(
@@ -63,6 +82,11 @@ def generate_cosmo(
     prim.props.ln10e10ASA = math.log((sigma8 / cosmo.sigma8(psf)) ** 2 * old_amplitude)
 
     return cosmo, cosmo_ccl
+
+
+####################################################################
+# Simulate clusters (same for all statistics)
+####################################################################
 
 
 def generate_cluster_data(
@@ -149,43 +173,31 @@ def generate_cluster_data(
     return cluster_z, cluster_richness, cluster_logM
 
 
-def compute_abundance_deltasigma_statistic(
-    N_richness: float, N_z: float, cosmo_ccl, cluster_z, cluster_richness, cluster_logM
-) -> Tuple[
-    np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
-]:
-    """Computes abundance statistics and DeltaSigma for clusters.
+####################################################################
+# Compute DeltaSigma and reduced shear, consistently binned
+####################################################################
 
-    :param N_richness: Number of richness bins.
-    :param N_z: Number of redshift bins.
-    :param cosmo_ccl: pyCCL cosmology object.
-    :param cluster_z: Array of cluster redshifts.
-    :param cluster_richness: Array of cluster richness values.
-    :param cluster_logM: Array of cluster log mass values.
-    :return: (Cluster counts, mean log mass, mean DeltaSigma,
-            redshift bin edges, richness bin edges, radius bin edges, covariance matrix)
-    """
-    N_richness = 5  # number of richness bins
-    N_z = 4  # number of redshift bins
 
-    cluster_counts, z_edges, richness_edges, _ = stats.binned_statistic_2d(
-        cluster_z, cluster_richness, cluster_logM, "count", bins=[N_z, N_richness]
+def compute_profiles(N_z: int, N_rich: int, cosmo_ccl, z, richness, logM):
+    """Compute lensing profile, Delta Sigma and g_t."""
+    # binning
+    counts, z_edges, r_edges, _ = stats.binned_statistic_2d(
+        z, richness, logM, "count", bins=[N_z, N_rich]
     )
+
     mean_logM = stats.binned_statistic_2d(
-        cluster_z,
-        cluster_richness,
-        cluster_logM,
-        "mean",
-        bins=[z_edges, richness_edges],
-    ).statistic
-    std_logM = stats.binned_statistic_2d(
-        cluster_z, cluster_richness, cluster_logM, "std", bins=[z_edges, richness_edges]
+        z, richness, logM, "mean", bins=[z_edges, r_edges]
     ).statistic
 
-    var_mean_logM = std_logM**2 / cluster_counts
-    # Use CLMM to create a mock DeltaSigma profile to add to the SACC file later
-    cosmo_clmm = Cosmology()
-    cosmo_clmm._init_from_cosmo(cosmo_ccl)  # pylint: disable=protected-access
+    std_logM = stats.binned_statistic_2d(
+        z, richness, logM, "std", bins=[z_edges, r_edges]
+    ).statistic
+
+    var_logM = std_logM**2 / counts
+
+    # CLMM modeling
+    cosmo_clmm = Cosmology(be_cosmo=cosmo_ccl)
+
     moo = clmm.Modeling(massdef="critical", delta_mdef=200, halo_profile_model="nfw")
     moo.set_cosmo(cosmo_clmm)
     # assuming the same concentration for all masses. Not realistic,
@@ -196,173 +208,243 @@ def compute_abundance_deltasigma_statistic(
         0.3, 6.0, nbins=6, method="evenlog10width"
     )  # 6 radial bins log-spaced between 0.3 and 6 Mpc
 
-    radius_centers = []
-    for i in range(len(radius_edges) - 1):
-        j = i + 2
-        radius_center = np.mean(radius_edges[i:j])
-        radius_centers.append(radius_center)
+    radius_centers = [
+        np.mean(radius_edges[i : i + 2])  # noqa: E203
+        for i in range(len(radius_edges) - 1)
+    ]
 
-    cluster_DeltaSigma_list = []
-    for redshift, log_mass in zip(cluster_z, cluster_logM):
-        mass = 10**log_mass
+    all_dsigma_list = []
+    all_gt_list = []
+
+    for zc, lM in zip(z, logM):
+        mass = 10**lM
         moo.set_mass(mass)
-        cluster_DeltaSigma_list.append(
-            moo.eval_excess_surface_density(radius_centers, redshift)
+
+        # DeltaSigma
+        ds = moo.eval_excess_surface_density(radius_centers, zc)
+
+        # reduced shear g_t
+        beta = compute_beta_s_mean_from_distribution(
+            z_cl=zc, z_inf=10, cosmo=moo.cosmo, zmax=5.0
         )
-    cluster_DeltaSigma = np.array(cluster_DeltaSigma_list)
-    mean_DeltaSigma = np.zeros((N_z, N_richness, len(radius_edges) - 1))
-    std_DeltaSigma = np.zeros((N_z, N_richness, len(radius_edges) - 1))
-    for i in range(len(radius_edges) - 1):
-        cluster_DeltaSigma_at_radius = cluster_DeltaSigma[:, i]
+        beta2 = compute_beta_s_square_mean_from_distribution(
+            z_cl=zc, z_inf=10, cosmo=moo.cosmo, zmax=5.0
+        )
 
-        mean_statistic = stats.binned_statistic_2d(
-            cluster_z,
-            cluster_richness,
-            cluster_DeltaSigma_at_radius,
-            "mean",
-            bins=[z_edges, richness_edges],
+        gt = moo.eval_reduced_tangential_shear(
+            radius_centers, zc, (beta, beta2), z_src_info="beta", approx="order1"
+        )
+
+        all_dsigma_list.append(ds)
+        all_gt_list.append(gt)
+
+    all_dsigma = np.array(all_dsigma_list)
+    all_gt = np.array(all_gt_list)
+
+    nb = len(radius_centers)
+
+    mean_dsigma: np.ndarray = np.zeros((N_z, N_rich, nb))
+    mean_gt: np.ndarray = np.zeros((N_z, N_rich, nb))
+
+    var_dsigma: np.ndarray = np.zeros((N_z, N_rich, nb))
+    var_gt: np.ndarray = np.zeros((N_z, N_rich, nb))
+
+    for ri in range(nb):
+        ds_i = all_dsigma[:, ri]
+        gt_i = all_gt[:, ri]
+
+        mean_dsigma[:, :, ri] = stats.binned_statistic_2d(
+            z, richness, ds_i, "mean", bins=[z_edges, r_edges]
         ).statistic
 
-        std_statistic = stats.binned_statistic_2d(
-            cluster_z,
-            cluster_richness,
-            cluster_DeltaSigma_at_radius,
-            "std",
-            bins=[z_edges, richness_edges],
+        std_dsigma = stats.binned_statistic_2d(
+            z, richness, ds_i, "std", bins=[z_edges, r_edges]
         ).statistic
-        mean_DeltaSigma[:, :, i] = mean_statistic
-        std_DeltaSigma[:, :, i] = std_statistic
-    var_mean_DeltaSigma = std_DeltaSigma**2 / cluster_counts[..., None]
-    # correlation matrix - the "large blocks" correspond to the $N_z$ redshift bins.
-    # In each redshift bin are the $N_{\rm richness}$ richness bins.**
-    covariance = np.diag(
+
+        var_dsigma[:, :, ri] = std_dsigma**2 / counts
+
+        mean_gt[:, :, ri] = stats.binned_statistic_2d(
+            z, richness, gt_i, "mean", bins=[z_edges, r_edges]
+        ).statistic
+
+        std_gt = stats.binned_statistic_2d(
+            z, richness, gt_i, "std", bins=[z_edges, r_edges]
+        ).statistic
+
+        var_gt[:, :, ri] = std_gt**2 / counts
+
+    # build diagonal covariance
+    cov = np.diag(
         np.concatenate(
-            (
-                cluster_counts.flatten(),
-                var_mean_logM.flatten(),
-                var_mean_DeltaSigma.flatten(),
-            )
+            [
+                counts.flatten(),
+                var_logM.flatten(),
+                var_dsigma.flatten(),
+                var_gt.flatten(),
+            ]
         )
     )
+
     return (
-        cluster_counts,
+        counts,
         mean_logM,
-        mean_DeltaSigma,
+        mean_dsigma,
+        mean_gt,
         z_edges,
-        richness_edges,
+        r_edges,
         radius_edges,
-        covariance,
+        cov,
     )
 
 
-def generate_sacc_file() -> None:
-    """Generate and save a SACC file for cluster number counts and DeltaSigma."""
-    # Define parameter values explicitly
+####################################################################
+# Build SACC file
+####################################################################
+
+
+def build_tracers(s, z_edges, r_edges, R_edges):
+    """Add all tracers to SACC and return label lists."""
+    z_labels, r_labels, R_labels = [], [], []
+
+    # Redshift bins
+    for i, (lo, hi) in enumerate(zip(z_edges[:-1], z_edges[1:])):
+        name = f"bin_z_{i}"
+        s.add_tracer("bin_z", name, lo, hi)
+        z_labels.append(name)
+
+    # Richness bins
+    for i, (lo, hi) in enumerate(zip(r_edges[:-1], r_edges[1:])):
+        name = f"bin_rich_{i}"
+        s.add_tracer("bin_richness", name, lo, hi)
+        r_labels.append(name)
+
+    # Radius bins
+    R_centers = [
+        np.mean(R_edges[i : i + 2]) for i in range(len(R_edges) - 1)  # noqa: E203
+    ]
+    for i, (lo, hi) in enumerate(zip(R_edges[:-1], R_edges[1:])):
+        name = f"bin_radius_{i}"
+        s.add_tracer("bin_radius", name, float(lo), float(hi), float(R_centers[i]))
+        R_labels.append(name)
+
+    return z_labels, r_labels, R_labels
+
+
+def fill_counts_and_mass(
+    s: sacc.Sacc,
+    survey: str,
+    counts: np.ndarray,
+    mean_logM: np.ndarray,
+    z_labels: list[str],
+    r_labels: list[str],
+    t_counts: str,
+    t_logmass: str,
+) -> None:
+    """Fill SACC object with cluster counts and mean log mass."""
+    counts_and_edges = zip(counts.flatten(), itertools.product(z_labels, r_labels))
+
+    mean_logM_and_edges = zip(
+        mean_logM.flatten(), itertools.product(z_labels, r_labels)
+    )
+
+    for _counts, (bin_z_label, bin_richness_label) in counts_and_edges:
+        s.add_data_point(
+            t_counts, (survey, bin_z_label, bin_richness_label), int(_counts)
+        )
+
+    for bin_mean_logM, (bin_z_label, bin_richness_label) in mean_logM_and_edges:
+        s.add_data_point(
+            t_logmass,
+            (survey, bin_z_label, bin_richness_label),
+            bin_mean_logM,
+        )
+
+
+def fill_profiles(
+    s: sacc.Sacc,
+    survey: str,
+    mean_dsigma: np.ndarray,
+    mean_gt: np.ndarray,
+    z_labels: list[str],
+    r_labels: list[str],
+    R_labels: list[str],
+    t_dsigma: str,
+    t_shear: str,
+) -> None:
+    """Fill SACC object with DeltaSigma and reduced shear profiles."""
+    for zi, zlab in enumerate(z_labels):
+        for ri, rlab in enumerate(r_labels):
+            for iR, Rlab in enumerate(R_labels):
+                s.add_data_point(
+                    t_dsigma,
+                    (str(survey), str(zlab), str(rlab), str(Rlab)),
+                    float(mean_dsigma[zi, ri, iR]),
+                )
+
+    for zi, zlab in enumerate(z_labels):
+        for ri, rlab in enumerate(r_labels):
+            for iR, Rlab in enumerate(R_labels):
+                s.add_data_point(
+                    t_shear,
+                    (str(survey), str(zlab), str(rlab), str(Rlab)),
+                    float(mean_gt[zi, ri, iR]),
+                )
+
+
+def generate_sacc_file():
+    """Generate the full SACC file for the simulated cluster data."""
+    # --- config ---
     area = 439.78986
     H0 = 71.0
     Ob0 = 0.0448
     Odm0 = 0.22
     n_s = 0.963
     sigma8 = 0.8
-    M0 = 3.0e14 / 0.71
+    M0 = 3e14 / 0.71
     z0 = 0.6
-    lnRl = 0.0
-    lnRu = 5.0
-    zl = 0.2
-    zu = 0.65
-    N_richness = 5
+    lnRl, lnRu = 0.0, 5.0
+    zl, zu = 0.2, 0.65
     N_z = 4
+    N_richness = 5
 
-    # Generate cosmology and cluster data
+    # --- generate data ---
     cosmo, cosmo_ccl = generate_cosmo(H0, Ob0, Odm0, n_s, sigma8)
-    cluster_z, cluster_richness, cluster_logM = generate_cluster_data(
-        cosmo, area, M0, z0, lnRl, lnRu, zl, zu
-    )
-    (
-        cluster_counts,
-        mean_logM,
-        mean_DeltaSigma,
-        z_edges,
-        richness_edges,
-        radius_edges,
-        covariance,
-    ) = compute_abundance_deltasigma_statistic(
-        N_richness, N_z, cosmo_ccl, cluster_z, cluster_richness, cluster_logM
-    )
-    # Prepare the SACC file
-    s_count = sacc.Sacc()
-    bin_z_labels = []
-    bin_richness_labels = []
-    bin_radius_labels = []
+    z, richness, logM = generate_cluster_data(cosmo, area, M0, z0, lnRl, lnRu, zl, zu)
 
-    survey_name = "numcosmo_simulated_redshift_richness_deltasigma"
-    s_count.add_tracer("survey", survey_name, area)
-
-    for i, z_bin in enumerate(zip(z_edges[:-1], z_edges[1:])):
-        lower, upper = z_bin
-        bin_z_label = f"bin_z_{i}"
-        s_count.add_tracer("bin_z", bin_z_label, lower, upper)
-        bin_z_labels.append(bin_z_label)
-
-    for i, richness_bin in enumerate(zip(richness_edges[:-1], richness_edges[1:])):
-        lower, upper = richness_bin
-        bin_richness_label = f"rich_{i}"
-        s_count.add_tracer("bin_richness", bin_richness_label, lower, upper)
-        bin_richness_labels.append(bin_richness_label)
-
-    for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
-        radius_lower, radius_upper = radius_bin
-        j = i + 2
-        radius_center = np.mean(radius_edges[i:j])
-        bin_radius_label = f"bin_radius_{i}"
-        s_count.add_tracer(
-            "bin_radius", bin_radius_label, radius_lower, radius_upper, radius_center
-        )
-        bin_radius_labels.append(bin_radius_label)
-
-    #  pylint: disable-next=no-member
-    cluster_count = sacc.standard_types.cluster_counts
-    #  pylint: disable-next=no-member
-    cluster_mean_log_mass = sacc.standard_types.cluster_mean_log_mass
-    #  pylint: disable-next=no-member
-    cluster_mean_DeltaSigma = sacc.standard_types.cluster_shear
-
-    counts_and_edges = zip(
-        cluster_counts.flatten(), itertools.product(bin_z_labels, bin_richness_labels)
+    counts, mean_logM, mean_dsigma, mean_gt, z_edges, r_edges, R_edges, cov = (
+        compute_profiles(N_z, N_richness, cosmo_ccl, z, richness, logM)
     )
 
-    mean_logM_and_edges = zip(
-        mean_logM.flatten(), itertools.product(bin_z_labels, bin_richness_labels)
+    # --- SACC setup ---
+    s = sacc.Sacc()
+    survey = "numcosmo_sim_red_richness_shear_dsigma"
+    s.add_tracer("survey", survey, area)
+
+    # Add tracers
+    z_labels, r_labels, R_labels = build_tracers(s, z_edges, r_edges, R_edges)
+
+    # Data types
+    # pylint: disable=no-member
+    t_counts = sacc.standard_types.cluster_counts
+    t_logmass = sacc.standard_types.cluster_mean_log_mass
+    t_dsigma = sacc.standard_types.cluster_delta_sigma
+    t_shear = sacc.standard_types.cluster_shear
+    # pylint: enable=no-member
+    # Fill data blocks
+    fill_counts_and_mass(
+        s, survey, counts, mean_logM, z_labels, r_labels, t_counts, t_logmass
+    )
+    fill_profiles(
+        s, survey, mean_dsigma, mean_gt, z_labels, r_labels, R_labels, t_dsigma, t_shear
     )
 
-    for counts, (bin_z_label, bin_richness_label) in counts_and_edges:
-        s_count.add_data_point(
-            cluster_count, (survey_name, bin_z_label, bin_richness_label), int(counts)
-        )
-
-    for bin_mean_logM, (bin_z_label, bin_richness_label) in mean_logM_and_edges:
-        s_count.add_data_point(
-            cluster_mean_log_mass,
-            (survey_name, bin_z_label, bin_richness_label),
-            bin_mean_logM,
-        )
-    for j, bin_z_label in enumerate(bin_z_labels):
-        for k, bin_richness_label in enumerate(bin_richness_labels):
-            for i, bin_radius_label in enumerate(bin_radius_labels):
-                profile = mean_DeltaSigma[j][k][i]
-                s_count.add_data_point(
-                    cluster_mean_DeltaSigma,
-                    (survey_name, bin_z_label, bin_richness_label, bin_radius_label),
-                    profile,
-                )
-    # ### Then the add the covariance and save the file
-
-    s_count.add_covariance(covariance)
-    s_count.to_canonical_order()
-    s_count.save_fits(
-        "cluster_redshift_richness_deltasigma_sacc_data.fits", overwrite=True
-    )
+    # Covariance & save
+    s.add_covariance(cov)
+    s.to_canonical_order()
+    s.save_fits("cluster_redshift_richness_shear_dsigma_sacc.fits", overwrite=True)
 
 
-Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
-generate_sacc_file()
+####################################################################
+if __name__ == "__main__":
+    Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
+    generate_sacc_file()

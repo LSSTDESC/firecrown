@@ -4,6 +4,10 @@ import os
 
 import pyccl as ccl
 
+from crow import ClusterAbundance, kernel, mass_proxy
+from crow.properties import ClusterProperty
+from crow.recipes.binned_exact import ExactBinnedClusterRecipe
+
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood import (
     BinnedClusterNumberCounts,
@@ -11,19 +15,54 @@ from firecrown.likelihood import (
     Likelihood,
     NamedParameters,
 )
+
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster import ClusterAbundance, ClusterProperty
-from firecrown.models.cluster import MurataBinnedSpecZRecipe
 
 
 def get_cluster_abundance() -> ClusterAbundance:
-    """Creates and returns a ClusterAbundance object."""
-    hmf = ccl.halos.MassFuncBocquet16()
-    min_mass, max_mass = 13.0, 16.0
-    min_z, max_z = 0.2, 0.8
-    cluster_abundance = ClusterAbundance((min_mass, max_mass), (min_z, max_z), hmf)
+    """Creates and returns a ClusterShearProfile."""
+    cluster_theory = ClusterAbundance(
+        cosmo=ccl.CosmologyVanillaLCDM(),
+        halo_mass_function=ccl.halos.MassFuncTinker08(mass_def="200c"),
+    )
 
-    return cluster_abundance
+    return cluster_theory
+
+
+def get_cluster_recipe(
+    cluster_theory=None,
+    pivot_mass: float = 14.625862906,
+    pivot_redshift: float = 0.6,
+    mass_interval=(12, 17),
+    true_z_interval=(0.1, 2.0),
+):
+    """Creates and returns an ExactBinnedClusterRecipe.
+
+    Parameters
+    ----------
+    cluster_theory : ClusterShearProfile or None
+        If None, uses get_cluster_shear_profile()
+
+    Returns
+    -------
+    ExactBinnedClusterRecipe
+    """
+    if cluster_theory is None:
+        cluster_theory = get_cluster_abundance()
+    redshift_distribution = kernel.SpectroscopicRedshift()
+    mass_distribution = mass_proxy.MurataBinned(pivot_mass, pivot_redshift)
+
+    recipe = ExactBinnedClusterRecipe(
+        cluster_theory=cluster_theory,
+        redshift_distribution=redshift_distribution,
+        mass_distribution=mass_distribution,
+        completeness=None,
+        purity=None,
+        mass_interval=mass_interval,
+        true_z_interval=true_z_interval,
+    )
+
+    return recipe
 
 
 def build_likelihood(
@@ -38,8 +77,9 @@ def build_likelihood(
         average_on |= ClusterProperty.MASS
 
     survey_name = "numcosmo_simulated_redshift_richness"
+    recipe = get_cluster_recipe()
     likelihood = ConstGaussian(
-        [BinnedClusterNumberCounts(average_on, survey_name, MurataBinnedSpecZRecipe())]
+        [BinnedClusterNumberCounts(average_on, survey_name, recipe)]
     )
 
     # Read in sacc data
@@ -50,7 +90,6 @@ def build_likelihood(
     sacc_data = load_sacc_data(os.path.join(sacc_path, sacc_file_nm))
     likelihood.read(sacc_data)
 
-    cluster_abundance = get_cluster_abundance()
-    modeling_tools = ModelingTools(cluster_abundance=cluster_abundance)
+    modeling_tools = ModelingTools()
 
     return likelihood, modeling_tools
