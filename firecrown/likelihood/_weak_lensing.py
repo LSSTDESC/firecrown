@@ -227,19 +227,19 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_amplitude = parameters.register_new_updatable_parameter(
+        self.ia_amplitude = register_new_updatable_parameter(
             default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_BIAS, shared=True
         )
-        self.ia_mass_scaling = parameters.register_new_updatable_parameter(
+        self.ia_mass_scaling = register_new_updatable_parameter(
             default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_SCALING, shared=True
         )
-        self.red_fraction = parameters.register_new_updatable_parameter(
+        self.red_fraction = register_new_updatable_parameter(
             default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_RED_FRACTION
         )
-        self.average_halo_mass = parameters.register_new_updatable_parameter(
+        self.average_halo_mass = register_new_updatable_parameter(
             default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS
         )
-        self.pivot_halo_mass = parameters.register_new_updatable_parameter(
+        self.pivot_halo_mass = register_new_updatable_parameter(
             value=10**13.5,
             default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS,
         )
