@@ -294,7 +294,7 @@ from firecrown.likelihood.factories import load_sacc_data
 from firecrown.utils import base_model_from_yaml
 
 # Load and extract
-sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
+sacc_data = load_sacc_data("../tests/sacc_data.hdf5")
 two_point_reals = extract_all_real_data(sacc_data)
 check_two_point_consistence_real(two_point_reals)
 
