@@ -19,7 +19,7 @@ import numpy.typing as npt
 from firecrown.updatable import get_default_params_map
 from firecrown.utils import upper_triangle_indices
 from firecrown.likelihood._statistic import TrivialStatistic
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (

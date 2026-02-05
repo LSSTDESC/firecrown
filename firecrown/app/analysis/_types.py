@@ -17,7 +17,7 @@ import numpy as np
 import pyccl
 
 from firecrown.likelihood import NamedParameters
-from firecrown.ccl_factory import CAMBExtraParams, PoweSpecAmplitudeParameter
+from firecrown.modeling_tools import CAMBExtraParams, PoweSpecAmplitudeParameter
 
 
 class Frameworks(StrEnum):

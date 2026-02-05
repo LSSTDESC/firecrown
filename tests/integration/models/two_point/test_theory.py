@@ -1,7 +1,7 @@
 """Integration tests for the TwoPointTheory class using real Source instances."""
 
 from firecrown.models.two_point import TwoPointTheory
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.likelihood import Source
 
 

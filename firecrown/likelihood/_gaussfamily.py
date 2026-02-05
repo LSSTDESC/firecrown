@@ -20,7 +20,7 @@ from firecrown.likelihood._base import (
     Statistic,
 )
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.updatable import UpdatableCollection
 from firecrown.utils import save_to_sacc
 
