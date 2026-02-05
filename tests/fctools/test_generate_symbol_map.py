@@ -304,25 +304,25 @@ def test_get_all_symbols_with_mock_package():
 
 
 def test_get_all_symbols_real_firecrown_subset():
-    """Test get_all_symbols with real firecrown.parameters module."""
-    import firecrown.parameters  # pylint: disable=import-outside-toplevel
+    """Test get_all_symbols with real firecrown.updatable module."""
+    import firecrown.updatable  # pylint: disable=import-outside-toplevel
 
-    symbols = get_all_symbols(firecrown.parameters)
+    symbols = get_all_symbols(firecrown.updatable)
 
     # Should have captured some symbols
     assert len(symbols) > 0
 
-    # Should have some classes from parameters
+    # Should have some classes from updatable
     # (without hard-coding specific class names that might change)
-    param_symbols = [k for k in symbols if "firecrown.parameters." in k]
+    param_symbols = [k for k in symbols if "firecrown.updatable." in k]
     assert len(param_symbols) > 0
 
 
 def test_get_all_symbols_captures_classes():
     """Test that get_all_symbols captures class definitions."""
-    import firecrown.parameters  # pylint: disable=import-outside-toplevel
+    import firecrown.updatable  # pylint: disable=import-outside-toplevel
 
-    symbols = get_all_symbols(firecrown.parameters)
+    symbols = get_all_symbols(firecrown.updatable)
 
     # Look for any class-like symbols (conventionally CamelCase)
     classes = [
@@ -335,9 +335,9 @@ def test_get_all_symbols_captures_classes():
 
 def test_get_all_symbols_captures_functions():
     """Test that get_all_symbols captures function definitions."""
-    import firecrown.parameters  # pylint: disable=import-outside-toplevel
+    import firecrown.updatable  # pylint: disable=import-outside-toplevel
 
-    symbols = get_all_symbols(firecrown.parameters)
+    symbols = get_all_symbols(firecrown.updatable)
 
     # Should have some symbols (classes or functions)
     assert len(symbols) > 0
@@ -347,21 +347,21 @@ def test_get_all_symbols_excludes_private():
     """Test that get_all_symbols excludes private members.
 
     The function excludes members with names starting with underscore,
-    but includes private module names (like _derived).
+    but includes private module names (like _parameters_derived).
     """
-    import firecrown.parameters  # pylint: disable=import-outside-toplevel
+    import firecrown.updatable  # pylint: disable=import-outside-toplevel
 
-    symbols = get_all_symbols(firecrown.parameters)
+    symbols = get_all_symbols(firecrown.updatable)
 
-    # Should have included private module names like _derived
-    assert any("._derived" in k for k in symbols)
+    # Should have included private module names like _parameters_derived
+    assert any("._parameters_derived" in k for k in symbols)
 
-    # Check a real example: _derived module exists, but not _private_function
-    # All symbols from _derived should be public classes/functions
-    derived_symbols = [k for k in symbols if "._derived." in k]
+    # Check a real example: _parameters_derived module exists, but not _private_function
+    # All symbols from _parameters_derived should be public classes/functions
+    derived_symbols = [k for k in symbols if "._parameters_derived." in k]
     for sym in derived_symbols:
-        # The part after _derived. should not start with underscore
-        after_derived = sym.split("._derived.")[-1]
+        # The part after _parameters_derived. should not start with underscore
+        after_derived = sym.split("._parameters_derived.")[-1]
         assert not after_derived.startswith("_"), f"Found private member: {sym}"
 
 

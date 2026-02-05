@@ -17,7 +17,7 @@ import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
+from firecrown.modeling_tools import CCLFactory
 
 
 def build_likelihood(params: NamedParameters):

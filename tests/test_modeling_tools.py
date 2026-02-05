@@ -10,7 +10,7 @@ from firecrown.modeling_tools import (
     ModelingTools,
     PowerspectrumModifier,
 )
-from firecrown.ccl_factory import Background, CCLCalculatorArgs
+from firecrown.modeling_tools import Background, CCLCalculatorArgs
 from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 
 

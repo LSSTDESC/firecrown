@@ -14,7 +14,7 @@ import pyccl.nl_pt
 import sacc
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from firecrown import parameters
+from firecrown.updatable import register_new_updatable_parameter
 from firecrown.likelihood._base import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
@@ -28,7 +28,7 @@ from firecrown.likelihood._base import (
 )
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 
 @dataclass(frozen=True)
@@ -98,7 +98,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mult_bias = parameters.register_new_updatable_parameter(
+        self.mult_bias = register_new_updatable_parameter(
             default_value=MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS
         )
 
@@ -151,16 +151,16 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_bias = parameters.register_new_updatable_parameter(
+        self.ia_bias = register_new_updatable_parameter(
             default_value=LINEAR_ALIGNMENT_DEFAULT_IA_BIAS
         )
-        self.alphaz = parameters.register_new_updatable_parameter(
+        self.alphaz = register_new_updatable_parameter(
             default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAZ
         )
-        self.alphag = parameters.register_new_updatable_parameter(
+        self.alphag = register_new_updatable_parameter(
             alphag, default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAG
         )
-        self.z_piv = parameters.register_new_updatable_parameter(
+        self.z_piv = register_new_updatable_parameter(
             default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
         )
 
@@ -311,40 +311,40 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             as a prefix for its parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
-        self.ia_a_1 = parameters.register_new_updatable_parameter(
+        self.ia_a_1 = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
         )
-        self.ia_zpiv_1 = parameters.register_new_updatable_parameter(
+        self.ia_zpiv_1 = register_new_updatable_parameter(
             value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1,
         )
-        self.ia_alphaz_1 = parameters.register_new_updatable_parameter(
+        self.ia_alphaz_1 = register_new_updatable_parameter(
             value=(
                 None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
             ),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1,
         )
-        self.ia_a_2 = parameters.register_new_updatable_parameter(
+        self.ia_a_2 = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
         )
-        self.ia_zpiv_2 = parameters.register_new_updatable_parameter(
+        self.ia_zpiv_2 = register_new_updatable_parameter(
             value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2,
         )
-        self.ia_alphaz_2 = parameters.register_new_updatable_parameter(
+        self.ia_alphaz_2 = register_new_updatable_parameter(
             value=(
                 None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
             ),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2,
         )
-        self.ia_a_d = parameters.register_new_updatable_parameter(
+        self.ia_a_d = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
         )
-        self.ia_zpiv_d = parameters.register_new_updatable_parameter(
+        self.ia_zpiv_d = register_new_updatable_parameter(
             value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
         )
-        self.ia_alphaz_d = parameters.register_new_updatable_parameter(
+        self.ia_alphaz_d = register_new_updatable_parameter(
             value=(
                 None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
             ),
@@ -409,10 +409,10 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__()
 
-        self.ia_a_1h = parameters.register_new_updatable_parameter(
+        self.ia_a_1h = register_new_updatable_parameter(
             default_value=HM_ALIGNMENT_DEFAULT_IA_A_1H
         )
-        self.ia_a_2h = parameters.register_new_updatable_parameter(
+        self.ia_a_2h = register_new_updatable_parameter(
             default_value=HM_ALIGNMENT_DEFAULT_IA_A_2H
         )
 

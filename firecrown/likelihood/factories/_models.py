@@ -7,7 +7,7 @@ import yaml
 from pydantic import BaseModel
 from typing_extensions import assert_never
 
-from firecrown.ccl_factory import CCLFactory
+from firecrown.modeling_tools import CCLFactory
 from firecrown.data_functions import (
     TwoPointBinFilterCollection,
     check_two_point_consistence_harmonic,

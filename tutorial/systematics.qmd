@@ -197,7 +197,7 @@ After having been updated, the systematic object will have its attribute values 
 
 ```{python}
 # Continuing from above...
-import firecrown.parameters as params
+import firecrown.updatable as params
 systematic.update(params.ParamsMap({
     "lens0_eta": 19.0,
     "lens0_r_lim": 24.0,

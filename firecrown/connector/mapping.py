@@ -16,8 +16,7 @@ import numpy.typing as npt
 from pyccl import physical_constants as physics
 from typing_extensions import assert_never
 
-from firecrown import parameters
-from firecrown.ccl_factory import (
+from firecrown.modeling_tools import (
     Background,
     CCLCalculatorArgs,
     PowerSpec,
@@ -25,6 +24,7 @@ from firecrown.ccl_factory import (
 )
 from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood import NamedParameters
+from firecrown.updatable import ParamsMap
 
 
 def build_ccl_background_dict(
@@ -489,7 +489,7 @@ class MappingCAMB(Mapping):
             "wa",
         ]
 
-    def set_params_from_camb(self, params_values: parameters.ParamsMap) -> None:
+    def set_params_from_camb(self, params_values: ParamsMap) -> None:
         """Set the parameters in this mapping from the given CAMB-style parameters."""
         # pylint: disable-msg=R0914
 

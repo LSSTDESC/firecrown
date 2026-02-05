@@ -10,7 +10,7 @@ import sacc
 import firecrown.data_types
 import firecrown.likelihood._statistic as stat
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 
 VECTOR_CLASSES = (firecrown.data_types.TheoryVector, firecrown.data_types.DataVector)
