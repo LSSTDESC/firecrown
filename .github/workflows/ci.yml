@@ -85,16 +85,7 @@ jobs:
       - name: Quick setup and linting
         shell: bash -l {0}
         run: |
-          set -e
-          pip install --no-deps -e .
-          # Fast parallel linting for immediate feedback
-          black --check firecrown tests examples &
-          BLACK_PID=$!
-          flake8 firecrown examples tests &
-          FLAKE8_PID=$!
-
-          wait $BLACK_PID
-          wait $FLAKE8_PID
+          make lint
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
 
@@ -176,42 +167,18 @@ jobs:
           conda list
       - name: Code quality checks
         shell: bash -l {0}
-        run: |
-          set -e
-          # Parallel linting and type checking
-          black --check firecrown tests examples &
-          BLACK_PID=$!
-          flake8 firecrown examples tests &
-          FLAKE8_PID=$!
-          mypy -p firecrown -p examples -p tests &
-          MYPY_PID=$!
-          pylint firecrown &
-          PYLINT1_PID=$!
-          pylint --rcfile tests/pylintrc tests &
-          PYLINT2_PID=$!
-          pylint --rcfile examples/pylintrc examples &
-          PYLINT3_PID=$!
-
-          wait $BLACK_PID
-          wait $FLAKE8_PID
-          wait $MYPY_PID
-          wait $PYLINT1_PID
-          wait $PYLINT2_PID
-          wait $PYLINT3_PID
+        run: make lint
       - name: Run unit tests with smart execution
         shell: bash -l {0}
         run: |
-          # matrix.coverage might be an empty string, so we need the or condition
           if [[ "${{ matrix.coverage || false }}" == "true" ]]; then
-            # Coverage job: fast execution without --runslow
-            python -m pytest -vv --cov firecrown --cov-report xml --cov-branch -n auto
+            make test-all-coverage
           else
-            # All other jobs: full test suite including slow tests
-            python -m pytest -vv --runslow -n auto
+            make test-all
           fi
       - name: Running example tests
         shell: bash -l {0}
-        run: python -m pytest -vv -s --example tests/example -n auto
+        run: make test-example
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v5
@@ -306,12 +273,9 @@ jobs:
           repository: "lsstdesc/augur"
           path: "augur"
           ref: "b59cfaf3dec90aa606a4add453a5a77e0c8ea942"
-      - name: Build tutorials and documentation and check links
+      - name: Build and verify tutorials and documentation
         shell: bash -l {0}
-        run: |
-          quarto render tutorial --output-dir=../docs/_static
-          make -C docs html
-          firecrown-link-checker docs/_build/html -v
+        run: make docs-verify
       - name: Pip-install Augur and test it
         shell: bash -l {0}
         run: |
