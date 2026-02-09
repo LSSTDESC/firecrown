@@ -30,6 +30,8 @@ def test_ccl_factory_deprecation_warning():
         # pylint: disable=import-outside-toplevel,unused-import
         import firecrown.ccl_factory  # noqa: F401
 
+        assert firecrown.ccl_factory is not None  # Verify import succeeded
+
 
 def test_ccl_factory_deprecation_warning_content():
     """Test the deprecation warning mentions modeling_tools.
@@ -39,6 +41,8 @@ def test_ccl_factory_deprecation_warning_content():
     """
     # pylint: disable=import-outside-toplevel,unused-import
     import firecrown.ccl_factory  # noqa: F401
+
+    assert firecrown.ccl_factory is not None  # Verify import succeeded
 
     # If we get here without error, the import worked
 
@@ -73,6 +77,9 @@ def test_all_items_importable():
 
 
 # pylint: disable=too-many-locals
+@pytest.mark.filterwarnings(
+    r".*ignore:firecrown\.ccl_factory is deprecated.*:DeprecationWarning"
+)
 def test_items_identical_to_new_location():
     """Test that imported items are the same objects as in modeling_tools."""
     # pylint: disable=import-outside-toplevel
