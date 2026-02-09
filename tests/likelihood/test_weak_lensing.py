@@ -134,6 +134,27 @@ def test_massdep_linear_alignment_systematic_init_default():
     assert hasattr(systematic, "average_halo_mass")
 
 
+def test_massdep_linear_alignment_systematic_apply(mock_tools, sample_tracer_args):
+    systematic = wl.MassDependentLinearAlignmentSystematic("test_tracer")
+    # Update parameter values using ParamsMap
+    params = ParamsMap(
+        {
+            "ia_amplitude": 6.0,
+            "ia_mass_scaling": 0.5,
+            "test_tracer_red_fraction": 0.3,
+            "test_tracer_average_halo_mass": 1e13,
+        }
+    )
+    systematic.update(params)
+
+    result = systematic.apply(mock_tools, sample_tracer_args)
+
+    # Check that ia_bias is set with correct structure
+    assert result.ia_bias is not None
+    assert len(result.ia_bias) == 2
+    assert np.array_equal(result.ia_bias[0], sample_tracer_args.z)
+
+
 def test_tatt_alignment_systematic_init_default():
     """Test TattAlignmentSystematic default initialization."""
     systematic = wl.TattAlignmentSystematic()
