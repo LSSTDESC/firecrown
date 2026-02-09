@@ -1,5 +1,7 @@
 """Utilities for matching tracer names and measurements."""
 
+from typing import Mapping
+
 import firecrown.metadata_types as mdt
 from firecrown.metadata_functions._type_defs import (
     TwoPointRealIndex,
@@ -44,7 +46,7 @@ For detailed information about fixing this issue, see:
 
 
 def make_two_point_xy(
-    projected_fields_dict: dict[str, mdt.ProjectedField],
+    projected_fields_dict: Mapping[str, mdt.ProjectedField],
     tracer_names: mdt.TracerNames,
     data_type: str,
 ) -> mdt.TwoPointXY:

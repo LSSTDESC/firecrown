@@ -50,7 +50,7 @@ from firecrown.metadata_types._pair_selector import (
     SourceLensBinPairSelector,
     ThreeTwoBinPairSelector,
     TypeSourceBinPairSelector,
-    TomographicBinPair,
+    ProjectedFieldPair,
     register_bin_pair_selector,
 )
 from firecrown.metadata_types._sacc_type_string import MEASURED_TYPE_STRING_MAP
@@ -122,7 +122,7 @@ __all__ = [
     "SourceLensBinPairSelector",
     "ThreeTwoBinPairSelector",
     "TypeSourceBinPairSelector",
-    "TomographicBinPair",
+    "ProjectedFieldPair",
     "MeasurementPair",
     "register_bin_pair_selector",
 ]

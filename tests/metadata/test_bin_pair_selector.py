@@ -24,7 +24,7 @@ def test_pair_selector_register_missing_kind():
             """BinPairSelector with missing kind."""
 
             def keep(
-                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
+                self, _field_pair: mt.ProjectedFieldPair, _m: mt.MeasurementPair
             ) -> bool:
                 return True
 
@@ -41,7 +41,7 @@ def test_pair_selector_register_duplicate_kind():
             kind: str = "foo"
 
             def keep(
-                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
+                self, _field_pair: mt.ProjectedFieldPair, _m: mt.MeasurementPair
             ) -> bool:
                 return True
 
@@ -52,7 +52,7 @@ def test_pair_selector_register_duplicate_kind():
             kind: str = "foo"
 
             def keep(
-                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
+                self, _field_pair: mt.ProjectedFieldPair, _m: mt.MeasurementPair
             ) -> bool:
                 return True
 
@@ -1004,24 +1004,26 @@ def test_cross_selectors_are_inverses():
     # CrossName vs AutoName
     auto_name = mt.AutoNameBinPairSelector()
     cross_name = mt.CrossNameBinPairSelector()
-    for zdist, measurements in test_cases:
-        assert auto_name.keep(zdist, measurements) != cross_name.keep(
-            zdist, measurements
+    for field_pair, measurements in test_cases:
+        assert auto_name.keep(field_pair, measurements) != cross_name.keep(
+            field_pair, measurements
         )
 
     # CrossMeasurement vs AutoMeasurement
     auto_measurement = mt.AutoMeasurementBinPairSelector()
     cross_measurement = mt.CrossMeasurementBinPairSelector()
-    for zdist, measurements in test_cases:
-        assert auto_measurement.keep(zdist, measurements) != cross_measurement.keep(
-            zdist, measurements
-        )
+    for field_pair, measurements in test_cases:
+        assert auto_measurement.keep(
+            field_pair, measurements
+        ) != cross_measurement.keep(field_pair, measurements)
 
     # CrossBin vs AutoBin
     auto_bin = mt.AutoBinPairSelector()
     cross_bin = mt.CrossBinPairSelector()
-    for zdist, measurements in test_cases:
-        assert auto_bin.keep(zdist, measurements) != cross_bin.keep(zdist, measurements)
+    for field_pair, measurements in test_cases:
+        assert auto_bin.keep(field_pair, measurements) != cross_bin.keep(
+            field_pair, measurements
+        )
 
 
 # ============================================================================
