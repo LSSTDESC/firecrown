@@ -2,6 +2,7 @@
 Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
+import dataclasses
 import pytest
 import sacc
 import numpy as np
@@ -10,13 +11,16 @@ from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     Clusters,
     CMB,
-    Galaxies,
-    TomographicBin,
     CMBLensing,
+    Galaxies,
+    Measurement,
+    ProjectedField,
+    TomographicBin,
     TracerNames,
     TwoPointHarmonic,
-    TwoPointXY,
     TwoPointReal,
+    TwoPointXY,
+    TypeSource,
 )
 from firecrown.metadata_functions import (
     make_two_point_xy,
@@ -67,7 +71,9 @@ def test_inferred_galaxy_z_dist_bad_shape():
 
 
 def test_inferred_galaxy_z_dist_bad_type():
-    with pytest.raises(ValueError, match="The measurement should be a Measurement."):
+    with pytest.raises(
+        ValueError, match="The measurement should be a Galaxies Measurement."
+    ):
         TomographicBin(
             bin_name="b_name1",
             z=np.linspace(0, 1, 100),
@@ -801,10 +807,17 @@ def test_two_point_from_metadata_xi_theta(optimized_real_two_point_xy, tp_factor
 
 def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    x = TomographicBin(
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DummyClusterBin:
+        """A dummy cluster bin for testing unsupported types."""
+
+        bin_name: str
+        measurements: set[Measurement]
+        type_source: TypeSource = TypeSource("cluster")
+
+    x = DummyClusterBin(
         bin_name="b_name1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
         measurements={Clusters.COUNTS},
     )
     y = TomographicBin(
@@ -877,11 +890,11 @@ def test_make_two_point_xy_valid_galaxies():
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = "galaxy_shear_cl_ee"
 
-    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+    xy = make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     assert xy.x == x
     assert xy.y == y
@@ -902,11 +915,14 @@ def test_make_two_point_xy_valid_cmb_galaxy():
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    inferred_dict = {"cmb_convergence": cmb, "galaxy_bin_0": galaxy}
+    tomographic_dict: dict[str, ProjectedField] = {
+        "cmb_convergence": cmb,
+        "galaxy_bin_0": galaxy,
+    }
     tracer_names = TracerNames("cmb_convergence", "galaxy_bin_0")
     data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
 
-    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+    xy = make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     assert xy.x == cmb
     assert xy.y == galaxy
@@ -927,13 +943,16 @@ def test_make_two_point_xy_valid_cmb_galaxy_needs_swap():
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    inferred_dict = {"cmb_convergence": cmb, "galaxy_bin_0": galaxy}
+    tomographic_dict: dict[str, ProjectedField] = {
+        "cmb_convergence": cmb,
+        "galaxy_bin_0": galaxy,
+    }
     tracer_names = TracerNames("galaxy_bin_0", "cmb_convergence")
     data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
     # Even though the order is swapped, this should still work this behavior will be
     # removed in the future. It is kept for backwards compatibility and to avoid
     # breaking existing data files.
-    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+    xy = make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     assert xy.x == cmb
     assert xy.y == galaxy
@@ -955,13 +974,13 @@ def test_make_two_point_xy_missing_tracer_zdist():
         measurements={Galaxies.SHEAR_E},
     )
     # Only provide one tracer in the dictionary
-    inferred_dict = {"shear_bin_0": x}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x}
     # But request two tracers (second one doesn't exist)
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "shear_bin_1" in error_msg
@@ -982,12 +1001,12 @@ def test_make_two_point_xy_missing_x_measurement():
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "Tracer measurements do not match the SACC naming convention" in error_msg
@@ -1013,12 +1032,12 @@ def test_make_two_point_xy_missing_y_measurement():
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},  # Has SHEAR_T but needs SHEAR_E
     )
-    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "Tracer measurements do not match the SACC naming convention" in error_msg
@@ -1043,12 +1062,12 @@ def test_make_two_point_xy_both_measurements_missing():
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},  # Has SHEAR_T, needs SHEAR_E
     )
-    inferred_dict = {"counts_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"counts_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("counts_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "Tracer measurements do not match the SACC naming convention" in error_msg
@@ -1070,12 +1089,12 @@ def test_make_two_point_xy_sacc_convention_explanation():
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},  # Has SHEAR_E but needs COUNTS
     )
-    inferred_dict = {"cmb_bin": x, "galaxy_bin": y}
+    tomographic_dict: dict[str, ProjectedField] = {"cmb_bin": x, "galaxy_bin": y}
     tracer_names = TracerNames("cmb_bin", "galaxy_bin")
     data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     # Check for convention explanation

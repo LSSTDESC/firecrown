@@ -647,7 +647,7 @@ def test_bin_filter_methods(
     bin_col = TwoPointBinFilterCollection(
         filters=[
             TwoPointBinFilter.from_args_auto(
-                "bin_1", Galaxies.COUNTS, 5, 10, method=method
+                "bin_5_1", Galaxies.COUNTS, 5, 10, method=method
             )
         ]
     )

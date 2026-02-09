@@ -8,6 +8,7 @@ Fixtures defined here are available to any test in Firecrown.
 import ast
 from itertools import product
 import sys
+from typing import assert_never
 import pytest
 
 import pyccl
@@ -23,14 +24,17 @@ from firecrown.updatable import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (
-    Measurement,
+    ALL_MEASUREMENTS,
+    Clusters,
+    CMB,
+    CMBLensing,
     Galaxies,
+    Measurement,
     TomographicBin,
     TracerNames,
     TwoPointHarmonic,
-    TwoPointXY,
     TwoPointReal,
-    ALL_MEASUREMENTS,
+    TwoPointXY,
 )
 from firecrown.metadata_types._compatibility import (
     measurement_is_compatible_harmonic,
@@ -43,7 +47,6 @@ import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._cmb as cmb
-from firecrown.metadata_types import Clusters, CMB
 
 
 # Helper function for creating AST ClassDef nodes across Python versions
@@ -290,8 +293,11 @@ def fixture_all_harmonic_bins() -> list[TomographicBin]:
         np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
     ]
     return [
-        TomographicBin(bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m})
+        TomographicBin(
+            bin_name=f"bin_{int(m)}_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
+        )
         for i in range(2)
+        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
     ]
 
 
@@ -1275,6 +1281,19 @@ def fixture_tp_factory(
     )
 
 
+@pytest.fixture(name="tp_factory_missing_counts")
+def fixture_tp_factory_missing_counts(
+    wl_factory: wl.WeakLensingFactory,
+) -> tp.TwoPointFactory:
+    """Generate a TwoPointFactory object."""
+    return tp.TwoPointFactory(
+        correlation_space=tp.TwoPointCorrelationSpace.REAL,
+        weak_lensing_factories=[wl_factory],
+        number_counts_factories=[],
+        cmb_factories=[cmb.CMBConvergenceFactory()],
+    )
+
+
 # Optimized fixtures that eliminate "incompatible measurements" skips
 
 
@@ -1409,19 +1428,44 @@ def fixture_optimized_harmonic_two_point_xy(
     # Use different z-distribution for harmonic space
     z = np.linspace(0.0, 1.0, 256)  # Match default lensing kernel size
 
-    bin_1 = TomographicBin(
-        bin_name="bin_1",
-        z=z,
-        dndz=np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
-        measurements={m1},
-    )
+    bin_1: TomographicBin | CMBLensing
+    bin_2: TomographicBin | CMBLensing
 
-    bin_2 = TomographicBin(
-        bin_name="bin_2",
-        z=z,
-        dndz=np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
-        measurements={m2},
-    )
+    match m1:
+        case Galaxies():
+            bin_1 = TomographicBin(
+                bin_name="bin_1",
+                z=z,
+                dndz=np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2)
+                / (np.sqrt(2 * np.pi) * 0.05),
+                measurements={m1},
+            )
+        case CMB():
+            bin_1 = CMBLensing(
+                bin_name="bin_1",
+                z_lss=1100.0,  # CMB lensing source redshift
+                measurements={m1},
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+
+    match m2:
+        case Galaxies():
+            bin_2 = TomographicBin(
+                bin_name="bin_2",
+                z=z,
+                dndz=np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2)
+                / (np.sqrt(2 * np.pi) * 0.05),
+                measurements={m2},
+            )
+        case CMB():
+            bin_2 = CMBLensing(
+                bin_name="bin_2",
+                z_lss=1100.0,  # CMB lensing source redshift
+                measurements={m2},
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
 
     return TwoPointXY(x=bin_1, y=bin_2, x_measurement=m1, y_measurement=m2)
 

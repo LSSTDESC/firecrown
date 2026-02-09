@@ -69,8 +69,8 @@ def test_pair_selector_auto(all_harmonic_bins):
         all_harmonic_bins, auto_pair_selector
     )
     # AutoBinPairSelector should create all auto-combinations
-    # There is two measurements per bin in all_harmonic_bins
-    assert len(two_point_xy_combinations) == 2 * len(all_harmonic_bins)
+    # There is one measurement per bin in all_harmonic_bins
+    assert len(two_point_xy_combinations) == len(all_harmonic_bins)
     for two_point_xy in two_point_xy_combinations:
         assert two_point_xy.x == two_point_xy.y
         assert two_point_xy.x_measurement == two_point_xy.y_measurement
@@ -131,15 +131,18 @@ def test_pair_selector_auto_source_lens(all_harmonic_bins):
 
 
 def test_pair_selector_named(all_harmonic_bins):
-    named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
+    named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1_1", "bin_1_2")])
 
     two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, named_pair_selector
     )
     # NamedBinPairSelector should create all named combinations
-    assert len(two_point_xy_combinations) == 3
+    assert len(two_point_xy_combinations) == 1
     for two_point_xy in two_point_xy_combinations:
-        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {"bin_1", "bin_2"}
+        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {
+            "bin_1_1",
+            "bin_1_2",
+        }
 
 
 def test_pair_selector_type_source(all_harmonic_bins):
@@ -173,15 +176,18 @@ def test_pair_selector_type_source(all_harmonic_bins):
 
 
 def test_pair_selector_not_named(all_harmonic_bins):
-    named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
+    named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1_1", "bin_1_2")])
 
     two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, ~named_pair_selector
     )
     # NamedBinPairSelector should create all named combinations
-    assert len(two_point_xy_combinations) == 7
+    assert len(two_point_xy_combinations) == 9
     for two_point_xy in two_point_xy_combinations:
-        assert [two_point_xy.x.bin_name, two_point_xy.y.bin_name] != ["bin_1", "bin_2"]
+        assert [two_point_xy.x.bin_name, two_point_xy.y.bin_name] != [
+            "bin_1_1",
+            "bin_1_2",
+        ]
 
 
 def test_pair_selector_first_neighbor(many_harmonic_bins):
@@ -672,8 +678,8 @@ def test_auto_bin_pair_selector(all_harmonic_bins):
         all_harmonic_bins, auto_pair_selector
     )
     # AutoBinPairSelector should create all auto-combinations
-    # There are two measurements per bin in all_harmonic_bins
-    assert len(two_point_xy_combinations) == 2 * len(all_harmonic_bins)
+    # There are one measurement per bin in all_harmonic_bins
+    assert len(two_point_xy_combinations) == len(all_harmonic_bins)
     for two_point_xy in two_point_xy_combinations:
         assert two_point_xy.x == two_point_xy.y
         assert two_point_xy.x_measurement == two_point_xy.y_measurement

@@ -9,8 +9,6 @@ tomographic redshift bins. It supports:
 
 from itertools import product, chain
 
-import numpy as np
-
 import firecrown.metadata_types as mdt
 
 
@@ -136,19 +134,24 @@ def make_cmb_galaxy_combinations_only(
     """
     _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
     # Create a mock mdt.CMB "bin"
-    cmb_bin = mdt.TomographicBin(
+    cmb_bin = mdt.CMBLensing(
         bin_name=cmb_tracer_name,
-        z=np.array([1100.0]),
-        dndz=np.array([1.0]),
+        z_lss=1100.0,
         measurements={mdt.CMB.CONVERGENCE},
         type_source=mdt.TypeSource.DEFAULT,
     )
 
     cmb_galaxy_combinations = []
 
+    x: mdt.ProjectedField
+    y: mdt.ProjectedField
     for galaxy_bin in inferred_galaxy_zdists:
-        galaxy_bin_type = list(product([galaxy_bin], list(galaxy_bin.measurements)))
-        cmb_bin_type = list(product([cmb_bin], list(cmb_bin.measurements)))
+        galaxy_bin_type: list[tuple[mdt.ProjectedField, mdt.Measurement]] = list(
+            product([galaxy_bin], list(galaxy_bin.measurements))
+        )
+        cmb_bin_type: list[tuple[mdt.ProjectedField, mdt.Measurement]] = list(
+            product([cmb_bin], list(cmb_bin.measurements))
+        )
         for (x, m1), (y, m2) in chain(
             product(galaxy_bin_type, cmb_bin_type),
             product(cmb_bin_type, galaxy_bin_type),
