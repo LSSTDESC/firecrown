@@ -3,7 +3,7 @@
 import firecrown.likelihood.number_counts as nc
 import firecrown.metadata_types as mt
 import firecrown.modeling_tools as mtools
-from firecrown import parameters
+from firecrown import updatable
 
 
 def test_get_derived_parameters(
@@ -11,7 +11,7 @@ def test_get_derived_parameters(
     tools_with_vanilla_cosmology: mtools.ModelingTools,
 ):
     ncs = nc.NumberCounts.create_ready(harmonic_bin_1, derived_scale=True)
-    ncs.update(parameters.ParamsMap({"bin_1_bias": 1.0}))
+    ncs.update(updatable.ParamsMap({"bin_1_bias": 1.0}))
     ncs.create_tracers(tools_with_vanilla_cosmology)
     params = ncs.get_derived_parameters()
     assert params is not None
