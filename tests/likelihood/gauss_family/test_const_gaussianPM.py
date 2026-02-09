@@ -12,10 +12,10 @@ from scipy.stats import chi2
 import sacc
 import pyccl
 
-import firecrown.parameters
+import firecrown.updatable
 from firecrown.likelihood import ConstGaussianPM, Statistic, TrivialStatistic, TwoPoint
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import (
+from firecrown.updatable import (
     RequiredParameters,
     DerivedParameterCollection,
     SamplerParameter,
@@ -127,7 +127,7 @@ def test_compute_theory_vector_works_after_read_and_update(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     assert np.all(
         likelihood.compute_theory_vector(ModelingTools())
         == np.array([10.5, 10.5, 10.5])
@@ -137,7 +137,7 @@ def test_compute_theory_vector_works_after_read_and_update(
 def test_compute_theory_vector_called_twice(trivial_stats, sacc_data_for_trivial_stat):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     res_1 = likelihood.compute_theory_vector(ModelingTools())
     res_2 = likelihood.compute_theory_vector(ModelingTools())
     assert np.all(res_1 == res_2)
@@ -173,7 +173,7 @@ def test_get_theory_vector_fails_before_compute_theory_vector(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     with pytest.raises(
         AssertionError,
         match=re.escape(
@@ -188,7 +188,7 @@ def test_get_theory_vector_works_after_read_update_and_compute_theory_vector(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     likelihood.compute_theory_vector(ModelingTools())
     assert np.all(likelihood.get_theory_vector() == np.array([10.5, 10.5, 10.5]))
 
@@ -198,7 +198,7 @@ def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_res
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
     likelihood.compute_theory_vector(ModelingTools())
     likelihood.reset()
     with pytest.raises(
@@ -319,7 +319,7 @@ def test_using_good_sacc(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     with pytest.warns(
         UserWarning,
@@ -347,7 +347,7 @@ def test_make_realization_chisq(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     with pytest.warns(
         UserWarning,
@@ -359,7 +359,7 @@ def test_make_realization_chisq(
 
     new_likelihood = ConstGaussianPM(statistics=[TrivialStatistic()])
     new_likelihood.read(new_sacc)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     new_likelihood.update(params)
     with pytest.warns(
         UserWarning,
@@ -382,7 +382,7 @@ def test_make_realization_chisq_mean(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     with pytest.warns(
         UserWarning,
@@ -396,7 +396,7 @@ def test_make_realization_chisq_mean(
 
         new_likelihood = ConstGaussianPM(statistics=[TrivialStatistic()])
         new_likelihood.read(new_sacc)
-        params = firecrown.parameters.ParamsMap(mean=10.5)
+        params = firecrown.updatable.ParamsMap(mean=10.5)
         new_likelihood.update(params)
         with pytest.warns(
             UserWarning,
@@ -419,7 +419,7 @@ def test_make_realization_data_vector(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     with pytest.warns(
         UserWarning,
@@ -433,7 +433,7 @@ def test_make_realization_data_vector(
 
         new_likelihood = ConstGaussianPM(statistics=[TrivialStatistic()])
         new_likelihood.read(new_sacc)
-        params = firecrown.parameters.ParamsMap(mean=10.5)
+        params = firecrown.updatable.ParamsMap(mean=10.5)
         new_likelihood.update(params)
         data_vector = new_likelihood.get_data_vector()
         data_vector_list.append(data_vector)
@@ -466,7 +466,7 @@ def test_make_realization_no_noise(
 ):
     likelihood = ConstGaussianPM(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     likelihood.update(params)
     with pytest.warns(
         UserWarning,
@@ -478,7 +478,7 @@ def test_make_realization_no_noise(
 
     new_likelihood = ConstGaussianPM(statistics=[TrivialStatistic()])
     new_likelihood.read(new_sacc)
-    params = firecrown.parameters.ParamsMap(mean=10.5)
+    params = firecrown.updatable.ParamsMap(mean=10.5)
     new_likelihood.update(params)
 
     assert_allclose(new_likelihood.get_data_vector(), likelihood.get_theory_vector())

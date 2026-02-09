@@ -18,23 +18,23 @@ from pydantic import (
 # To be moved to the import from typing when migrating to Python 3.11
 from typing_extensions import assert_never
 
-from firecrown.ccl_factory._enums import (
+from firecrown.modeling_tools._ccl_enums import (
     CCLCreationMode,
     CCLPureModeTransferFunction,
     PoweSpecAmplitudeParameter,
 )
-from firecrown.ccl_factory._models import (
+from firecrown.modeling_tools._ccl_models import (
     CAMBExtraParams,
     CCLSplineParams,
     MuSigmaModel,
 )
-from firecrown.ccl_factory._types import CCLCalculatorArgs
-from firecrown.parameters import (
+from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
+from firecrown.updatable import (
     ParamsMap,
     SamplerParameter,
     register_new_updatable_parameter,
+    Updatable,
 )
-from firecrown.updatable import Updatable
 
 
 def _validate_neutrino_mass_splits(value):

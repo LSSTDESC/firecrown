@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict
 import yaml
 import pyccl
 
-from firecrown.ccl_factory import CAMBExtraParams
+from firecrown.modeling_tools import CAMBExtraParams
 from . import logging
 from .analysis import CCLCosmologySpec, Prior
 

@@ -1,6 +1,6 @@
 """Parameter types and creation functions."""
 
-from ._names import parameter_get_full_name
+from ._parameters_names import parameter_get_full_name
 
 
 class SamplerParameter:
@@ -47,7 +47,6 @@ class SamplerParameter:
         else:
             self._prefix = prefix
         self._name = name
-        print(self._prefix, self._name)
 
     @property
     def shared(self) -> bool:
