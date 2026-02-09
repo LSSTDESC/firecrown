@@ -29,7 +29,7 @@ from pydantic import (
 )
 from pydantic_core import PydanticUndefined, core_schema
 
-from firecrown.metadata_types._inferred_galaxy_zdist import InferredGalaxyZDist
+from firecrown.metadata_types._two_point_tracers import TomographicBin
 from firecrown.metadata_types._measurements import (
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
@@ -67,7 +67,7 @@ def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSel
 
 
 # Type aliases for clarity
-TomographicBinPair = tuple[InferredGalaxyZDist, InferredGalaxyZDist]
+TomographicBinPair = tuple[TomographicBin, TomographicBin]
 """A pair of tomographic bin distributions to be correlated."""
 
 MeasurementPair = tuple[Measurement, Measurement]
@@ -77,7 +77,7 @@ MeasurementPair = tuple[Measurement, Measurement]
 class BinPairSelector(BaseModel):
     """Base class for filtering pairs of tomographic bins in two-point measurements.
 
-    A BinPairSelector determines which pairs of `InferredGalaxyZDist` bins should be
+    A BinPairSelector determines which pairs of `TomographicBin` bins should be
     included when constructing `TwoPointXY` objects. Concrete implementations define
     specific selection criteria (e.g., auto-correlations only, specific bin names,
     measurement types, etc.).
@@ -94,7 +94,7 @@ class BinPairSelector(BaseModel):
     def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if the pair should be kept.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if the pair should be kept, False otherwise.
@@ -180,7 +180,7 @@ class AndBinPairSelector(BinPairSelector):
     def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if all of the bin pair selectors pass.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if all bin pair selectors pass, False otherwise.
@@ -218,7 +218,7 @@ class OrBinPairSelector(BinPairSelector):
     def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if any of the bin pair selectors pass.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if any bin pair selector passes, False otherwise.
@@ -256,7 +256,7 @@ class NotBinPairSelector(BinPairSelector):
     def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return the negation of the contained pair selector's result.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if the contained pair selector returns False, False otherwise.
@@ -333,7 +333,7 @@ class NamedBinPairSelector(BinPairSelector):
         Note: Matching is currently order-dependent. To achieve symmetric matching,
         include both (name1, name2) and (name2, name1) in the names list.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects (unused).
 
         :return: True if the bin name pair matches any configured name pair.
@@ -354,7 +354,7 @@ class AutoNameBinPairSelector(BinPairSelector):
     def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
         """Return True if both bins have the same bin name.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
         :return: True if both bins have the same name, False otherwise.
@@ -389,7 +389,7 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
     def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if both measurements are the same.
 
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param _zdist: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
         :return: True if both measurements are identical, False otherwise.
@@ -460,7 +460,7 @@ class LeftMeasurementBinPairSelector(BinPairSelector):
     def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if the left measurement is in the configured set.
 
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param _zdist: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
         :return: True if the left measurement is in the set, False otherwise.
@@ -486,7 +486,7 @@ class RightMeasurementBinPairSelector(BinPairSelector):
     def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if the right measurement is in the configured set.
 
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param _zdist: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
         :return: True if the right measurement is in the set, False otherwise.
@@ -604,7 +604,7 @@ class NameDiffBinPairSelector(BinPairSelector):
         extracted and their difference is checked against the allowed values.
         If same_name_prefix is set, the text parts must also satisfy the constraint.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
         :return: True if bins are neighbors, False otherwise.
@@ -770,7 +770,7 @@ class TypeSourceBinPairSelector(BinPairSelector):
     def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
         """Return True if both bins have the same matching type-source.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param zdist: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
         :return: True if both bins have matching type-sources, False otherwise.
