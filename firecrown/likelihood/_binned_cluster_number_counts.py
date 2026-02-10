@@ -40,9 +40,8 @@ class BinnedClusterNumberCounts(BinnedCluster):
 
         theory_vector_list: list[float] = []
         cluster_counts = []
-
-        cluster_counts = self.get_binned_cluster_counts()
         self.cluster_recipe.setup()
+        cluster_counts = self.get_binned_cluster_counts()
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
             if not include_prop:
