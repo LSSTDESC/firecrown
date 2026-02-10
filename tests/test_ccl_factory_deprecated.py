@@ -78,7 +78,7 @@ def test_all_items_importable():
 
 # pylint: disable=too-many-locals
 @pytest.mark.filterwarnings(
-    r".*ignore:firecrown\.ccl_factory is deprecated.*:DeprecationWarning"
+    r"ignore:firecrown\.ccl_factory is deprecated.*:DeprecationWarning"
 )
 def test_items_identical_to_new_location():
     """Test that imported items are the same objects as in modeling_tools."""
