@@ -145,8 +145,8 @@ class CMBLensing(YAMLSerializable):
         if not isinstance(self.z_lss, (int, float)) or not np.isfinite(self.z_lss):
             raise ValueError("z_lss must be a finite float value.")
 
-        if self.z_lss < 0:
-            raise ValueError("z_lss must be non-negative.")
+        if self.z_lss <= 0:
+            raise ValueError("z_lss must be positive.")
 
         for measurement in self.measurements:
             if not isinstance(measurement, CMB):

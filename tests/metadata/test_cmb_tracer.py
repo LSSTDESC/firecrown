@@ -21,14 +21,19 @@ def test_cmblensing_basic():
 
 
 def test_cmblensing_validation():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="bin_name should not be empty"):
         CMBLensing(bin_name="", z_lss=1090.0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="z_lss must be a finite float value."):
         CMBLensing(bin_name="cmb0", z_lss=float("nan"))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="z_lss must be positive"):
         CMBLensing(bin_name="cmb0", z_lss=-1.0)
+
+    with pytest.raises(
+        ValueError, match="The measurement should be a CMB Measurement."
+    ):
+        CMBLensing(bin_name="cmb0", z_lss=1100.0, measurements={Galaxies.COUNTS})
 
 
 def test_tomographicbin_equality_and_cmb_mismatch():
