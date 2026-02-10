@@ -7,6 +7,7 @@ deprecation warnings.
 
 import sys
 import warnings
+import pytest
 
 
 def test_parameters_module_emits_deprecation_warning():
@@ -22,6 +23,7 @@ def test_parameters_module_emits_deprecation_warning():
         # pylint: disable=unused-import,import-outside-toplevel
         import firecrown.parameters  # noqa: F401
 
+        assert firecrown.parameters is not None  # Verify import succeeded
         # Should have at least one warning (there might be multiple due to
         # imports within the module)
         assert len(w) >= 1
@@ -89,6 +91,9 @@ def test_params_map_from_deprecated_module():
     assert params.get("b") == 2.0
 
 
+@pytest.mark.filterwarnings(
+    r"ignore:.*firecrown\.parameters module is deprecated.*:DeprecationWarning"
+)
 def test_required_parameters_from_deprecated_module():
     """Ensure RequiredParameters imported from deprecated module works correctly."""
     # pylint: disable=import-outside-toplevel

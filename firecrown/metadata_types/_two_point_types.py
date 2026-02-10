@@ -9,7 +9,7 @@ import numpy.typing as npt
 from pydantic_core import core_schema
 
 from firecrown.metadata_types._compatibility import measurement_is_compatible
-from firecrown.metadata_types._inferred_galaxy_zdist import InferredGalaxyZDist
+from firecrown.metadata_types._two_point_tracers import ProjectedField
 from firecrown.metadata_types._measurements import (
     HARMONIC_ONLY_MEASUREMENTS,
     REAL_ONLY_MEASUREMENTS,
@@ -43,8 +43,10 @@ class TwoPointXY(YAMLSerializable):
     the Measurement enum (e.g., for Galaxies: shape measurements before counts).
     """
 
-    x: InferredGalaxyZDist
-    y: InferredGalaxyZDist
+    # Use the generic ProjectedField protocol so other fields implementations can be
+    # used
+    x: ProjectedField
+    y: ProjectedField
     x_measurement: Measurement
     y_measurement: Measurement
 

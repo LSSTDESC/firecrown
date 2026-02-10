@@ -20,7 +20,7 @@ from firecrown.likelihood.weak_lensing import (
 )
 from firecrown.likelihood._base import SourceGalaxySystematic
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
-from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
+from firecrown.metadata_types import ProjectedField, TomographicBin, TypeSource
 
 
 class LinearBiasSystematicFactory(BaseModel):
@@ -155,24 +155,25 @@ class NumberCountsFactory(BaseModel):
             for nc_systematic_factory in self.global_systematics
         ]
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
+    def create(self, tomographic_bin: ProjectedField) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale.
 
-        :param inferred_zdist: the inferred redshift distribution
+        :param tomographic_bin: the inferred redshift distribution
         :return: a fully initialized NumberCounts object
         """
-        inferred_zdist_id = id(inferred_zdist)
+        assert isinstance(tomographic_bin, TomographicBin)
+        inferred_zdist_id = id(tomographic_bin)
         if inferred_zdist_id in self._cache:
             return self._cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
-            systematic_factory.create(inferred_zdist.bin_name)
+            systematic_factory.create(tomographic_bin.bin_name)
             for systematic_factory in self.per_bin_systematics
         ]
         systematics.extend(self._global_systematics_instances)
 
         nc = NumberCounts.create_ready(
-            inferred_zdist, systematics=systematics, has_rsd=self.include_rsd
+            tomographic_bin, systematics=systematics, has_rsd=self.include_rsd
         )
         self._cache[inferred_zdist_id] = nc
 

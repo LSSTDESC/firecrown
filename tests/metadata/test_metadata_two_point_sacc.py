@@ -19,13 +19,14 @@ from firecrown.metadata_types import (
     CMB,
     Galaxies,
     GALAXY_SOURCE_TYPES,
-    InferredGalaxyZDist,
     LensBinPairSelector,
     NamedBinPairSelector,
     SourceBinPairSelector,
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
+    TomographicBin,
+    CMBLensing,
     TypeSource,
 )
 from firecrown.metadata_types._sacc_type_string import (
@@ -892,13 +893,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_basic():
     """Test basic functionality of make_all_photoz_bin_combinations_with_cmb."""
     # Create test galaxy bins
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -934,7 +935,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_basic():
 def test_make_all_photoz_bin_combinations_with_cmb_with_auto():
     """Test make_all_photoz_bin_combinations_with_cmb with CMB auto-correlation."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -968,7 +969,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_with_auto():
 def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name():
     """Test make_all_photoz_bin_combinations_with_cmb with custom CMB tracer name."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1002,13 +1003,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name():
 def test_make_all_photoz_bin_combinations_with_cmb_measurement_compatibility():
     """Test that only compatible measurements create CMB-galaxy cross-correlations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="counts_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="shear_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1061,7 +1062,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty_input():
 def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
     """Test that the created CMB bin has correct properties."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1078,8 +1079,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
 
     cmb_bin = cmb_combo.x
     assert cmb_bin.bin_name == "cmb_convergence"
-    assert np.array_equal(cmb_bin.z, np.array([1100.0]))
-    assert np.array_equal(cmb_bin.dndz, np.array([1.0]))
+    assert isinstance(cmb_bin, CMBLensing)
     assert cmb_bin.measurements == {CMB.CONVERGENCE}
     assert cmb_bin.type_source == TypeSource.DEFAULT
 
@@ -1088,7 +1088,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
 def test_make_all_photoz_bin_combinations_with_cmb_parametrized(include_auto: bool):
     """Parametrized test for CMB auto-correlation inclusion."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1119,7 +1119,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_parametrized(include_auto: bo
 def test_make_all_photoz_bin_combinations_with_cmb_multiple_measurements():
     """Test with galaxy bins that have multiple measurement types."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="multi_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1164,13 +1164,13 @@ def test_make_cmb_galaxy_combinations_only_basic():
     """Test basic functionality of make_cmb_galaxy_combinations_only."""
     # Create test galaxy bins
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1218,7 +1218,7 @@ def test_make_cmb_galaxy_combinations_only_basic():
 def test_make_cmb_galaxy_combinations_only_custom_tracer_name():
     """Test make_cmb_galaxy_combinations_only with custom CMB tracer name."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1252,13 +1252,13 @@ def test_make_cmb_galaxy_combinations_only_custom_tracer_name():
 def test_make_cmb_galaxy_combinations_only_measurement_compatibility():
     """Test that only compatible measurements create CMB-galaxy cross-correlations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="counts_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="shear_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1299,7 +1299,7 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
     # Create a galaxy bin with a measurement that might not be compatible
     # (This test depends on what measurements are actually incompatible)
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="test_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1323,7 +1323,7 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
 def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
     """Test that the created CMB bin has correct properties."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1340,8 +1340,7 @@ def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
 
     cmb_bin = cmb_combo.x
     assert cmb_bin.bin_name == "cmb_convergence"
-    assert np.array_equal(cmb_bin.z, np.array([1100.0]))
-    assert np.array_equal(cmb_bin.dndz, np.array([1.0]))
+    assert isinstance(cmb_bin, CMBLensing)
     assert cmb_bin.measurements == {CMB.CONVERGENCE}
     assert cmb_bin.type_source == TypeSource.DEFAULT
 
@@ -1349,7 +1348,7 @@ def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
 def test_make_cmb_galaxy_combinations_only_multiple_measurements():
     """Test with galaxy bins that have multiple measurement types."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="multi_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1380,7 +1379,7 @@ def test_make_cmb_galaxy_combinations_only_multiple_measurements():
 def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
     """Test that symmetric pairs are created for each compatible measurement."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="test_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1412,7 +1411,7 @@ def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
 def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
     """Test with a single galaxy bin."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="single_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1436,7 +1435,7 @@ def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
 def test_make_cmb_galaxy_combinations_only_parametrized_names(cmb_name: str):
     """Parametrized test for different CMB tracer names."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1461,13 +1460,13 @@ def test_make_cmb_galaxy_combinations_only_vs_with_cmb():
     make_all_photoz_bin_combinations_with_cmb
     without galaxy combinations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1512,13 +1511,13 @@ def test_make_cmb_galaxy_combinations_only_vs_with_cmb():
 def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
     """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="another_compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1565,13 +1564,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
 def test_make_cmb_galaxy_combinations_only_incompatible_measurements():
     """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.SHEAR_E},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="another_compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1606,13 +1605,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
     # Since we can't find truly incompatible measurements, let's test with
     # measurements that we know ARE compatible and adjust expectations
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.SHEAR_T},  # Actually compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1646,7 +1645,7 @@ def test_make_cmb_galaxy_combinations_only_all_incompatible():
     # Since we can't find truly incompatible measurements, let's test with
     # measurements that we know ARE compatible and adjust expectations
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1663,7 +1662,7 @@ def test_make_cmb_galaxy_combinations_only_all_incompatible():
 def test_make_all_photoz_bin_combinations_with_cmb_empty():
     """Test behavior when given an empty list of galaxy bins."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),

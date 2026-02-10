@@ -20,7 +20,7 @@ from firecrown.metadata_functions._combination_utils import (
 def extract_all_tracers_inferred_galaxy_zdists(
     sacc_data: sacc.Sacc,
     allow_mixed_types: bool = False,
-) -> list[mdt.InferredGalaxyZDist]:
+) -> list[mdt.TomographicBin]:
     """Extracts the two-point function metadata from a Sacc object.
 
     The Sacc object contains a set of tracers (one-dimensional bins) and data
@@ -44,7 +44,7 @@ def extract_all_tracers_inferred_galaxy_zdists(
                 )
 
     return [
-        mdt.InferredGalaxyZDist(
+        mdt.TomographicBin(
             bin_name=tracer.name,
             z=tracer.z,
             dndz=tracer.nz,

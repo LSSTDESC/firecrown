@@ -8,7 +8,14 @@ from firecrown.metadata_types._compatibility import (
     measurement_is_compatible,
     measurements_types,
 )
-from firecrown.metadata_types._inferred_galaxy_zdist import InferredGalaxyZDist
+from firecrown.metadata_types._two_point_tracers import (
+    TomographicBin,
+    ProjectedField,
+    CMBLensing,
+    InferredGalaxyZDist,
+)
+
+# Backwards compatibility: expose the legacy name
 from firecrown.metadata_types._measurements import (
     ALL_MEASUREMENTS,
     ALL_MEASUREMENT_TYPES,
@@ -43,7 +50,7 @@ from firecrown.metadata_types._pair_selector import (
     SourceLensBinPairSelector,
     ThreeTwoBinPairSelector,
     TypeSourceBinPairSelector,
-    TomographicBinPair,
+    ProjectedFieldPair,
     register_bin_pair_selector,
 )
 from firecrown.metadata_types._sacc_type_string import MEASURED_TYPE_STRING_MAP
@@ -79,8 +86,11 @@ __all__ = [
     "TracerNames",
     "TRACER_NAMES_TOTAL",
     "TypeSource",
-    # Inferred galaxy zdist
+    # Tomographic bin / legacy name
+    "TomographicBin",
     "InferredGalaxyZDist",
+    "ProjectedField",
+    "CMBLensing",
     # Two-point types
     "TwoPointXY",
     "TwoPointHarmonic",
@@ -112,7 +122,7 @@ __all__ = [
     "SourceLensBinPairSelector",
     "ThreeTwoBinPairSelector",
     "TypeSourceBinPairSelector",
-    "TomographicBinPair",
+    "ProjectedFieldPair",
     "MeasurementPair",
     "register_bin_pair_selector",
 ]

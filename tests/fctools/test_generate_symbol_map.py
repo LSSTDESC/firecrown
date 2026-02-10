@@ -7,6 +7,7 @@ and to test dynamic importing behavior.
 import json
 from types import ModuleType
 
+import pytest
 from typer.testing import CliRunner
 
 from firecrown.fctools.generate_symbol_map import (
@@ -391,6 +392,12 @@ def test_get_all_symbols_with_generators():
 runner = CliRunner()
 
 
+@pytest.mark.filterwarnings(
+    r"ignore:.*firecrown\.ccl_factory is deprecated.*:DeprecationWarning"
+)
+@pytest.mark.filterwarnings(
+    r"ignore:.*firecrown\.parameters module is deprecated.*:DeprecationWarning"
+)
 def test_main_outputs_valid_json():
     """Test that main command outputs valid JSON to stdout."""
     result = runner.invoke(app, [])
