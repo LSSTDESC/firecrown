@@ -43,7 +43,29 @@ PYTEST_PARALLEL := $(PYTEST) -n auto
 PYTEST_DURATIONS := --durations 10
 PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json --cov-report html --cov-report term-missing --cov-branch
 
-help:  ## Show this help message
+help:  ## Show common developer targets
+	@echo "Firecrown Developer Quick Reference"
+	@echo "===================================="
+	@echo ""
+	@echo "During development:"
+	@echo "  make format          - Auto-format code (run frequently)"
+	@echo "  make lint            - Check code quality (before commit)"
+	@echo "  make test            - Run fast tests (during development)"
+	@echo ""
+	@echo "Before committing:"
+	@echo "  make unit-tests      - Verify 100% coverage on changed modules"
+	@echo "  make docs            - Build docs if you changed tutorials/docstrings"
+	@echo ""
+	@echo "Before pushing:"
+	@echo "  make pre-commit      - Comprehensive check (format, lint, docs, full tests)"
+	@echo "  make test-ci         - Run exactly what CI will run"
+	@echo ""
+	@echo "Other useful targets:"
+	@echo "  make help-all        - Show all available targets"
+	@echo "  make clean           - Remove all generated files"
+	@echo ""
+
+help-all:  ## Show this help message
 	@echo "Firecrown Makefile targets:"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
