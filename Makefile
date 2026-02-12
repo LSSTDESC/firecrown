@@ -14,12 +14,14 @@
 .DEFAULT_GOAL := help
 
 # Parallel execution configuration
-JOBS ?= auto
-ifeq ($(JOBS),auto)
-	NPROCS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-else
-	NPROCS := $(JOBS)
-endif
+JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+MAKEFLAGS += -j$(JOBS)
+
+# Tools
+PYTHON := python3
+PYTEST := pytest
+RM := rm -f
+find := find
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
@@ -33,31 +35,55 @@ TUTORIAL_DIR := tutorial
 HTMLCOV_DIR := htmlcov
 DOCS_BUILD_DIR := $(DOCS_DIR)/_build
 AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
+# Tutorial configuration
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
 
 # Test configuration
-PYTEST := pytest
 PYTEST_PARALLEL := $(PYTEST) -n auto
 PYTEST_DURATIONS := --durations 10
 PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json --cov-report html --cov-report term-missing --cov-branch
 
-help:  ## Show this help message
+help:  ## Show common developer targets
+	@echo "Firecrown Developer Quick Reference"
+	@echo "===================================="
+	@echo ""
+	@echo "During development:"
+	@echo "  make format          - Auto-format code (run frequently)"
+	@echo "  make lint            - Check code quality (before commit)"
+	@echo "  make test            - Run fast tests (during development)"
+	@echo ""
+	@echo "Before committing:"
+	@echo "  make unit-tests      - Verify 100% coverage on changed modules"
+	@echo "  make docs            - Build docs if you changed tutorials/docstrings"
+	@echo ""
+	@echo "Before pushing:"
+	@echo "  make pre-commit      - Comprehensive check (format, lint, docs, full tests)"
+	@echo "  make test-ci         - Run exactly what CI will run"
+	@echo ""
+	@echo "Other useful targets:"
+	@echo "  make help-all        - Show all available targets"
+	@echo "  make clean           - Remove all generated files"
+	@echo ""
+
+help-all:  ## Show this help message
 	@echo "Firecrown Makefile targets:"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "Common workflows:"
 	@echo "  make format          - Format all code with black"
-	@echo "  make lint            - Run all linting tools in parallel"
-	@echo "  make test            - Run tests in parallel (fast)"
-	@echo "  make test-all        - Run all tests including slow tests"
-	@echo "  make pre-commit      - Run all pre-commit checks (format, lint, test)"
-	@echo "  make docs            - Build all documentation (tutorials + API)"
+	@echo "  make lint            - Run all linting tools (parallel by default)"
+	@echo "  make test            - Run fast tests (parallel by default)"
+	@echo "  make unit-tests      - Run all unit tests with 100% coverage check"
+	@echo "  make test-ci         - Run the full CI suite (all tests, slow, examples)"
+	@echo "  make docs            - Build and verify all documentation (tutorials + API)"
+	@echo "  make pre-commit      - Comprehensive pre-push check (format, lint, docs, test-ci)"
 	@echo ""
 	@echo "Parallel execution:"
-	@echo "  make -j4 lint        - Run linting with 4 parallel jobs"
-	@echo "  JOBS=8 make lint     - Set parallel jobs via environment variable"
-	@echo "  Detected CPUs: $(NPROCS)"
+	@echo "  Parallel execution is ENABLED by default using $(JOBS) jobs."
+	@echo "  Use 'make -j1 <target>' to run serially (e.g., for debugging)."
+	@echo "  Use 'JOBS=N make <target>' to override the number of jobs."
+	@echo ""
 
 ##@ Formatting
 
@@ -69,55 +95,26 @@ format-check:  ## Check code formatting without modifying files
 
 ##@ Linting
 
-lint:  ## Run all linting tools in parallel
-	@echo "Running all linters in parallel..."
-	@(black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ black passed" || (echo "❌ black failed" && false)) & \
-	PID1=$$! ; \
-	(flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ flake8 passed" || (echo "❌ flake8 failed" && false)) & \
-	PID2=$$! ; \
-	(mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) && echo "✅ mypy passed" || (echo "❌ mypy failed" && false)) & \
-	PID3=$$! ; \
-	($(MAKE) lint-pylint && echo "✅ pylint passed" || (echo "❌ pylint failed" && false)) & \
-	PID4=$$! ; \
-	FAILED=0 ; \
-	wait $$PID1 || FAILED=1 ; \
-	wait $$PID2 || FAILED=1 ; \
-	wait $$PID3 || FAILED=1 ; \
-	wait $$PID4 || FAILED=1 ; \
-	if [ $$FAILED -eq 1 ]; then \
-		echo "❌ One or more linters failed" ; \
-		exit 1 ; \
-	fi ; \
-	echo "✅ All linters passed!"
+lint: lint-black lint-flake8 lint-mypy lint-pylint  ## Run all linting tools
+	@echo "✅ All linters passed!"
 
 lint-black:  ## Check code formatting with black
 	@echo "Running black..."
 	@black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ || (echo "❌ black failed" && exit 1)
+	@echo "✅ black passed"
 
 lint-flake8:  ## Run flake8 linter
 	@echo "Running flake8..."
 	@flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
+	@echo "✅ flake8 passed"
 
-lint-pylint:  ## Run pylint on all packages in parallel
-	@echo "Running pylint on all packages in parallel..."
-	@(pylint $(FIRECROWN_PKG_DIR) && echo "✅ pylint passed for firecrown" || (echo "❌ pylint failed for firecrown" && false)) & \
-	PID1=$$! ; \
-	(pylint $(PYLINT_PLUGINS_DIR) && echo "✅ pylint passed for pylint_plugins" || (echo "❌ pylint failed for pylint_plugins" && false)) & \
-	PID2=$$! ; \
-	(pylint --rcfile $(TESTS_DIR)/pylintrc $(TESTS_DIR) && echo "✅ pylint passed for tests" || (echo "❌ pylint failed for tests" && false)) & \
-	PID3=$$! ; \
-	(pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) && echo "✅ pylint passed for examples" || (echo "❌ pylint failed for examples" && false)) & \
-	PID4=$$! ; \
-	FAILED=0 ; \
-	wait $$PID1 || FAILED=1 ; \
-	wait $$PID2 || FAILED=1 ; \
-	wait $$PID3 || FAILED=1 ; \
-	wait $$PID4 || FAILED=1 ; \
-	if [ $$FAILED -eq 1 ]; then \
-		echo "❌ One or more pylint checks failed" ; \
-		exit 1 ; \
-	fi ; \
-	echo "✅ All pylint checks passed!"
+lint-mypy:  ## Run mypy type checker
+	@echo "Running mypy..."
+	@mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) || (echo "❌ mypy failed" && exit 1)
+	@echo "✅ mypy passed"
+
+lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-examples ## Run all pylint checks
+	@echo "✅ All pylint checks passed!"
 
 lint-pylint-firecrown:  ## Run pylint on firecrown package
 	@echo "Running pylint on firecrown..."
@@ -138,10 +135,6 @@ lint-pylint-examples:  ## Run pylint on examples
 	@echo "Running pylint on examples..."
 	@pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) || (echo "❌ pylint failed for examples" && exit 1)
 	@echo "✅ pylint passed for examples"
-
-lint-mypy:  ## Run mypy type checker
-	@echo "Running mypy..."
-	@mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) || (echo "❌ mypy failed" && exit 1)
 
 typecheck: lint-mypy  ## Alias for mypy type checking
 
@@ -171,138 +164,136 @@ test-integration:  ## Run integration tests only
 
 test-all: test-slow test-example test-integration test  ## Run all tests (slow + example + integration)
 
-test-updatable:  ## Run tests for firecrown.updatable module with coverage
-	$(PYTEST) tests/test_updatable.py tests/test_assert_updatable_interface.py \
-		--cov=firecrown.updatable \
-		--cov-report=term-missing \
-		--cov-branch \
-		--cov-fail-under=100
+unit-tests: unit-tests-post ## Run all unit tests in parallel
+	@echo "✅ All unit tests passed!"
 
-test-utils:  ## Run tests for firecrown.utils module with coverage
-	$(PYTEST) tests/test_utils.py \
-		--cov=firecrown.utils \
-		--cov-report=term-missing \
-		--cov-branch \
-		--cov-fail-under=100
+unit-tests-pre:
+	@$(RM) .coverage.* .coverage
 
-test-parameters:  ## Run tests for firecrown.parameters module with coverage
-	$(PYTEST) tests/test_parameters.py \
-		--cov=firecrown.parameters \
-		--cov-report=term-missing \
-		--cov-branch \
-		--cov-fail-under=100
+# Order-only prerequisite ensures unit-tests-pre runs before any test target
+# but doesn't force a rebuild if it's already "complete".
+test-updatable test-utils test-parameters test-modeling-tools test-models-cluster test-models-two-point: | unit-tests-pre
 
-test-modeling-tools:  ## Run tests for firecrown.modeling_tools module with coverage
-	$(PYTEST) tests/test_modeling_tools.py \
-		--cov=firecrown.modeling_tools \
-		--cov-report=term-missing \
-		--cov-branch \
-		--cov-fail-under=100
-
-test-models-cluster:  ## Run unit tests for firecrown.models.cluster package with coverage
-	$(PYTEST) tests/models/cluster/ \
-		--cov=firecrown.models.cluster \
-		--cov-report=term-missing \
-		--cov-branch \
-		--cov-fail-under=100
-
-test-models-two-point:  ## Run unit tests for firecrown.models.two_point package with coverage
-	$(PYTEST) tests/models/two_point/ \
-		--cov=firecrown.models.two_point \
-		--cov-report=term-missing \
-		--cov-branch \
-		--cov-fail-under=100
-
-unit-tests:  ## Run all unit tests in parallel
-	@echo "Running unit tests in parallel..."
-	@rm -f .coverage.* .coverage
-	@(COVERAGE_FILE=.coverage.updatable $(MAKE) test-updatable && echo "✅ test-updatable passed" || (echo "❌ test-updatable failed" && exit 1)) & \
-	PID1=$$! ; \
-	(COVERAGE_FILE=.coverage.utils $(MAKE) test-utils && echo "✅ test-utils passed" || (echo "❌ test-utils failed" && exit 1)) & \
-	PID2=$$! ; \
-	(COVERAGE_FILE=.coverage.parameters $(MAKE) test-parameters && echo "✅ test-parameters passed" || (echo "❌ test-parameters failed" && exit 1)) & \
-	PID3=$$! ; \
-	(COVERAGE_FILE=.coverage.modeling-tools $(MAKE) test-modeling-tools && echo "✅ test-modeling-tools passed" || (echo "❌ test-modeling-tools failed" && exit 1)) & \
-	PID4=$$! ; \
-	(COVERAGE_FILE=.coverage.models-cluster $(MAKE) test-models-cluster && echo "✅ test-models-cluster passed" || (echo "❌ test-models-cluster failed" && exit 1)) & \
-	PID5=$$! ; \
-	(COVERAGE_FILE=.coverage.models-two-point $(MAKE) test-models-two-point && echo "✅ test-models-two-point passed" || (echo "❌ test-models-two-point failed" && exit 1)) & \
-	PID6=$$! ; \
-	FAILED=0 ; \
-	wait $$PID1 || FAILED=1 ; \
-	wait $$PID2 || FAILED=1 ; \
-	wait $$PID3 || FAILED=1 ; \
-	wait $$PID4 || FAILED=1 ; \
-	wait $$PID5 || FAILED=1 ; \
-	wait $$PID6 || FAILED=1 ; \
-	if [ $$FAILED -eq 1 ]; then \
-		echo "❌ One or more unit test targets failed" ; \
-		exit 1 ; \
-	fi
+unit-tests-post: test-updatable test-utils test-parameters test-modeling-tools test-models-cluster test-models-two-point
 	@echo "Combining coverage data..."
 	@coverage combine
 	@coverage report
-	@echo "✅ All unit tests passed!"
+
+test-updatable:  ## Run tests for firecrown.updatable module with coverage
+	@COVERAGE_FILE=.coverage.updatable $(PYTEST) tests/test_updatable.py \
+		tests/test_assert_updatable_interface.py \
+		tests/test_updatable_parameters.py \
+		--cov=firecrown.updatable \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100 || (echo "❌ test-updatable failed" && exit 1)
+	@echo "✅ test-updatable passed"
+
+test-utils:  ## Run tests for firecrown.utils module with coverage
+	@COVERAGE_FILE=.coverage.utils $(PYTEST) tests/test_utils.py \
+		--cov=firecrown.utils \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100 || (echo "❌ test-utils failed" && exit 1)
+	@echo "✅ test-utils passed"
+
+test-parameters:  ## Run tests for firecrown.parameters module with coverage
+	@COVERAGE_FILE=.coverage.parameters $(PYTEST) tests/test_parameters_deprecated.py \
+		--cov=firecrown.parameters \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100 || (echo "❌ test-parameters failed" && exit 1)
+	@echo "✅ test-parameters passed"
+
+test-modeling-tools:  ## Run tests for firecrown.modeling_tools module with coverage
+	@COVERAGE_FILE=.coverage.modeling-tools $(PYTEST) tests/test_modeling_tools.py \
+		tests/test_modeling_tools_ccl_factory.py \
+		--cov=firecrown.modeling_tools \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100 || (echo "❌ test-modeling-tools failed" && exit 1)
+	@echo "✅ test-modeling-tools passed"
+
+test-models-cluster:  ## Run unit tests for firecrown.models.cluster package with coverage
+	@COVERAGE_FILE=.coverage.models-cluster $(PYTEST) tests/models/cluster/ \
+		--cov=firecrown.models.cluster \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100 || (echo "❌ test-models-cluster failed" && exit 1)
+	@echo "✅ test-models-cluster passed"
+
+test-models-two-point:  ## Run unit tests for firecrown.models.two_point package with coverage
+	@COVERAGE_FILE=.coverage.models-two-point $(PYTEST) tests/models/two_point/ \
+		--cov=firecrown.models.two_point \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100 || (echo "❌ test-models-two-point failed" && exit 1)
+	@echo "✅ test-models-two-point passed"
 
 ##@ Documentation
 
 docs-generate-symbol-map:  ## Generate the firecrown symbol-to-URL map for documentation
 	@mkdir -p $(TUTORIAL_OUTPUT_DIR)
-	python $(FIRECROWN_PKG_DIR)/fctools/generate_symbol_map.py > $(TUTORIAL_OUTPUT_DIR)/symbol_map.json
+	@$(PYTHON) $(FIRECROWN_PKG_DIR)/fctools/generate_symbol_map.py > $(TUTORIAL_OUTPUT_DIR)/symbol_map.json
 
-docs-code-check:  ## Check Python code blocks in tutorials for syntax errors
-	@echo "Checking tutorial code blocks for syntax errors..."
-	@python -m firecrown.fctools.code_block_checker $(TUTORIAL_DIR)
-
-docs-symbol-check:  ## Validate Firecrown symbol references in tutorials
-	@echo "Validating Firecrown symbol references in tutorials..."
-	@python -m firecrown.fctools.symbol_reference_checker $(TUTORIAL_DIR) $(TUTORIAL_OUTPUT_DIR)/symbol_map.json --external-symbols-file $(TUTORIAL_DIR)/external_symbols.txt
-
-tutorials:  ## Render tutorials with quarto, applying symbol linking filter
+# Note: Building tutorials in parallel using 'make -j' with individual Rendering targets
+# is unsafe because multiple Quarto processes compete for shared assets in 'site_libs',
+# leading to race conditions and "No such file or directory" errors.
+# We build the entire project in a single Quarto process for safety and reliability.
+tutorials: docs-generate-symbol-map ## Render all tutorials with quarto (safe sequential build)
 	quarto render $(TUTORIAL_DIR) --output-dir=$(CURDIR)/$(TUTORIAL_OUTPUT_DIR) --to html --metadata "quarto-filters=[$(TUTORIAL_DIR)/link_symbols.lua]"
+	@echo "✅ All tutorials rendered"
 
-api-docs:  ## Build API documentation with Sphinx
-	$(MAKE) -C $(DOCS_DIR) html
+api-docs: tutorials ## Build API documentation with Sphinx
+	@$(MAKE) -C $(DOCS_DIR) html
 
-docs-build: tutorials api-docs  ## Build tutorials and API docs (can run in parallel with make -j2)
+docs-build: tutorials api-docs  ## Build tutorials and API docs
 
-docs: docs-generate-symbol-map docs-build docs-linkcheck docs-code-check docs-symbol-check ## Build and check all documentation (tutorials + API docs)
-	@echo ""
-	@echo "Documentation built and checked successfully:"
-	@echo "  - Tutorials: $(TUTORIAL_OUTPUT_DIR)/"
-	@echo "  - API docs: $(DOCS_BUILD_DIR)/html/index.html"
+docs: docs-build docs-verify ## Build and check all documentation
 
-docs-linkcheck:  ## Check documentation for broken links
-	firecrown-link-checker $(DOCS_BUILD_DIR)/html -v
+docs-verify: docs-generate-symbol-map docs-code-check docs-symbol-check docs-linkcheck ## Run all documentation verification checks
+
+docs-code-check: tutorials ## Check Python code blocks in .qmd files
+	@echo "Checking tutorial code blocks for syntax errors..."
+	@$(PYTHON) $(FIRECROWN_PKG_DIR)/fctools/code_block_checker.py $(TUTORIAL_DIR) || (echo "❌ docs-code-check failed" && exit 1)
+	@echo "✅ docs-code-check passed"
+
+docs-symbol-check: tutorials docs-generate-symbol-map ## Validate symbol references in .qmd files
+	@echo "Validating Firecrown symbol references in tutorials..."
+	@$(PYTHON) $(FIRECROWN_PKG_DIR)/fctools/symbol_reference_checker.py $(TUTORIAL_DIR) $(TUTORIAL_OUTPUT_DIR)/symbol_map.json --external-symbols-file $(TUTORIAL_DIR)/external_symbols.txt || (echo "❌ docs-symbol-check failed" && exit 1)
+	@echo "✅ docs-symbol-check passed"
+
+docs-linkcheck: docs-build ## Check documentation for broken links
+	@echo "Checking for broken links..."
+	@firecrown-link-checker $(DOCS_BUILD_DIR)/html -v || (echo "❌ docs-linkcheck failed" && exit 1)
+	@echo "✅ docs-linkcheck passed"
 
 ##@ Cleaning
 
 clean-coverage:  ## Remove coverage reports
-	rm -f coverage.json coverage.xml .coverage
-	rm -rf $(HTMLCOV_DIR)
+	$(RM) coverage.json coverage.xml .coverage .coverage.*
+	$(RM) -r $(HTMLCOV_DIR)
 
 clean-docs:  ## Remove built documentation
-	rm -rf $(DOCS_BUILD_DIR)
-	rm -rf $(TUTORIAL_OUTPUT_DIR)
-	rm -rf $(AUTOAPI_BUILD_DIR)
+	$(RM) -r $(DOCS_BUILD_DIR)
+	$(RM) -r $(TUTORIAL_OUTPUT_DIR)
+	$(RM) -r $(AUTOAPI_BUILD_DIR)
 
 clean-build:  ## Remove build artifacts
-	rm -rf build/ dist/ *.egg-info/
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
+	$(RM) -r build/ dist/ *.egg-info/
+	$(find) . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	$(find) . -type f -name "*.pyc" -delete
+	$(find) . -type f -name "*.pyo" -delete
 
-clean: clean-coverage clean-docs clean-build  ## Remove all generated files (can run with make -j3 clean)
+clean: clean-coverage clean-docs clean-build  ## Remove all generated files
 
 ##@ Pre-commit
 
-pre-commit: format lint test-coverage docs  ## Run all pre-commit checks (format, lint, test with coverage, docs)
+pre-commit: format lint docs-verify test-ci ## Run all pre-commit checks
 	@echo ""
 	@echo "✅ All pre-commit checks passed!"
 
-all-checks: format lint test-coverage test-slow test-integration docs  ## Run everything: format, lint, all tests, and docs with optimal parallelism
-	@echo ""
-	@echo "✅ All checks passed! (format, lint, coverage, slow tests, integration tests, docs)"
+all-checks: pre-commit test-slow test-integration ## Run everything
 
 install:  ## Install firecrown in development mode
 	pip uninstall -y firecrown || true
@@ -311,10 +302,17 @@ install:  ## Install firecrown in development mode
 ##@ Advanced
 
 test-verbose:  ## Run tests with verbose output
-	$(PYTEST_PARALLEL) -vv
+	$(PYTEST) -vv -n auto
 
 test-serial:  ## Run tests serially (no parallelization, useful for debugging)
 	$(PYTEST) -vv
 
 test-failfast:  ## Run tests and stop at first failure
-	$(PYTEST_PARALLEL) -x
+	$(PYTEST) -x -n auto
+
+test-ci: test-all-coverage test-slow test-integration test-example ## Run exactly what CI runs
+
+test-all-coverage: unit-tests-pre unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
+
+unit-tests-core:  ## Internal target for core tests with coverage
+	$(PYTEST) -vv --cov firecrown --cov-report xml --cov-branch -n auto
