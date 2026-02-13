@@ -43,6 +43,7 @@ class BinnedClusterShearProfile(BinnedCluster):
         self.updatable_parameters.export_all_parameters(
             self.cluster_recipe, tools.get_ccl_cosmology()
         )
+        self.cluster_recipe.setup()
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
             if not include_prop:
@@ -63,7 +64,6 @@ class BinnedClusterShearProfile(BinnedCluster):
         a single point of the parameter space, and returns the predicted
         mean deltasigma of the clusters in each bin.
         """
-        self.cluster_recipe.setup()
 
         grouped = self._group_bins_by_edges()
 
