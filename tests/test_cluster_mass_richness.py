@@ -179,7 +179,9 @@ def test_cluster_distribution_unimodal_property(
     # Skip if mass2 is out of range
     assume(mass2 <= 26.0)
 
+    # pylint: disable=unreachable
     mass1_array = np.atleast_1d(mass1)
+
     mass2_array = np.atleast_1d(mass2)
     z_array = np.atleast_1d(z)
 
