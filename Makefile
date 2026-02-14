@@ -3,12 +3,14 @@
 # Useful targets for testing, formatting, linting, and building documentation.
 # Run 'make help' for a list of available targets.
 
-.PHONY: help format lint typecheck test test-coverage test-integration test-slow \
+.PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
 	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
 	test-updatable test-utils test-parameters test-modeling-tools test-models \
-	test-models-cluster test-models-two-point unit-tests
+	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
+	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
+	docs-verify docs-code-check docs-symbol-check docs-linkcheck
 
 # Default target
 .DEFAULT_GOAL := help
@@ -16,6 +18,12 @@
 # Parallel execution configuration
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(JOBS)
+
+# Ensure 'clean' targets run before any other targets on the same command line
+# to avoid race conditions (e.g., 'make clean test -j').
+ifneq ($(filter clean%,$(MAKECMDGOALS)),)
+    $(filter-out clean%,$(MAKECMDGOALS)): | $(filter clean%,$(MAKECMDGOALS))
+endif
 
 # Tools
 PYTHON := python3
@@ -31,9 +39,20 @@ PYLINT_PLUGINS_DIR := pylint_plugins
 DOCS_DIR := docs
 TUTORIAL_DIR := tutorial
 
-# Output directories
-HTMLCOV_DIR := htmlcov
+# Output configuration
+COVERAGE_ID ?=
+COVERAGE_JSON := coverage$(if $(COVERAGE_ID),_$(COVERAGE_ID),).json
+HTMLCOV_DIR := htmlcov$(if $(COVERAGE_ID),_$(COVERAGE_ID),)
 DOCS_BUILD_DIR := $(DOCS_DIR)/_build
+
+# Patterns to preserve during 'make clean'
+CLEAN_EXCLUDES := --exclude=.venv \
+                  --exclude=venv \
+                  --exclude=env \
+                  --exclude=.env \
+                  --exclude=.vscode \
+                  --exclude=.agent \
+                  --exclude=.amazonq
 AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
 # Tutorial configuration
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
@@ -41,7 +60,7 @@ TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
 # Test configuration
 PYTEST_PARALLEL := $(PYTEST) -n auto
 PYTEST_DURATIONS := --durations 10
-PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json --cov-report html --cov-report term-missing --cov-branch
+PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json:$(COVERAGE_JSON) --cov-report html:$(HTMLCOV_DIR) --cov-report term-missing --cov-branch
 
 help:  ## Show common developer targets
 	@echo "Firecrown Developer Quick Reference"
@@ -144,8 +163,8 @@ test:  ## Run tests in parallel (fast, no --runslow)
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS)
 
 test-coverage:  ## Run tests with coverage reporting
-	rm -f coverage.json
-	rm -rf $(HTMLCOV_DIR)
+	$(RM) $(COVERAGE_JSON)
+	$(RM) -r $(HTMLCOV_DIR)
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) $(PYTEST_COV_FLAGS)
 	@echo ""
 	@echo "Coverage reports generated:"
@@ -172,7 +191,8 @@ unit-tests-pre:
 
 # Order-only prerequisite ensures unit-tests-pre runs before any test target
 # but doesn't force a rebuild if it's already "complete".
-test-updatable test-utils test-parameters test-modeling-tools test-models-cluster test-models-two-point: | unit-tests-pre
+test-updatable test-utils test-parameters test-modeling-tools test-models-cluster \
+test-models-two-point unit-tests-core test-slow test-example test-integration: | unit-tests-pre
 
 unit-tests-post: test-updatable test-utils test-parameters test-modeling-tools test-models-cluster test-models-two-point
 	@echo "Combining coverage data..."
@@ -271,21 +291,16 @@ docs-linkcheck: docs-build ## Check documentation for broken links
 ##@ Cleaning
 
 clean-coverage:  ## Remove coverage reports
-	$(RM) coverage.json coverage.xml .coverage .coverage.*
-	$(RM) -r $(HTMLCOV_DIR)
+	git clean -fdX $(CLEAN_EXCLUDES) -- coverage.json coverage.xml .coverage .coverage.* $(HTMLCOV_DIR)
 
 clean-docs:  ## Remove built documentation
-	$(RM) -r $(DOCS_BUILD_DIR)
-	$(RM) -r $(TUTORIAL_OUTPUT_DIR)
-	$(RM) -r $(AUTOAPI_BUILD_DIR)
+	git clean -fdX $(CLEAN_EXCLUDES) -- $(DOCS_BUILD_DIR) $(TUTORIAL_OUTPUT_DIR) $(AUTOAPI_BUILD_DIR)
 
 clean-build:  ## Remove build artifacts
-	$(RM) -r build/ dist/ *.egg-info/
-	$(find) . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	$(find) . -type f -name "*.pyc" -delete
-	$(find) . -type f -name "*.pyo" -delete
+	git clean -fdX $(CLEAN_EXCLUDES) -- build/ dist/ *.egg-info/ firecrown/fctools/__pycache__ tests/__pycache__
 
-clean: clean-coverage clean-docs clean-build  ## Remove all generated files
+clean:  ## Remove all generated files (using .gitignore as truth)
+	git clean -fdX $(CLEAN_EXCLUDES)
 
 ##@ Pre-commit
 
@@ -310,9 +325,9 @@ test-serial:  ## Run tests serially (no parallelization, useful for debugging)
 test-failfast:  ## Run tests and stop at first failure
 	$(PYTEST) -x -n auto
 
-test-ci: test-all-coverage test-slow test-integration test-example ## Run exactly what CI runs
+test-ci: unit-tests-pre test-all-coverage test-slow test-integration test-example ## Run exactly what CI runs
 
-test-all-coverage: unit-tests-pre unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
+test-all-coverage: unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
 
 unit-tests-core:  ## Internal target for core tests with coverage
 	$(PYTEST) -vv --cov firecrown --cov-report xml --cov-branch -n auto

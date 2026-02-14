@@ -178,17 +178,14 @@ jobs:
       - name: Code quality checks
         shell: bash -l {0}
         run: make lint
-      - name: Run unit tests with smart execution
+      - name: Run CI tests
         shell: bash -l {0}
         run: |
           if [[ "${{ matrix.coverage || false }}" == "true" ]]; then
-            make test-all-coverage
+            make test-ci
           else
             make test-all
           fi
-      - name: Running example tests
-        shell: bash -l {0}
-        run: make test-example
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v5
