@@ -168,3 +168,8 @@ tutorial/theoretical_predictions_tutorial.html
 *.Rproj
 coverage.json
 plans/*.md
+.agent
+.amazonq
+AGENTS.md
+.github/copilot-instructions.md
+.github/instructions
