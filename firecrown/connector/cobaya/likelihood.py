@@ -6,6 +6,7 @@ This module provides the class :class:`LikelihoodConnector`, which is an impleme
 of a Cobaya likelihood.
 """
 
+import os
 import warnings
 import numpy as np
 import numpy.typing as npt
@@ -106,7 +107,7 @@ class LikelihoodConnector(Likelihood):
             build_parameters = self.build_parameters
 
         self.likelihood, self.tools = load_likelihood(
-            self.firecrownIni, build_parameters
+            os.path.expandvars(os.path.expanduser(self.firecrownIni)), build_parameters
         )
 
         self.external_obs: (

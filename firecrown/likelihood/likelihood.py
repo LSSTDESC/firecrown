@@ -220,7 +220,7 @@ class NamedParameters:
             val = self.data.get(name, default_value)
 
         assert isinstance(val, str)
-        return val
+        return os.path.expandvars(os.path.expanduser(val))
 
     def get_int(self, name: str, default_value: None | int = None) -> int:
         """Return the named parameter as an int.
