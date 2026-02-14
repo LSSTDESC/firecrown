@@ -4,6 +4,7 @@
 # number of processors available to use, and will cap the count on Windows to
 # avoid hangs.
 jobs=0
+ignore=sndata
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.

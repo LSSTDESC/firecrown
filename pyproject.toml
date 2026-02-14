@@ -52,6 +52,7 @@ exclude_also = [
 
 # Ruff configuration - replaces flake8 and pylint (black still used for formatting)
 [tool.ruff]
+extend-exclude = ["examples/srd_sn/sndata"]
 line-length = 88
 target-version = "py311"
 
@@ -256,7 +257,7 @@ reportUnnecessaryCast = false
 [tool.mypy]
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "build|docs|.venv|venv"
+exclude = "build|docs|.venv|venv|examples/srd_sn/sndata"
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
