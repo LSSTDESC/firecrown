@@ -7,7 +7,7 @@ from firecrown.metadata_functions._type_defs import (
 )
 
 
-def match_name_type(
+def match_name_type(  # noqa: C901
     tracer1: str,
     tracer2: str,
     a: mdt.Measurement,
@@ -111,5 +111,4 @@ def measurements_from_index(
         b,
         require_convetion=True,
     )
-    print(f" [] >>>>>", n1, a, n2, b)
     return n1, a, n2, b
