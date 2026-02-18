@@ -15,7 +15,18 @@ def match_name_type(
     require_convetion: bool = False,
 ) -> tuple[bool, str, mdt.Measurement, str, mdt.Measurement]:
     """Use the naming convention to assign the right measurement to each tracer."""
+    # Handle auto-correlations (tracer1 == tracer2)
+    if tracer1 == tracer2:
+        if a == b:
+            return True, tracer1, a, tracer2, b
+        raise ValueError(
+            f"Invalid SACC file, auto-correlation tracers ({tracer1}, {tracer2}) "
+            f"must have matching measurements ({a}, {b})."
+        )
+
+    # Handle cross-correlations
     for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
+        # Lens-source cross-correlation
         if mdt.LENS_REGEX.match(n1) and mdt.SOURCE_REGEX.match(n2):
             if a in mdt.GALAXY_SOURCE_TYPES and b in mdt.GALAXY_LENS_TYPES:
                 return True, n1, b, n2, a
@@ -23,17 +34,30 @@ def match_name_type(
                 return True, n1, a, n2, b
             raise ValueError(
                 "Invalid SACC file, tracer names do not respect "
-                "the naming convetion."
+                "the naming convention."
             )
-    if require_convetion:
-        if mdt.LENS_REGEX.match(tracer1) and mdt.LENS_REGEX.match(tracer2):
-            return False, tracer1, a, tracer2, b
-        if mdt.SOURCE_REGEX.match(tracer1) and mdt.SOURCE_REGEX.match(tracer2):
-            return False, tracer1, a, tracer2, b
+        # Source-source cross-correlation
+        if mdt.SOURCE_REGEX.match(n1) and mdt.SOURCE_REGEX.match(n2):
+            if a in mdt.GALAXY_SOURCE_TYPES and b in mdt.GALAXY_SOURCE_TYPES:
+                return True, n1, a, n2, b
 
+    # CMB-related cross-correlation
+    if mdt.CMB_REGEX.match(tracer1) and not mdt.CMB_REGEX.match(tracer2):
+        if a == mdt.CMB.CONVERGENCE:
+            return True, tracer1, a, tracer2, b
+        if b == mdt.CMB.CONVERGENCE:
+            return True, tracer1, b, tracer2, a
+
+    if mdt.CMB_REGEX.match(tracer2) and not mdt.CMB_REGEX.match(tracer1):
+        if a == mdt.CMB.CONVERGENCE:
+            return True, tracer1, b, tracer2, a
+        if b == mdt.CMB.CONVERGENCE:
+            return True, tracer1, a, tracer2, b
+
+    if require_convetion:
         raise ValueError(
             f"Invalid tracer names ({tracer1}, {tracer2}) "
-            f"do not respect the naming convetion."
+            f"do not respect the naming convention."
         )
 
     return False, tracer1, a, tracer2, b
@@ -87,4 +111,5 @@ def measurements_from_index(
         b,
         require_convetion=True,
     )
+    print(f" [] >>>>>", n1, a, n2, b)
     return n1, a, n2, b

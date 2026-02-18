@@ -239,6 +239,29 @@ class TwoPoint(Statistic):
             for n1, a, n2, b in [measurements_from_index(metadata_index)]
         ]
         return UpdatableCollection(two_point_list)
+    # @classmethod
+    # def from_metadata_index(
+    #     cls,
+    #     metadata_indices: Sequence[TwoPointHarmonicIndex | TwoPointRealIndex],
+    #     tp_factory: TwoPointFactory,
+    # ) -> UpdatableCollection[TwoPoint]:
+    #     """Create an UpdatableCollection of TwoPoint statistics."""
+    #     two_point_list = []
+    #     for metadata_index in metadata_indices:
+    #         for n1, a, n2, b in [measurements_from_index(metadata_index)]:
+    #             print(f"Processing tracers: {n1}, {n2} with measurements: {a}, {b}")
+    #             source0 = use_source_factory_metadata_index(n1, a, tp_factory)
+    #             source1 = use_source_factory_metadata_index(n2, b, tp_factory)
+    #             print(f"Source0 factory: {type(source0).__name__}, Source1 factory: {type(source1).__name__}")
+    #             two_point_list.append(
+    #                 cls(
+    #                     sacc_data_type=metadata_index["data_type"],
+    #                     source0=source0,
+    #                     source1=source1,
+    #                     int_options=tp_factory.int_options,
+    #                 )
+    #             )
+    #     return UpdatableCollection(two_point_list)
 
     @classmethod
     def _from_metadata_single(
@@ -815,6 +838,26 @@ class TwoPointFactory(BaseModel):
                 )
             self._cmb_factory_map[cmb_factory.type_source] = cmb_factory
 
+    # def get_factory(
+    #     self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
+    # ) -> WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory:
+    #     """Get the Factory for the given Measurement and TypeSource."""
+    #     candidates: Sequence[tuple[tuple[str, ...], dict, str]] = [
+    #         (GALAXY_SOURCE_TYPES, self._wl_factory_map, "WeakLensingFactory"),
+    #         (GALAXY_LENS_TYPES, self._nc_factory_map, "NumberCountsFactory"),
+    #         (CMB_TYPES, self._cmb_factory_map, "CMBConvergenceFactory"),
+    #     ]
+    #     for type_set, factory_map, factory_name in candidates:
+    #         if measurement in type_set:
+    #             if type_source not in factory_map:
+    #                 raise ValueError(
+    #                     f"No {factory_name} found for type_source {type_source}."
+    #                 )
+    #             return factory_map[type_source]
+
+    #     raise ValueError(
+    #         f"Factory not found for measurement {measurement}, it is not supported."
+    #     )
     def get_factory(
         self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
     ) -> WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory:
@@ -830,7 +873,9 @@ class TwoPointFactory(BaseModel):
                     raise ValueError(
                         f"No {factory_name} found for type_source {type_source}."
                     )
-                return factory_map[type_source]
+                factory = factory_map[type_source]
+                print(f"[get_factory] Using {factory_name} for measurement {measurement} with type_source {type_source}")
+                return factory
 
         raise ValueError(
             f"Factory not found for measurement {measurement}, it is not supported."
@@ -867,18 +912,12 @@ def use_source_factory(
     source = source_factory.create(inferred_galaxy_zdist)
     return source
 
-
 def use_source_factory_metadata_index(
-    sacc_tracer: str,
-    measurement: Measurement,
-    tp_factory: TwoPointFactory,
-) -> WeakLensing | NumberCounts | CMBConvergence:
-    """Apply the factory to create a source using metadata only.
-
-    This method is used when the galaxy redshift distribution is not available. It
-    defaults to using the factory associated with the default TypeSource, since SACC
-    does not encode TypeSource information.
-    """
-    source_factory = tp_factory.get_factory(measurement)
-    source = source_factory.create_from_metadata_only(sacc_tracer)
-    return source
+        sacc_tracer: str,
+        measurement: Measurement,
+        tp_factory: TwoPointFactory,
+    ) -> WeakLensing | NumberCounts | CMBConvergence:
+        """Apply the factory to create a source using metadata only."""
+        source_factory = tp_factory.get_factory(measurement)
+        source = source_factory.create_from_metadata_only(sacc_tracer)
+        return source

@@ -293,6 +293,7 @@ EXACT_MATCH_MEASUREMENTS = (Galaxies.PART_OF_XI_MINUS, Galaxies.PART_OF_XI_PLUS)
 INCOMPATIBLE_MEASUREMENTS = (Galaxies.SHEAR_T,)
 LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
+CMB_REGEX = re.compile(r"^(cmb\d+|cmb_convergence)$")  # Allow cmb_convergence
 GALAXY_SOURCE_TYPES = (
     Galaxies.SHEAR_E,
     Galaxies.SHEAR_T,
