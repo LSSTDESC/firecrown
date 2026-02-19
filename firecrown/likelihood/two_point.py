@@ -830,7 +830,8 @@ class TwoPointFactory(BaseModel):
                     raise ValueError(
                         f"No {factory_name} found for type_source {type_source}."
                     )
-                return factory_map[type_source]
+                factory = factory_map[type_source]
+                return factory
 
         raise ValueError(
             f"Factory not found for measurement {measurement}, it is not supported."
@@ -873,12 +874,7 @@ def use_source_factory_metadata_index(
     measurement: Measurement,
     tp_factory: TwoPointFactory,
 ) -> WeakLensing | NumberCounts | CMBConvergence:
-    """Apply the factory to create a source using metadata only.
-
-    This method is used when the galaxy redshift distribution is not available. It
-    defaults to using the factory associated with the default TypeSource, since SACC
-    does not encode TypeSource information.
-    """
+    """Apply the factory to create a source using metadata only."""
     source_factory = tp_factory.get_factory(measurement)
     source = source_factory.create_from_metadata_only(sacc_tracer)
     return source
