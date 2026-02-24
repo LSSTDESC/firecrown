@@ -3,6 +3,8 @@
 # Useful targets for testing, formatting, linting, and building documentation.
 # Run 'make help' for a list of available targets.
 
+SHELL := /bin/bash
+
 .PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
