@@ -46,7 +46,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 3
+  CACHE_VERSION: 4
 
 jobs:
   quick-validation:
@@ -148,14 +148,14 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
         run: |
-          # Parallel setup of dependencies
-          (source ${CONDA_PREFIX}/bin/cosmosis-configure && \
-           pushd ${CONDA_PREFIX} && \
-           cosmosis-build-standard-library && \
-           export CSL_DIR=${PWD}/cosmosis-standard-library && \
-           conda env config vars set CSL_DIR=${CSL_DIR}) &
-          (python -m pip install cobaya --no-deps) &
-          wait
+          # Sequential setup of dependencies to avoid environment corruption
+          source ${CONDA_PREFIX}/bin/cosmosis-configure
+          pushd ${CONDA_PREFIX}
+          cosmosis-build-standard-library
+          export CSL_DIR=${PWD}/cosmosis-standard-library
+          conda env config vars set CSL_DIR=${CSL_DIR}
+          popd
+          python -m pip install cobaya --no-deps
       - name: Remove redundant rpath and import isitgr
         if: ${{ (matrix.os == 'macos') && (steps.cache.outputs.cache-hit != 'true') }}
         shell: bash -l {0}
@@ -248,14 +248,14 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
         run: |
-          # Parallel setup of dependencies
-          (source ${CONDA_PREFIX}/bin/cosmosis-configure && \
-           pushd ${CONDA_PREFIX} && \
-           cosmosis-build-standard-library && \
-           export CSL_DIR=${PWD}/cosmosis-standard-library && \
-           conda env config vars set CSL_DIR=${CSL_DIR}) &
-          (python -m pip install cobaya --no-deps) &
-          wait
+          # Sequential setup of dependencies to avoid environment corruption
+          source ${CONDA_PREFIX}/bin/cosmosis-configure
+          pushd ${CONDA_PREFIX}
+          cosmosis-build-standard-library
+          export CSL_DIR=${PWD}/cosmosis-standard-library
+          conda env config vars set CSL_DIR=${CSL_DIR}
+          popd
+          python -m pip install cobaya --no-deps
       - name: Save conda-forge, CosmoSIS and Cobaya environment
         id: cache-primes-save
         uses: actions/cache/save@v4
