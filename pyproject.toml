@@ -207,6 +207,7 @@ known-third-party = ["numpy", "scipy", "pandas", "matplotlib", "astropy", "pyccl
 [tool.black]
 line-length = 88
 target-version = ['py311']
+extend-exclude = 'examples/srd_sn/sndata'
 
 # Pyright configuration - runs alongside mypy without conflicts
 [tool.pyright]
@@ -263,7 +264,7 @@ reportUnnecessaryCast = false
 [tool.mypy]
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "build|docs|.venv|venv"
+exclude = "build|docs|.venv|venv|examples/srd_sn/sndata"
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
