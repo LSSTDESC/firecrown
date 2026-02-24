@@ -74,6 +74,7 @@ help:  ## Show common developer targets
 	@echo "Before committing:"
 	@echo "  make unit-tests      - Verify 100% coverage on changed modules"
 	@echo "  make docs            - Build docs if you changed tutorials/docstrings"
+	@echo "  make clean-docs      - Remove all generated tutorials and API docs"
 	@echo ""
 	@echo "Before pushing:"
 	@echo "  make pre-commit      - Comprehensive check (format, lint, docs, full tests)"
@@ -176,10 +177,18 @@ test-slow:  ## Run only slow tests (with --runslow)
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) -m slow --runslow $(TESTS_DIR)
 
 test-example:  ## Run example tests only
-	$(PYTEST) -vv -s --example -m example tests/example
+	@tmpfile=$$(mktemp /tmp/test-example.XXXXXX); \
+	set -o pipefail; \
+	if $(PYTEST) -v --example -m example tests/example 2>&1 | tee "$$tmpfile"; then \
+		rm -f "$$tmpfile"; \
+	else \
+		echo ""; \
+		echo "❌ test-example failed. Output saved to: $$tmpfile"; \
+		exit 1; \
+	fi
 
 test-integration:  ## Run integration tests only
-	$(PYTEST) -vv -s -m integration tests/integration
+	$(PYTEST) -v -s -m integration tests/integration
 
 test-all: test-slow test-example test-integration test  ## Run all tests (slow + example + integration)
 
