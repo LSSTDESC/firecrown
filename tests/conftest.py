@@ -90,6 +90,7 @@ def pytest_addoption(parser):
 
     --runslow: used to run tests marked as slow, which are otherwise not run.
     --example: used to run only example tests, which are otherwise not run.
+    --runintegration: used to run tests marked as integration, which are otherwise not run.
     """
     parser.addoption(
         "--runslow", action="store_true", default=False, help="run slow tests"
@@ -100,6 +101,12 @@ def pytest_addoption(parser):
         default=False,
         help="run example tests",
     )
+    parser.addoption(
+        "--runintegration",
+        action="store_true",
+        default=False,
+        help="run integration tests",
+    )
 
 
 def pytest_configure(config):
@@ -108,6 +115,10 @@ def pytest_configure(config):
     Use the marker `slow` for any test that takes more than a second to run.
     Tests marked as `slow` are not run unless the user requests them by specifying
     the --runslow flag to the pytest program.
+
+    Use the marker `integration` for tests that verify independent units work together.
+    Tests marked as `integration` are not run unless the user requests them by
+    specifying the --runintegration flag to the pytest program.
     """
     config.addinivalue_line("markers", "slow: mark test as slow to run")
 
@@ -120,6 +131,9 @@ def pytest_collection_modifyitems(config, items):
 
     if not config.getoption("--runslow"):
         _skip_tests(items, "slow", "need --runslow option to run")
+
+    if not config.getoption("--runintegration"):
+        _skip_tests(items, "integration", "need --runintegration option to run")
 
 
 def _skip_tests(items, keyword, reason):

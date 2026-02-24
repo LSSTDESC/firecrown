@@ -5,7 +5,7 @@
 
 SHELL := /bin/bash
 
-.PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
+.PHONY: help format lint typecheck test test-example test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
 	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
@@ -71,7 +71,7 @@ help:  ## Show common developer targets
 	@echo "During development:"
 	@echo "  make format          - Auto-format code (run frequently)"
 	@echo "  make lint            - Check code quality (before commit)"
-	@echo "  make test            - Run fast tests (during development)"
+	@echo "  make test            - Run tests with coverage (during development)"
 	@echo ""
 	@echo "Before committing:"
 	@echo "  make unit-tests      - Verify 100% coverage on changed modules"
@@ -95,7 +95,7 @@ help-all:  ## Show this help message
 	@echo "Common workflows:"
 	@echo "  make format          - Format all code with black"
 	@echo "  make lint            - Run all linting tools (parallel by default)"
-	@echo "  make test            - Run fast tests (parallel by default)"
+	@echo "  make test            - Run tests with coverage (parallel by default)"
 	@echo "  make unit-tests      - Run all unit tests with 100% coverage check"
 	@echo "  make test-ci         - Run the full CI suite (all tests, slow, examples)"
 	@echo "  make docs            - Build and verify all documentation (tutorials + API)"
@@ -162,10 +162,7 @@ typecheck: lint-mypy  ## Alias for mypy type checking
 
 ##@ Testing
 
-test:  ## Run tests in parallel (fast, no --runslow)
-	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS)
-
-test-coverage:  ## Run tests with coverage reporting
+test:  ## Run tests in parallel with coverage reporting
 	$(RM) $(COVERAGE_JSON)
 	$(RM) -r $(HTMLCOV_DIR)
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) $(PYTEST_COV_FLAGS)
@@ -190,7 +187,7 @@ test-example:  ## Run example tests only
 	fi
 
 test-integration:  ## Run integration tests only
-	$(PYTEST) -v -s -m integration tests/integration
+	$(PYTEST) -v -s --runintegration -m integration tests/integration
 
 test-all: test-slow test-example test-integration test  ## Run all tests (slow + example + integration)
 
