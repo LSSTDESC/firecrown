@@ -31,7 +31,7 @@ To maintain high code quality and consistency, we use several automated tools. W
 | :--- | :--- | :--- |
 | `make format` | Automatically format all code using `black` | Frequently during development |
 | `make lint` | Run all linters (`black`, `flake8`, `mypy`, `pylint`) in parallel | Before every commit |
-| `make test` | Run fast unit tests in parallel | Regularly during development |
+| `make test` | Run unit tests in parallel with coverage reporting | Regularly during development |
 | `make unit-tests` | Run all unit tests with 100% per-component coverage check | Before pushing |
 | `make test-ci` | Run the full test suite exactly as the CI system does | Final check before pushing |
 | `make docs` | Build and verify all documentation (tutorials + API) | When changing tutorials or docstrings |
@@ -50,6 +50,7 @@ graph TD
     
     pre-commit["make pre-commit"]:::main
     test-ci["make test-ci"]:::main
+    test-all["make test-all"]:::main
     docs["make docs"]:::main
     unit-tests["make unit-tests"]:::main
     
@@ -65,6 +66,12 @@ graph TD
     test-ci --> test-slow["make test-slow"]
     test-ci --> test-integration["make test-integration"]
     test-ci --> test-example["make test-example"]
+    
+    %% Test-all dependencies
+    test-all --> test["make test\n(+coverage)"]
+    test-all --> test-slow
+    test-all --> test-integration
+    test-all --> test-example
     
     %% Test coverage dependencies
     test-all-coverage --> unit-tests-core["unit-tests-core"]
@@ -147,6 +154,13 @@ graph TD
     barrier -.->|then parallel| test-slow["test-slow<br/>(pytest -n auto)"]:::pytest
     barrier -.->|then parallel| test-int["test-integration"]:::sequential
     barrier -.->|then parallel| test-ex["test-example"]:::sequential
+    
+    %% Test-all parallelism
+    test-all["make test-all<br/>(parallel)"]:::parallel
+    test-all --> test-run["test<br/>(pytest -n auto<br/>+coverage)"]:::pytest
+    test-all --> test-slow
+    test-all --> test-int
+    test-all --> test-ex
     
     %% Unit tests post parallelism
     test-all-cov --> unit-post["unit-tests-post<br/>(parallel)"]:::parallel
