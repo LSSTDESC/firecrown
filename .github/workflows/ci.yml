@@ -41,14 +41,12 @@ jobs:
       - uses: actions/checkout@v5
       - name: Check branch against supported list
         id: check
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "result=true" >> $GITHUB_OUTPUT
-          elif python3 -c "
-import json, sys
-branches = json.load(open('.github/ci-branches.json'))
-sys.exit(0 if '${{ github.ref_name }}' in branches else 1)
-"; then
+          elif python3 .github/check_branch.py; then
             echo "result=true" >> $GITHUB_OUTPUT
           else
             echo "result=false" >> $GITHUB_OUTPUT
