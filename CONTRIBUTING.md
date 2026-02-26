@@ -180,6 +180,52 @@ graph TD
 - **Barrier (🚧)**: `unit-tests-pre` runs first, then its dependent targets run in parallel
 - **Tutorials**: Specifically run sequentially due to Quarto's shared asset limitations
 
+## CI System Architecture
+
+Firecrown's CI is split across four files in `.github/`.
+This structure keeps all job definitions in one place,
+and the list of supported long-lived branches in exactly one place,
+while allowing both push/PR events and nightly scheduled runs
+to target multiple branches without any duplication.
+
+| File | Purpose |
+| :--- | :--- |
+| `ci-branches.json` | **The single source of truth** for which long-lived branches receive full CI on every push and are tested nightly. Edit only this file to add or remove a branch. |
+| `workflows/ci-reusable.yml` | The single source of truth for all CI job definitions (all three stages). Called by the other two workflows. Never triggered directly by GitHub events. |
+| `workflows/ci.yml` | Triggered on every `push` (all branches) and on `pull_request`. A gateway job reads `ci-branches.json` and short-circuits the pipeline for pushes to unsupported branches. Pull requests always run. |
+| `workflows/nightly.yml` | Triggered by the daily cron schedule. Reads `ci-branches.json` at runtime to build the branch matrix, then calls `ci-reusable.yml` once per branch. |
+
+### How it works
+
+`ci-reusable.yml` accepts an optional `ref` string input.
+When `ref` is empty (the default), `actions/checkout` falls back to the commit
+that triggered the calling workflow.
+When `ref` is a branch name (as supplied by `nightly.yml`),
+all checkout steps test that specific branch's code.
+
+Because GitHub always executes scheduled workflows from the repository's
+**default branch** (`master`), `nightly.yml` must explicitly supply `ref`
+to test any branch other than `master`.
+The reusable workflow definition used is always the one on `master`,
+but the source code and `environment.yml` checked out during testing
+come from the branch named in `ref`.
+
+For push events, `ci.yml` intentionally does not filter by branch name in its
+`on.push.branches` trigger (which would require duplicating the list).
+Instead, a lightweight `should-run` gateway job reads `ci-branches.json`
+at runtime and sets an output flag; the actual CI call is skipped if the
+pushed branch is not in the supported list.
+
+### Adding or removing a supported branch
+
+Edit `.github/ci-branches.json` only — for example, to add `v1.15`:
+
+```json
+["master", "v1.14", "v1.15"]
+```
+
+No changes to any workflow file are needed.
+
 ## Pull Request Process
 
 1. **Create a Branch**: Always work on a new branch for your feature or bug fix.
