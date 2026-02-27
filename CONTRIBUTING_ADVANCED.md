@@ -148,17 +148,17 @@ graph TD
 
 ## CI System Architecture
 
-Firecrown's CI is split across four files in `.github/`.
-This structure keeps all job definitions in one place,
+Firecrown's CI is split across three files in `.github/`.
+This structure keeps all job definitions in one place
 and the list of supported long-lived branches in exactly one place,
-while allowing both push/PR events and nightly scheduled runs
+while allowing both PR and nightly scheduled runs
 to target multiple branches without any duplication.
 
 | File | Purpose |
 | :--- | :--- |
-| `ci-branches.json` | **The single source of truth** for which long-lived branches receive full CI on every push and are tested nightly. Edit only this file to add or remove a branch. |
+| `ci-branches.json` | **The single source of truth** for which long-lived branches are tested nightly. Edit only this file to add or remove a branch. |
 | `workflows/ci-reusable.yml` | The single source of truth for all CI job definitions (all three stages). Called by the other two workflows. Never triggered directly by GitHub events. |
-| `workflows/ci.yml` | Triggered on every `push` (all branches) and on `pull_request`. A gateway job reads `ci-branches.json` and short-circuits the pipeline for pushes to unsupported branches. Pull requests always run. |
+| `workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` unconditionally. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
 | `workflows/nightly.yml` | Triggered by the daily cron schedule. Reads `ci-branches.json` at runtime to build the branch matrix, then calls `ci-reusable.yml` once per branch. |
 
 ### How it works
@@ -175,12 +175,6 @@ to test any branch other than `master`.
 The reusable workflow definition used is always the one on `master`,
 but the source code and `environment.yml` checked out during testing
 come from the branch named in `ref`.
-
-For push events, `ci.yml` intentionally does not filter by branch name in its
-`on.push.branches` trigger (which would require duplicating the list).
-Instead, a lightweight `should-run` gateway job reads `ci-branches.json`
-at runtime and sets an output flag; the actual CI call is skipped if the
-pushed branch is not in the supported list.
 
 ### Adding or removing a supported branch
 

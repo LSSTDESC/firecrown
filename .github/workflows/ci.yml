@@ -1,60 +1,20 @@
-# CI Entry Point - Push and Pull Request Events
-# ==============================================
+# CI Entry Point - Pull Request Events
+# =====================================
 # This is a thin caller workflow.
 # All job definitions live in ci-reusable.yml.
 #
-# The canonical list of long-lived branches that receive full CI on every
-# push is defined in .github/ci-branches.json.  That is the ONLY place
-# that list is maintained.  Adding or removing a branch requires editing
-# only that one file.
-#
-# How branch filtering works:
-#   - The push trigger fires for ALL branches (no static filter here,
-#     because a static filter would duplicate the branch list).
-#   - The 'should-run' job reads ci-branches.json at runtime and outputs
-#     'true' only when the pushed branch is in the supported list.
-#   - The 'ci' job is gated on that output.
-#   - Pull requests always run CI regardless of the target branch or
-#     which files were changed.  Path filtering must not apply to PRs,
-#     because every PR HEAD commit must receive a definitive check status
-#     before the PR can be merged.
+# This workflow fires only on pull_request events.  There is no push
+# trigger because all commits to long-lived branches arrive via merged
+# PRs (which have already run CI), and the nightly workflow handles
+# ongoing health checks of those branches.  A push trigger would fire
+# a redundant second check suite for every PR commit, producing
+# duplicate "Expected" check entries that never resolve cleanly.
 
 name: firecrown-ci
 on:
-  push:
-    branches:
-      - "**"
-    paths-ignore:
-      - "docs/**/*.md"
-      - "*.md"
   pull_request:
-    branches:
-      - "*"
 
 jobs:
-  should-run:
-    name: Check if branch is supported
-    runs-on: ubuntu-latest
-    outputs:
-      result: ${{ steps.check.outputs.result }}
-    steps:
-      - uses: actions/checkout@v5
-      - name: Check branch against supported list
-        id: check
-        env:
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "result=true" >> $GITHUB_OUTPUT
-          elif python3 .github/check_branch.py; then
-            echo "result=true" >> $GITHUB_OUTPUT
-          else
-            echo "result=false" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
   ci:
-    needs: [should-run]
-    if: needs.should-run.outputs.result == 'true'
     uses: ./.github/workflows/ci-reusable.yml
     secrets: inherit
