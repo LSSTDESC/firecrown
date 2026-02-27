@@ -14,7 +14,10 @@
 #   - The 'should-run' job reads ci-branches.json at runtime and outputs
 #     'true' only when the pushed branch is in the supported list.
 #   - The 'ci' job is gated on that output.
-#   - Pull requests always run CI regardless of the target branch.
+#   - Pull requests always run CI regardless of the target branch or
+#     which files were changed.  Path filtering must not apply to PRs,
+#     because every PR HEAD commit must receive a definitive check status
+#     before the PR can be merged.
 
 name: firecrown-ci
 on:
@@ -27,9 +30,6 @@ on:
   pull_request:
     branches:
       - "*"
-    paths-ignore:
-      - "docs/**/*.md"
-      - "*.md"
 
 jobs:
   should-run:
