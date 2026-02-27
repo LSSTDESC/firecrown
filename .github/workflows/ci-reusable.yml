@@ -9,7 +9,13 @@
 # STAGE 1: QUICK VALIDATION (Parallel with Stage 2)
 # - Goal: 2-3 minute feedback on common PR issues.
 # - Actions: Linting, formatting, and Jupyter Notebook cleanliness checks.
-# - Optimization: Uses environment caching to minimize setup time.
+# - Optimization: Uses a dedicated conda cache (key suffix "-lint") that is
+#   intentionally separate from the full-matrix cache.  The two jobs run in
+#   parallel and would otherwise race to write the same cache key; because
+#   quick-validation finishes first it would overwrite the key with an
+#   incomplete environment (no CosmoSIS/Cobaya), breaking the matrix job on
+#   every subsequent run until CACHE_VERSION was bumped.  Do NOT remove the
+#   "-lint" suffix.
 #
 # STAGE 2: FULL COMPATIBILITY MATRIX
 # - Goal: Verify Firecrown across all supported environments.
@@ -83,7 +89,7 @@ jobs:
         id: cache
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-Linux-X64-py3.12-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
+          key: conda-Linux-X64-py3.12-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}-lint
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -169,6 +175,7 @@ jobs:
           install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
             python -c "import isitgr"
       - name: Save conda-forge, CosmoSIS and Cobaya environment
+        if: steps.cache.outputs.cache-hit != 'true'
         id: cache-primes-save
         uses: actions/cache/save@v4
         with:
@@ -265,6 +272,7 @@ jobs:
           popd
           python -m pip install cobaya --no-deps
       - name: Save conda-forge, CosmoSIS and Cobaya environment
+        if: steps.cache.outputs.cache-hit != 'true'
         id: cache-primes-save
         uses: actions/cache/save@v4
         with:
