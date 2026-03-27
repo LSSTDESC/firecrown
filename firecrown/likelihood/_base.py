@@ -32,6 +32,7 @@ import pyccl.nl_pt
 import sacc
 from pydantic import BaseModel, ConfigDict, Field
 from scipy.interpolate import Akima1DInterpolator
+from scipy.signal import fftconvolve
 
 from firecrown.data_types import DataVector, TheoryVector
 from firecrown.modeling_tools import ModelingTools
@@ -808,6 +809,7 @@ _SourceGalaxySystematicT = TypeVar(
 
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z = 1.0
+SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_V = 0.0
 
 
 def dndz_shift_and_stretch_active(
@@ -1004,6 +1006,150 @@ class PhotoZShiftandStretchFactory(BaseModel):
     def create_global(self) -> PhotoZShiftandStretch:
         """Create a PhotoZShiftandStretch object with the given tracer name."""
         raise ValueError("PhotoZShiftandStretch cannot be global.")
+
+
+def dndz_stretch_fog_gaussian(
+    z,
+    dndz,
+    sigma_v: float,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Apply the Fingers-of-God (FoG) effect on the spec-z distribution.
+
+    This function applies a gaussian kernel to model the FoG effect
+    due to velocity dispersion within a redshift bin.
+
+    :param z: the redshifts
+    :param dndz: the dndz
+    :param sigma_v: the velocity dispersion within the redshift bin in km/s
+    :return: the shifted and stretched dndz
+    """
+    z = np.asarray(z)
+    dndz = np.asarray(dndz)
+    c = 299792.458  # km/s
+
+    if sigma_v < 0.0:
+        raise ValueError("Stretch Parameter (sigma_v) must be positive")
+    if sigma_v == 0.0:
+        return z, dndz
+
+    n = z.shape[0]
+    dz = z[1] - z[0]
+
+    z_mean = np.trapezoid(dndz * z, z)
+    sigma_s = (1 + z_mean) * sigma_v / c
+
+    z_kernel = (np.arange(n) - n // 2) * dz
+    kernel = np.exp(-0.5 * (z_kernel / sigma_s) ** 2)
+    kernel /= np.trapezoid(kernel, z)
+
+    dndz_new = fftconvolve(dndz, kernel, mode="same")
+    dndz_new /= np.trapezoid(dndz_new, z)
+
+    return z, dndz_new
+
+
+def dndz_stretch_fog_lorentzian(
+    z,
+    dndz,
+    sigma_v: float,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Apply the Fingers-of-God (FoG) effect on the spec-z distribution.
+
+    This function applies a lorentzian kernel to model the FoG effect
+    due to velocity dispersion within a redshift bin.
+
+    :param z: the redshifts
+    :param dndz: the dndz
+    :param sigma_v: the velocity dispersion within the redshift bin in km/s
+    :return: the shifted and stretched dndz
+    """
+    z = np.asarray(z)
+    dndz = np.asarray(dndz)
+    c = 299792.458  # km/s
+
+    if sigma_v < 0.0:
+        raise ValueError("Stretch Parameter (sigma_v) must be positive")
+    if sigma_v == 0.0:
+        return z, dndz
+
+    n = z.shape[0]
+    dz = z[1] - z[0]
+
+    z_mean = np.trapezoid(dndz * z, z)
+    sigma_s = (1 + z_mean) * sigma_v / c
+
+    z_kernel = (np.arange(n) - n // 2) * dz
+    arg = -np.sqrt(2) * np.abs(z_kernel) / sigma_s
+    arg = np.clip(arg, -700, 0)  # avoid overflow
+    kernel = np.exp(arg)
+    kernel /= np.trapezoid(kernel, z)
+
+    dndz_new = fftconvolve(dndz, kernel, mode="same")
+    dndz_new /= np.trapezoid(dndz_new, z)
+
+    return z, dndz_new
+
+
+class SourceGalaxySpecZStretch(
+    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
+):
+    """A spec-z convolution for the Fingers-of-God (FoG) effect.
+
+    This systematic convolves the spec-z distribution with a kernel to model
+    the FoG effect.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar sigma_v: the spec-z stretch.
+    """
+
+    def __init__(self, sacc_tracer: str, kernel: str = "gaussian") -> None:
+        """Create a SpecZShift object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        :param kernel: which kernel to use when convolving the distribution.
+        """
+        super().__init__(sacc_tracer)
+
+        self.sigma_v = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_V
+        )
+
+        if kernel == "lorentzian":
+            self._transform = dndz_stretch_fog_lorentzian
+        else:
+            self._transform = dndz_stretch_fog_gaussian
+
+    def apply(self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+        """Apply a convolution to the spec-z distribution of a source."""
+        new_z, new_dndz = self._transform(tracer_arg.z, tracer_arg.dndz, self.sigma_v)
+        return replace(tracer_arg, z=new_z, dndz=new_dndz)
+
+
+class SpecZStretch(SourceGalaxySpecZStretch):
+    """Spec-z stretch systematic."""
+
+
+class SpecZStretchFactory(BaseModel):
+    """Factory class for SpecZStretch objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["SpecZStretchFactory"],
+        Field(description="The type of the systematic."),
+    ] = "SpecZStretchFactory"
+
+    def create(self, bin_name: str) -> SpecZStretch:
+        """Create a SpecZStretch object with the given tracer name."""
+        return SpecZStretch(bin_name)
+
+    def create_global(self) -> SpecZStretch:
+        """Create a SpecZStretch object with the given tracer name."""
+        raise ValueError("SpecZStretch cannot be global.")
 
 
 class SourceGalaxySelectField(
