@@ -8,6 +8,7 @@ Fixtures defined here are available to any test in Firecrown.
 import ast
 from itertools import product
 import sys
+from typing import assert_never
 import pytest
 
 import pyccl
@@ -23,14 +24,17 @@ from firecrown.updatable import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (
-    Measurement,
+    ALL_MEASUREMENTS,
+    Clusters,
+    CMB,
+    CMBLensing,
     Galaxies,
-    InferredGalaxyZDist,
+    Measurement,
+    TomographicBin,
     TracerNames,
     TwoPointHarmonic,
-    TwoPointXY,
     TwoPointReal,
-    ALL_MEASUREMENTS,
+    TwoPointXY,
 )
 from firecrown.metadata_types._compatibility import (
     measurement_is_compatible_harmonic,
@@ -43,7 +47,6 @@ import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._cmb as cmb
-from firecrown.metadata_types import Clusters, CMB
 
 
 # Helper function for creating AST ClassDef nodes across Python versions
@@ -230,19 +233,19 @@ def fixture_tools_with_vanilla_cosmology() -> ModelingTools:
 
 
 @pytest.fixture(name="harmonic_bin_1")
-def fixture_harmonic_bin_1(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 5 bins."""
+def fixture_harmonic_bin_1(request) -> TomographicBin:
+    """Generate an TomographicBin object with 5 bins."""
     return request.param
 
 
-def _make_harmonic_bin(name: str, z_mean: float, m: Measurement) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 5 bins."""
+def _make_harmonic_bin(name: str, z_mean: float, m: Measurement) -> TomographicBin:
+    """Generate an TomographicBin object with 5 bins."""
     z = np.linspace(0.0, 1.0, 256)  # Necessary to match the default lensing kernel size
     z_sigma = 0.05
     dndz = np.exp(-0.5 * (z - z_mean) ** 2 / z_sigma**2) / (
         np.sqrt(2 * np.pi) * z_sigma
     )
-    x = InferredGalaxyZDist(bin_name=name, z=z, dndz=dndz, measurements={m})
+    x = TomographicBin(bin_name=name, z=z, dndz=dndz, measurements={m})
     return x
 
 
@@ -282,36 +285,34 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 @pytest.fixture(
     name="all_harmonic_bins",
 )
-def fixture_all_harmonic_bins() -> list[InferredGalaxyZDist]:
-    """Generate a list of InferredGalaxyZDist objects with 4 bins."""
+def fixture_all_harmonic_bins() -> list[TomographicBin]:
+    """Generate a list of TomographicBin objects with 5 bins."""
     z = np.linspace(0.0, 1.0, 256)
     dndzs = [
         np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
         np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
     ]
     return [
-        InferredGalaxyZDist(
-            bin_name=f"bin_{i + 1}",
-            z=z,
-            dndz=dndzs[i],
-            measurements={Galaxies.COUNTS, Galaxies.SHEAR_E},
+        TomographicBin(
+            bin_name=f"bin_{int(m)}_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
         )
         for i in range(2)
+        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
     ]
 
 
 @pytest.fixture(
     name="many_harmonic_bins",
 )
-def make_many_harmonic_bins() -> list[InferredGalaxyZDist]:
-    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+def make_many_harmonic_bins() -> list[TomographicBin]:
+    """Generate a list of TomographicBin objects with 5 bins."""
     z = np.linspace(0.0, 1.0, 256)
     dndzs = [
         np.exp(-0.5 * (z - mu) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05)
         for mu in np.linspace(0.5, 0.9, 5)
     ]
     return [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name=f"bin_{i + 1}",
             z=z,
             dndz=dndzs[i],
@@ -331,9 +332,9 @@ def make_many_harmonic_bins() -> list[InferredGalaxyZDist]:
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
-def fixture_real_bin_1(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 5 bins."""
-    x = InferredGalaxyZDist(
+def fixture_real_bin_1(request) -> TomographicBin:
+    """Generate an TomographicBin object with 5 bins."""
+    x = TomographicBin(
         bin_name="bin_1",
         z=np.linspace(0, 1, 5),
         dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
@@ -352,9 +353,9 @@ def fixture_real_bin_1(request) -> InferredGalaxyZDist:
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
-def fixture_real_bin_2(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 3 bins."""
-    x = InferredGalaxyZDist(
+def fixture_real_bin_2(request) -> TomographicBin:
+    """Generate an TomographicBin object with 3 bins."""
+    x = TomographicBin(
         bin_name="bin_2",
         z=np.linspace(0, 1, 3),
         dndz=np.array([0.1, 0.5, 0.4]),
@@ -366,10 +367,10 @@ def fixture_real_bin_2(request) -> InferredGalaxyZDist:
 @pytest.fixture(
     name="all_real_bins",
 )
-def fixture_all_real_bins() -> list[InferredGalaxyZDist]:
-    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+def fixture_all_real_bins() -> list[TomographicBin]:
+    """Generate a list of TomographicBin objects with 5 bins."""
     return [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name=f"bin_{i + 1}",
             z=np.linspace(0, 1, 5),
             dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
@@ -398,8 +399,8 @@ def fixture_window_1() -> (
 
 @pytest.fixture(name="harmonic_two_point_xy")
 def fixture_harmonic_two_point_xy(
-    harmonic_bin_1: InferredGalaxyZDist,
-    harmonic_bin_2: InferredGalaxyZDist,
+    harmonic_bin_1: TomographicBin,
+    harmonic_bin_2: TomographicBin,
 ) -> TwoPointXY:
     """Generate a TwoPointXY object with 100 ells."""
     m1 = list(harmonic_bin_1.measurements)[0]
@@ -414,8 +415,8 @@ def fixture_harmonic_two_point_xy(
 
 @pytest.fixture(name="real_two_point_xy")
 def fixture_real_two_point_xy(
-    real_bin_1: InferredGalaxyZDist,
-    real_bin_2: InferredGalaxyZDist,
+    real_bin_1: TomographicBin,
+    real_bin_2: TomographicBin,
 ) -> TwoPointXY:
     """Generate a TwoPointXY object with 100 ells."""
     m1 = list(real_bin_1.measurements)[0]
@@ -1280,6 +1281,19 @@ def fixture_tp_factory(
     )
 
 
+@pytest.fixture(name="tp_factory_missing_counts")
+def fixture_tp_factory_missing_counts(
+    wl_factory: wl.WeakLensingFactory,
+) -> tp.TwoPointFactory:
+    """Generate a TwoPointFactory object."""
+    return tp.TwoPointFactory(
+        correlation_space=tp.TwoPointCorrelationSpace.REAL,
+        weak_lensing_factories=[wl_factory],
+        number_counts_factories=[],
+        cmb_factories=[cmb.CMBConvergenceFactory()],
+    )
+
+
 # Optimized fixtures that eliminate "incompatible measurements" skips
 
 
@@ -1382,14 +1396,14 @@ def fixture_optimized_real_two_point_xy(optimized_real_measurement_pair) -> TwoP
     """
     m1, m2 = optimized_real_measurement_pair
 
-    bin_1 = InferredGalaxyZDist(
+    bin_1 = TomographicBin(
         bin_name="bin_1",
         z=np.linspace(0, 1, 5),
         dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
         measurements={m1},
     )
 
-    bin_2 = InferredGalaxyZDist(
+    bin_2 = TomographicBin(
         bin_name="bin_2",
         z=np.linspace(0, 1, 3),
         dndz=np.array([0.1, 0.5, 0.4]),
@@ -1414,19 +1428,44 @@ def fixture_optimized_harmonic_two_point_xy(
     # Use different z-distribution for harmonic space
     z = np.linspace(0.0, 1.0, 256)  # Match default lensing kernel size
 
-    bin_1 = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=z,
-        dndz=np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
-        measurements={m1},
-    )
+    bin_1: TomographicBin | CMBLensing
+    bin_2: TomographicBin | CMBLensing
 
-    bin_2 = InferredGalaxyZDist(
-        bin_name="bin_2",
-        z=z,
-        dndz=np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
-        measurements={m2},
-    )
+    match m1:
+        case Galaxies():
+            bin_1 = TomographicBin(
+                bin_name="bin_1",
+                z=z,
+                dndz=np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2)
+                / (np.sqrt(2 * np.pi) * 0.05),
+                measurements={m1},
+            )
+        case CMB():
+            bin_1 = CMBLensing(
+                bin_name="bin_1",
+                z_lss=1100.0,  # CMB lensing source redshift
+                measurements={m1},
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+
+    match m2:
+        case Galaxies():
+            bin_2 = TomographicBin(
+                bin_name="bin_2",
+                z=z,
+                dndz=np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2)
+                / (np.sqrt(2 * np.pi) * 0.05),
+                measurements={m2},
+            )
+        case CMB():
+            bin_2 = CMBLensing(
+                bin_name="bin_2",
+                z_lss=1100.0,  # CMB lensing source redshift
+                measurements={m2},
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
 
     return TwoPointXY(x=bin_1, y=bin_2, x_measurement=m1, y_measurement=m2)
 

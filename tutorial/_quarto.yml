@@ -7,7 +7,7 @@ project:
     - development_example.qmd
     - intro_article.qmd
     - two_point_framework.qmd
-    - inferred_zdist.qmd
+    - tomographic_bin.qmd
     - inferred_zdist_generators.qmd
     - inferred_zdist_serialization.qmd
     - two_point_generators.qmd
@@ -40,12 +40,12 @@ website:
           contents:
             - section: "Tomographic Bins"
               contents:
-                - href: inferred_zdist.qmd
-                  text: "Distributions"
+                - href: tomographic_bin.qmd
+                  text: "Inferred Redshift Distributions"
                 - href: inferred_zdist_generators.qmd
-                  text: "Distribution Generators"
+                  text: "Redshift Distribution Generators"
                 - href: inferred_zdist_serialization.qmd
-                  text: "Serialization"
+                  text: "Redshift Distribution Serialization"
             - section: "Two-Point"
               contents:
                 - href: two_point_framework.qmd

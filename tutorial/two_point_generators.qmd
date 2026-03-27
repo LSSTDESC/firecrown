@@ -9,7 +9,7 @@ format: html
 
 In the tutorial [redshift distributions](inferred_zdist_generators.qmd) we illustrate the process of using Firecrown to create redshift distributions based on specified parameters describing the distributions.
 Additionally, in [serializable redshift distributions](inferred_zdist_serialization.qmd) we demonstrate how to generate redshift distributions using serializable objects.
-This document outlines how to use `InferredGalaxyZDist` objects to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
+This document outlines how to use `TomographicBin` objects to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
 
 This tutorial focuses on generating two-point statistics from scratch using metadata. For loading existing data from SACC files and applying scale cuts, see:
 - [Two-Point Factory Basics](two_point_factory_basics.qmd)

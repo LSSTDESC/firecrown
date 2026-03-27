@@ -16,7 +16,7 @@ from firecrown.likelihood._base import (
     SourceGalaxySystematic,
     Tracer,
 )
-from firecrown.metadata_types import InferredGalaxyZDist
+from firecrown.metadata_types import TomographicBin
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import (
     DerivedParameter,
@@ -70,7 +70,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     @classmethod
     def create_ready(
         cls,
-        inferred_zdist: InferredGalaxyZDist,
+        tomographic_bin: TomographicBin,
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
@@ -81,7 +81,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         This is the recommended way to create a NumberCounts object. It creates
         a fully initialized object.
 
-        :param inferred_zdist: the inferred redshift distribution
+        :param tomographic_bin: the inferred redshift distribution
         :param has_rsd: whether to include RSD in the tracer
         :param derived_scale: whether to include a derived parameter for the scale
             of the tracer
@@ -90,7 +90,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         :return: a fully initialized NumberCounts object
         """
         obj = cls(
-            sacc_tracer=inferred_zdist.bin_name,
+            sacc_tracer=tomographic_bin.bin_name,
             systematics=systematics,
             has_rsd=has_rsd,
             derived_scale=derived_scale,
@@ -99,8 +99,8 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         # pylint: disable=unexpected-keyword-arg
         obj.tracer_args = NumberCountsArgs(
             scale=obj.scale,
-            z=inferred_zdist.z,
-            dndz=inferred_zdist.dndz,
+            z=tomographic_bin.z,
+            dndz=tomographic_bin.dndz,
             bias=None,
             mag_bias=None,
         )

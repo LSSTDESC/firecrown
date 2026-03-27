@@ -29,7 +29,7 @@ from pydantic import (
 )
 from pydantic_core import PydanticUndefined, core_schema
 
-from firecrown.metadata_types._inferred_galaxy_zdist import InferredGalaxyZDist
+from firecrown.metadata_types._two_point_tracers import ProjectedField
 from firecrown.metadata_types._measurements import (
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
@@ -67,7 +67,7 @@ def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSel
 
 
 # Type aliases for clarity
-TomographicBinPair = tuple[InferredGalaxyZDist, InferredGalaxyZDist]
+ProjectedFieldPair = tuple[ProjectedField, ProjectedField]
 """A pair of tomographic bin distributions to be correlated."""
 
 MeasurementPair = tuple[Measurement, Measurement]
@@ -77,7 +77,7 @@ MeasurementPair = tuple[Measurement, Measurement]
 class BinPairSelector(BaseModel):
     """Base class for filtering pairs of tomographic bins in two-point measurements.
 
-    A BinPairSelector determines which pairs of `InferredGalaxyZDist` bins should be
+    A BinPairSelector determines which pairs of `ProjectedField` bins should be
     included when constructing `TwoPointXY` objects. Concrete implementations define
     specific selection criteria (e.g., auto-correlations only, specific bin names,
     measurement types, etc.).
@@ -91,10 +91,10 @@ class BinPairSelector(BaseModel):
     kind: str
 
     @abstractmethod
-    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return True if the pair should be kept.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if the pair should be kept, False otherwise.
@@ -177,16 +177,16 @@ class AndBinPairSelector(BinPairSelector):
     kind: str = "and"
     pair_selectors: list[SerializeAsAny[BinPairSelector]]
 
-    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return True if all of the bin pair selectors pass.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if all bin pair selectors pass, False otherwise.
         """
         return all(
-            pair_selector.keep(zdist, m) for pair_selector in self.pair_selectors
+            pair_selector.keep(field_pair, m) for pair_selector in self.pair_selectors
         )
 
     def model_post_init(self, _, /) -> None:
@@ -215,16 +215,16 @@ class OrBinPairSelector(BinPairSelector):
     kind: str = "or"
     pair_selectors: list[SerializeAsAny[BinPairSelector]]
 
-    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return True if any of the bin pair selectors pass.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if any bin pair selector passes, False otherwise.
         """
         return any(
-            pair_selector.keep(zdist, m) for pair_selector in self.pair_selectors
+            pair_selector.keep(field_pair, m) for pair_selector in self.pair_selectors
         )
 
     def model_post_init(self, _, /) -> None:
@@ -253,15 +253,15 @@ class NotBinPairSelector(BinPairSelector):
     kind: str = "not"
     pair_selector: SerializeAsAny[BinPairSelector]
 
-    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return the negation of the contained pair selector's result.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
         :return: True if the contained pair selector returns False, False otherwise.
         """
-        return not self.pair_selector.keep(zdist, m)
+        return not self.pair_selector.keep(field_pair, m)
 
 
 class BadSelector(BinPairSelector):
@@ -269,7 +269,7 @@ class BadSelector(BinPairSelector):
 
     kind: str = "bad-selector"
 
-    def keep(self, _zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, _field_pair: ProjectedFieldPair, _m: MeasurementPair) -> bool:
         """Raise NotImplementedError always.
 
         :raise NotImplementedError: Always raised since this selector should not be
@@ -283,10 +283,10 @@ class CompositeSelector(BinPairSelector):
 
     _impl: BinPairSelector = BadSelector()
 
-    def keep(self, zdist: TomographicBinPair, m: MeasurementPair):
+    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair):
         """Delegate to the underlying selector implementation."""
         assert isinstance(self._impl, BinPairSelector)
-        return self._impl.keep(zdist, m)
+        return self._impl.keep(field_pair, m)
 
 
 @register_bin_pair_selector
@@ -327,18 +327,18 @@ class NamedBinPairSelector(BinPairSelector):
             assert len(names) == 2
         return [(names[0], names[1]) for names in value]
 
-    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return True if the bin name pair matches any configured pair.
 
         Note: Matching is currently order-dependent. To achieve symmetric matching,
         include both (name1, name2) and (name2, name1) in the names list.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects (unused).
 
         :return: True if the bin name pair matches any configured name pair.
         """
-        return (zdist[0].bin_name, zdist[1].bin_name) in self.names
+        return (field_pair[0].bin_name, field_pair[1].bin_name) in self.names
 
 
 @register_bin_pair_selector
@@ -351,15 +351,15 @@ class AutoNameBinPairSelector(BinPairSelector):
 
     kind: str = "auto-name"
 
-    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, _m: MeasurementPair) -> bool:
         """Return True if both bins have the same bin name.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
         :return: True if both bins have the same name, False otherwise.
         """
-        return zdist[0].bin_name == zdist[1].bin_name
+        return field_pair[0].bin_name == field_pair[1].bin_name
 
 
 @register_bin_pair_selector
@@ -386,10 +386,10 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
 
     kind: str = "auto-measurement"
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, _field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return True if both measurements are the same.
 
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param _field_pair: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
         :return: True if both measurements are identical, False otherwise.
@@ -457,10 +457,10 @@ class LeftMeasurementBinPairSelector(BinPairSelector):
     kind: str = "left-measurement"
     measurement_set: set[Measurement]
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, _field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return True if the left measurement is in the configured set.
 
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param _field_pair: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
         :return: True if the left measurement is in the set, False otherwise.
@@ -483,10 +483,10 @@ class RightMeasurementBinPairSelector(BinPairSelector):
     kind: str = "right-measurement"
     measurement_set: set[Measurement]
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, _field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Return True if the right measurement is in the configured set.
 
-        :param _zdist: Pair of InferredGalaxyZDist objects (unused).
+        :param _field_pair: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
         :return: True if the right measurement is in the set, False otherwise.
@@ -597,14 +597,14 @@ class NameDiffBinPairSelector(BinPairSelector):
     same_name_prefix: bool = True
     neighbors_diff: int | list[int] = 1
 
-    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, _m: MeasurementPair) -> bool:
         """Return True if bin name indices differ by an allowed amount.
 
         Both bin names must match the pattern <text><number>. The numeric parts are
         extracted and their difference is checked against the allowed values.
         If same_name_prefix is set, the text parts must also satisfy the constraint.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
         :return: True if bins are neighbors, False otherwise.
@@ -616,8 +616,8 @@ class NameDiffBinPairSelector(BinPairSelector):
             else self.neighbors_diff
         )
         if not (
-            (match1 := pattern.match(zdist[0].bin_name))
-            and (match2 := pattern.match(zdist[1].bin_name))
+            (match1 := pattern.match(field_pair[0].bin_name))
+            and (match2 := pattern.match(field_pair[1].bin_name))
         ):
             return False
         if self.same_name_prefix and (match1["text"] != match2["text"]):
@@ -767,14 +767,14 @@ class TypeSourceBinPairSelector(BinPairSelector):
     kind: str = "type-source"
     type_source: TypeSource
 
-    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, field_pair: ProjectedFieldPair, _m: MeasurementPair) -> bool:
         """Return True if both bins have the same matching type-source.
 
-        :param zdist: Pair of InferredGalaxyZDist objects.
+        :param field_pair: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
         :return: True if both bins have matching type-sources, False otherwise.
         """
-        return (zdist[0].type_source == zdist[1].type_source) and (
-            self.type_source == zdist[0].type_source
+        return (field_pair[0].type_source == field_pair[1].type_source) and (
+            self.type_source == field_pair[0].type_source
         )

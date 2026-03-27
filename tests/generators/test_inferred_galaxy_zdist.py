@@ -1,4 +1,4 @@
-"""Tests for the module firecrown.generators.inferred_galaxy_zdist."""
+"""Tests for the module firecrown.generators.tomographic_bin."""
 
 from typing import Any
 from itertools import pairwise, product

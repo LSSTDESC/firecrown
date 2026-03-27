@@ -1,5 +1,5 @@
 ---
-title: "Using Firecrown InferredGalaxyZDist objects"
+title: "Using Firecrown TomographicBin objects"
 format: html
 ---
 
@@ -12,24 +12,24 @@ The galaxy redshift distributions play a crucial role in modeling the distributi
 
 ## Overview
 
-Firecrown employs `InferredGalaxyZDist` objects to encapsulate these distributions.
+Firecrown employs `TomographicBin` objects to encapsulate these distributions.
 These objects are essential for representing the redshift distribution of galaxies within predefined photometric redshift bins.
 Additionally, Firecrown utilizes metadata dataclasses to handle metadata and calibration data pertinent to cosmological analyses.
 These dataclasses can be constructed directly, extracted from SACC objects, or generated through Firecrown's provided functionalities.
 
-This document outlines the process of creating `InferredGalaxyZDist` objects directly and demonstrates their utilization in cosmological analyses.
+This document outlines the process of creating `TomographicBin` objects directly and demonstrates their utilization in cosmological analyses.
 
-## Creating an `InferredGalaxyZDist` Object
+## Creating an `TomographicBin` Object
 
-The `InferredGalaxyZDist` object serves as the cornerstone for representing the redshift distribution of galaxies within a designated photometric redshift bin. Each bin is identified by a string identifier, `bin_name`, utilized by theoretical models to specify parameters specific to the corresponding redshift bin.
+The `TomographicBin` object serves as the cornerstone for representing the redshift distribution of galaxies within a designated photometric redshift bin. Each bin is identified by a string identifier, `bin_name`, utilized by theoretical models to specify parameters specific to the corresponding redshift bin.
 
-The `InferredGalaxyZDist` object can be created by providing the following parameters:
+The `TomographicBin` object can be created by providing the following parameters:
 ```{python}
-from firecrown.metadata_types import Galaxies, InferredGalaxyZDist
+from firecrown.metadata_types import Galaxies, TomographicBin
 import numpy as np
 
 z = np.linspace(0.0, 1.0, 200)
-lens0 = InferredGalaxyZDist(
+lens0 = TomographicBin(
     bin_name="lens0",
     z=z,
     dndz=np.exp(-0.5 * ((z - 0.5) / 0.02) ** 2) / np.sqrt(2 * np.pi) / 0.02,
@@ -182,7 +182,7 @@ data = pd.DataFrame(
 ## Conclusion
 
 This document has provided an overview of Firecrown's capabilities in representing galaxy redshift distributions and utilizing them in cosmological analyses.
-The `InferredGalaxyZDist` object encapsulates the redshift distribution of galaxies within predefined photometric redshift bins.
+The `TomographicBin` object encapsulates the redshift distribution of galaxies within predefined photometric redshift bins.
 The `TwoPointHarmonic` object is used to encapsulate the two-point correlation function in harmonic space, while the `TwoPoint` object encapsulates the theoretical model for the two-point correlation function.
 These objects are essential for modeling the distribution of galaxies within specific photometric redshift bins and are crucial for cosmological analyses.
 

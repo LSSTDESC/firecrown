@@ -18,7 +18,7 @@ from firecrown.updatable import (
     DerivedParameterCollection,
     SamplerParameter,
 )
-from firecrown import parameters
+from firecrown import updatable
 
 
 class MinimalUpdatable(Updatable):
@@ -27,7 +27,7 @@ class MinimalUpdatable(Updatable):
     def __init__(self, prefix: str | None = None):
         """Initialize object with defaulted value."""
         super().__init__(prefix)
-        self.a = parameters.register_new_updatable_parameter(default_value=1.0)
+        self.a = updatable.register_new_updatable_parameter(default_value=1.0)
 
 
 class SimpleUpdatable(Updatable):  # pylint: disable=too-many-instance-attributes
@@ -37,8 +37,8 @@ class SimpleUpdatable(Updatable):  # pylint: disable=too-many-instance-attribute
         """Initialize object with defaulted values."""
         super().__init__(prefix)
 
-        self.x = parameters.register_new_updatable_parameter(default_value=2.0)
-        self.y = parameters.register_new_updatable_parameter(default_value=3.0)
+        self.x = updatable.register_new_updatable_parameter(default_value=2.0)
+        self.y = updatable.register_new_updatable_parameter(default_value=3.0)
 
 
 class UpdatableWithDerived(Updatable):
@@ -48,8 +48,8 @@ class UpdatableWithDerived(Updatable):
         """Initialize object with defaulted values."""
         super().__init__()
 
-        self.A = parameters.register_new_updatable_parameter(default_value=2.0)
-        self.B = parameters.register_new_updatable_parameter(default_value=1.0)
+        self.A = updatable.register_new_updatable_parameter(default_value=2.0)
+        self.B = updatable.register_new_updatable_parameter(default_value=1.0)
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         derived_scale = DerivedParameter("Section", "Name", self.A + self.B)
@@ -98,11 +98,11 @@ def test_updatable_record_with_internal_params():
     obj = SimpleUpdatable("test")
     obj.set_internal_parameter(
         "internal1",
-        parameters.register_new_updatable_parameter(value=1.0, default_value=1.0),
+        updatable.register_new_updatable_parameter(value=1.0, default_value=1.0),
     )
     obj.set_internal_parameter(
         "internal2",
-        parameters.register_new_updatable_parameter(value=2.0, default_value=2.0),
+        updatable.register_new_updatable_parameter(value=2.0, default_value=2.0),
     )
 
     params = ParamsMap({"test_x": 1.0, "test_y": 2.0})
@@ -336,7 +336,7 @@ def test_updatable_collection_insertion():
 
 def test_set_sampler_parameter():
     my_updatable = MinimalUpdatable()
-    my_param = parameters.register_new_updatable_parameter(default_value=42.0)
+    my_param = updatable.register_new_updatable_parameter(default_value=42.0)
     my_param.set_fullname(prefix=None, name="the_meaning_of_life")
     my_updatable.set_sampler_parameter(my_param)
 
@@ -346,7 +346,7 @@ def test_set_sampler_parameter():
 
 def test_set_sampler_parameter_rejects_internal_parameter():
     my_updatable = MinimalUpdatable()
-    my_param = parameters.register_new_updatable_parameter(
+    my_param = updatable.register_new_updatable_parameter(
         value=42.0, default_value=41.0
     )
 
@@ -356,9 +356,9 @@ def test_set_sampler_parameter_rejects_internal_parameter():
 
 def test_set_sampler_parameter_rejects_duplicates():
     my_updatable = MinimalUpdatable()
-    my_param = parameters.register_new_updatable_parameter(default_value=42.0)
+    my_param = updatable.register_new_updatable_parameter(default_value=42.0)
     my_param.set_fullname(prefix=None, name="the_meaning_of_life")
-    my_param_same = parameters.register_new_updatable_parameter(default_value=42.0)
+    my_param_same = updatable.register_new_updatable_parameter(default_value=42.0)
     my_param_same.set_fullname(prefix=None, name="the_meaning_of_life")
 
     my_updatable.set_sampler_parameter(my_param)
@@ -371,7 +371,7 @@ def test_set_internal_parameter():
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
         "the_meaning_of_life",
-        parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
+        updatable.register_new_updatable_parameter(value=1.0, default_value=42.0),
     )
 
     assert hasattr(my_updatable, "the_meaning_of_life")
@@ -380,7 +380,7 @@ def test_set_internal_parameter():
 
 def test_set_parameter_using_internal_parameter():
     my_updatable = MinimalUpdatable()
-    ip = parameters.InternalParameter(2112)
+    ip = updatable.InternalParameter(2112)
     my_updatable.set_parameter("epic_Rush_album", ip)
 
     assert hasattr(my_updatable, "epic_Rush_album")
@@ -392,7 +392,7 @@ def test_set_internal_parameter_rejects_sampler_parameter():
     with pytest.raises(TypeError):
         my_updatable.set_internal_parameter(
             "sampler_param",
-            parameters.register_new_updatable_parameter(default_value=1.0),
+            updatable.register_new_updatable_parameter(default_value=1.0),
         )
 
 
@@ -400,13 +400,13 @@ def test_set_internal_parameter_rejects_duplicates():
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
         "the_meaning_of_life",
-        parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
+        updatable.register_new_updatable_parameter(value=1.0, default_value=42.0),
     )
 
     with pytest.raises(ValueError):
         my_updatable.set_internal_parameter(
             "the_meaning_of_life",
-            parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
+            updatable.register_new_updatable_parameter(value=1.0, default_value=42.0),
         )
 
 
@@ -414,11 +414,11 @@ def test_set_parameter():
     my_updatable = MinimalUpdatable()
     my_updatable.set_parameter(
         "the_meaning_of_life",
-        parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
+        updatable.register_new_updatable_parameter(value=1.0, default_value=42.0),
     )
     my_updatable.set_parameter(
         "no_meaning_of_life",
-        parameters.register_new_updatable_parameter(default_value=42.0),
+        updatable.register_new_updatable_parameter(default_value=42.0),
     )
 
     assert hasattr(my_updatable, "the_meaning_of_life")
@@ -432,7 +432,7 @@ def test_update_rejects_internal_parameters():
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
         "the_meaning_of_life",
-        parameters.register_new_updatable_parameter(value=2.0, default_value=42.0),
+        updatable.register_new_updatable_parameter(value=2.0, default_value=42.0),
     )
     assert hasattr(my_updatable, "the_meaning_of_life")
 
@@ -528,8 +528,8 @@ def test_nesting_updatables_missing_parameters(nested_updatables):
 
     base.update(params)
 
-    for updatable in nested_updatables:
-        assert updatable.is_updated()
+    for my_updatable in nested_updatables:
+        assert my_updatable.is_updated()
 
 
 def test_nesting_updatables_required_parameters(nested_updatables):

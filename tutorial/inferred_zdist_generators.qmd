@@ -7,7 +7,7 @@ format: html
 
 ## Purpose of this document
 
-In the previous [tutorial](inferred_zdist.qmd), we explored how to use `InferredGalaxyZDist` objects to represent redshift distributions for galaxies. 
+In the previous [tutorial](tomographic_bin.qmd), we explored how to use `TomographicBin` objects to represent redshift distributions for galaxies. 
 These distributions are necessary for modeling galaxy redshift distributions and can be created using various methods.
 In this tutorial, we will focus on generating these distributions using the `ZDistLSSTSRD` class in Firecrown. 
 This class generates redshift distributions in accordance with the LSST Science Requirements Document (SRD).
@@ -18,7 +18,7 @@ P(z|B_i, \theta) \equiv \frac{\mathrm{d}n}{\mathrm{d}z}(z;B_i, \theta),
 $${#eq-Pi}
 where $B_i$ is the $i$-th bin of the photometric redshifts, and $\theta$ is a set of parameters that describe the model.
 
-In Firecrown this distribution is represented as an object of type `InferredGalaxyZDist`[^1].
+In Firecrown this distribution is represented as an object of type `TomographicBin`[^1].
 An object of this type contains the redshifts, the corresponding probabilities, and the data-type of the measurements.
 Firecrown also provides facilities to generate these distributions, given a chosen model.
 In `firecrown.generators`, we have the `ZDistLSSTSRD` class, which can be used to generate redshift distributions according to the LSST SRD.
@@ -131,7 +131,7 @@ d_y_all = pd.concat(
 )
 ```
 
-Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
+Next, using the same SRD prescriptions, we want to generate the `TomographicBin` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
 Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points equally spaced between $0$ and $0.6$.[^3]
 
 [^3]: Note that we are making use of several module-level constants in the `firecrown.generators` module, namely `Y1_LENS_BINS`, `Y10_LENS_BINS`, `Y1_SOURCE_BINS`, and `Y10_SOURCE_BINS`, which are dictionaries that contain the bin edges and the resolution parameter $\sigma_z$ for the bins.
@@ -139,7 +139,7 @@ Here we show the first bin for the lens and source samples for both Year 1 and Y
 ```{python}
 import numpy as np
 import firecrown
-from firecrown.metadata_types import InferredGalaxyZDist
+from firecrown.metadata_types import TomographicBin
 from firecrown.generators import (
     ZDistLSSTSRD,
     Y1_LENS_BINS,
@@ -154,7 +154,7 @@ z = np.linspace(0.0, 0.6, 100)
 
 
 # We use the same zdist_y1_* and zdist_y10_* that were created above.
-# We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
+# We create two TomographicBin objects, one for Y1 and one for Y10.
 Pz_lens0_y1 = zdist_y1_lens.binned_distribution(
     zpl=Y1_LENS_BINS["edges"][0],
     zpu=Y1_LENS_BINS["edges"][1],
@@ -189,13 +189,13 @@ Pz_source0_y10 = zdist_y10_source.binned_distribution(
 )
 
 # Next we check that the objects we created are of the expected type.
-assert isinstance(Pz_lens0_y1, InferredGalaxyZDist)
-assert isinstance(Pz_lens0_y10, InferredGalaxyZDist)
-assert isinstance(Pz_source0_y1, InferredGalaxyZDist)
-assert isinstance(Pz_source0_y10, InferredGalaxyZDist)
+assert isinstance(Pz_lens0_y1, TomographicBin)
+assert isinstance(Pz_lens0_y10, TomographicBin)
+assert isinstance(Pz_source0_y1, TomographicBin)
+assert isinstance(Pz_source0_y10, TomographicBin)
 ```
 
-The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxyZDist` objects is shown in @fig-inferred-dist.
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `TomographicBin` objects is shown in @fig-inferred-dist.
 
 ```{python}
 # | label: fig-inferred-dist
@@ -256,7 +256,7 @@ The following code block demonstrates how to do this.
 from itertools import pairwise
 
 # We use the same zdist_y1 and zdist_y10 that were created above.
-# We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
+# We create two TomographicBin objects, one for Y1 and one for Y10.
 z = np.linspace(0.0, 3.5, 1000)
 all_y1_bins = [
     zdist_y1_lens.binned_distribution(
@@ -281,7 +281,7 @@ all_y1_bins = [
 ]
 ```
 
-The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxyZDist` objects is shown in @fig-inferred-dist-all.
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `TomographicBin` objects is shown in @fig-inferred-dist-all.
 
 ```{python}
 # | label: fig-inferred-dist-all
@@ -432,5 +432,5 @@ percent_diff = 100.0 * (N_gal - N_gal_phot) / N_gal
 ## End note
 
 Note that these facilities for creating redshift distributions are not limitations on the use of the distributions.
-Any facility that can create the $z$ and $\textrm{d}N/\textrm{d}z$  arrays can be used to create an `InferredGalaxyZDist` object.
-Code that uses the `InferredGalaxyZDist` objects does not depend on how they were created.
+Any facility that can create the $z$ and $\textrm{d}N/\textrm{d}z$  arrays can be used to create an `TomographicBin` object.
+Code that uses the `TomographicBin` objects does not depend on how they were created.
