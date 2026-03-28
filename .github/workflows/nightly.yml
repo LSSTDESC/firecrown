@@ -1,0 +1,48 @@
+# Nightly CI - Multi-Branch Scheduled Testing
+# ============================================
+# Runs the full CI pipeline once per night against every supported
+# long-lived branch.  The job definitions live exclusively in
+# ci-reusable.yml; this file only declares the schedule.
+#
+# The list of branches to test is read at runtime from
+# .github/ci-branches.json — the single source of truth shared
+# with ci.yml.
+#
+# ADDING OR REMOVING A SUPPORTED BRANCH:
+# Edit .github/ci-branches.json only. No changes to this file are needed.
+#
+# NOTE: GitHub always executes scheduled workflows from the repository's
+# default branch (master).  The 'ref' input to ci-reusable.yml overrides
+# which branch's code is actually checked out and tested.
+
+name: firecrown-nightly
+on:
+  schedule:
+    - cron: "47 1 * * *"
+  # Allow manual triggering for testing this workflow itself.
+  workflow_dispatch:
+
+jobs:
+  load-branches:
+    name: Load supported branch list
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.load.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Read ci-branches.json
+        id: load
+        run: echo "matrix=$(cat .github/ci-branches.json)" >> $GITHUB_OUTPUT
+        shell: bash
+
+  nightly:
+    name: Nightly (${{ matrix.branch }})
+    needs: [load-branches]
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.load-branches.outputs.matrix) }}
+    uses: ./.github/workflows/ci-reusable.yml
+    with:
+      ref: ${{ matrix.branch }}
+    secrets: inherit
