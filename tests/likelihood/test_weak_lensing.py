@@ -131,7 +131,7 @@ def test_massdep_linear_alignment_systematic_init_default():
     assert hasattr(systematic, "ia_amplitude")
     assert hasattr(systematic, "ia_mass_scaling")
     assert hasattr(systematic, "red_fraction")
-    assert hasattr(systematic, "average_halo_mass")
+    assert hasattr(systematic, "log10_average_halo_mass")
 
 
 def test_massdep_linear_alignment_systematic_apply(mock_tools, sample_tracer_args):
@@ -142,7 +142,7 @@ def test_massdep_linear_alignment_systematic_apply(mock_tools, sample_tracer_arg
             "ia_amplitude": 6.0,
             "ia_mass_scaling": 0.5,
             "test_tracer_red_fraction": 0.3,
-            "test_tracer_average_halo_mass": 1e13,
+            "test_tracer_log10_average_halo_mass": 13.0,
         }
     )
     systematic.update(params)

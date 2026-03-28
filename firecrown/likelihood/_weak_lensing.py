@@ -40,7 +40,7 @@ class WeakLensingArgs(SourceGalaxyArgs):
     ia_amplitude: None | np.float64 = None
     ia_mass_scaling: None | np.float64 = None
     red_fraction: None | np.float64 = None
-    average_halo_mass: None | np.float64 = None
+    log10_average_halo_mass: None | np.float64 = None
 
     has_pt: bool = False
     has_hm: bool = False
@@ -190,7 +190,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_BIAS = 5.74
 MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_SCALING = 0.44
 MASSDEP_LINEAR_ALIGNMENT_DEFAULT_RED_FRACTION = 1.0
-MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS = 10**13.5
+MASSDEP_LINEAR_ALIGNMENT_DEFAULT_LOG10_AVERAGE_HALO_MASS = 13.5
 
 
 class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
@@ -208,14 +208,15 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
     :ivar ia_amplitude: the intrinsic alignment amplitude at the pivot halo mass.
     :ivar ia_mass_scaling: the power-law index of the model's mass scaling.
     :ivar red_fraction: the red galaxy fraction of the tracer sample.
-    :ivar average_halo_mass: the average halo mass of the tracer sample (in units of
-        solar mass / h).
+    :ivar log10_average_halo_mass: the 10-base logarithm of the average halo mass of the
+        tracer sample (mass should be given in units of solar mass / h).
 
     The following parameter is an InternalParameter that will not be provided
     by the sampler, instead the value given will be used throughout all
     calculations:
 
-    :ivar pivot_halo_mass: the pivot halo mass of the model (default=10^(13.5) M_sun/h).
+    :ivar pivot_log10_halo_mass: the log10-base of the pivot halo mass of the model
+        (default=13.5, pivot mass in M_sun/h).
     """
 
     def __init__(self, sacc_tracer: None | str = None):
@@ -236,12 +237,12 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
         self.red_fraction = register_new_updatable_parameter(
             default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_RED_FRACTION
         )
-        self.average_halo_mass = register_new_updatable_parameter(
-            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS
+        self.log10_average_halo_mass = register_new_updatable_parameter(
+            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_LOG10_AVERAGE_HALO_MASS
         )
-        self.pivot_halo_mass = register_new_updatable_parameter(
-            value=10**13.5,
-            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_AVERAGE_HALO_MASS,
+        self.pivot_log10_halo_mass = register_new_updatable_parameter(
+            value=13.5,
+            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_LOG10_AVERAGE_HALO_MASS,
         )
 
     def apply(
@@ -255,7 +256,8 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
         pref = (
             self.ia_amplitude
             * self.red_fraction
-            * (self.average_halo_mass / self.pivot_halo_mass) ** self.ia_mass_scaling
+            * (10**self.log10_average_halo_mass / 10**self.pivot_log10_halo_mass)
+            ** self.ia_mass_scaling
         )
 
         ia_bias_array = np.full_like(tracer_arg.z, pref)
