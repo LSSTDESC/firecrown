@@ -83,3 +83,20 @@ class BinnedCluster(Statistic):
         """
         assert self.data_vector is not None
         return self.data_vector
+
+    def check_mor_murata_variance(self):
+        """Check if variance is negative."""
+        mmin, mmax = self.cluster_recipe.mass_interval
+        for bin_i in self.bins:
+            zmin, zmax = bin_i.z_edges
+
+            logM = np.array([mmin, mmax])
+            z = np.array([zmin, zmax])
+
+            sigma = self.cluster_recipe.mass_distribution.get_ln_mass_proxy_sigma(
+                logM[:, None], z[None, :]
+            )
+            if np.any(sigma_array < 0.0):
+                raise ValueError(
+                f"Negative sigma detected in bin z={z_edges}. Skipping likelihood evaluation."
+                )

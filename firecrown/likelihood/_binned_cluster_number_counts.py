@@ -41,6 +41,7 @@ class BinnedClusterNumberCounts(BinnedCluster):
         theory_vector_list: list[float] = []
         cluster_counts = []
         self.cluster_recipe.setup()
+        self.check_mor_murata_variance()
         cluster_counts = self.get_binned_cluster_counts()
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties

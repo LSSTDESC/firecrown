@@ -44,6 +44,7 @@ class BinnedClusterShearProfile(BinnedCluster):
             self.cluster_recipe, tools.get_ccl_cosmology()
         )
         self.cluster_recipe.setup()
+        self.check_mor_murata_variance()
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
             if not include_prop:

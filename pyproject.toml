@@ -14,7 +14,7 @@ dependencies = [
     "astropy",
     "cobaya",
     "cosmosis",
-    "desc-crow",
+    "lsstdesc-crow",
     "fitsio",
     "numcosmo_py",
     "numpy",
