@@ -96,7 +96,7 @@ class BinnedCluster(Statistic):
             sigma = self.cluster_recipe.mass_distribution.get_ln_mass_proxy_sigma(
                 logM[:, None], z[None, :]
             )
-            if np.any(sigma_array < 0.0):
+            if np.any(sigma < 0.0):
                 raise ValueError(
-                f"Negative sigma detected in bin z={z_edges}. Skipping likelihood evaluation."
+                f"Negative sigma detected. Skipping likelihood evaluation."
                 )
