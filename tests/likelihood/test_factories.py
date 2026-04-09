@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 import numpy as np
 
+import pyccl
 import sacc
 from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.likelihood.factories import (
@@ -32,7 +33,11 @@ from firecrown.metadata_types import (
     CMB_TYPES,
 )
 from firecrown.data_types import TwoPointMeasurement
-from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
+from firecrown.data_functions import (
+    TwoPointBinFilterCollection,
+    TwoPointBinFilter,
+    extract_all_harmonic_data,
+)
 from firecrown.utils import (
     base_model_from_yaml,
     base_model_to_yaml,
@@ -1189,3 +1194,222 @@ def test_load_sacc_data_with_string():
     sacc_data = load_sacc_data("tests/bug_398.sacc.gz")
     assert sacc_data is not None
     assert isinstance(sacc_data, sacc.Sacc)
+
+
+@pytest.fixture(name="sacc_with_window", scope="function")
+def fixture_sacc_with_window(tmp_path: Path):
+    """Create a SACC file with window functions for testing normalize_window."""
+    # Create window function data
+    n_ell_bin = 5
+    ell_bin_edges = np.geomspace(10, 500, n_ell_bin + 1)
+    ell_bin_centers = np.sqrt(ell_bin_edges[:-1] * ell_bin_edges[1:])
+    ell_bin_widths = np.diff(ell_bin_edges)
+
+    ell_window = np.arange(800)
+    window_function = np.zeros((ell_window.shape[0], n_ell_bin))
+    for i, (mu_ell, sigma_ell) in enumerate(zip(ell_bin_centers, ell_bin_widths)):
+        window_function[:, i] = np.exp(
+            -0.5 * (ell_window - mu_ell) ** 2 / (sigma_ell) ** 2
+        )
+
+    # Intentionally NOT normalizing - so we can test the difference
+    # window_function = window_function / window_function.sum(axis=0, keepdims=True)
+
+    # Create SACC data
+    sacc_data = sacc.Sacc()
+    z = np.linspace(0, 2.0, 50)
+
+    # Add tracers
+    for i in range(2):
+        dndz = np.exp(-0.5 * (z - 0.5 * (i + 1)) ** 2 / 0.1**2)
+        sacc_data.add_tracer("NZ", f"src{i}", z, dndz)
+
+    # Create cosmology for realistic data
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    ccl_tracers = {}
+    for i in range(2):
+        tracer = sacc_data.get_tracer(f"src{i}")
+        ccl_tracers[f"src{i}"] = pyccl.WeakLensingTracer(
+            cosmo=cosmo, dndz=(tracer.z, tracer.nz)
+        )
+
+    # Add data with window functions
+    window = sacc.BandpowerWindow(ell_window, window_function)
+    for i in range(2):
+        for j in range(i, 2):
+            Cell = pyccl.angular_cl(
+                cosmo=cosmo,
+                tracer1=ccl_tracers[f"src{i}"],
+                tracer2=ccl_tracers[f"src{j}"],
+                ell=ell_window,
+            )
+            Cell_binned = window_function.T @ Cell
+            sacc_data.add_ell_cl(
+                data_type="galaxy_shear_cl_ee",
+                tracer1=f"src{i}",
+                tracer2=f"src{j}",
+                ell=ell_bin_centers,
+                x=Cell_binned,
+                window=window,
+            )
+
+    # Add covariance
+    sacc_data.add_covariance(np.identity(len(sacc_data)) * 0.01)
+
+    # Save to file
+    sacc_file = tmp_path / "test_window.fits"
+    sacc_data.save_fits(str(sacc_file), overwrite=True)
+
+    return sacc_file
+
+
+def test_data_source_sacc_normalize_window_default(sacc_with_window: Path):
+    """Test that DataSourceSacc.normalize_window defaults to True."""
+    data_source = DataSourceSacc(sacc_data_file=str(sacc_with_window))
+    assert data_source.normalize_window is True
+
+
+def test_data_source_sacc_normalize_window_false_dict(sacc_with_window: Path):
+    """Test DataSourceSacc.normalize_window can be set to False via dict."""
+    data_source_dict = {
+        "sacc_data_file": str(sacc_with_window),
+        "normalize_window": False,
+    }
+    data_source = DataSourceSacc.model_validate(data_source_dict)
+    assert data_source.normalize_window is False
+
+
+def test_data_source_sacc_normalize_window_false_direct(sacc_with_window: Path):
+    """Test DataSourceSacc.normalize_window can be set to False directly."""
+    data_source = DataSourceSacc(
+        sacc_data_file=str(sacc_with_window), normalize_window=False
+    )
+    assert data_source.normalize_window is False
+
+
+def test_data_source_sacc_normalize_window_true_explicit(sacc_with_window: Path):
+    """Test DataSourceSacc.normalize_window can be explicitly set to True."""
+    data_source = DataSourceSacc(
+        sacc_data_file=str(sacc_with_window), normalize_window=True
+    )
+    assert data_source.normalize_window is True
+
+
+def test_two_point_experiment_normalize_window_flows_through(
+    empty_factory_harmonic: TwoPointFactory,
+    sacc_with_window: Path,
+):
+    """Test that normalize_window flows through TwoPointExperiment to likelihood."""
+    # Create experiment with normalize_window=False
+    experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_harmonic,
+        data_source=DataSourceSacc(
+            sacc_data_file=str(sacc_with_window), normalize_window=False
+        ),
+    )
+
+    # Verify the attribute is set correctly
+    assert experiment.data_source.normalize_window is False
+
+    # Make likelihood - this should not raise an error
+    likelihood = experiment.make_likelihood()
+    assert likelihood is not None
+
+
+def test_two_point_experiment_normalize_window_default_flows_through(
+    empty_factory_harmonic: TwoPointFactory,
+    sacc_with_window: Path,
+):
+    """Test that default normalize_window=True flows through correctly."""
+    experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_harmonic,
+        data_source=DataSourceSacc(sacc_data_file=str(sacc_with_window)),
+    )
+
+    # Verify the default is True
+    assert experiment.data_source.normalize_window is True
+
+    # Make likelihood - this should not raise an error
+    likelihood = experiment.make_likelihood()
+    assert likelihood is not None
+
+
+def test_normalize_window_affects_extraction(sacc_with_window: Path):
+    """Test that normalize_window parameter actually affects window extraction."""
+    sacc_data = load_sacc_data(sacc_with_window)
+
+    # Extract with normalization (default)
+    data_normalized = extract_all_harmonic_data(sacc_data, normalize=True)
+
+    # Extract without normalization
+    data_unnormalized = extract_all_harmonic_data(sacc_data, normalize=False)
+
+    # Both should have the same number of measurements
+    assert len(data_normalized) == len(data_unnormalized)
+
+    # Check if any measurements have window functions
+    has_window = False
+    for measurement_norm, measurement_unnorm in zip(data_normalized, data_unnormalized):
+        assert isinstance(measurement_norm.metadata, TwoPointHarmonic)
+        assert isinstance(measurement_unnorm.metadata, TwoPointHarmonic)
+        if measurement_norm.metadata.window is not None:
+            has_window = True
+            window_norm = measurement_norm.metadata.window
+            window_unnorm = measurement_unnorm.metadata.window
+
+            # Windows should exist in both
+            assert window_unnorm is not None
+
+            # Normalized window should sum to 1 along axis 0
+            assert np.allclose(window_norm.sum(axis=0), 1.0)
+
+            # Unnormalized window should NOT necessarily sum to 1
+            # (unless it happens to by coincidence)
+            # But we can verify that normalized != unnormalized (when they differ)
+            if not np.allclose(window_unnorm.sum(axis=0), 1.0):
+                # If unnormalized doesn't sum to 1, they should be different
+                assert not np.allclose(window_norm, window_unnorm)
+
+                # The normalized should be the unnormalized divided by its sum
+                expected_normalized = window_unnorm / window_unnorm.sum(axis=0)
+                assert np.allclose(window_norm, expected_normalized)
+
+    # Verify we actually tested something with windows
+    assert has_window, "No window functions found in test data"
+
+
+def test_two_point_experiment_yaml_with_normalize_window(
+    tmp_path: Path, sacc_with_window: Path
+):
+    """Test TwoPointExperiment loading from YAML with normalize_window=False."""
+    tmp_experiment_file = tmp_path / "experiment_no_norm.yaml"
+    # Use relative path from tmp_path to sacc_with_window
+    sacc_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, sacc_with_window
+    )
+
+    tmp_experiment_file.write_text(f"""
+two_point_factory:
+  correlation_space: harmonic
+  weak_lensing_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
+  number_counts_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
+data_source:
+  sacc_data_file: {sacc_path_relative_to_tmp_path}
+  normalize_window: false
+""")
+
+    # Load the experiment
+    experiment = TwoPointExperiment.load_from_yaml(tmp_experiment_file)
+
+    # Verify normalize_window is set to False
+    assert experiment.data_source.normalize_window is False
+
+    # Create likelihood to ensure it works end-to-end
+    likelihood = experiment.make_likelihood()
+    assert likelihood is not None

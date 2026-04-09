@@ -8,6 +8,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 import pyccl
+import sacc
 from hypothesis import given, assume
 from hypothesis.strategies import floats, integers
 
@@ -861,3 +862,133 @@ def test_calculate_pk_with_halo_model():
 
         # Verify that tools.has_pk was called (ensuring we didn't take the first branch)
         tools.has_pk.assert_called_once_with("test_pk")
+
+
+def test_two_point_normalize_window_default():
+    """Test that TwoPoint.normalize_window defaults to True."""
+    source = NumberCounts(sacc_tracer="lens_0")
+    two_point = tp.TwoPoint(
+        sacc_data_type="galaxy_density_cl",
+        source0=source,
+        source1=source,
+    )
+    assert two_point.normalize_window is True
+
+
+def test_two_point_normalize_window_false():
+    """Test that TwoPoint.normalize_window can be set to False."""
+    source = NumberCounts(sacc_tracer="lens_0")
+    two_point = tp.TwoPoint(
+        sacc_data_type="galaxy_density_cl",
+        source0=source,
+        source1=source,
+        normalize_window=False,
+    )
+    assert two_point.normalize_window is False
+
+
+def test_two_point_normalize_window_true_explicit():
+    """Test that TwoPoint.normalize_window can be explicitly set to True."""
+    source = NumberCounts(sacc_tracer="lens_0")
+    two_point = tp.TwoPoint(
+        sacc_data_type="galaxy_density_cl",
+        source0=source,
+        source1=source,
+        normalize_window=True,
+    )
+    assert two_point.normalize_window is True
+
+
+@pytest.fixture(name="sacc_with_window_for_two_point")
+def fixture_sacc_with_window_for_two_point(tmp_path):
+    """Create a SACC file with window functions for TwoPoint testing."""
+    import pyccl
+
+    # Create window function data
+    n_ell_bin = 5
+    ell_bin_edges = np.geomspace(10, 500, n_ell_bin + 1)
+    ell_bin_centers = np.sqrt(ell_bin_edges[:-1] * ell_bin_edges[1:])
+    ell_bin_widths = np.diff(ell_bin_edges)
+
+    ell_window = np.arange(800)
+    window_function = np.zeros((ell_window.shape[0], n_ell_bin))
+    for i, (mu_ell, sigma_ell) in enumerate(zip(ell_bin_centers, ell_bin_widths)):
+        window_function[:, i] = np.exp(
+            -0.5 * (ell_window - mu_ell) ** 2 / (sigma_ell) ** 2
+        )
+
+    # Intentionally NOT normalizing the window so we can test the difference
+
+    # Create SACC data
+    sacc_data = sacc.Sacc()
+    z = np.linspace(0, 2.0, 50)
+
+    # Add src0 tracer for WeakLensing
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.1**2)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    # Create cosmology for realistic data
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    tracer = sacc_data.get_tracer("src0")
+    ccl_tracer = pyccl.WeakLensingTracer(cosmo=cosmo, dndz=(tracer.z, tracer.nz))
+
+    # Add data with window function
+    window = sacc.BandpowerWindow(ell_window, window_function)
+    Cell = pyccl.angular_cl(
+        cosmo=cosmo, tracer1=ccl_tracer, tracer2=ccl_tracer, ell=ell_window
+    )
+    Cell_binned = window_function.T @ Cell
+    sacc_data.add_ell_cl(
+        data_type="galaxy_shear_cl_ee",
+        tracer1="src0",
+        tracer2="src0",
+        ell=ell_bin_centers,
+        x=Cell_binned,
+        window=window,
+    )
+
+    # Add covariance
+    sacc_data.add_covariance(np.identity(len(sacc_data)) * 0.01)
+
+    return sacc_data
+
+
+def test_two_point_normalize_window_used_in_read(sacc_with_window_for_two_point):
+    """Test that normalize_window is actually used during read."""
+    # Use SACC data with window functions from fixture
+    sacc_data = sacc_with_window_for_two_point
+
+    # Create two TwoPoint objects: one with normalize_window=True, one False
+    source = WeakLensing(sacc_tracer="src0")
+
+    two_point_normalized = tp.TwoPoint(
+        sacc_data_type="galaxy_shear_cl_ee",
+        source0=source,
+        source1=source,
+        normalize_window=True,
+    )
+
+    two_point_unnormalized = tp.TwoPoint(
+        sacc_data_type="galaxy_shear_cl_ee",
+        source0=source,
+        source1=source,
+        normalize_window=False,
+    )
+
+    # Read data
+    two_point_normalized.read(sacc_data)
+    two_point_unnormalized.read(sacc_data)
+
+    # If window functions were present, they should be different
+    # (unless unnormalized already sums to 1)
+    if two_point_normalized.theory.window is not None:
+        assert two_point_unnormalized.theory.window is not None
+
+        # Normalized should sum to 1
+        assert np.allclose(two_point_normalized.theory.window.sum(axis=0), 1.0)
+
+        # Check if they differ (they should unless unnormalized already sums to 1)
+        if not np.allclose(two_point_unnormalized.theory.window.sum(axis=0), 1.0):
+            assert not np.allclose(
+                two_point_normalized.theory.window, two_point_unnormalized.theory.window
+            )
