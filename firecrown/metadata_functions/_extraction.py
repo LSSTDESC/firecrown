@@ -468,6 +468,8 @@ def extract_all_harmonic_metadata(
     :param sacc_data: The SACC object containing tracers and data points.
     :param allowed_data_type: Optional list of SACC data type strings to include.
         If None, all harmonic-space data types are extracted.
+    :param allow_mixed_types: If True, allow extraction when tracers contain mixed
+        measurement types; otherwise require consistent tracer measurement typing.
     :param bin_pair_selector: Optional selector to filter which bin pairs to include.
         If None, all valid bin pairs are returned.
     :param normalize: If True, normalize the window function weights to sum to 1.
@@ -601,10 +603,10 @@ def extract_window_function(
 ) -> tuple[None | npt.NDArray[np.int64], None | npt.NDArray[np.float64]]:
     """Extract ells and weights for a window function.
 
-    :params sacc_data: the Sacc object from which we read.
-    :params indices: the indices of the data points in the Sacc object which
+    :param sacc_data: the Sacc object from which we read.
+    :param indices: the indices of the data points in the Sacc object which
         are computed by the window function.
-    :params normalize: if True, normalize the window function weights to sum to 1.
+    :param normalize: if True, normalize the window function weights to sum to 1.
     :return: the ells and weights of the window function that match the
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
@@ -649,7 +651,9 @@ def maybe_enforce_window(
     :param indices: The indices of the data points in the SACC object.
     :param sacc_data: The SACC object containing the data.
     :param normalize: if True, normalize the window function weights to sum to 1.
-    :return: A tuple containing the possibly replaced ells and the window weights.
+    :return: A tuple containing the possibly replaced ells, the window weights, and
+        `window_ells`, the original ell grid used by the window (or None if no window
+        function is applied).
     """
     replacement_ells, weights = extract_window_function(sacc_data, indices, normalize)
     if replacement_ells is not None:
