@@ -7,7 +7,7 @@ import warnings
 import re
 import pytest
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_allclose
 
 
 import sacc
@@ -659,6 +659,55 @@ def test_constructor_harmonic_with_window_metadata(sacc_galaxy_cwindows, tp_fact
             window.weight / window.weight.sum(axis=0),
         )
         assert_array_equal(two_point.ells, window.values)
+
+
+def test_extract_all_harmonic_metadata_normalize_true(sacc_galaxy_cwindows):
+    """Test that normalize=True normalizes windows in extract_all_harmonic_metadata."""
+    sacc_data, _, _ = sacc_galaxy_cwindows
+
+    two_point_harmonics = extract_all_harmonic_metadata(sacc_data, normalize=True)
+
+    assert len(two_point_harmonics) > 0
+
+    for metadata in two_point_harmonics:
+        assert metadata.window is not None
+        # Normalized windows should sum to 1 along axis 0
+        window_sum = metadata.window.sum(axis=0)
+        assert_allclose(window_sum, np.ones_like(window_sum))
+
+
+def test_extract_all_harmonic_metadata_normalize_false(sacc_galaxy_cwindows):
+    """Test that normalize=False keeps windows unnormalized in extract_all_harmonic_metadata."""
+    sacc_data, _, _ = sacc_galaxy_cwindows
+
+    two_point_harmonics = extract_all_harmonic_metadata(sacc_data, normalize=False)
+
+    assert len(two_point_harmonics) > 0
+
+    for metadata in two_point_harmonics:
+        assert metadata.window is not None
+        # Unnormalized windows should NOT sum to 1 along axis 0
+        # The fixture creates weights with multiple identity matrices,
+        # so the sum should be greater than 1
+        window_sum = metadata.window.sum(axis=0)
+        # Check that at least some values are not close to 1.0
+        # (i.e., windows are not normalized)
+        assert not np.allclose(window_sum, np.ones_like(window_sum))
+
+
+def test_extract_all_harmonic_metadata_default_normalizes(sacc_galaxy_cwindows):
+    """Test that the default behavior (no normalize parameter) normalizes windows."""
+    sacc_data, _, _ = sacc_galaxy_cwindows
+
+    two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
+
+    assert len(two_point_harmonics) > 0
+
+    for metadata in two_point_harmonics:
+        assert metadata.window is not None
+        # Default should normalize windows (sum to 1 along axis 0)
+        window_sum = metadata.window.sum(axis=0)
+        assert_allclose(window_sum, np.ones_like(window_sum))
 
 
 @pytest.mark.slow

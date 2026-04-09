@@ -461,6 +461,7 @@ def extract_all_harmonic_metadata(
     allowed_data_type: None | list[str] = None,
     allow_mixed_types: bool = False,
     bin_pair_selector: None | mdt.BinPairSelector = None,
+    normalize: bool = True,
 ) -> list[mdt.TwoPointHarmonic]:
     """Extract two-point harmonic-space metadata and data from a SACC file.
 
@@ -469,6 +470,7 @@ def extract_all_harmonic_metadata(
         If None, all harmonic-space data types are extracted.
     :param bin_pair_selector: Optional selector to filter which bin pairs to include.
         If None, all valid bin pairs are returned.
+    :param normalize: If True, normalize the window function weights to sum to 1.
     :return: List of TwoPointHarmonic objects with metadata and ell values.
     """
     inferred_galaxy_zdists_dict = {
@@ -501,7 +503,9 @@ def extract_all_harmonic_metadata(
             return_cov=False,
             return_ind=True,
         )
-        ells, weights, window_ells = maybe_enforce_window(ells, indices, sacc_data)
+        ells, weights, window_ells = maybe_enforce_window(
+            ells, indices, sacc_data, normalize
+        )
 
         result.append(
             mdt.TwoPointHarmonic(
