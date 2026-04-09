@@ -608,6 +608,7 @@ def extract_window_function(
     :return: the ells and weights of the window function that match the
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
+    :raises ValueError: if any window function column has zero total weight.
     """
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -618,8 +619,19 @@ def extract_window_function(
     if bandpower_window is None:
         return None, None
     ells = bandpower_window.values
+
+    # Check for zero-weight columns
+    weight_sums = bandpower_window.weight.sum(axis=0)
+    zero_weight_indices = np.where(np.isclose(weight_sums, 0.0))[0]
+    if len(zero_weight_indices) > 0:
+        raise ValueError(
+            f"Window function has zero total weight for column(s) at index/indices: "
+            f"{zero_weight_indices.tolist()}. Each window function column must have "
+            f"non-zero total weight."
+        )
+
     if normalize:
-        weights = bandpower_window.weight / bandpower_window.weight.sum(axis=0)
+        weights = bandpower_window.weight / weight_sums
     else:
         weights = bandpower_window.weight
     return ells, weights

@@ -710,6 +710,137 @@ def test_extract_all_harmonic_metadata_default_normalizes(sacc_galaxy_cwindows):
         assert_allclose(window_sum, np.ones_like(window_sum))
 
 
+def test_extract_window_function_raises_on_zero_weight():
+    """Test that extract_window_function raises ValueError for zero-weight columns."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50)
+    ells = np.array([10, 20, 30, 40, 50], dtype=np.int64)
+
+    # Add a tracer
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.1 / 0.1)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    # Create weights with a zero column (column index 1)
+    weights = np.array(
+        [
+            [1.0, 0.0, 1.0],
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 1.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+    window = sacc.BandpowerWindow(ells, weights)
+    Cells = np.array([100.0, 0.0, 150.0])
+
+    sacc_data.add_ell_cl(
+        "galaxy_shear_cl_ee",
+        "src0",
+        "src0",
+        weights.T.dot(ells),
+        Cells,
+        window=window,
+    )
+
+    # Get indices for the data we just added
+    _, _, indices = sacc_data.get_ell_cl(
+        "galaxy_shear_cl_ee", "src0", "src0", return_ind=True, return_cov=False
+    )
+
+    # Should raise ValueError mentioning column index 1
+    with pytest.raises(
+        ValueError, match=r"Window function has zero total weight.*\[1\]"
+    ):
+        extract_window_function(sacc_data, indices, normalize=True)
+
+
+def test_extract_window_function_raises_on_multiple_zero_weights():
+    """Test that extract_window_function reports multiple zero-weight columns."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50)
+    ells = np.array([10, 20, 30, 40, 50], dtype=np.int64)
+
+    # Add a tracer
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.1 / 0.1)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    # Create weights with multiple zero columns (columns 0 and 2)
+    weights = np.array(
+        [
+            [0.0, 1.0, 0.0],
+            [0.0, 0.5, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.5, 0.0],
+            [0.0, 1.0, 0.0],
+        ],
+        dtype=np.float64,
+    )
+    window = sacc.BandpowerWindow(ells, weights)
+    Cells = np.array([0.0, 100.0, 0.0])
+
+    sacc_data.add_ell_cl(
+        "galaxy_shear_cl_ee",
+        "src0",
+        "src0",
+        weights.T.dot(ells),
+        Cells,
+        window=window,
+    )
+
+    # Get indices
+    _, _, indices = sacc_data.get_ell_cl(
+        "galaxy_shear_cl_ee", "src0", "src0", return_ind=True, return_cov=False
+    )
+
+    # Should raise ValueError mentioning both column indices
+    with pytest.raises(
+        ValueError, match=r"Window function has zero total weight.*\[0, 2\]"
+    ):
+        extract_window_function(sacc_data, indices, normalize=False)
+
+
+def test_extract_all_harmonic_metadata_raises_on_zero_weight():
+    """Test that extract_all_harmonic_metadata raises ValueError for zero weights."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50)
+    ells = np.array([10, 20, 30, 40, 50], dtype=np.int64)
+
+    # Add tracers
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.1 / 0.1)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    # Create weights with a zero column
+    weights = np.array(
+        [
+            [1.0, 0.0, 1.0],
+            [1.0, 0.0, 1.0],
+            [1.0, 0.0, 1.0],
+            [1.0, 0.0, 1.0],
+            [1.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+    window = sacc.BandpowerWindow(ells, weights)
+    Cells = np.array([100.0, 0.0, 150.0])
+
+    sacc_data.add_ell_cl(
+        "galaxy_shear_cl_ee",
+        "src0",
+        "src0",
+        weights.T.dot(ells),
+        Cells,
+        window=window,
+    )
+
+    # Should raise ValueError when trying to extract metadata
+    with pytest.raises(ValueError, match="Window function has zero total weight"):
+        extract_all_harmonic_metadata(sacc_data, normalize=True)
+
+
 @pytest.mark.slow
 def test_constructor_harmonic_with_window_data(sacc_galaxy_cwindows, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
