@@ -30,10 +30,10 @@ def _build_two_point_likelihood_harmonic(
 ):
     """Build a likelihood object for two-point statistics in harmonic space.
 
-    This function creates a likelihood object for two-point statistics in harmonic space
-    using a SACC file and a set of statistic factories. The user must provide the SACC
-    file and specify which statistic factories to use. The likelihood object is created
-    by combining the SACC file with the specified statistic factories.
+    This function creates a likelihood object for two-point statistics in harmonic
+    space using a SACC file and a set of statistic factories. The user must provide the
+    SACC file and specify which statistic factories to use. The likelihood object is
+    created by combining the SACC file with the specified statistic factories.
 
     :param sacc_data: The SACC file containing the data.
     :param two_point_factory: The two-point statistic factory.

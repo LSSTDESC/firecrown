@@ -677,7 +677,7 @@ def test_extract_all_harmonic_metadata_normalize_true(sacc_galaxy_cwindows):
 
 
 def test_extract_all_harmonic_metadata_normalize_false(sacc_galaxy_cwindows):
-    """Test that normalize=False keeps windows unnormalized in extract_all_harmonic_metadata."""
+    """Test that normalize=False keeps windows unnormalized."""
     sacc_data, _, _ = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data, normalize=False)
