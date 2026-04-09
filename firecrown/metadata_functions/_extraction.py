@@ -635,9 +635,7 @@ def maybe_enforce_window(
     :param normalize: if True, normalize the window function weights to sum to 1.
     :return: A tuple containing the possibly replaced ells and the window weights.
     """
-    replacement_ells, weights = extract_window_function(
-        sacc_data, indices, normalize
-    )
+    replacement_ells, weights = extract_window_function(sacc_data, indices, normalize)
     if replacement_ells is not None:
         window_ells = ells
         ells = replacement_ells
