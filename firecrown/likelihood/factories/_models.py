@@ -36,8 +36,8 @@ def _build_two_point_likelihood_harmonic(
     by combining the SACC file with the specified statistic factories.
 
     :param sacc_data: The SACC file containing the data.
-    :param wl_factory: The weak lensing statistic factory.
-    :param nc_factory: The number counts statistic factory.
+    :param two_point_factory: The two-point statistic factory.
+    :param filters: Optional filters to apply to the two-point measurements.
     :param normalize: If True, normalize the window function weights to sum to 1.
 
     :return: A likelihood object for two-point statistics in harmonic space.
