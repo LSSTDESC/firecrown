@@ -194,6 +194,7 @@ class TwoPoint(Statistic):
         tracers: None | TracerNames = None,
         int_options: ClIntegrationOptions | None = None,
         apply_interp: ApplyInterpolationWhen = ApplyInterpolationWhen.DEFAULT,
+        normalize_window: bool = True,
     ) -> None:
         super().__init__()
         self.theory = TwoPointTheory(
@@ -206,6 +207,7 @@ class TwoPoint(Statistic):
             apply_interp=apply_interp,
         )
         self._data: None | DataVector = None
+        self.normalize_window = normalize_window
 
     @classmethod
     def from_metadata_index(
@@ -460,7 +462,9 @@ class TwoPoint(Statistic):
                 )
             replacement_ells: None | npt.NDArray[np.int64]
             window: None | npt.NDArray[np.float64]
-            replacement_ells, window = extract_window_function(sacc_data, sacc_indices)
+            replacement_ells, window = extract_window_function(
+                sacc_data, sacc_indices, self.normalize_window
+            )
             if window is not None:
                 # When using a window function, we do not calculate all Cl's.
                 # For this reason we have a default set of ells that we use

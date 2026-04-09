@@ -593,13 +593,14 @@ def extract_all_photoz_bin_combinations(
 
 
 def extract_window_function(
-    sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64]
+    sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64], normalize: bool = True
 ) -> tuple[None | npt.NDArray[np.int64], None | npt.NDArray[np.float64]]:
     """Extract ells and weights for a window function.
 
     :params sacc_data: the Sacc object from which we read.
     :params indices: the indices of the data points in the Sacc object which
         are computed by the window function.
+    :params normalize: if True, normalize the window function weights to sum to 1.
     :return: the ells and weights of the window function that match the
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
@@ -613,21 +614,30 @@ def extract_window_function(
     if bandpower_window is None:
         return None, None
     ells = bandpower_window.values
-    weights = bandpower_window.weight / bandpower_window.weight.sum(axis=0)
+    if normalize:
+        weights = bandpower_window.weight / bandpower_window.weight.sum(axis=0)
+    else:
+        weights = bandpower_window.weight
     return ells, weights
 
 
 def maybe_enforce_window(
-    ells: npt.NDArray, indices: npt.NDArray[np.int64], sacc_data: sacc.Sacc
+    ells: npt.NDArray,
+    indices: npt.NDArray[np.int64],
+    sacc_data: sacc.Sacc,
+    normalize: bool = True,
 ) -> tuple[npt.NDArray[np.int64], None | npt.NDArray[np.float64], None | npt.NDArray]:
     """Possibly enforce a window function on the given ells.
 
     :param ells: The original ell values.
     :param indices: The indices of the data points in the SACC object.
     :param sacc_data: The SACC object containing the data.
+    :param normalize: if True, normalize the window function weights to sum to 1.
     :return: A tuple containing the possibly replaced ells and the window weights.
     """
-    replacement_ells, weights = extract_window_function(sacc_data, indices)
+    replacement_ells, weights = extract_window_function(
+        sacc_data, indices, normalize
+    )
     if replacement_ells is not None:
         window_ells = ells
         ells = replacement_ells
