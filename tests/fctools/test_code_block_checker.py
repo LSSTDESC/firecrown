@@ -10,7 +10,6 @@ from typer.testing import CliRunner
 
 from firecrown.fctools.code_block_checker import check_qmd_file, app
 
-
 # Create CliRunner instance for testing
 runner = CliRunner()
 

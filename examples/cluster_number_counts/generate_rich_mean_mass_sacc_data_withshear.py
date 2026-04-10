@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Function to generate a SACC file for cluster number counts and cluster DeltaSigma."""
+
 import os
 from typing import Tuple
 

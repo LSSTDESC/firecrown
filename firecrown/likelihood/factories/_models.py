@@ -26,21 +26,23 @@ def _build_two_point_likelihood_harmonic(
     sacc_data: sacc.Sacc,
     two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
+    normalize: bool = True,
 ):
     """Build a likelihood object for two-point statistics in harmonic space.
 
-    This function creates a likelihood object for two-point statistics in harmonic space
-    using a SACC file and a set of statistic factories. The user must provide the SACC
-    file and specify which statistic factories to use. The likelihood object is created
-    by combining the SACC file with the specified statistic factories.
+    This function creates a likelihood object for two-point statistics in harmonic
+    space using a SACC file and a set of statistic factories. The user must provide the
+    SACC file and specify which statistic factories to use. The likelihood object is
+    created by combining the SACC file with the specified statistic factories.
 
     :param sacc_data: The SACC file containing the data.
-    :param wl_factory: The weak lensing statistic factory.
-    :param nc_factory: The number counts statistic factory.
+    :param two_point_factory: The two-point statistic factory.
+    :param filters: Optional filters to apply to the two-point measurements.
+    :param normalize: If True, normalize the window function weights to sum to 1.
 
     :return: A likelihood object for two-point statistics in harmonic space.
     """
-    tpms = extract_all_harmonic_data(sacc_data)
+    tpms = extract_all_harmonic_data(sacc_data, normalize=normalize)
     if len(tpms) == 0:
         raise ValueError(
             "No two-point measurements in harmonic space found in the SACC file."
@@ -95,6 +97,7 @@ class DataSourceSacc(BaseModel):
 
     sacc_data_file: str
     filters: TwoPointBinFilterCollection | None = None
+    normalize_window: bool = True
     _path: Path | None = None
 
     def set_path(self, path: Path) -> None:
@@ -169,7 +172,10 @@ class TwoPointExperiment(BaseModel):
                 )
             case TwoPointCorrelationSpace.HARMONIC:
                 likelihood = _build_two_point_likelihood_harmonic(
-                    sacc_data, self.two_point_factory, filters=self.data_source.filters
+                    sacc_data,
+                    self.two_point_factory,
+                    filters=self.data_source.filters,
+                    normalize=self.data_source.normalize_window,
                 )
             case _ as unreachable:
                 assert_never(unreachable)

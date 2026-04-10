@@ -6,7 +6,6 @@ import pytest
 from firecrown.models.cluster import ScipyIntegrator
 from firecrown.models.cluster import NumCosmoIntegrator
 
-
 # @pytest.fixture(name="integrator", params=[ScipyIntegrator, NumCosmoIntegrator])
 # def fixture_integrator(request) -> Integrator:
 #     return request.param()

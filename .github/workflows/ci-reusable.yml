@@ -86,7 +86,7 @@ jobs:
           echo "env_hash=${h}" >> $GITHUB_OUTPUT
         shell: bash
       - name: Cache Conda env
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache
         with:
           path: ${{ env.CONDA }}/envs
@@ -98,7 +98,7 @@ jobs:
           conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
       - name: Save conda environment
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: ${{ env.CONDA }}/envs
           key: ${{ steps.cache.outputs.cache-primary-key }}
@@ -148,7 +148,7 @@ jobs:
           echo "env_hash=${h}" >> $GITHUB_OUTPUT
         shell: bash
       - name: Cache Conda env
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache
         with:
           path: ${{ env.CONDA }}/envs
@@ -179,7 +179,7 @@ jobs:
       - name: Save conda-forge, CosmoSIS and Cobaya environment
         if: steps.cache.outputs.cache-hit != 'true'
         id: cache-primes-save
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: ${{ env.CONDA }}/envs
           key: ${{ steps.cache.outputs.cache-primary-key }}
@@ -247,7 +247,7 @@ jobs:
           echo "env_hash=${h}" >> $GITHUB_OUTPUT
         shell: bash
       - name: Cache Conda env
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache
         with:
           path: ${{ env.CONDA }}/envs
@@ -277,7 +277,7 @@ jobs:
       - name: Save conda-forge, CosmoSIS and Cobaya environment
         if: steps.cache.outputs.cache-hit != 'true'
         id: cache-primes-save
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: ${{ env.CONDA }}/envs
           key: ${{ steps.cache.outputs.cache-primary-key }}

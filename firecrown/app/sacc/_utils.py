@@ -8,7 +8,6 @@ from scipy.interpolate import PchipInterpolator
 
 from firecrown import metadata_types as mdt
 
-
 QuadOpts = TypedDict(
     "QuadOpts",
     {

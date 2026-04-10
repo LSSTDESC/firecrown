@@ -20,7 +20,6 @@ from firecrown.fctools.generate_symbol_map import (
     app,
 )
 
-
 # Test fixtures - create some mock objects
 
 
