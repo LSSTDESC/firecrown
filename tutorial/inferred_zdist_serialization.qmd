@@ -9,7 +9,7 @@ format: html
 
 In the previous [tutorial](inferred_zdist_generators.qmd), we discussed using the `ZDistLSSTSRD` class in Firecrown to generate redshift distributions for galaxies. In this tutorial, we will cover how to serialize these distributions to disk and read them back in.
 
-While `InferredGalaxyZDist` objects can be serialized, the resulting files are not human-readable because they contain the final redshift distribution.
+While `TomographicBin` objects can be serialized, the resulting files are not human-readable because they contain the final redshift distribution.
 To achieve a human-readable format, we need to serialize the parameters used to generate the distribution.
 
 Firecrown addresses this by introducing the `ZDistLSSTSRDBin` and `ZDistLSSTSRDBinCollection` dataclasses.[^1]
@@ -115,7 +115,7 @@ assert bin_collection.bins[0].measurements == bin_collection_read.bins[0].measur
 assert bin_collection.bins[0].z == bin_collection_read.bins[0].z
 ```
 
-Calling `generate()` on the read object will generate the `InferredGalaxyZDist` redshift distribution dataclasses.
+Calling `generate()` on the read object will generate the redshift distribution dataclasses `TomographicBin`.
 ```{python}
 from pprint import pprint
 
