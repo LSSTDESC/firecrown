@@ -837,6 +837,71 @@ def test_empty_camb_extra_params() -> None:
     assert not params.is_mead2020_feedback()
 
 
+def test_camb_extra_params_update_exact_case() -> None:
+    """Test that CAMBExtraParams.update() works with exact case parameter names."""
+    camb_params = CAMBExtraParams(halofit_version="mead")
+    params_map = ParamsMap(
+        {
+            "HMCode_A_baryon": 3.5,
+            "HMCode_eta_baryon": 0.7,
+        }
+    )
+    camb_params.update(params_map)
+    assert camb_params.HMCode_A_baryon == 3.5
+    assert camb_params.HMCode_eta_baryon == 0.7
+    assert camb_params.HMCode_logT_AGN is None
+
+
+def test_camb_extra_params_update_lower_case() -> None:
+    """Test that CAMBExtraParams.update() respects lower_case parameter setting."""
+    camb_params = CAMBExtraParams(halofit_version="mead")
+    params_map = ParamsMap(
+        {
+            "hmcode_a_baryon": 4.0,
+            "hmcode_eta_baryon": 0.8,
+        }
+    )
+    params_map.use_lower_case_keys(True)
+    camb_params.update(params_map)
+    assert camb_params.HMCode_A_baryon == 4.0
+    assert camb_params.HMCode_eta_baryon == 0.8
+    assert camb_params.HMCode_logT_AGN is None
+
+
+def test_camb_extra_params_update_mead2020_feedback() -> None:
+    """Test CAMBExtraParams.update() with mead2020_feedback parameters."""
+    camb_params = CAMBExtraParams(halofit_version="mead2020_feedback")
+    params_map = ParamsMap({"HMCode_logT_AGN": 8.0})
+    camb_params.update(params_map)
+    assert camb_params.HMCode_logT_AGN == 8.0
+    assert camb_params.HMCode_A_baryon is None
+    assert camb_params.HMCode_eta_baryon is None
+
+
+def test_camb_extra_params_update_missing_params() -> None:
+    """Test that CAMBExtraParams.update() doesn't fail when parameters are missing."""
+    camb_params = CAMBExtraParams(halofit_version="mead")
+    params_map = ParamsMap({"some_other_param": 1.0})
+    # Should not raise an error
+    camb_params.update(params_map)
+    # Parameters should remain None
+    assert camb_params.HMCode_A_baryon is None
+    assert camb_params.HMCode_eta_baryon is None
+    assert camb_params.HMCode_logT_AGN is None
+
+
+def test_camb_extra_params_update_partial() -> None:
+    """Test CAMBExtraParams.update() with only some parameters present."""
+    camb_params = CAMBExtraParams(halofit_version="mead", HMCode_A_baryon=3.0)
+    params_map = ParamsMap({"HMCode_eta_baryon": 0.9})
+    camb_params.update(params_map)
+    # HMCode_A_baryon should remain at its initial value
+    assert camb_params.HMCode_A_baryon == 3.0
+    # HMCode_eta_baryon should be updated
+    assert camb_params.HMCode_eta_baryon == 0.9
+    assert camb_params.HMCode_logT_AGN is None
+
+
 def test_ccl_factory_invalid_extra_params() -> None:
     with pytest.raises(
         ValueError,

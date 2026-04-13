@@ -241,12 +241,20 @@ class CAMBExtraParams(BaseModel):
         :param params: The parameters to update.
         :return: None
         """
-        if "HMCode_A_baryon" in params:
-            self.HMCode_A_baryon = params["HMCode_A_baryon"]
-        if "HMCode_eta_baryon" in params:
-            self.HMCode_eta_baryon = params["HMCode_eta_baryon"]
-        if "HMCode_logT_AGN" in params:
-            self.HMCode_logT_AGN = params["HMCode_logT_AGN"]
+        try:
+            self.HMCode_A_baryon = params.get_from_full_name("HMCode_A_baryon")
+        except KeyError:
+            pass
+
+        try:
+            self.HMCode_eta_baryon = params.get_from_full_name("HMCode_eta_baryon")
+        except KeyError:
+            pass
+
+        try:
+            self.HMCode_logT_AGN = params.get_from_full_name("HMCode_logT_AGN")
+        except KeyError:
+            pass
 
     def is_mead2020_feedback(self) -> bool:
         """Return True if the halofit_version is mead2020_feedback."""
