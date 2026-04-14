@@ -198,8 +198,32 @@ def make_binned_two_point_filtered(
     """
     _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
     all_bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
+    return filter_two_point_combinations(all_bin_combinations, bin_pair_selector)
+
+
+def filter_two_point_combinations(
+    combinations: list[mdt.TwoPointXY],
+    bin_pair_selector: mdt.BinPairSelector,
+) -> list[mdt.TwoPointXY]:
+    """Filter a list of TwoPointXY combinations using a bin pair selector.
+
+    This function takes an existing list of TwoPointXY combinations and applies the
+    provided selector to filter out pairs that do not meet the selection criteria. This
+    function preserves the order of the input combinations while applying the filter.
+
+    :param combinations: List of TwoPointXY combinations to filter.
+    :param bin_pair_selector: Selector defining which bin pairs to include.
+
+    :return: List of TwoPointXY combinations that pass the selector's criteria.
+
+    Example:
+        # Filter existing combinations to get only auto-correlations of source
+        # measurements
+        selector = AutoNameBinPairSelector() & SourceBinPairSelector()
+        filtered_combinations = filter_two_point_combinations(combinations, selector)
+    """
     return [
         xy
-        for xy in all_bin_combinations
+        for xy in combinations
         if bin_pair_selector.keep((xy.x, xy.y), (xy.x_measurement, xy.y_measurement))
     ]
