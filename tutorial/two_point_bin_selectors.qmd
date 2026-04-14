@@ -28,9 +28,10 @@ Bin pair selectors let you express these requirements declaratively, making your
 
 A [[metadata_types|BinPairSelector]] is applied when creating [[metadata_types|TwoPointXY]] combinations from [[metadata_types|InferredGalaxyZDist]] bins. It determines whether to keep or discard each potential pair.
 
-### The `keep()` Method
+### The [[metadata_types|BinPairSelector.keep]] Method
 
-Every selector implements a `keep()` method that takes:
+Every selector implements a [[metadata_types|BinPairSelector.keep]] method that takes:
+
 - **`zdist`**: A pair of [[metadata_types|InferredGalaxyZDist]] objects `(bin1, bin2)`
 - **`m`**: A pair of [[metadata_types|Measurement]] types `(measurement1, measurement2)`
 
@@ -43,6 +44,7 @@ When selecting bin pairs for two-point analyses, you may need to ensure that the
 ### Galaxy-Galaxy Lensing: A Key Example
 
 Consider galaxy-galaxy lensing, which measures the correlation between:
+
 - **Source galaxies** (background): Whose shapes are distorted by lensing
 - **Lens galaxies** (foreground): Whose gravitational field causes the lensing
 
@@ -60,6 +62,7 @@ Other approaches are possible: In the future, Firecrown may include selectors th
 ## Naming Conventions for Redshift Ordering
 
 Many surveys use a convention where tomographic bins are numbered in order of increasing redshift:
+
 - `lsst_y1_source0` contains sources at the lowest redshift
 - `lsst_y1_source4` contains sources at the highest redshift
 - Similarly: `lsst_y1_lens0` < `lsst_y1_lens1` < ... in redshift
@@ -153,7 +156,7 @@ Firecrown provides atomic selector building blocks rather than prescribing one "
 - Redshift overlap between bins varies by survey
 - Some analyses may intentionally include broader selections
 
-`SourceLensBinPairSelector()` is the fundamental building block, it selects (Source, Lens) measurement pairs. You can then combine it with other selectors to add constraints appropriate to your data:
+[[metadata_types|SourceLensBinPairSelector]] is the fundamental building block, it selects (Source, Lens) measurement pairs. You can then combine it with other selectors to add constraints appropriate to your data:
 
 - **If using naming conventions**: Combine with [[metadata_types|NameDiffBinPairSelector]]
 - **If listing pairs explicitly**: Combine with [[metadata_types|NamedBinPairSelector]]
@@ -364,12 +367,14 @@ Index-based selectors filter pairs based on the numeric indices in bin names and
 #### Understanding Bin Name Structure
 
 Bin names follow the pattern `<prefix><number>`:
+
 - `lsst_y1_source0` → prefix: `lsst_y1_source`, index: `0`
 - `lsst_y1_lens3` → prefix: `lsst_y1_lens`, index: `3`
 
 #### NameDiffBinPairSelector: Index-Based Filtering
 
 This selector is useful when your bins follow a naming convention where the numeric index correlates with some property (typically redshift). It filters based on:
+
 1. Whether bin prefixes match (`same_name_prefix`)
 2. The difference between bin indices (`neighbors_diff`)
 
@@ -760,6 +765,7 @@ print(f"Multi-constrained galaxy-galaxy lensing: {len(multi_constrained_gl_pairs
 ```
 
 This combines:
+
 1. **Measurement type filtering**: Only source-lens pairs
 2. **Index-based constraints**: Assumes naming convention where indices differ by 0, 1, or 2
 3. **Manual exclusions**: Remove specific pairs known to be problematic
@@ -787,6 +793,7 @@ print(f"Type-source filtered pairs: {len(type_filtered_pairs)}")
 ```
 
 **Use cases:**
+
 - Separate analyses for spectroscopic vs photometric samples
 - Avoid mixing bins from different surveys with incompatible systematics
 - Ensure consistent redshift calibration within correlations
@@ -929,11 +936,13 @@ print(f"Default 3×2pt: {len(default_pairs)} pairs")
 ## Physical Motivation for Distance Parameters
 
 **Why limit redshift separation?**
+
 - Signal-to-noise decreases for widely separated bins
 - Computational cost increases with more pairs
 - Very distant bins may have negligible correlation
 
 **Why exclude same-index source-lens pairs?**
+
 - Standard practice: source and lens samples are typically drawn from the same parent population, just split by different selection criteria
 - Correlating them at the same redshift would mix the selection effects in complicated ways
 - Different analyses may handle this differently, but ThreeTwoBinPairSelector follows the conservative standard
@@ -1113,24 +1122,45 @@ Bin pair selectors provide a declarative way to control which bin pairs are incl
 
 ### Key Selectors for Physical Constraints
 
-| Requirement | Selector Combination | Notes |
-|---------------------|---------------------|-----|
-| All (Source, Lens) pairs | [[metadata_types|SourceLensBinPairSelector]] | Fundamental building block |
-| Galaxy-galaxy lensing<br>(with naming convention) | `SourceLensBinPairSelector() &`<br>`CrossNameDiffBinPairSelector(`<br>`  neighbors_diff=[0, 1])` | Assumes index ∝ redshift |
-| Nearby bins<br>(with naming convention) | `AutoNameDiffBinPairSelector(`<br>`  neighbors_diff=[0, 1, -1])` | Limits index differences |
-| Same data source | `TypeSourceBinPairSelector(`<br>`  type_source=...)` | Filter by provenance |
-| Standard 3×2pt<br>(with naming convention) | `ThreeTwoBinPairSelector()` | Pre-built composite |
-| Custom high-S/N | `ThreeTwoBinPairSelector(`<br>`  source_dist=2, lens_dist=2,`<br>`  source_lens_dist=1)` | Conservative distances |
+**All (Source, Lens) pairs**
+
+- Selector: [[metadata_types|SourceLensBinPairSelector]]
+- Notes: Fundamental building block
+
+**Galaxy-galaxy lensing** (with naming convention)
+
+- Selector: [[metadata_types|SourceLensBinPairSelector]] () & [[metadata_types|CrossNameDiffBinPairSelector]] (neighbors_diff=[0, 1])
+- Notes: Assumes index ∝ redshift
+
+**Nearby bins** (with naming convention)
+
+- Selector: [[metadata_types|AutoNameDiffBinPairSelector]] (neighbors_diff=[0, 1, -1])
+- Notes: Limits index differences
+
+**Same data source**
+
+- Selector: [[metadata_types|TypeSourceBinPairSelector]] (type_source=...)
+- Notes: Filter by provenance
+
+**Standard 3×2pt** (with naming convention)
+
+- Selector: [[metadata_types|ThreeTwoBinPairSelector]] ()
+- Notes: Pre-built composite
+
+**Custom high-S/N**
+
+- Selector: [[metadata_types|ThreeTwoBinPairSelector]] (source_dist=2, lens_dist=2, source_lens_dist=1)
+- Notes: Conservative distances
 
 ### Key Functions
 
 | Function | Purpose | Selector Parameter |
 |----------|---------|-------------------|
-| `make_binned_two_point_filtered()` | Filter generated bins | Required |
-| `filter_two_point_combinations()` | Filter existing combinations | Required |
-| `extract_all_photoz_bin_combinations()` | Filter SACC bin combinations | Optional |
-| `extract_all_harmonic_metadata()` | Filter SACC harmonic data | Optional |
-| `extract_all_real_metadata()` | Filter SACC real-space data | Optional |
+| [[metadata_functions\|make_binned_two_point_filtered]] | Filter generated bins | Required |
+| [[metadata_functions\|filter_two_point_combinations]] | Filter existing combinations | Required |
+| [[metadata_functions\|extract_all_photoz_bin_combinations]] | Filter SACC bin combinations | Optional |
+| [[metadata_functions\|extract_all_harmonic_metadata]] | Filter SACC harmonic data | Optional |
+| [[metadata_functions\|extract_all_real_metadata]] | Filter SACC real-space data | Optional |
 
 ### Critical Takeaways
 
