@@ -456,7 +456,7 @@ cross_neighbor_table = [
     {
         "bin-x": pair.x.bin_name,
         "bin-y": pair.y.bin_name,
-        "index-diff": f"{pair.x.bin_name.split('_')[-1]} - {pair.y.bin_name.split('_')[-1]}",
+        "index-diff": int(pair.x.bin_name[-1]) - int(pair.y.bin_name[-1]),
         "measurement-x": str(pair.x_measurement),
         "measurement-y": str(pair.y_measurement),
     }
