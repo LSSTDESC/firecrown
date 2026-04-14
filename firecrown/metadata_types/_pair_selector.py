@@ -716,13 +716,14 @@ class ThreeTwoBinPairSelector(CompositeSelector):
         # Includes: source-source, lens-lens, and cross-name source-lens pairs
 
     :param source_dist: Maximum allowed index separation (left minus right) for
-        source-source bin pairs. The allowed set is ``range(-source_dist,
-        source_dist)`` (zero included, upper bound exclusive).
+        source-source bin pairs. The allowed differences are in the interval
+        ``[-source_dist, source_dist]`` (both endpoints inclusive).
     :param lens_dist: Maximum allowed index separation (left minus right) for
-        lens-lens bin pairs. The allowed set is ``range(-lens_dist, lens_dist)``.
-    :param source_lens_dist: Maximum positive index separation allowed for
-        source-lens pairs. The allowed set is ``range(1, source_lens_dist + 1)``.
-        Only pairs with different prefixes (enforced by ``CrossNameDiff``) are kept.
+        lens-lens bin pairs. The allowed differences are in the interval
+        ``[-lens_dist, lens_dist]`` (both endpoints inclusive).
+    :param source_lens_dist: Maximum positive index separation allowed for source-lens
+        pairs. The allowed differences are ``{1, 2, ..., source_lens_dist}``. Only
+        pairs with different prefixes (enforced by ``CrossNameDiff``) are kept.
     """
 
     kind: str = "3x2pt"
@@ -737,13 +738,13 @@ class ThreeTwoBinPairSelector(CompositeSelector):
             (
                 SourceBinPairSelector()
                 & AutoNameDiffBinPairSelector(
-                    neighbors_diff=list(range(-self.source_dist, self.source_dist))
+                    neighbors_diff=list(range(-self.source_dist, self.source_dist + 1))
                 )
             )
             | (
                 LensBinPairSelector()
                 & AutoNameDiffBinPairSelector(
-                    neighbors_diff=list(range(-self.lens_dist, self.lens_dist))
+                    neighbors_diff=list(range(-self.lens_dist, self.lens_dist + 1))
                 )
             )
             | (

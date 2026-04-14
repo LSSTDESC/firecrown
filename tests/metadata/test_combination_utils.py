@@ -85,9 +85,13 @@ def test_filter_two_point_combinations_cross_name(
     result = filter_two_point_combinations(sample_combinations, selector)
 
     # Verify all results are cross-correlations (different bin names)
-    assert len(result) >= 0
+    assert len(result) > 0
     for combo in result:
         assert combo.x.bin_name != combo.y.bin_name
+
+    # Verify completeness - all cross-name combinations should be present
+    cross_from_sample = [c for c in sample_combinations if c.x.bin_name != c.y.bin_name]
+    assert len(result) == len(cross_from_sample)
 
 
 def test_filter_two_point_combinations_source_selector(
@@ -396,10 +400,12 @@ def test_filter_two_point_combinations_left_right_measurement_selectors():
 
     result = filter_two_point_combinations(combinations, selector)
 
-    assert len(result) >= 1
-    for combo in result:
-        assert combo.x_measurement in mt.GALAXY_SOURCE_TYPES
-        assert combo.y_measurement in mt.GALAXY_LENS_TYPES
+    # Should have exactly one pair: (source, lens)
+    assert len(result) == 1
+    assert result[0].x.bin_name == "src"
+    assert result[0].y.bin_name == "lens"
+    assert result[0].x_measurement in mt.GALAXY_SOURCE_TYPES
+    assert result[0].y_measurement in mt.GALAXY_LENS_TYPES
 
 
 def test_filter_two_point_combinations_idempotent():

@@ -104,7 +104,7 @@ basic_pairs = make_binned_two_point_filtered(all_bins, basic_selector)
 # i.e., lens at same or slightly lower redshift
 redshift_constrained_selector = SourceLensBinPairSelector() & NameDiffBinPairSelector(
     same_name_prefix=False,  # Different prefixes (source vs lens)
-    neighbors_diff=[0, 1],   # Lens index ≤ source index + 1
+    neighbors_diff=[0, 1],   # lens_index ∈ {source_index, source_index - 1}
 )
 redshift_constrained_pairs = make_binned_two_point_filtered(all_bins, redshift_constrained_selector)
 
@@ -409,7 +409,7 @@ print(f"Different prefix, controlled indices: {len(diff_prefix_pairs)} pairs")
 
 | Configuration | Keeps | Rejects | Use Case |
 |--------------|-------|---------|----------|
-| `same_name_prefix=True`<br>`neighbors_diff=1` | (bin0, bin1)<br>(bin1, bin0)<br>(bin2, bin2) | (bin0, bin2)<br>(src0, bin0) | Adjacent bins, same type |
+| `same_name_prefix=True`<br>`neighbors_diff=1` | (bin0, bin1)<br>(bin1, bin0) | (bin0, bin2)<br>(bin2, bin2)<br>(src0, bin0) | Adjacent bins, same type |
 | `same_name_prefix=False`<br>`neighbors_diff=[0, 1]` | (src0, lens0)<br>(src1, lens0)<br>(src1, lens1) | (src0, lens2)<br>(lens1, src0) | Cross-type, redshift constraint |
 | `same_name_prefix=True`<br>`neighbors_diff=0` | (bin0, bin0)<br>(bin1, bin1) | (bin0, bin1) | Exact auto-correlations |
 
@@ -862,7 +862,7 @@ class MyCustomSelector(CompositeSelector):
         self._impl = (
             SourceLensBinPairSelector()
             & CrossNameDiffBinPairSelector(
-                neighbors_diff=list(range(0, self.max_separation + 1))
+                neighbors_diff=list(range(0, self.max_separation + 1))  # [0, max_separation]
             )
         )
 ```
@@ -909,8 +909,8 @@ from firecrown.metadata_types import ThreeTwoBinPairSelector
 
 # Default: fairly permissive
 default_3x2pt = ThreeTwoBinPairSelector(
-    source_dist=5,       # Cosmic shear: |source_i - source_j| < 5
-    lens_dist=5,         # Clustering: |lens_i - lens_j| < 5  
+    source_dist=5,       # Cosmic shear: source_i - source_j ∈ [-5, 5]
+    lens_dist=5,         # Clustering: lens_i - lens_j ∈ [-5, 5]
     source_lens_dist=5   # Galaxy-galaxy lensing: source_i - lens_j ∈ {1,2,3,4,5}
 )
 
@@ -920,12 +920,13 @@ print(f"Default 3×2pt: {len(default_pairs)} pairs")
 
 **What each parameter does:**
 
-- `source_dist`: For cosmic shear, allows source bins with indices differing by up to this amount
-  - Range: `[-source_dist, source_dist)` (zero included)
+- `source_dist`: For cosmic shear, controls which source bin index pairs are included
+  - Difference: `source_i - source_j ∈ [-source_dist, source_dist]`
+  - Example: `source_dist=5` allows differences in `{-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5}`
   - Larger values → more cross-redshift correlations → more data, but weaker signals
   
-- `lens_dist`: For galaxy clustering, same logic for lens bins
-  - Range: `[-lens_dist, lens_dist)`
+- `lens_dist`: For galaxy clustering, same logic for lens bin pairs
+  - Difference: `lens_i - lens_j ∈ [-lens_dist, lens_dist]`
   
 - `source_lens_dist`: For galaxy-galaxy lensing, enforces `source_index - lens_index ∈ {1, 2, ..., source_lens_dist}`
   - **Does NOT include 0**: Excludes same-index pairs to avoid mixing source/lens from same redshift bin
@@ -1006,7 +1007,7 @@ gl_table = [
 
 df = pd.DataFrame(gl_table)
 print("\nGalaxy-galaxy lensing pairs (source × lens):")
-print("Note: diff = source_idx - lens_idx should be positive (lens at lower/equal z)\n")
+print("Note: diff = source_idx - lens_idx should be positive (lens at lower z)\n")
 display(Markdown(df.to_markdown(index=False)))
 ```
 
