@@ -78,7 +78,6 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
-          auto-update-conda: true
           conda-solver: libmamba
           python-version: '3.12'
           show-channel-urls: true
@@ -117,7 +116,6 @@ jobs:
         with:
           miniforge-version: latest
           installation-dir: ${{ env.CONDA_ROOT }}
-          auto-update-conda: true
           conda-solver: libmamba
           python-version: ${{ matrix.python-version }}
           conda-remove-defaults: true
@@ -226,7 +224,6 @@ jobs:
         with:
           miniforge-version: latest
           installation-dir: ${{ env.CONDA_ROOT }}
-          auto-update-conda: true
           conda-solver: libmamba
           python-version: "3.13"
           conda-remove-defaults: true
