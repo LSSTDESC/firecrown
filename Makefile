@@ -183,7 +183,10 @@ test-slow:  ## Run only slow tests (with --runslow)
 test-integration:  ## Run integration tests only
 	$(PYTEST) -vv -s --integration -m integration tests/integration
 
-test-all: test-slow test-integration test  ## Run all tests (slow + integration)
+test-all:  ## Run all tests (slow + integration)
+	$(MAKE) test
+	$(MAKE) test-slow
+	$(MAKE) test-integration
 
 
 ##@ Documentation
@@ -221,11 +224,17 @@ clean: clean-coverage clean-docs clean-build  ## Remove all generated files
 
 ##@ Pre-commit
 
-pre-commit: check-env check-deps format lint test-ci ## Run all pre-commit checks
+pre-commit:  ## Run all pre-commit checks
+	$(MAKE) check-env
+	$(MAKE) check-deps
+	$(MAKE) format
+	$(MAKE) lint
+	$(MAKE) test-ci
 	@echo ""
 	$(OK_MSG) "All pre-commit checks passed!"
 
-all-checks: pre-commit test-slow test-integration ## Run everything
+all-checks:  ## Run everything
+	$(MAKE) pre-commit
 
 install: check-env check-deps  ## Install firecrown in development mode
 	pip uninstall -y firecrown || true
@@ -242,4 +251,7 @@ test-serial:  ## Run tests serially (no parallelization, useful for debugging)
 test-failfast:  ## Run tests and stop at first failure
 	$(PYTEST) -x -n auto
 
-test-ci: test test-slow test-integration ## Run exactly what CI runs
+test-ci:  ## Run exactly what CI runs
+	$(MAKE) test
+	$(MAKE) test-slow
+	$(MAKE) test-integration

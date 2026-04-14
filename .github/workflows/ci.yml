@@ -15,12 +15,12 @@
 #    - All jobs run integration tests on the full matrix
 #
 # 3. OPTIMIZED CACHING STRATEGY:
-#    - Enhanced conda caching with both /envs and /pkgs paths
-#    - Better cache keys with restore fallbacks
-#    - Uses global CACHE_VERSION environment variable
+#    - Caches the named conda environment instead of the full envs directory
+#    - Uses date-salted keys with restore fallbacks for warm-cache reuse
+#    - Uses global CACHE_VERSION environment variable for cache format changes
 #
 # 4. PARALLEL EXECUTION OPTIMIZATIONS:
-#    - Linting: All tools run in parallel (black, flake8, mypy, pylint)
+#    - Linting: black, flake8, and mypy run in parallel; pylint runs serially
 #    - Dependencies: CosmoSIS and Cobaya setup run in parallel
 #    - Tests: Uses -n auto for pytest parallelization
 #
@@ -65,7 +65,8 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 3
+  # Bump when cache contents or bootstrap commands materially change.
+  CACHE_VERSION: 4
 
 jobs:
   quick-validation:
@@ -96,6 +97,8 @@ jobs:
   firecrown-miniforge:
     name: (${{ matrix.os }}, py${{ matrix.python-version }})${{ matrix.coverage && ' + coverage' || '' }}
     runs-on: ${{ matrix.os }}-latest
+    env:
+      CONDA_ROOT: ${{ github.workspace }}/.miniforge
     strategy:
       fail-fast: false
       matrix:
@@ -111,6 +114,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
+          installation-dir: ${{ env.CONDA_ROOT }}
           python-version: ${{ matrix.python-version }}
           activate-environment: ${{ env.CONDA_ENV }}
       - name: Cache date
@@ -121,8 +125,10 @@ jobs:
         uses: actions/cache/restore@v4
         id: cache
         with:
-          path: ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
+          path: ${{ env.CONDA_ROOT }}/envs/${{ env.CONDA_ENV }}
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ hashFiles('environment.yml', '.github/update_ci.py') }}-v${{ env.CACHE_VERSION }}-${{ steps.get-date.outputs.today }}
+          restore-keys: |
+            conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ hashFiles('environment.yml', '.github/update_ci.py') }}-v${{ env.CACHE_VERSION }}-
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -144,13 +150,14 @@ jobs:
         if: ${{ (matrix.os == 'macos') && (steps.cache.outputs.cache-hit != 'true') }}
         shell: bash -l {0}
         run: |
-          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
-            python -c "import isitgr"
+          install_name_tool -delete_rpath "${CONDA_PREFIX}/lib" ${CONDA_PREFIX}/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+          python -c "import isitgr"
       - name: Save conda-forge, CosmoSIS and Cobaya environment
+        if: steps.cache.outputs.cache-hit != 'true'
         id: cache-primes-save
         uses: actions/cache/save@v4
         with:
-          path: ${{ env.CONDA }}/envs
+          path: ${{ env.CONDA_ROOT }}/envs/${{ env.CONDA_ENV }}
           key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Setting up Firecrown
         shell: bash -l {0}
@@ -162,14 +169,15 @@ jobs:
       - name: Code quality checks
         shell: bash -l {0}
         run: |
-          # Parallel linting and type checking
+          # Run light-weight checks in parallel, then serialize nested-parallel pylint.
           black --check firecrown tests examples &
           flake8 firecrown examples tests &
           mypy -p firecrown -p examples -p tests &
-          pylint firecrown &
-          pylint --rcfile tests/pylintrc tests &
-          pylint --rcfile examples/pylintrc examples &
           wait
+
+          pylint firecrown
+          pylint --rcfile tests/pylintrc tests
+          pylint --rcfile examples/pylintrc examples
       - name: Run unit tests with smart execution
         shell: bash -l {0}
         run: |
@@ -202,13 +210,17 @@ jobs:
 
   external-dependencies:
     name: External dependencies and documentation
+    needs: [quick-validation, firecrown-miniforge]
     runs-on: macos-latest
+    env:
+      CONDA_ROOT: ${{ github.workspace }}/.miniforge
     steps:
       - uses: actions/checkout@v4
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
+          installation-dir: ${{ env.CONDA_ROOT }}
           python-version: "3.13"
           activate-environment: ${{ env.CONDA_ENV }}
       - name: Cache date
@@ -219,8 +231,10 @@ jobs:
         uses: actions/cache/restore@v4
         id: cache
         with:
-          path: ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
+          path: ${{ env.CONDA_ROOT }}/envs/${{ env.CONDA_ENV }}
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ hashFiles('environment.yml', '.github/update_ci.py') }}-v${{ env.CACHE_VERSION }}-${{ steps.get-date.outputs.today }}
+          restore-keys: |
+            conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ hashFiles('environment.yml', '.github/update_ci.py') }}-v${{ env.CACHE_VERSION }}-
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -229,7 +243,7 @@ jobs:
       - name: Remove redundant rpath and import isitgr
         shell: bash -l {0}
         run: |
-          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+          install_name_tool -delete_rpath "${CONDA_PREFIX}/lib" ${CONDA_PREFIX}/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
           python -c "import isitgr"
       - name: Setting up CosmoSIS and Cobaya
         if: steps.cache.outputs.cache-hit != 'true'
@@ -244,10 +258,11 @@ jobs:
           (python -m pip install cobaya --no-deps) &
           wait
       - name: Save conda-forge, CosmoSIS and Cobaya environment
+        if: steps.cache.outputs.cache-hit != 'true'
         id: cache-primes-save
         uses: actions/cache/save@v4
         with:
-          path: ${{ env.CONDA }}/envs
+          path: ${{ env.CONDA_ROOT }}/envs/${{ env.CONDA_ENV }}
           key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Create firecrown_developer environment
         shell: bash -l {0}
