@@ -206,7 +206,8 @@ def test_filter_two_point_combinations_named_selector():
     selector = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
     result = filter_two_point_combinations(combinations, selector)
 
-    # Should only have the bin_1-bin_2 pair (note: order matters for NamedBinPairSelector)
+    # Should only have the bin_1-bin_2 pair (note: order matters for
+    # NamedBinPairSelector)
     assert len(result) == 1
     assert result[0].x.bin_name == "bin_1"
     assert result[0].y.bin_name == "bin_2"
@@ -348,7 +349,11 @@ def test_filter_two_point_combinations_triple_negation():
 
 
 def test_filter_two_point_combinations_with_real_vs_harmonic():
-    """Test that filter_two_point_combinations works with different measurement types."""
+    """Test that filter_two_point_combinations.
+
+    Test that filter_two_point_combinations works with different measurement
+    types.
+    """
     # Create bins with measurements that support different spaces
     harmonic_bin = mt.InferredGalaxyZDist(
         bin_name="harmonic",
@@ -462,7 +467,8 @@ def test_filter_two_point_combinations_commutative_or():
     result1 = filter_two_point_combinations(combinations, selector1)
     result2 = filter_two_point_combinations(combinations, selector2)
 
-    # Results should be identical including order (since make_all_photoz_bin_combinations
-    # returns sorted results and filter preserves order)
+    # Results should be identical including order (since
+    # make_all_photoz_bin_combinations returns sorted results and filter preserves
+    # order)
     assert len(result1) == len(result2)
     assert result1 == result2
