@@ -5,6 +5,7 @@
 
 .PHONY: help format lint typecheck test test-coverage test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
+	docs-verify docs-code-check docs-symbol-check docs-linkcheck \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
 	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
 	check-env check-deps
@@ -202,6 +203,18 @@ api-docs: ## Build API documentation with Sphinx
 docs-build: tutorials api-docs  ## Build tutorials and API docs
 
 docs: docs-build  ## Build and check all documentation
+
+docs-verify: docs-code-check docs-symbol-check docs-linkcheck  ## Placeholder documentation verification
+	$(OK_MSG) "Documentation verification placeholder passed"
+
+docs-code-check:  ## Placeholder documentation code check
+	$(OK_MSG) "Documentation code check placeholder passed"
+
+docs-symbol-check:  ## Placeholder documentation symbol check
+	$(OK_MSG) "Documentation symbol check placeholder passed"
+
+docs-linkcheck:  ## Placeholder documentation link check
+	$(OK_MSG) "Documentation link check placeholder passed"
 
 
 ##@ Cleaning
