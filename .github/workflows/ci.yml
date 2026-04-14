@@ -134,9 +134,11 @@ jobs:
             conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ hashFiles('environment.yml', '.github/update_ci.py') }}-v${{ env.CACHE_VERSION }}-
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash -l {0}
         run: |
           python .github/update_ci.py ${{ matrix.python-version }}
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
+          conda config --show solver
+          mamba env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
       - name: Setting up CosmoSIS and Cobaya
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
@@ -242,9 +244,11 @@ jobs:
             conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ hashFiles('environment.yml', '.github/update_ci.py') }}-v${{ env.CACHE_VERSION }}-
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash -l {0}
         run: |
           python .github/update_ci.py 3.13
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
+          conda config --show solver
+          mamba env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
       - name: Remove redundant rpath and import isitgr
         shell: bash -l {0}
         run: |
