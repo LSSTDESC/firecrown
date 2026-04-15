@@ -88,6 +88,7 @@ def test_render_attributes_simple():
             ),
         ],
         decorator_list=[],
+        type_params=[],
     )
     result = _render_attributes(class_def)
     assert any("attr1: int" in line for line in result)
@@ -102,6 +103,7 @@ def test_render_attributes_empty():
         keywords=[],
         body=[],
         decorator_list=[],
+        type_params=[],
     )
     result = _render_attributes(class_def)
     assert not result
@@ -120,6 +122,7 @@ def test_render_attributes_no_annotation():
         keywords=[],
         body=[assign_node],
         decorator_list=[],
+        type_params=[],
     )
     result = _render_attributes(class_def)
     assert any("attr = 42" in line for line in result)
@@ -140,6 +143,7 @@ def test_render_attributes_complex_value():
             )
         ],
         decorator_list=[],
+        type_params=[],
     )
     result = _render_attributes(class_def)
     assert any("attr: list = [1, 2]" in line for line in result)
