@@ -5,6 +5,8 @@ Fixtures defined here are available to any test in Firecrown.
 """
 
 # pylint: disable=too-many-lines
+import ast
+import sys
 from itertools import product
 import pytest
 
@@ -39,6 +41,45 @@ import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.two_point as tp
 from firecrown.likelihood import cmb
 from firecrown.metadata_types import Clusters, CMB
+
+
+# Helper function for creating AST ClassDef nodes across Python versions
+if sys.version_info >= (3, 12):
+
+    def _make_class_def(
+        name: str,
+        bases: list[ast.expr],
+        keywords: list[ast.keyword],
+        body: list[ast.stmt],
+        decorator_list: list[ast.expr],
+    ) -> ast.ClassDef:
+        """Create a ClassDef node with type_params (Python 3.12+)."""
+        return ast.ClassDef(
+            name=name,
+            bases=bases,
+            keywords=keywords,
+            body=body,
+            decorator_list=decorator_list,
+            type_params=[],
+        )
+
+else:
+
+    def _make_class_def(
+        name: str,
+        bases: list[ast.expr],
+        keywords: list[ast.keyword],
+        body: list[ast.stmt],
+        decorator_list: list[ast.expr],
+    ) -> ast.ClassDef:
+        """Create a ClassDef node without type_params (Python 3.11)."""
+        return ast.ClassDef(
+            name=name,
+            bases=bases,
+            keywords=keywords,
+            body=body,
+            decorator_list=decorator_list,
+        )
 
 
 def pytest_addoption(parser):
