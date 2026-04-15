@@ -825,9 +825,30 @@ def dndz_shift_and_stretch_active(
     The active transformation preserves the redshift array and modifies the dndz array.
     This transformation introduces an interpolation error on dndz.
 
+    **Sign convention:** For the pure-shift case (:math:`\\sigma_z = 1`), the
+    transformed distribution satisfies:
+
+    .. math::
+
+        n'(z) = n(z + \\delta_z)
+
+    A positive :math:`\\delta_z` therefore shifts the distribution toward *lower*
+    redshifts (i.e. the peak moves to :math:`z_{\\rm peak} - \\delta_z`).
+
+    .. note::
+        This sign convention is **opposite** to the one used in the
+        `Cosmosis Standard Library <https://github.com/cosmosis-developers/
+        cosmosis-standard-library/blob/main/number_density/photoz_bias/
+        photoz_bias.py>`_ ``photoz_bias`` module (additive mode), which
+        implements :math:`n'(z) = n(z - \\Delta z_{\\rm CSL})`, so that a
+        positive shift moves the distribution toward *higher* redshifts.
+        The relationship between the two conventions is
+        :math:`\\delta_z = -\\Delta z_{\\rm CSL}`.
+
     :param z: the redshifts
     :param dndz: the dndz
-    :param delta_z: the photo-z shift
+    :param delta_z: the photo-z shift (positive values shift the distribution
+        toward lower redshifts)
     :param sigma_z: the photo-z stretch
     :return: the shifted and stretched dndz
     """
@@ -856,9 +877,29 @@ def dndz_shift_and_stretch_passive(
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Shift and stretch the photo-z distribution using a passive transformation.
 
+    The passive transformation modifies the redshift array and preserves the dndz
+    values. For the pure-shift case (:math:`\\sigma_z = 1`), each tabulated redshift
+    :math:`z_i` is replaced by :math:`z_i - \\delta_z`, so the distribution is
+    shifted toward *lower* redshifts when :math:`\\delta_z > 0`. This is equivalent
+    to evaluating the original distribution at :math:`z + \\delta_z`:
+
+    .. math::
+
+        n'(z) = n(z + \\delta_z)
+
+    **Sign convention:** This sign convention is **opposite** to the one used in the
+    `Cosmosis Standard Library <https://github.com/cosmosis-developers/
+    cosmosis-standard-library/blob/main/number_density/photoz_bias/
+    photoz_bias.py>`_ ``photoz_bias`` module (additive mode), which
+    implements :math:`n'(z) = n(z - \\Delta z_{\\rm CSL})`, so that a
+    positive shift moves the distribution toward *higher* redshifts.
+    The relationship between the two conventions is
+    :math:`\\delta_z = -\\Delta z_{\\rm CSL}`.
+
     :param z: the redshifts
     :param dndz: the dndz
-    :param delta_z: the photo-z shift
+    :param delta_z: the photo-z shift (positive values shift the distribution
+        toward lower redshifts)
     :param sigma_z: the photo-z stretch
     :return: the shifted and stretched dndz
     """
@@ -878,13 +919,25 @@ class SourceGalaxyPhotoZShift(
 ):
     """A photo-z shift bias.
 
-    This systematic shifts the photo-z distribution by some amount `delta_z`.
+    This systematic shifts the photo-z distribution by some amount ``delta_z``.
+    The transformation applied is :math:`n'(z) = n(z + \\delta_z)`, so a
+    *positive* ``delta_z`` shifts the distribution toward *lower* redshifts.
+
+    **Sign convention note:** This convention is **opposite** to the one used
+    in the `Cosmosis Standard Library
+    <https://github.com/cosmosis-developers/cosmosis-standard-library/blob/main/
+    number_density/photoz_bias/photoz_bias.py>`_ ``photoz_bias`` module
+    (additive mode), where a positive shift parameter moves the distribution
+    toward *higher* redshifts (:math:`n'(z) = n(z - \\Delta z_{\\rm CSL})`).
+    To convert between the two conventions use
+    :math:`\\delta_z = -\\Delta z_{\\rm CSL}`.
 
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
     prefix for the parameters:
 
-    :ivar delta_z: the photo-z shift.
+    :ivar delta_z: the photo-z shift (positive values shift the distribution
+        toward lower redshifts).
     """
 
     def __init__(self, sacc_tracer: str, active: bool = True) -> None:
@@ -946,13 +999,27 @@ class PhotoZShiftFactory(BaseModel):
 class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArgsT]):
     """A photo-z shift & stretch bias.
 
-    This systematic shifts and widens the photo-z distribution by some amount `delta_z`.
+    This systematic shifts and stretches the photo-z distribution by ``delta_z``
+    and ``sigma_z``, respectively. The shift follows the same sign convention as
+    :class:`SourceGalaxyPhotoZShift`: a *positive* ``delta_z`` shifts the
+    distribution toward *lower* redshifts (i.e. :math:`n'(z) = n(z + \\delta_z)`
+    for the pure-shift case :math:`\\sigma_z = 1`).
+
+    **Sign convention note:** This convention is **opposite** to the one used
+    in the `Cosmosis Standard Library
+    <https://github.com/cosmosis-developers/cosmosis-standard-library/blob/main/
+    number_density/photoz_bias/photoz_bias.py>`_ ``photoz_bias`` module
+    (additive mode), where a positive shift parameter moves the distribution
+    toward *higher* redshifts (:math:`n'(z) = n(z - \\Delta z_{\\rm CSL})`).
+    To convert between the two conventions use
+    :math:`\\delta_z = -\\Delta z_{\\rm CSL}`.
 
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
     prefix for the parameters:
 
-    :ivar delta_z: the photo-z shift.
+    :ivar delta_z: the photo-z shift (positive values shift the distribution
+        toward lower redshifts).
     :ivar sigma_z: the photo-z stretch.
     """
 
