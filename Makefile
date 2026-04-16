@@ -15,7 +15,7 @@
 
 # Parallel execution configuration
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-MAKEFLAGS += -j$(JOBS)
+MAKEFLAGS += -j$(JOBS) --output-sync=target
 
 # Tools
 PYTHON := python3
