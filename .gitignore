@@ -9,6 +9,7 @@ examples/srd_sn/sndata/
 .project
 .pydevproject
 .vscode
+covdata/
 
 *.csv
 *.txt
