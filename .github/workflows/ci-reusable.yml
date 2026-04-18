@@ -197,9 +197,9 @@ jobs:
         shell: bash -l {0}
         run: |
           if [[ "${{ matrix.coverage || false }}" == "true" ]]; then
-            make test-ci
+            MAKEFLAGS= make test-ci
           else
-            make test-all
+            MAKEFLAGS= make test-all
           fi
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
