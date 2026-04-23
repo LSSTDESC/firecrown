@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 32
+  CACHE_VERSION: 33
 
 jobs:
   quick-validation:
@@ -115,25 +115,6 @@ jobs:
           conda env remove --name firecrown_developer --all -y -q || true
           conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
-          which python
-          echo $CONDA_DEFAULT_ENV
-          python --version
-          echo "=== Conda diagnostics (updated) ==="
-          conda --version
-          conda info
-          conda config --show solver
-          conda config --show channels
-          conda list conda || true
-          conda list conda-libmamba-solver || true
-      - name: Python information
-        shell: bash -l {0}
-        run: |
-          which python
-          echo $CONDA_DEFAULT_ENV
-          python --version
-      - name: Python information
-        shell: bash -l {0}
-        run: |
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
@@ -221,19 +202,6 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Conda diagnostics (updated) ==="
-          conda --version
-          conda info
-          conda config --show solver
-          conda config --show channels
-          conda list conda || true
-          conda list conda-libmamba-solver || true
-      - name: Python information
-        shell: bash -l {0}
-        run: |
-          which python
-          echo $CONDA_DEFAULT_ENV
-          python --version
       - name: Setting up CosmoSIS and Cobaya
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
@@ -273,9 +241,9 @@ jobs:
         shell: bash -l {0}
         run: |
           if [[ "${{ matrix.coverage || false }}" == "true" ]]; then
-            MAKEFLAGS= make test-ci
+            make test-ci
           else
-            MAKEFLAGS= make test-all
+            make test-all
           fi
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
@@ -352,19 +320,6 @@ jobs:
           conda env remove --name firecrown_developer --all -y -q || true
           conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
-          which python
-          echo $CONDA_DEFAULT_ENV
-          python --version
-          echo "=== Conda diagnostics (updated) ==="
-          conda --version
-          conda info
-          conda config --show solver
-          conda config --show channels
-          conda list conda || true
-          conda list conda-libmamba-solver || true
-      - name: Python information
-        shell: bash -l {0}
-        run: |
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
