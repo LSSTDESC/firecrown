@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 370
+  CACHE_VERSION: 21
 
 jobs:
   quick-validation:
@@ -110,7 +110,7 @@ jobs:
           python --version
           echo "=== Updating environment ==="
           conda list
-          conda env update --freeze-installed -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
+          conda update --freeze-installed -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -210,7 +210,7 @@ jobs:
           python --version
           echo "=== Updating environment ==="
           conda list
-          conda env update --freeze-installed -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
+          conda update --freeze-installed -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -341,7 +341,7 @@ jobs:
           python --version
           echo "=== Updating environment ==="
           conda list
-          conda env update --freeze-installed -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
+          conda update --freeze-installed -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
