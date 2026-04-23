@@ -109,7 +109,8 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
-          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
+          conda list
+          conda env update --freeze-installed -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -208,7 +209,8 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
-          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
+          conda list
+          conda env update --freeze-installed -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -338,7 +340,8 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
-          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
+          conda list
+          conda env update --freeze-installed -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
