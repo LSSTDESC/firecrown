@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 230
+  CACHE_VERSION: 350
 
 jobs:
   quick-validation:
@@ -93,6 +93,7 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: conda-Linux-X64-py3.12-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}-lint
       - name: Update environment
+        shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           echo "=== Conda diagnostics ==="
@@ -107,8 +108,7 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
-          python .github/update_ci.py 3.12
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune -v -q
+          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -191,6 +191,7 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
+        shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           echo "=== Conda diagnostics ==="
@@ -205,8 +206,7 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
-          python .github/update_ci.py ${{ matrix.python-version }}
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune -v -q
+          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -320,6 +320,7 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
+        shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           echo "=== Conda diagnostics ==="
@@ -334,8 +335,7 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
-          python .github/update_ci.py 3.13
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune -v -q
+          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
