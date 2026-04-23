@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 350
+  CACHE_VERSION: 360
 
 jobs:
   quick-validation:
@@ -72,6 +72,7 @@ jobs:
           activate-environment: ${{ env.CONDA_ENV }}
           auto-activate: true
           conda-remove-defaults: true
+          use-mamba: false
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -170,6 +171,7 @@ jobs:
           activate-environment: ${{ env.CONDA_ENV }}
           auto-activate: true
           conda-remove-defaults: true
+          use-mamba: false
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -299,6 +301,7 @@ jobs:
           activate-environment: ${{ env.CONDA_ENV }}
           auto-activate: true
           conda-remove-defaults: true
+          use-mamba: false
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
