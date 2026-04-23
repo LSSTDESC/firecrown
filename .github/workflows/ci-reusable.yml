@@ -112,7 +112,7 @@ jobs:
           conda list
           conda deactivate
           conda env remove -n firecrown_developer --all -y -q || true
-          conda env create -f environment.yml --prune -v -q python=3.12 -n ${{ env.CONDA_ENV }}
+          conda env create -f environment.yml -v -q python=3.12 -n ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -214,7 +214,7 @@ jobs:
           conda list
           conda deactivate
           conda env remove -n firecrown_developer --all -y -q || true
-          conda env create -f environment.yml --prune -v -q python=${{ matrix.python-version }} -n ${{ env.CONDA_ENV }}
+          conda env create -f environment.yml -v -q python=${{ matrix.python-version }} -n ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -347,7 +347,7 @@ jobs:
           conda list
           conda deactivate
           conda env remove -n firecrown_developer --all -y -q || true
-          conda env create -f environment.yml --prune -v -q python=3.13 -n ${{ env.CONDA_ENV }}
+          conda env create -f environment.yml -v -q python=3.13 -n ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
