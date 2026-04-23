@@ -109,10 +109,11 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
+          python .github/update_ci.py 3.12
           conda list
           conda deactivate
           conda env remove --name firecrown_developer --all -y -q || true
-          conda create --file environment.yml --name ${{ env.CONDA_ENV }} -v -q python=3.12
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -211,10 +212,11 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
+          python .github/update_ci.py ${{ matrix.python-version }}
           conda list
           conda deactivate
           conda env remove --name firecrown_developer --all -y -q || true
-          conda create --file environment.yml --name ${{ env.CONDA_ENV }} -v -q python=${{ matrix.python-version }}
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -344,10 +346,11 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
           echo "=== Updating environment ==="
+          python .github/update_ci.py 3.13
           conda list
           conda deactivate
           conda env remove --name firecrown_developer --all -y -q || true
-          conda create --file environment.yml --name ${{ env.CONDA_ENV }} -v -q python=3.13
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
