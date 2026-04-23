@@ -101,7 +101,7 @@ jobs:
           conda info
           conda config --show solver
           conda config --show channels
-          conda list conda
+          conda list conda || true
           conda list conda-libmamba-solver || true
           echo "=== Python (base) ==="
           which python
@@ -118,7 +118,7 @@ jobs:
           conda info
           conda config --show solver
           conda config --show channels
-          conda list conda
+          conda list conda || true
           conda list conda-libmamba-solver || true
       - name: Python information
         shell: bash -l {0}
@@ -199,7 +199,7 @@ jobs:
           conda info
           conda config --show solver
           conda config --show channels
-          conda list conda
+          conda list conda || true
           conda list conda-libmamba-solver || true
           echo "=== Python (base) ==="
           which python
@@ -216,7 +216,7 @@ jobs:
           conda info
           conda config --show solver
           conda config --show channels
-          conda list conda
+          conda list conda || true
           conda list conda-libmamba-solver || true
       - name: Python information
         shell: bash -l {0}
@@ -328,7 +328,7 @@ jobs:
           conda info
           conda config --show solver
           conda config --show channels
-          conda list conda
+          conda list conda || true
           conda list conda-libmamba-solver || true
           echo "=== Python (base) ==="
           which python
@@ -345,7 +345,7 @@ jobs:
           conda info
           conda config --show solver
           conda config --show channels
-          conda list conda
+          conda list conda || true
           conda list conda-libmamba-solver || true
       - name: Python information
         shell: bash -l {0}
