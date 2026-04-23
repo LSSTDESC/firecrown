@@ -112,7 +112,7 @@ jobs:
           python .github/update_ci.py 3.12
           conda list
           conda deactivate
-          conda env remove --name firecrown_developer --all -y -q || true
+          conda env remove --name firecrown_developer -y -q || true
           conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
           which python
@@ -196,7 +196,7 @@ jobs:
           python .github/update_ci.py ${{ matrix.python-version }}
           conda list
           conda deactivate
-          conda env remove --name firecrown_developer --all -y -q || true
+          conda env remove --name firecrown_developer -y -q || true
           conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
           which python
@@ -317,7 +317,7 @@ jobs:
           python .github/update_ci.py 3.13
           conda list
           conda deactivate
-          conda env remove --name firecrown_developer --all -y -q || true
+          conda env remove --name firecrown_developer -y -q || true
           conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
           echo "=== Python (updated) ==="
           which python
