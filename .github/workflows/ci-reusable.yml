@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 1
+  CACHE_VERSION: 100
 
 jobs:
   quick-validation:
