@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 31
+  CACHE_VERSION: 32
 
 jobs:
   quick-validation:
@@ -110,7 +110,9 @@ jobs:
           python --version
           echo "=== Updating environment ==="
           conda list
-          conda env update -f environment.yml --prune -v -q
+          conda deactivate
+          conda env remove -n firecrown_developer --all -y -q || true
+          conda env create -f environment.yml --prune -v -q python=3.12 -n ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -210,7 +212,9 @@ jobs:
           python --version
           echo "=== Updating environment ==="
           conda list
-          conda env update -f environment.yml --prune -v -q
+          conda deactivate
+          conda env remove -n firecrown_developer --all -y -q || true
+          conda env create -f environment.yml --prune -v -q python=${{ matrix.python-version }} -n ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -341,7 +345,9 @@ jobs:
           python --version
           echo "=== Updating environment ==="
           conda list
-          conda env update -f environment.yml --prune -v -q
+          conda deactivate
+          conda env remove -n firecrown_developer --all -y -q || true
+          conda env create -f environment.yml --prune -v -q python=3.13 -n ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
