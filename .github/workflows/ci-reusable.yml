@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 34
+  CACHE_VERSION: 33
 
 jobs:
   quick-validation:
@@ -93,39 +93,6 @@ jobs:
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-Linux-X64-py3.12-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}-lint
-      - name: Create Python pin (cache miss)
-        shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          pinned_file="${CONDA_PREFIX}/conda-meta/pinned"
-          mkdir -p "$(dirname "${pinned_file}")"
-          printf "python 3.12.*\n" > "${pinned_file}"
-          echo "Pinned packages in ${pinned_file}:"
-          cat "${pinned_file}"
-      - name: Validate cached Python pin
-        shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit == 'true'
-        run: |
-          expected_python="3.12"
-          pinned_file="${CONDA_PREFIX}/conda-meta/pinned"
-          if [[ ! -f "${pinned_file}" ]]; then
-            echo "ERROR: Cache hit but ${pinned_file} was not found."
-            echo "This cache was created before pinning was enabled or is corrupted."
-            exit 1
-          fi
-          if ! grep -Eq "^python[[:space:]]+${expected_python//./\\.}\\.\*$" "${pinned_file}"; then
-            echo "ERROR: Cache hit but ${pinned_file} does not contain expected pin 'python ${expected_python}.*'."
-            echo "Actual pinned file contents:"
-            cat "${pinned_file}"
-            exit 1
-          fi
-          actual_python="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-          if [[ "${actual_python}" != "${expected_python}" ]]; then
-            echo "ERROR: Cache hit python version mismatch."
-            echo "Expected: ${expected_python}.x"
-            echo "Actual: $(python --version)"
-            exit 1
-          fi
       - name: Update environment
         shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
@@ -141,22 +108,17 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Python pin ==="
-          cat "${CONDA_PREFIX}/conda-meta/pinned"
           echo "=== Updating environment ==="
-          conda env update --name ${{ env.CONDA_ENV }} --file environment.yml --prune -v -q
+          python .github/update_ci.py 3.12
           conda list
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
+          conda activate ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          actual_python="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-          if [[ "${actual_python}" != "3.12" ]]; then
-            echo "ERROR: Environment update produced unexpected Python version."
-            echo "Expected: 3.12.x"
-            echo "Actual: $(python --version)"
-            exit 1
-          fi
       - name: Save conda environment
         if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
@@ -216,39 +178,6 @@ jobs:
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
-      - name: Create Python pin (cache miss)
-        shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          pinned_file="${CONDA_PREFIX}/conda-meta/pinned"
-          mkdir -p "$(dirname "${pinned_file}")"
-          printf "python ${{ matrix.python-version }}.*\n" > "${pinned_file}"
-          echo "Pinned packages in ${pinned_file}:"
-          cat "${pinned_file}"
-      - name: Validate cached Python pin
-        shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit == 'true'
-        run: |
-          expected_python="${{ matrix.python-version }}"
-          pinned_file="${CONDA_PREFIX}/conda-meta/pinned"
-          if [[ ! -f "${pinned_file}" ]]; then
-            echo "ERROR: Cache hit but ${pinned_file} was not found."
-            echo "This cache was created before pinning was enabled or is corrupted."
-            exit 1
-          fi
-          if ! grep -Eq "^python[[:space:]]+${expected_python//./\\.}\\.\*$" "${pinned_file}"; then
-            echo "ERROR: Cache hit but ${pinned_file} does not contain expected pin 'python ${expected_python}.*'."
-            echo "Actual pinned file contents:"
-            cat "${pinned_file}"
-            exit 1
-          fi
-          actual_python="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-          if [[ "${actual_python}" != "${expected_python}" ]]; then
-            echo "ERROR: Cache hit python version mismatch."
-            echo "Expected: ${expected_python}.x"
-            echo "Actual: $(python --version)"
-            exit 1
-          fi
       - name: Update environment
         shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
@@ -264,23 +193,17 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Python pin ==="
-          cat "${CONDA_PREFIX}/conda-meta/pinned"
           echo "=== Updating environment ==="
-          conda env update --name ${{ env.CONDA_ENV }} --file environment.yml --prune -v -q
+          python .github/update_ci.py ${{ matrix.python-version }}
           conda list
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
+          conda activate ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          expected_python="${{ matrix.python-version }}"
-          actual_python="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-          if [[ "${actual_python}" != "${expected_python}" ]]; then
-            echo "ERROR: Environment update produced unexpected Python version."
-            echo "Expected: ${expected_python}.x"
-            echo "Actual: $(python --version)"
-            exit 1
-          fi
       - name: Setting up CosmoSIS and Cobaya
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
@@ -377,39 +300,6 @@ jobs:
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
-      - name: Create Python pin (cache miss)
-        shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          pinned_file="${CONDA_PREFIX}/conda-meta/pinned"
-          mkdir -p "$(dirname "${pinned_file}")"
-          printf "python 3.13.*\n" > "${pinned_file}"
-          echo "Pinned packages in ${pinned_file}:"
-          cat "${pinned_file}"
-      - name: Validate cached Python pin
-        shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit == 'true'
-        run: |
-          expected_python="3.13"
-          pinned_file="${CONDA_PREFIX}/conda-meta/pinned"
-          if [[ ! -f "${pinned_file}" ]]; then
-            echo "ERROR: Cache hit but ${pinned_file} was not found."
-            echo "This cache was created before pinning was enabled or is corrupted."
-            exit 1
-          fi
-          if ! grep -Eq "^python[[:space:]]+${expected_python//./\\.}\\.\*$" "${pinned_file}"; then
-            echo "ERROR: Cache hit but ${pinned_file} does not contain expected pin 'python ${expected_python}.*'."
-            echo "Actual pinned file contents:"
-            cat "${pinned_file}"
-            exit 1
-          fi
-          actual_python="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-          if [[ "${actual_python}" != "${expected_python}" ]]; then
-            echo "ERROR: Cache hit python version mismatch."
-            echo "Expected: ${expected_python}.x"
-            echo "Actual: $(python --version)"
-            exit 1
-          fi
       - name: Update environment
         shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
@@ -425,22 +315,17 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Python pin ==="
-          cat "${CONDA_PREFIX}/conda-meta/pinned"
           echo "=== Updating environment ==="
-          conda env update --name ${{ env.CONDA_ENV }} --file environment.yml --prune -v -q
+          python .github/update_ci.py 3.13
           conda list
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
+          conda activate ${{ env.CONDA_ENV }}
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          actual_python="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-          if [[ "${actual_python}" != "3.13" ]]; then
-            echo "ERROR: Environment update produced unexpected Python version."
-            echo "Expected: 3.13.x"
-            echo "Actual: $(python --version)"
-            exit 1
-          fi
       - name: Remove redundant rpath and import isitgr
         shell: bash -l {0}
         run: |
