@@ -54,7 +54,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 16
+  CACHE_VERSION: 33
 
 jobs:
   quick-validation:
@@ -65,12 +65,14 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniforge-version: latest
           python-version: "3.12"
           activate-environment: ${{ env.CONDA_ENV }}
+          auto-activate: true
           conda-remove-defaults: true
+          use-mamba: false
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -92,10 +94,31 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: conda-Linux-X64-py3.12-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}-lint
       - name: Update environment
+        shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Updating environment ==="
           python .github/update_ci.py 3.12
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
+          conda list
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
+          conda activate ${{ env.CONDA_ENV }}
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
       - name: Save conda environment
         if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
@@ -127,12 +150,14 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniforge-version: latest
           python-version: ${{ matrix.python-version }}
           activate-environment: ${{ env.CONDA_ENV }}
+          auto-activate: true
           conda-remove-defaults: true
+          use-mamba: false
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -154,10 +179,31 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
+        shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Updating environment ==="
           python .github/update_ci.py ${{ matrix.python-version }}
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
+          conda list
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
+          conda activate ${{ env.CONDA_ENV }}
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
       - name: Setting up CosmoSIS and Cobaya
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
@@ -226,12 +272,14 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniforge-version: latest
           python-version: "3.13"
           activate-environment: ${{ env.CONDA_ENV }}
+          auto-activate: true
           conda-remove-defaults: true
+          use-mamba: false
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -253,10 +301,31 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
+        shell: bash -l {0}
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Updating environment ==="
           python .github/update_ci.py 3.13
-          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
+          conda list
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda env create --file env_tmp.yml --name ${{ env.CONDA_ENV }} -v -q
+          conda activate ${{ env.CONDA_ENV }}
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
       - name: Remove redundant rpath and import isitgr
         shell: bash -l {0}
         run: |

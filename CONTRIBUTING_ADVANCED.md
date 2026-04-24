@@ -26,7 +26,6 @@ graph TD
     pre-commit --> test-ci
     
     %% Test-CI dependencies
-    test-ci --> unit-tests-pre["unit-tests-pre"]
     test-ci --> test-all-coverage["make test-all-coverage"]
     test-ci --> test-slow["make test-slow"]
     test-ci --> test-integration["make test-integration"]
@@ -54,13 +53,10 @@ graph TD
     lint --> lint-pylint["lint-pylint"]
     
     %% Documentation dependencies
-    docs --> docs-build["make docs-build"]
     docs --> docs-verify
     
-    docs-build --> tutorials["make tutorials"]
     docs-build --> api-docs["make api-docs"]
     
-    docs-verify --> docs-generate-symbol-map["docs-generate-symbol-map"]
     docs-verify --> docs-code-check["docs-code-check"]
     docs-verify --> docs-symbol-check["docs-symbol-check"]
     docs-verify --> docs-linkcheck["make docs-linkcheck"]
@@ -125,7 +121,6 @@ graph TD
     unit-post --> t-two["test-models-two-point<br/>(100% cov)"]:::sequential
     
     %% Docs verify parallelism
-    docs-verify --> dg-map["docs-generate-symbol-map"]:::sequential
     docs-verify --> d-code["docs-code-check"]:::sequential
     docs-verify --> d-sym["docs-symbol-check"]:::sequential
     docs-verify --> d-link["docs-linkcheck"]:::sequential
