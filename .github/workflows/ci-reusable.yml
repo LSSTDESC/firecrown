@@ -120,7 +120,8 @@ jobs:
         id: cache-nightly
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-Linux-X64-py3.12-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}-lint
+          key: conda-Linux-X64-py3.12-lock-${{ steps.lock-meta.outputs.lockfile_hash
+            }}-v${{ env.CACHE_VERSION }}-pipdeps1-lint
           restore-keys: |
             conda-Linux-X64-py3.12-
       - name: Cache Conda env (pr)
@@ -150,6 +151,7 @@ jobs:
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
           conda activate ${{ env.CONDA_ENV }}
+          python -m pip install --no-deps cobaya isitgr "pygobject-stubs<2.17"
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -275,7 +277,9 @@ jobs:
         id: cache-nightly
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version
+            }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{
+            env.CACHE_VERSION }}-pipdeps1
           restore-keys: |
             conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-
       - name: Cache Conda env (pr)
@@ -305,6 +309,7 @@ jobs:
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
           conda activate ${{ env.CONDA_ENV }}
+          python -m pip install --no-deps cobaya isitgr "pygobject-stubs<2.17"
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -454,7 +459,8 @@ jobs:
         id: cache-nightly
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-lock-${{
+            steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}-pipdeps1
           restore-keys: |
             conda-${{ runner.os }}-${{ runner.arch }}-py3.13-
       - name: Cache Conda env (pr)
@@ -484,6 +490,7 @@ jobs:
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
           conda activate ${{ env.CONDA_ENV }}
+          python -m pip install --no-deps cobaya isitgr "pygobject-stubs<2.17"
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
