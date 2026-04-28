@@ -153,7 +153,7 @@ to target multiple branches without any duplication.
 | :--- | :--- |
 | `ci-branches.json` | **The single source of truth** for which long-lived branches are tested nightly. Edit only this file to add or remove a branch. |
 | `workflows/ci-reusable.yml` | The single source of truth for all CI job definitions (all three stages). Called by the other two workflows. Never triggered directly by GitHub events. |
-| `workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` unconditionally. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
+| `workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` for main PR validation and also defines a non-blocking, path-filtered rebuild-drift canary job for dependency-impacting changes. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
 | `workflows/nightly.yml` | Triggered by the daily cron schedule. Reads `ci-branches.json` at runtime to build the branch matrix, then calls `ci-reusable.yml` once per branch. |
 
 ### How it works
@@ -188,6 +188,25 @@ These drift jobs are non-blocking by design.
 They set `continue-on-error` to `true` and use a 45-minute timeout.
 If a solve fails or times out, the jobs upload logs and a step summary
 so drift can be diagnosed without failing the core nightly signal.
+
+### Pull request mode and drift canary
+
+Pull request runs also use lockfile-based environment creation and lock-hash
+cache keys in `.github/workflows/ci-reusable.yml`.
+This avoids routine conda solves on standard pull request cache misses and
+aligns pull request environment behavior with nightly mode.
+
+To preserve dependency-drift signal in pull request context,
+`.github/workflows/ci.yml` defines a non-blocking rebuild-drift canary job.
+That canary is path-filtered and runs only when dependency-impacting files
+change,
+such as `environment.yml`, lockfiles, CI environment scripts, or reusable
+workflow dependency setup.
+
+When it runs,
+the canary performs a fresh rebuild from `environment.yml`-derived `env_tmp.yml`.
+Failures are reported with summary text and an uploaded log artifact,
+but do not fail the pull request check suite.
 
 ### Adding or removing a supported branch
 
