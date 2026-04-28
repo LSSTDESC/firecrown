@@ -171,6 +171,24 @@ The reusable workflow definition used is always the one on `master`,
 but the source code and `environment.yml` checked out during testing
 come from the branch named in `ref`.
 
+### Nightly mode and rebuild-drift jobs
+
+The nightly workflow in `.github/workflows/nightly.yml`
+calls the reusable CI workflow with `ci_mode` set to `nightly`.
+In nightly mode, primary CI jobs in `.github/workflows/ci-reusable.yml`
+prefer lockfile-based environment creation and lock-hash cache keys,
+which reduces repeated full conda solves in routine nightly validation.
+
+Nightly also runs advisory rebuild-drift jobs on Linux and macOS.
+These jobs intentionally regenerate `env_tmp.yml` via `.github/update_ci.py`
+and rebuild the environment from that file,
+so they do exercise a fresh conda solve against current channels.
+
+These drift jobs are non-blocking by design.
+They set `continue-on-error` to `true` and use a 45-minute timeout.
+If a solve fails or times out, the jobs upload logs and a step summary
+so drift can be diagnosed without failing the core nightly signal.
+
 ### Adding or removing a supported branch
 
 Edit `.github/ci-branches.json` only — for example, to add `v1.15`:

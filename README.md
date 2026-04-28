@@ -16,5 +16,5 @@ See also our [Tutorial Site](https://firecrown.readthedocs.io/en/latest/_static/
 Contributions are welcome!
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow,
 coding standards, and instructions for running the test suite.
-The [CI System Architecture](CONTRIBUTING.md#ci-system-architecture) section
-explains how to add a new branch to the nightly scheduled CI runs.
+The [CI System Architecture](CONTRIBUTING_ADVANCED.md#ci-system-architecture)
+section explains how to add a new branch to the nightly scheduled CI runs.
