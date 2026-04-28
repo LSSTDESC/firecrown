@@ -47,6 +47,11 @@ on:
         required: false
         type: string
         default: ""
+      ci_mode:
+        description: "CI mode selector: pr or nightly"
+        required: false
+        type: string
+        default: "pr"
     secrets:
       CODECOV_TOKEN:
         description: "Codecov upload token"
@@ -73,11 +78,33 @@ jobs:
           auto-activate: true
           conda-remove-defaults: true
           use-mamba: false
+      - name: Compute nightly lock metadata
+        if: ${{ inputs.ci_mode == 'nightly' }}
+        id: lock-meta
+        run: |
+          lockfile_path=".github/conda-lock/conda-linux-64-py3.12.lock"
+
+          if [[ ! -f "${lockfile_path}" ]]; then
+            echo "Missing lockfile: ${lockfile_path}" >&2
+            exit 1
+          fi
+
+          if command -v sha256sum &>/dev/null 2>&1; then
+            lockfile_hash=$(sha256sum "${lockfile_path}" | cut -d' ' -f1)
+          else
+            lockfile_hash=$(shasum -a 256 "${lockfile_path}" | cut -d' ' -f1)
+          fi
+
+          echo "lockfile_path=${lockfile_path}" >> "$GITHUB_OUTPUT"
+          echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
+        shell: bash
       - name: Cache date
+        if: ${{ inputs.ci_mode != 'nightly' }}
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
       - name: Compute environment.yml hash
+        if: ${{ inputs.ci_mode != 'nightly' }}
         id: env-hash
         run: |
           if command -v sha256sum &>/dev/null 2>&1; then
@@ -87,15 +114,49 @@ jobs:
           fi
           echo "env_hash=${h}" >> $GITHUB_OUTPUT
         shell: bash
-      - name: Cache Conda env
+      - name: Cache Conda env (nightly)
+        if: ${{ inputs.ci_mode == 'nightly' }}
         uses: actions/cache/restore@v5
-        id: cache
+        id: cache-nightly
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-Linux-X64-py3.12-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}-lint
+          restore-keys: |
+            conda-Linux-X64-py3.12-
+      - name: Cache Conda env (pr)
+        if: ${{ inputs.ci_mode != 'nightly' }}
+        uses: actions/cache/restore@v5
+        id: cache-pr
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-Linux-X64-py3.12-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}-lint
+      - name: Install environment from lockfile
+        shell: bash -l {0}
+        if: ${{ (inputs.ci_mode == 'nightly') && (steps.cache-nightly.outputs.cache-hit != 'true') }}
+        run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Installing from lockfile ==="
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
+          conda activate ${{ env.CONDA_ENV }}
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
       - name: Update environment
         shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode != 'nightly') && (steps.cache-pr.outputs.cache-hit != 'true') }}
         run: |
           echo "=== Conda diagnostics ==="
           conda --version
@@ -120,11 +181,11 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
       - name: Save conda environment
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-hit != 'true') || (inputs.ci_mode != 'nightly' && steps.cache-pr.outputs.cache-hit != 'true') }}
         uses: actions/cache/save@v5
         with:
           path: ${{ env.CONDA }}/envs
-          key: ${{ steps.cache.outputs.cache-primary-key }}
+          key: ${{ inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-primary-key || steps.cache-pr.outputs.cache-primary-key }}
       - name: Quick setup and linting
         shell: bash -l {0}
         run: |
@@ -136,6 +197,7 @@ jobs:
   firecrown-miniforge:
     name: (${{ matrix.os }}, py${{ matrix.python-version }})${{ matrix.coverage && ' + coverage' || '' }}
     runs-on: ${{ matrix.os }}-latest
+    timeout-minutes: ${{ inputs.ci_mode == 'nightly' && 60 || 360 }}
     strategy:
       fail-fast: false
       matrix:
@@ -158,11 +220,46 @@ jobs:
           auto-activate: true
           conda-remove-defaults: true
           use-mamba: false
+      - name: Compute nightly lock metadata
+        if: ${{ inputs.ci_mode == 'nightly' }}
+        id: lock-meta
+        run: |
+          case "${{ matrix.os }}" in
+            ubuntu)
+              platform="linux-64"
+              ;;
+            macos)
+              platform="osx-arm64"
+              ;;
+            *)
+              echo "Unsupported matrix.os value: ${{ matrix.os }}" >&2
+              exit 1
+              ;;
+          esac
+
+          lockfile_path=".github/conda-lock/conda-${platform}-py${{ matrix.python-version }}.lock"
+
+          if [[ ! -f "${lockfile_path}" ]]; then
+            echo "Missing lockfile: ${lockfile_path}" >&2
+            exit 1
+          fi
+
+          if command -v sha256sum &>/dev/null 2>&1; then
+            lockfile_hash=$(sha256sum "${lockfile_path}" | cut -d' ' -f1)
+          else
+            lockfile_hash=$(shasum -a 256 "${lockfile_path}" | cut -d' ' -f1)
+          fi
+
+          echo "lockfile_path=${lockfile_path}" >> "$GITHUB_OUTPUT"
+          echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
+        shell: bash
       - name: Cache date
+        if: ${{ inputs.ci_mode != 'nightly' }}
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
       - name: Compute environment.yml hash
+        if: ${{ inputs.ci_mode != 'nightly' }}
         id: env-hash
         run: |
           if command -v sha256sum &>/dev/null 2>&1; then
@@ -172,15 +269,49 @@ jobs:
           fi
           echo "env_hash=${h}" >> $GITHUB_OUTPUT
         shell: bash
-      - name: Cache Conda env
+      - name: Cache Conda env (nightly)
+        if: ${{ inputs.ci_mode == 'nightly' }}
         uses: actions/cache/restore@v5
-        id: cache
+        id: cache-nightly
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}
+          restore-keys: |
+            conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-
+      - name: Cache Conda env (pr)
+        if: ${{ inputs.ci_mode != 'nightly' }}
+        uses: actions/cache/restore@v5
+        id: cache-pr
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
+      - name: Install environment from lockfile
+        shell: bash -l {0}
+        if: ${{ (inputs.ci_mode == 'nightly') && (steps.cache-nightly.outputs.cache-hit != 'true') }}
+        run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Installing from lockfile ==="
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
+          conda activate ${{ env.CONDA_ENV }}
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
       - name: Update environment
         shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode != 'nightly') && (steps.cache-pr.outputs.cache-hit != 'true') }}
         run: |
           echo "=== Conda diagnostics ==="
           conda --version
@@ -205,7 +336,7 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
       - name: Setting up CosmoSIS and Cobaya
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-hit != 'true') || (inputs.ci_mode != 'nightly' && steps.cache-pr.outputs.cache-hit != 'true') }}
         shell: bash -l {0}
         run: |
           # Sequential setup of dependencies to avoid environment corruption
@@ -217,18 +348,18 @@ jobs:
           popd
           python -m pip install cobaya --no-deps
       - name: Remove redundant rpath and import isitgr
-        if: ${{ (matrix.os == 'macos') && (steps.cache.outputs.cache-hit != 'true') }}
+        if: ${{ (matrix.os == 'macos') && ((inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-hit != 'true') || (inputs.ci_mode != 'nightly' && steps.cache-pr.outputs.cache-hit != 'true')) }}
         shell: bash -l {0}
         run: |
           install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
             python -c "import isitgr"
       - name: Save conda-forge, CosmoSIS and Cobaya environment
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-hit != 'true') || (inputs.ci_mode != 'nightly' && steps.cache-pr.outputs.cache-hit != 'true') }}
         id: cache-primes-save
         uses: actions/cache/save@v5
         with:
           path: ${{ env.CONDA }}/envs
-          key: ${{ steps.cache.outputs.cache-primary-key }}
+          key: ${{ inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-primary-key || steps.cache-pr.outputs.cache-primary-key }}
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
@@ -267,6 +398,7 @@ jobs:
     name: External dependencies and documentation
     needs: [firecrown-miniforge]
     runs-on: macos-latest
+    timeout-minutes: ${{ inputs.ci_mode == 'nightly' && 60 || 360 }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -280,11 +412,33 @@ jobs:
           auto-activate: true
           conda-remove-defaults: true
           use-mamba: false
+      - name: Compute nightly lock metadata
+        if: ${{ inputs.ci_mode == 'nightly' }}
+        id: lock-meta
+        run: |
+          lockfile_path=".github/conda-lock/conda-osx-arm64-py3.13.lock"
+
+          if [[ ! -f "${lockfile_path}" ]]; then
+            echo "Missing lockfile: ${lockfile_path}" >&2
+            exit 1
+          fi
+
+          if command -v sha256sum &>/dev/null 2>&1; then
+            lockfile_hash=$(sha256sum "${lockfile_path}" | cut -d' ' -f1)
+          else
+            lockfile_hash=$(shasum -a 256 "${lockfile_path}" | cut -d' ' -f1)
+          fi
+
+          echo "lockfile_path=${lockfile_path}" >> "$GITHUB_OUTPUT"
+          echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
+        shell: bash
       - name: Cache date
+        if: ${{ inputs.ci_mode != 'nightly' }}
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
       - name: Compute environment.yml hash
+        if: ${{ inputs.ci_mode != 'nightly' }}
         id: env-hash
         run: |
           if command -v sha256sum &>/dev/null 2>&1; then
@@ -294,15 +448,49 @@ jobs:
           fi
           echo "env_hash=${h}" >> $GITHUB_OUTPUT
         shell: bash
-      - name: Cache Conda env
+      - name: Cache Conda env (nightly)
+        if: ${{ inputs.ci_mode == 'nightly' }}
         uses: actions/cache/restore@v5
-        id: cache
+        id: cache-nightly
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}
+          restore-keys: |
+            conda-${{ runner.os }}-${{ runner.arch }}-py3.13-
+      - name: Cache Conda env (pr)
+        if: ${{ inputs.ci_mode != 'nightly' }}
+        uses: actions/cache/restore@v5
+        id: cache-pr
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
+      - name: Install environment from lockfile
+        shell: bash -l {0}
+        if: ${{ (inputs.ci_mode == 'nightly') && (steps.cache-nightly.outputs.cache-hit != 'true') }}
+        run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Installing from lockfile ==="
+          conda deactivate
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
+          conda activate ${{ env.CONDA_ENV }}
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
       - name: Update environment
         shell: bash -l {0}
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode != 'nightly') && (steps.cache-pr.outputs.cache-hit != 'true') }}
         run: |
           echo "=== Conda diagnostics ==="
           conda --version
@@ -332,7 +520,7 @@ jobs:
           install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
           python -c "import isitgr"
       - name: Setting up CosmoSIS and Cobaya
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-hit != 'true') || (inputs.ci_mode != 'nightly' && steps.cache-pr.outputs.cache-hit != 'true') }}
         shell: bash -l {0}
         run: |
           # Sequential setup of dependencies to avoid environment corruption
@@ -344,12 +532,12 @@ jobs:
           popd
           python -m pip install cobaya --no-deps
       - name: Save conda-forge, CosmoSIS and Cobaya environment
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: ${{ (inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-hit != 'true') || (inputs.ci_mode != 'nightly' && steps.cache-pr.outputs.cache-hit != 'true') }}
         id: cache-primes-save
         uses: actions/cache/save@v5
         with:
           path: ${{ env.CONDA }}/envs
-          key: ${{ steps.cache.outputs.cache-primary-key }}
+          key: ${{ inputs.ci_mode == 'nightly' && steps.cache-nightly.outputs.cache-primary-key || steps.cache-pr.outputs.cache-primary-key }}
       - name: Create firecrown_developer environment
         shell: bash -l {0}
         run: |

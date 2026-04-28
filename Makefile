@@ -12,6 +12,7 @@ SHELL := /bin/bash
 	test-updatable test-utils test-parameters test-modeling-tools \
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
+	conda-lock conda-lock-check \
 	docs-verify docs-code-check docs-symbol-check docs-linkcheck
 
 # Default target
@@ -31,6 +32,7 @@ endif
 PYTHON := python3
 PYTEST := pytest
 RM := rm -f
+BASH := bash
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
@@ -71,11 +73,16 @@ CLEAN_EXCLUDES := --exclude=.venv \
 AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
 # Tutorial configuration
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
+CONDA_LOCK_DIR := .github/conda-lock
+CONDA_LOCK_SCRIPT := .github/scripts/generate_conda_locks.sh
 
 # Test configuration
 PYTEST_PARALLEL := $(PYTEST) -n auto
 PYTEST_DURATIONS := --durations 10
 PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json:$(COVERAGE_JSON) --cov-report html:$(HTMLCOV_DIR) --cov-report term-missing --cov-branch
+
+# These targets create shared temporary files and should always run serially.
+.NOTPARALLEL: conda-lock conda-lock-check
 
 help:  ## Show common developer targets
 	@echo "Firecrown Developer Quick Reference"
@@ -127,6 +134,15 @@ format:  ## Format code with black
 
 format-check:  ## Check code formatting without modifying files
 	black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/
+
+##@ Conda Lockfiles
+
+conda-lock:  ## Generate committed conda lockfiles for CI matrix
+	@$(BASH) $(CONDA_LOCK_SCRIPT)
+
+conda-lock-check:  ## Verify generated lockfiles are up to date
+	@$(BASH) $(CONDA_LOCK_SCRIPT)
+	@git diff --exit-code -- $(CONDA_LOCK_DIR)
 
 ##@ Linting
 

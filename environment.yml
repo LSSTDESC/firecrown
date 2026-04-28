@@ -1,4 +1,3 @@
-name: firecrown_developer
 channels:
   - conda-forge
 dependencies:
