@@ -45,4 +45,107 @@ jobs:
     uses: ./.github/workflows/ci-reusable.yml
     with:
       ref: ${{ matrix.branch }}
+      ci_mode: nightly
     secrets: inherit
+
+  rebuild-drift-linux:
+    name: Rebuild drift Linux (${{ matrix.branch }})
+    needs: [load-branches]
+    continue-on-error: true
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.load-branches.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.branch }}
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          python-version: "3.12"
+          activate-environment: firecrown_developer
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Rebuild environment from environment.yml
+        shell: bash -l {0}
+        run: |
+          set -o pipefail
+          python .github/update_ci.py 3.12
+          conda deactivate
+          conda env remove --name firecrown_developer -y -q || true
+          conda env create --file env_tmp.yml --name firecrown_developer -v -q 2>&1 | tee rebuild-drift.log
+      - name: Summarize drift failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          {
+            echo "## Rebuild Drift Failure (Linux)"
+            echo ""
+            echo "Branch: ${{ matrix.branch }}"
+            echo "OS: ubuntu-latest"
+            echo "Python: 3.12"
+            echo ""
+            echo "See artifact: rebuild-drift-log-linux-${{ matrix.branch }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload drift log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rebuild-drift-log-linux-${{ matrix.branch }}
+          path: rebuild-drift.log
+
+  rebuild-drift-macos:
+    name: Rebuild drift macOS (${{ matrix.branch }})
+    needs: [load-branches]
+    continue-on-error: true
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.load-branches.outputs.matrix) }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.branch }}
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          python-version: "3.12"
+          activate-environment: firecrown_developer
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Rebuild environment from environment.yml
+        shell: bash -l {0}
+        run: |
+          set -o pipefail
+          python .github/update_ci.py 3.12
+          conda deactivate
+          conda env remove --name firecrown_developer -y -q || true
+          conda env create --file env_tmp.yml --name firecrown_developer -v -q 2>&1 | tee rebuild-drift.log
+      - name: Summarize drift failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          {
+            echo "## Rebuild Drift Failure (macOS)"
+            echo ""
+            echo "Branch: ${{ matrix.branch }}"
+            echo "OS: macos-latest"
+            echo "Python: 3.12"
+            echo ""
+            echo "See artifact: rebuild-drift-log-macos-${{ matrix.branch }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload drift log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rebuild-drift-log-macos-${{ matrix.branch }}
+          path: rebuild-drift.log
