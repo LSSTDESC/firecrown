@@ -209,7 +209,7 @@ line-length = 88
 target-version = ['py311']
 extend-exclude = 'examples/srd_sn/sndata'
 
-# Pyright configuration - runs alongside mypy without conflicts
+# Pyright configuration
 [tool.pyright]
 # Include all main source directories
 include = ["firecrown", "tests", "examples"]
@@ -260,22 +260,40 @@ reportUnknownVariableType = false   # NumPy/SciPy operations create dynamic type
 reportUnnecessaryIsInstance = false
 reportUnnecessaryCast = false
 
-# Mypy configuration
-[tool.mypy]
-ignore_missing_imports = true
-check_untyped_defs = true
-exclude = "build|docs|.venv|venv|examples/srd_sn/sndata"
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-no_implicit_optional = true
-strict_equality = true
-extra_checks = true
-disallow_subclassing_any = true
-disallow_untyped_decorators = true
-explicit_package_bases = true
-# disallow_any_generics = true
+# ty configuration
+[tool.ty.environment]
+# Check against minimum supported Python version to catch compatibility issues.
+# This is redundant with requires-python = ">=3.11" in [project], but is kept
+# explicit for clarity.
+python-version = "3.11"
 
-[[tool.mypy.overrides]]
-module = "firecrown.connector.cobaya.*"
-disallow_subclassing_any = false
+[tool.ty.src]
+# Include the directories to check.
+# ty check (with no arguments) uses these to determine what to check.
+include = ["firecrown", "examples", "tests"]
+# Exclude patterns (gitignore-style syntax).
+# Note: .venv and venv are already excluded by ty's built-in defaults.
+exclude = ["build", "docs", "examples/srd_sn/sndata"]
+
+[tool.ty.analysis]
+# Suppress unresolved-import errors for third-party packages that lack stubs
+allowed-unresolved-imports = [
+    "cobaya.**",
+    "cosmosis.**",
+    "fitsio.**",
+    "isitgr.**",
+    "numcosmo_py.**",
+    "pyccl.**",
+    "sacc.**",
+]
+
+[[tool.ty.overrides]]
+include = ["firecrown/connector/cobaya/**"]
+
+[tool.ty.overrides.analysis]
+# Preserve current passing behavior in the Cobaya connector with minimal effort
+replace-imports-with-any = ["cobaya.**"]
+
+[tool.ty.terminal]
+# Migration success requires zero ty warnings as well as zero ty errors
+error-on-warning = true

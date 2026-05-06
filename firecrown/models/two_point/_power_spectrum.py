@@ -67,7 +67,7 @@ def at_least_one_tracer_has_hm(
         IA_bias_exponent = (
             1  # IA bias if not both tracers are HM (doing GI correlation).
         )
-        # mypy complains about the following line even though
+        # Type checker complains about the following line even though
         # the HMCalculator type does have a mass_def attribute.
         other_profile = pyccl.halos.HaloProfileNFW(
             mass_def=hm_calculator.mass_def,

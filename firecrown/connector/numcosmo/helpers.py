@@ -40,7 +40,7 @@ def get_amplitude_parameters(
     A_s: float | None = None
     sigma8: float | None = None
 
-    # mypy verifies that the match statement below is exhaustive
+    # Type checker verifies that the match statement below is exhaustive
     match amplitude_parameter:
         case fac.PoweSpecAmplitudeParameter.SIGMA8:
             if p_ml is None:

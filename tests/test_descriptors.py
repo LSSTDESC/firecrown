@@ -227,7 +227,7 @@ def test_string_conversion_failure():
     d = HasString()
     with pytest.raises(TypeError):
         # We ignore type checking on this line because we are testing the error
-        # handling for the very type error that mypy would detect.
+        # handling for the very type error that type checker would detect.
         d.x = NotStringy()  # type: ignore
 
 

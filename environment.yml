@@ -7,6 +7,7 @@ dependencies:
   - charset-normalizer
   - clmm
   - compilers
+  - conda-lock
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
@@ -26,7 +27,6 @@ dependencies:
   - linkchecker
   - matplotlib-base
   - more-itertools
-  - mypy
   - numcosmo >= 0.21.1
   - numpy >= 2.0, < 2.4
   - pip >= 20.1  # pip is needed as dependency
@@ -57,6 +57,7 @@ dependencies:
   - sphinx-rtd-theme
   - sphinxcontrib-apidoc
   - tabulate
+  - ty == 0.0.34
   - typer
   - types-pyyaml
   - types-requests

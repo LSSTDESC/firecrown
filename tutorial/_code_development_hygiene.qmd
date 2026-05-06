@@ -24,14 +24,14 @@ Two examples are the PEP 8 specified ordering of `import` statements and identif
   Its documentation is available at [https://flake8.pycqa.org](https://flake8.pycqa.org).
 
 We are using type annotations in Firecrown for several reasons.
-They help in the automatic generation of documentation, and when used with a tool like `mypy` they help make sure the type information in the documentation does not diverge from the code itself.
+They help in the automatic generation of documentation, and when used with a static type checker they help make sure the type information in the documentation does not diverge from the code itself.
 They help many different integrated development environments (IDEs) provide better code completion options.
 They also can be used by static type checking tools to identify some types of coding error that otherwise could only be identified through exhaustive testing.
 We strongly recommend that new code added to Firecrown should have appropriate type annotations.
-We use `mypy`[^mypy] as our static type checking tool.
+We use `ty`[^ty] as our static type checking tool.
 
-[^mypy]: Mypy is a static type checker for Python.
-  Documentation for it is found at [https://mypy.readthedocs.io](https://mypy.readthedocs.io).
+[^ty]: Ty is a static type checker for Python.
+  Documentation for it is available at [https://docs.astral.sh/ty](https://docs.astral.sh/ty).
 
 We use `pylint`[^pylint] to help identify additional categories of errors that are not detected by the other tools.
 
@@ -59,6 +59,6 @@ flake8 firecrown/ tests/ examples/
 pyline firecrown
 pylint --rcfile firecrown/models/pylintrc firecrown/models
 pylint --rcfile tests/pylintrc tests
-mypy -p firecrown -p tests -p examples
+ty check
 python -m pytest --runslow -vv --example tests
 ```

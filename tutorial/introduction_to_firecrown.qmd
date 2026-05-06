@@ -201,7 +201,7 @@ cd ${FIRECROWN_DIR}
     -   Note that this use of `black --check` does not actually change any file.
     -   If files other than those you edited are complained about by black, please file an issue.
 -   We are using `flake8` to help verify PEP8 compliance.
--   We are using type hints and `mypy` to help catch type-related errors.
+-   We are using type hints and `ty` to help catch type-related errors.
 -   We are using `pylint` to enforce a variety of rules.
 :::
 
@@ -212,7 +212,7 @@ cd ${FIRECROWN_DIR}
 ```{.bash code-copy=true}
 black --check firecrown/ examples/ tests/
 flake8 firecrown examples tests
-mypy -p firecrown -p examples -p tests
+ty check
 pylint firecrown
 pylint --rcfile firecrown/models/pylintrc firecrown/models
 pylint --rcfile pylintrc_for_tests tests

@@ -763,7 +763,7 @@ def test_PM_correction_matrix(sacc_data):
     likelihood.read(sacc_data)
     cosmo = pyccl.CosmologyVanillaLCDM()
     likelihood.compute_pointmass(cosmo)
-    # Runtime checks to ensure inv_cov is not None for mypy
+    # Runtime checks to ensure inv_cov is not None for type checker
     assert likelihood.inv_cov is not None
     assert likelihood._pm_inv_cov_original is not None
     assert (likelihood.inv_cov != likelihood._pm_inv_cov_original).any()

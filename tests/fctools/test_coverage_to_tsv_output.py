@@ -580,7 +580,7 @@ def test_main_direct_with_timing(tmp_path, capsys):
 
     output_file = tmp_path / "output.tsv"
 
-    # Call main directly with timing (use keyword args for mypy)
+    # Call main directly with timing (use keyword args for type checker)
     main(input_file=input_file, output_file=output_file, timing=timing_file)
 
     # Check output file was created

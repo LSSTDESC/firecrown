@@ -95,7 +95,7 @@ def enforce_states(
             succeeds.
             """
             # The odd use of args[0] instead of self seems to be the only way
-            # to have both the Python runtime and mypy agree on what is being
+            # to have both the Python runtime and type checker agree on what is being
             # passed to the method, and to allow access to the attribute
             # 'state'. Recall that the syntax:
             #       o.foo()

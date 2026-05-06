@@ -30,7 +30,7 @@ To maintain high code quality and consistency, we use several automated tools. W
 | Target | Description | When to run |
 | :--- | :--- | :--- |
 | `make format` | Automatically format all code using `black` | Frequently during development |
-| `make lint` | Run all linters (`black`, `flake8`, `mypy`, `pylint`) in parallel | Before every commit |
+| `make lint` | Run all linters (`black`, `flake8`, `ty`, `pylint`) in parallel | Before every commit |
 | `make test` | Run fast unit tests in parallel | Regularly during development |
 | `make unit-tests` | Run all unit tests with 100% per-component coverage check | Before pushing |
 | `make test-ci` | Run the full test suite exactly as the CI system does | Final check before pushing |
@@ -56,6 +56,5 @@ works, and how the CI pipeline is structured, see
 
 - Use `black` for formatting.
 - Follow PEP 8 guidelines (enforced by `flake8`).
-- Use type hints wherever possible (checked by `mypy`).
+- Use type hints wherever possible (checked by `type checker`).
 - Ensure `pylint` passes without warnings in the relevant packages.
-

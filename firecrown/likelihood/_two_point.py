@@ -736,7 +736,7 @@ def read_reals(
     if common_length == 0:
         return None
     sacc_indices = np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
-    assert sacc_indices is not None  # Needed for mypy
+    assert sacc_indices is not None  # Needed for type checker
     assert len(sacc_indices) == common_length
     return thetas, xis, sacc_indices
 
@@ -765,7 +765,7 @@ def read_ell_cells(
     if common_length == 0:
         return None
     sacc_indices = np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
-    assert sacc_indices is not None  # Needed for mypy
+    assert sacc_indices is not None  # Needed for type checker
     assert len(sacc_indices) == common_length
     return ells, cells, sacc_indices
 
