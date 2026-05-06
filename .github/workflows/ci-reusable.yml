@@ -66,11 +66,11 @@ jobs:
     name: Quick validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v4
+        uses: conda-incubator/setup-miniconda@v4.0.1
         with:
           miniforge-version: latest
           python-version: "3.12"
@@ -110,7 +110,7 @@ jobs:
           echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: Cache Conda env (lockfile)
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.5
         id: cache-lock
         with:
           path: ${{ env.CONDA }}/envs
@@ -155,7 +155,7 @@ jobs:
           python --version
       - name: Save conda environment
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v5.0.5
         with:
           path: ${{ env.CONDA }}/envs
           key: ${{ steps.cache-lock.outputs.cache-primary-key }}
@@ -185,11 +185,11 @@ jobs:
             python-version: "3.12"
             coverage: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v4
+        uses: conda-incubator/setup-miniconda@v4.0.1
         with:
           miniforge-version: latest
           python-version: ${{ matrix.python-version }}
@@ -242,7 +242,7 @@ jobs:
           echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: Cache Conda env (lockfile)
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.5
         id: cache-lock
         with:
           path: ${{ env.CONDA }}/envs
@@ -313,7 +313,7 @@ jobs:
       - name: Save conda-forge, CosmoSIS and Cobaya environment
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         id: cache-primes-save
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v5.0.5
         with:
           path: ${{ env.CONDA }}/envs
           key: ${{ steps.cache-lock.outputs.cache-primary-key }}
@@ -348,7 +348,7 @@ jobs:
           fi
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6.0.0
         with:
           files: ./coverage.xml
           fail_ci_if_error: true
@@ -368,11 +368,11 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: ${{ inputs.ci_mode == 'nightly' && 60 || 360 }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v4
+        uses: conda-incubator/setup-miniconda@v4.0.1
         with:
           miniforge-version: latest
           python-version: "3.13"
@@ -412,7 +412,7 @@ jobs:
           echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: Cache Conda env (lockfile)
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.5
         id: cache-lock
         with:
           path: ${{ env.CONDA }}/envs
@@ -481,7 +481,7 @@ jobs:
       - name: Save conda-forge, CosmoSIS and Cobaya environment
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         id: cache-primes-save
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v5.0.5
         with:
           path: ${{ env.CONDA }}/envs
           key: ${{ steps.cache-lock.outputs.cache-primary-key }}
@@ -497,13 +497,13 @@ jobs:
           conda list
           echo "done with conda list"
       - name: Cloning Smokescreen
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6.0.2
         with:
           repository: "marcpaterno/smokescreen"
           path: "smokescreen"
           ref: "adjust-to-firecrown-pr-586"
       - name: Cloning Augur
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6.0.2
         with:
           repository: "lsstdesc/augur"
           path: "augur"
