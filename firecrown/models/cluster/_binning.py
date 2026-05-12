@@ -5,8 +5,20 @@ used for cluster theoretical predictions within Firecrown.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
+from typing import Protocol, cast
 
 import sacc
+
+
+class _BoundedTracer(Protocol):
+    tracer_type: str
+    lower: float
+    upper: float
+
+
+class _RadiusTracer(_BoundedTracer, Protocol):
+    center: float
 
 
 class NDimensionalBin(ABC):
@@ -40,14 +52,18 @@ class NDimensionalBin(ABC):
 class SaccBin(NDimensionalBin):
     """An implementation of the N dimensional bin using sacc tracers."""
 
-    def __init__(self, coordinate_bins: list[sacc.BaseTracer]):
-        self.coordinate_bins = coordinate_bins
+    def __init__(self, coordinate_bins: Sequence[sacc.BaseTracer]):
+        self.coordinate_bins = list(coordinate_bins)
         self.dimension = len(coordinate_bins)
 
     @property
     def z_edges(self) -> tuple[float, float]:
         """Redshift bin edges."""
-        z_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_z"]
+        z_bin = [
+            cast(_BoundedTracer, x)
+            for x in self.coordinate_bins
+            if x.tracer_type == "bin_z"
+        ]
         if len(z_bin) != 1:
             raise ValueError("SaccBin must have exactly one z bin")
         return z_bin[0].lower, z_bin[0].upper
@@ -55,7 +71,11 @@ class SaccBin(NDimensionalBin):
     @property
     def mass_proxy_edges(self) -> tuple[float, float]:
         """Mass proxy bin edges."""
-        mass_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_richness"]
+        mass_bin = [
+            cast(_BoundedTracer, x)
+            for x in self.coordinate_bins
+            if x.tracer_type == "bin_richness"
+        ]
         if len(mass_bin) != 1:
             raise ValueError("SaccBin must have exactly one richness bin")
         return mass_bin[0].lower, mass_bin[0].upper
@@ -63,7 +83,11 @@ class SaccBin(NDimensionalBin):
     @property
     def radius_edges(self) -> tuple[float, float]:
         """Radius bin edges."""
-        radius_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_radius"]
+        radius_bin = [
+            cast(_RadiusTracer, x)
+            for x in self.coordinate_bins
+            if x.tracer_type == "bin_radius"
+        ]
         if len(radius_bin) != 1:
             raise ValueError("SaccBin must have exactly one radius bin")
         return radius_bin[0].lower, radius_bin[0].upper
@@ -71,7 +95,11 @@ class SaccBin(NDimensionalBin):
     @property
     def radius_center(self) -> float:
         """Radius bin center."""
-        radius_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_radius"]
+        radius_bin = [
+            cast(_RadiusTracer, x)
+            for x in self.coordinate_bins
+            if x.tracer_type == "bin_radius"
+        ]
         if len(radius_bin) != 1:
             raise ValueError("SaccBin must have exactly one radius bin")
         return radius_bin[0].center
@@ -84,9 +112,12 @@ class SaccBin(NDimensionalBin):
         if self.dimension != other.dimension:
             return False
 
-        for my_bin in self.coordinate_bins:
+        for my_bin_raw in self.coordinate_bins:
+            my_bin = cast(_BoundedTracer, my_bin_raw)
             other_bin = [
-                x for x in other.coordinate_bins if x.tracer_type == my_bin.tracer_type
+                cast(_BoundedTracer, x)
+                for x in other.coordinate_bins
+                if x.tracer_type == my_bin.tracer_type
             ]
 
             if my_bin.lower != other_bin[0].lower:
@@ -98,7 +129,13 @@ class SaccBin(NDimensionalBin):
 
     def __hash__(self) -> int:
         """One bin's hash is determined by the dimension and lower/upper bound."""
-        bin_bounds = [(bin.lower, bin.upper) for bin in self.coordinate_bins]
+        bin_bounds = [
+            (
+                cast(_BoundedTracer, current_bin).lower,
+                cast(_BoundedTracer, current_bin).upper,
+            )
+            for current_bin in self.coordinate_bins
+        ]
         return hash((self.dimension, tuple(bin_bounds)))
 
 
