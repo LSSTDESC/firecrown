@@ -23,9 +23,8 @@ def test_pair_selector_register_missing_kind():
         class MissingBinPairSelector(mt.BinPairSelector):
             """BinPairSelector with missing kind."""
 
-            def keep(
-                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
-            ) -> bool:
+            def keep(self, zdist: mt.TomographicBinPair, m: mt.MeasurementPair) -> bool:
+                del zdist, m
                 return True
 
         _ = MissingBinPairSelector(kind="foo")
@@ -40,9 +39,8 @@ def test_pair_selector_register_duplicate_kind():
 
             kind: str = "foo"
 
-            def keep(
-                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
-            ) -> bool:
+            def keep(self, zdist: mt.TomographicBinPair, m: mt.MeasurementPair) -> bool:
+                del zdist, m
                 return True
 
         @mt.register_bin_pair_selector
@@ -51,9 +49,8 @@ def test_pair_selector_register_duplicate_kind():
 
             kind: str = "foo"
 
-            def keep(
-                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
-            ) -> bool:
+            def keep(self, zdist: mt.TomographicBinPair, m: mt.MeasurementPair) -> bool:
+                del zdist, m
                 return True
 
         _ = Duplicate2BinPairSelector()

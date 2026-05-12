@@ -62,13 +62,16 @@ class ExampleSupernovaSRD(AnalysisBuilder):
         )
         return sacc_full_file
 
-    def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
+    def generate_factory(
+        self, output_path: Path, sacc: Path
+    ) -> Path:  # pylint: disable=redefined-outer-name
         """Copy supernova factory template.
 
         :param output_path: Output directory
-        :param _sacc: SACC file path (unused)
+        :param sacc: SACC file path (unused)
         :return: Path to factory file
         """
+        del sacc
         output_file = output_path / f"{self.prefix}_factory.py"
         copy_template(_sn_srd_template, output_file)
         return output_file

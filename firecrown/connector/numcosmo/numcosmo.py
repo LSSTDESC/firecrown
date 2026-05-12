@@ -585,16 +585,23 @@ class NumCosmoData(Ncm.Data):
             raise_on_unused=self.likelihood.raise_on_unused_parameter,
         )
 
-    def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
+    # pylint: disable=arguments-differ
+    def do_m2lnL_val(
+        self,
+        mset: Ncm.MSet,
+    ) -> float:
         """Implements the virtual method `m2lnL`.
 
         This method should calculate the value of the likelihood for
         the model set `mset`.
 
-        :param _: unused, but required by interface
+        :param mset: model set (unused)
         """
+        del mset
         loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
         return -2.0 * loglike
+
+    # pylint: enable=arguments-differ
 
 
 class NumCosmoGaussCov(Ncm.DataGaussCov):
@@ -896,15 +903,16 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
             self.tools.prepare()
 
     # pylint: disable-next=arguments-differ
-    def do_mean_func(self, _, vp) -> None:
+    def do_mean_func(self, mset: Ncm.MSet, vp: Ncm.Vector) -> None:
         """Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
 
         This method should compute the theoretical mean for the gaussian
         distribution.
 
-        :param _: unused, but required by interface
+        :param mset: model set (unused)
         :param vp: the vector to set
         """
+        del mset
         theory_vector = self.likelihood.compute_theory_vector(self.tools)
         vp.set_array(theory_vector)
 
