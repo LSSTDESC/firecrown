@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import warnings
+from typing import cast
 
 from firecrown.updatable._parameters_map import ParamsMap
 
@@ -62,23 +63,26 @@ def assert_updatable_interface(
     """
     overwritten = []
 
+    def recurse_children(children) -> None:
+        for child in children:
+            if not isinstance(child, (UpdatableCollection, Updatable)):
+                raise TypeError("Expected Updatable or UpdatableCollection")  # pragma: no cover
+            assert_updatable_interface(
+                cast(UpdatableProtocol, child),
+                raise_on_override=raise_on_override,
+            )
+
     my_type: type
     match obj:
         case UpdatableCollection():
             my_type = UpdatableCollection
             if recursive:
-                for item in obj:
-                    assert_updatable_interface(
-                        item, raise_on_override=raise_on_override
-                    )
+                recurse_children(obj)
         case Updatable():
             my_type = Updatable
             if recursive:
                 # pylint: disable-next=protected-access
-                for item in obj._updatables:
-                    assert_updatable_interface(
-                        item, raise_on_override=raise_on_override
-                    )
+                recurse_children(obj._updatables)
         case _:
             raise TypeError("Expected Updatable or UpdatableCollection")
 
@@ -91,7 +95,8 @@ def assert_updatable_interface(
 
     msg = f"Updatable interface methods {overwritten} were overridden"
 
-    if overwritten:
-        if raise_on_override:
-            raise TypeError(msg)
-        warnings.warn(msg, RuntimeWarning)
+    if not overwritten:
+        return
+    if raise_on_override:
+        raise TypeError(msg)
+    warnings.warn(msg, RuntimeWarning)
