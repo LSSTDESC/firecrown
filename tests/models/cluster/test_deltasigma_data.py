@@ -7,6 +7,8 @@ from firecrown.models.cluster import (
     DeltaSigmaData,
 )
 
+CLUSTER_SHEAR = getattr(sacc.standard_types, "cluster_shear", "cluster_shear")
+
 
 def test_create_deltasigma_data():
     s = sacc.Sacc()
@@ -52,7 +54,7 @@ def test_wrong_property(cluster_sacc_data: sacc.Sacc) -> None:
 def test_wrong_tracer_number(cluster_sacc_data: sacc.Sacc) -> None:
     dsd = DeltaSigmaData(cluster_sacc_data)
     # pylint: disable=no-member
-    cs = sacc.standard_types.cluster_shear
+    cs = CLUSTER_SHEAR
     tracers_n = 3
     with pytest.raises(
         ValueError,
@@ -95,7 +97,6 @@ def test_observed_data_and_indices_wrong_property():
     # pylint: disable=no-member
     with pytest.raises(
         ValueError,
-        match=f"The property should be related to the "
-        f"{sacc.standard_types.cluster_shear} data type.",
+        match=f"The property should be related to the " f"{CLUSTER_SHEAR} data type.",
     ):
         ads.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.MASS)

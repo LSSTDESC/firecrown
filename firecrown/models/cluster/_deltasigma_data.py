@@ -6,6 +6,8 @@ from firecrown.models.cluster._binning import SaccBin
 from firecrown.models.cluster._cluster_data import ClusterData
 from firecrown.models.cluster._properties import ClusterProperty
 
+CLUSTER_SHEAR = getattr(sacc.standard_types, "cluster_shear", "cluster_shear")
+
 
 class DeltaSigmaData(ClusterData):
     """The class used to wrap a sacc file and return the cluster deltasigma data.
@@ -35,12 +37,11 @@ class DeltaSigmaData(ClusterData):
             include_prop = cluster_property & properties
             if include_prop == ClusterProperty.DELTASIGMA:
                 # pylint: disable=no-member
-                data_types.append(sacc.standard_types.cluster_shear)
+                data_types.append(CLUSTER_SHEAR)
         if not data_types:
             # pylint: disable=no-member
             raise ValueError(
-                f"The property should be related to the "
-                f"{sacc.standard_types.cluster_shear} data type."
+                f"The property should be related to the " f"{CLUSTER_SHEAR} data type."
             )
 
         data_vectors, sacc_indices = self._get_observed_data_and_indices_by_survey(
@@ -58,7 +59,7 @@ class DeltaSigmaData(ClusterData):
         if ClusterProperty.DELTASIGMA not in properties:
             raise ValueError(f"The property must be {ClusterProperty.DELTASIGMA}.")
         # pylint: disable=no-member
-        data_type = sacc.standard_types.cluster_shear
+        data_type = CLUSTER_SHEAR
         bin_combinations_for_survey = (
             self._all_bin_combinations_for_data_type_and_survey(survey_nm, data_type, 4)
         )

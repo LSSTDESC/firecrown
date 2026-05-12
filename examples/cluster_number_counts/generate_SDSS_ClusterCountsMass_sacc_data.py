@@ -10,6 +10,11 @@ import numpy as np
 from numcosmo_py import Ncm
 import sacc
 
+CLUSTER_COUNTS = getattr(sacc.standard_types, "cluster_counts", "cluster_counts")
+CLUSTER_MEAN_LOG_MASS = getattr(
+    sacc.standard_types, "cluster_mean_log_mass", "cluster_mean_log_mass"
+)
+
 
 def generate_SDSSCL_sacc_file() -> None:
     """
@@ -58,9 +63,9 @@ def generate_SDSSCL_sacc_file() -> None:
         bin_richness_labels.append(bin_richness_label)
 
     #  pylint: disable-next=no-member
-    cluster_count = sacc.standard_types.cluster_counts
+    cluster_count = CLUSTER_COUNTS
     #  pylint: disable-next=no-member
-    cluster_mean_log_mass = sacc.standard_types.cluster_mean_log_mass
+    cluster_mean_log_mass = CLUSTER_MEAN_LOG_MASS
 
     counts_and_edges = zip(
         cluster_counts.flatten(), itertools.product(bin_z_labels, bin_richness_labels)

@@ -6,6 +6,11 @@ from firecrown.models.cluster._binning import SaccBin
 from firecrown.models.cluster._cluster_data import ClusterData
 from firecrown.models.cluster._properties import ClusterProperty
 
+CLUSTER_COUNTS = getattr(sacc.standard_types, "cluster_counts", "cluster_counts")
+CLUSTER_MEAN_LOG_MASS = getattr(
+    sacc.standard_types, "cluster_mean_log_mass", "cluster_mean_log_mass"
+)
+
 
 class AbundanceData(ClusterData):
     """The class used to wrap a sacc file and return the cluster abundance data.
@@ -34,10 +39,10 @@ class AbundanceData(ClusterData):
 
             if cluster_property == ClusterProperty.COUNTS:
                 # pylint: disable=no-member
-                data_types.append(sacc.standard_types.cluster_counts)
+                data_types.append(CLUSTER_COUNTS)
             elif cluster_property == ClusterProperty.MASS:
                 # pylint: disable=no-member
-                data_types.append(sacc.standard_types.cluster_mean_log_mass)
+                data_types.append(CLUSTER_MEAN_LOG_MASS)
 
         data_vectors, sacc_indices = self._get_observed_data_and_indices_by_survey(
             survey_nm, data_types, 3
@@ -56,10 +61,10 @@ class AbundanceData(ClusterData):
 
             if cluster_property == ClusterProperty.COUNTS:
                 # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_counts
+                data_type = CLUSTER_COUNTS
             elif cluster_property == ClusterProperty.MASS:
                 # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_mean_log_mass
+                data_type = CLUSTER_MEAN_LOG_MASS
             else:
                 continue
 
