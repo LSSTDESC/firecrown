@@ -282,7 +282,8 @@ class CCLFactory(Updatable, BaseModel):
         self, ccl_args: dict[str, Any], calculator_args: CCLCalculatorArgs | None
     ) -> pyccl.Cosmology:
         if calculator_args is not None:
-            ccl_args.update(calculator_args)
+            for key, value in calculator_args.items():
+                ccl_args[key] = value
             if ("pk_nonlin" not in ccl_args) and self.require_nonlinear_pk:
                 ccl_args["nonlinear_model"] = "halofit"
             else:
