@@ -2,11 +2,13 @@
 
 import types
 import sys
+from typing import cast
 from unittest import mock
 import pytest
 import numpy as np
 from cobaya.model import get_model, Model
 from cobaya.log import LoggedError
+from cobaya.typing import InputDict
 from firecrown.connector.cobaya.likelihood import LikelihoodConnector
 from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.likelihood._gaussian import ConstGaussian
@@ -97,7 +99,7 @@ def test_cobaya_ccl_likelihood(fiducial_params):
         "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
     assert model_fiducial.logposterior({}).logpost == -3.0
 
@@ -123,7 +125,7 @@ def test_resetting_after_exception_in_log_likelihood(fiducial_params):
         "resetting state and re-raising for Cobaya handling"
     )
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
 
     with (
@@ -154,7 +156,7 @@ def test_parameterized_likelihood_missing(fiducial_params):
     }
 
     with pytest.raises(KeyError):
-        _ = get_model(info_fiducial)
+        _ = get_model(cast(InputDict, info_fiducial))
 
 
 def test_parameterized_likelihood_wrong_type(fiducial_params):
@@ -174,7 +176,7 @@ def test_parameterized_likelihood_wrong_type(fiducial_params):
     with pytest.raises(
         TypeError, match="build_parameters must be a NamedParameters or dict"
     ):
-        _ = get_model(info_fiducial)
+        _ = get_model(cast(InputDict, info_fiducial))
 
 
 def test_parameterized_likelihood_dict(fiducial_params):
@@ -191,7 +193,7 @@ def test_parameterized_likelihood_dict(fiducial_params):
         "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
     assert model_fiducial.logposterior({}).logpost == -1.5
 
@@ -212,7 +214,7 @@ def test_parameterized_likelihood_namedparameters(fiducial_params):
         "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
     assert model_fiducial.logposterior({}).logpost == -1.5
 
@@ -232,7 +234,7 @@ def test_sampler_parameter_likelihood_missing(fiducial_params):
     }
 
     with pytest.raises(LoggedError, match="my_prefix_sampler_param0"):
-        _ = get_model(info_fiducial)
+        _ = get_model(cast(InputDict, info_fiducial))
 
 
 def test_sampler_parameter_likelihood(fiducial_params):
@@ -250,7 +252,7 @@ def test_sampler_parameter_likelihood(fiducial_params):
         "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
     assert model_fiducial.logposterior({}).logpost == -2.1
 
@@ -270,7 +272,7 @@ def test_derived_parameter_likelihood(fiducial_params):
         "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
     logpost = model_fiducial.logposterior({})
     assert logpost.logpost == -3.14
@@ -360,7 +362,7 @@ def test_logp_with_pure_ccl_mode():
         },
     }
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
     # This will test the else branch in logp() method (lines 280-283)
     logpost = model_fiducial.logposterior({})
