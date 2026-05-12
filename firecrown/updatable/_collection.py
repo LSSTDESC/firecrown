@@ -3,7 +3,7 @@
 from __future__ import annotations
 from collections import UserList
 from collections.abc import Iterable
-from typing import Generic, TypeVar, cast, final
+from typing import Generic, TypeVar, SupportsIndex, cast, final
 
 from firecrown.updatable._parameters_map import ParamsMap
 from firecrown.updatable._parameters_required import RequiredParameters
@@ -119,11 +119,25 @@ class UpdatableCollection(UserList[T], Generic[T]):
             )
         super().append(item)
 
-    def __setitem__(self, key, value):
-        """Set self[key] to value; raise TypeError if Value is not Updatable."""
-        if not isinstance(value, Updatable):
+    def __setitem__(self, i, item) -> None:
+        """Set self[i] to item; raise TypeError if item is not Updatable."""
+        if isinstance(i, slice):
+            if not isinstance(item, Iterable):
+                raise TypeError(
+                    "Slice assignment requires an iterable of updatable items"
+                )
+            values = list(item)
+            for value_item in values:
+                if not isinstance(value_item, Updatable):
+                    raise TypeError(
+                        "Only updatable items can be appended to an "
+                        "UpdatableCollection"
+                    )
+            super().__setitem__(i, cast("Iterable[T]", values))
+            return
+
+        if not isinstance(item, Updatable):
             raise TypeError(
                 "Only updatable items can be appended to an UpdatableCollection"
             )
-
-        super().__setitem__(key, cast("T", value))
+        super().__setitem__(cast(SupportsIndex, i), cast("T", item))

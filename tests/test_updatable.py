@@ -334,6 +334,28 @@ def test_updatable_collection_insertion():
         x[0] = 1
 
 
+def test_updatable_collection_slice_assignment_valid():
+    """Slice assignment of a valid list of Updatables should succeed."""
+    coll = UpdatableCollection([SimpleUpdatable(), SimpleUpdatable()])
+    coll[0:1] = [MinimalUpdatable()]
+    assert len(coll) == 2
+    assert isinstance(coll[0], MinimalUpdatable)
+
+
+def test_updatable_collection_slice_assignment_non_iterable_raises():
+    """Slice assignment of a non-iterable should raise TypeError."""
+    coll = UpdatableCollection([SimpleUpdatable()])
+    with pytest.raises(TypeError, match="iterable"):
+        coll[0:1] = 42  # type: ignore[index]
+
+
+def test_updatable_collection_slice_assignment_non_updatable_item_raises():
+    """Slice assignment containing a non-Updatable item should raise TypeError."""
+    coll = UpdatableCollection([SimpleUpdatable()])
+    with pytest.raises(TypeError, match="updatable"):
+        coll[0:1] = [object()]  # type: ignore[list-item]
+
+
 def test_set_sampler_parameter():
     my_updatable = MinimalUpdatable()
     my_param = parameters.register_new_updatable_parameter(default_value=42.0)
