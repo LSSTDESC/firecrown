@@ -124,7 +124,7 @@ One concrete example is `PhotoZShift`[^2], which encapsulate a shift in the cent
 Derived from `SourceSystematic`, and defined in the same module, is the class `SourceGalaxySystematic`.
 This class includes the `apply` method which is used to apply the systematic to a source galaxy tracer argument.
 It also introduces a restriction that subclasses of `SourceGalaxySystematic` can only be applied to source galaxy tracers.[^other]
-This restriction will be enforced by the `mypy` type checker.
+This restriction will be enforced by the `type checker`.
 This is done using the Python type systems support of *generics*.[^generics]
 The goal of this restriction is to avoid having systematics intended for one variety of observation (e.g. a weak lensing source) being applied to an inappropriate other variety of observation.
 

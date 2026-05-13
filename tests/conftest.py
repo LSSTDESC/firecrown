@@ -45,6 +45,12 @@ import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._cmb as cmb
 from firecrown.metadata_types import Clusters, CMB
 
+CLUSTER_COUNTS = getattr(sacc.standard_types, "cluster_counts", "cluster_counts")
+CLUSTER_MEAN_LOG_MASS = getattr(
+    sacc.standard_types, "cluster_mean_log_mass", "cluster_mean_log_mass"
+)
+CLUSTER_SHEAR = getattr(sacc.standard_types, "cluster_shear", "cluster_shear")
+
 # Helper function for creating AST ClassDef nodes across Python versions
 if sys.version_info >= (3, 12):
 
@@ -511,11 +517,11 @@ def fixture_harmonic_data_no_window(
 def fixture_cluster_sacc_data() -> sacc.Sacc:
     """Return a Sacc object with cluster data."""
     # pylint: disable=no-member
-    cc = sacc.standard_types.cluster_counts
+    cc = CLUSTER_COUNTS
     # pylint: disable=no-member
-    mlm = sacc.standard_types.cluster_mean_log_mass
+    mlm = CLUSTER_MEAN_LOG_MASS
     # pylint: disable=no-member
-    cs = sacc.standard_types.cluster_shear
+    cs = CLUSTER_SHEAR
 
     s = sacc.Sacc()
     s.add_tracer("survey", "my_survey", 4000)

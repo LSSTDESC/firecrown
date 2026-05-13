@@ -29,7 +29,7 @@ def extract_all_tracers_inferred_galaxy_zdists(
     This function extracts the two-point function metadata from the Sacc object
     and returns it in a list.
     """
-    tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
+    tracers: list[sacc.tracers.BaseTracer] = list(sacc_data.tracers.values())
     tracer_types, _ = extract_all_measured_types(
         sacc_data, allow_mixed_types=allow_mixed_types
     )

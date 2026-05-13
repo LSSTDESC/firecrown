@@ -5,6 +5,8 @@ and phenomenological predictions.  This module contains the classes and
 functions that produce those predictions.
 """
 
+from typing import Any, cast
+
 import clmm  # pylint: disable=import-error
 import numpy as np
 import numpy.typing as npt
@@ -42,14 +44,16 @@ class ClusterDeltaSigma(ClusterAbundance):
         radius_center: float,
     ) -> npt.NDArray[np.float64]:
         """Delta sigma for clusters."""
-        cosmo_clmm = clmm.Cosmology()
+        if (clmm.Cosmology is None) or (clmm.Modeling is None):  # pragma: no cover
+            raise RuntimeError("CLMM backend is unavailable.")
+        cosmo_clmm = cast(Any, clmm.Cosmology)()
         # pylint: disable=protected-access
         cosmo_clmm._init_from_cosmo(self._cosmo)
         mass_def = self.halo_mass_function.mass_def
         mass_type = mass_def.rho_type
         if mass_type == "matter":
             mass_type = "mean"
-        moo = clmm.Modeling(
+        moo = cast(Any, clmm.Modeling)(
             massdef=mass_type,
             delta_mdef=mass_def.Delta,
             halo_profile_model="nfw",

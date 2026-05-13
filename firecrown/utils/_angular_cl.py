@@ -3,7 +3,7 @@
 import functools
 from collections.abc import Callable
 from enum import Enum, auto
-from typing import Annotated
+from typing import Annotated, Any
 
 import numpy as np
 import pyccl
@@ -18,7 +18,13 @@ class ClLimberMethod(YAMLSerializable, str, Enum):
     """This class defines Cl limber methods."""
 
     @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
+    def _generate_next_value_(
+        name: str,
+        start: int,
+        count: int,
+        last_values: list[Any],
+    ) -> str:
+        del start, count, last_values
         return name.lower()
 
     GSL_QAG_QUAD = auto()
@@ -38,7 +44,13 @@ class ClIntegrationMethod(YAMLSerializable, str, Enum):
     """This class defines Cl integration methods."""
 
     @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
+    def _generate_next_value_(
+        name: str,
+        start: int,
+        count: int,
+        last_values: list[Any],
+    ) -> str:
+        del start, count, last_values
         return name.lower()
 
     LIMBER = auto()

@@ -148,9 +148,10 @@ class CountsIntegralND(Ncm.IntegralND):
         x: Ncm.Vector,
         dim: int,
         npoints: int,
-        _fdim: int,
+        fdim: int,
         fval: Ncm.Vector,
     ) -> None:
         """Called by NumCosmo to evaluate the integrand."""
+        del fdim
         x_array = np.array(x.dup_array()).reshape(npoints, dim)
         fval.set_array(list(self.fun(x_array, self.extra_args)))

@@ -49,7 +49,7 @@ graph TD
     %% Lint dependencies
     lint --> lint-black["lint-black"]
     lint --> lint-flake8["lint-flake8"]
-    lint --> lint-mypy["lint-mypy"]
+    lint --> lint-ty["lint-ty"]
     lint --> lint-pylint["lint-pylint"]
     
     %% Documentation dependencies
@@ -95,7 +95,7 @@ graph TD
     %% Lint parallelism
     lint --> lint-black["lint-black"]:::sequential
     lint --> lint-flake8["lint-flake8"]:::sequential
-    lint --> lint-mypy["lint-mypy"]:::sequential
+    lint --> lint-ty["lint-ty"]:::sequential
     lint --> lint-pylint["lint-pylint<br/>(parallel)"]:::parallel
     
     lint-pylint --> pylint-fc["pylint-firecrown"]:::sequential

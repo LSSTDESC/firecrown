@@ -382,7 +382,7 @@ class Statistic(Updatable):
         self.computed_theory_vector = False
         self.theory_vector: None | TheoryVector = None
 
-    def read(self, _: sacc.Sacc) -> None:
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic and mark it as ready for use.
 
         Derived classes that override this function should make sure to call the
@@ -394,8 +394,9 @@ class Statistic(Updatable):
 
         as the last thing they do.
 
-        :param _: currently unused, but required by the interface.
+        :param sacc_data: currently unused, but required by the interface.
         """
+        del sacc_data
         assert len(self.get_data_vector()) > 0
         self.ready = True
 
@@ -566,12 +567,13 @@ class TrivialStatistic(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def _compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Return a fixed theory vector.
 
-        :param _: unused, but required by the interface
+        :param tools: unused, but required by the interface
         :return: A fixed theory vector
         """
+        del tools
         return TheoryVector.from_list([self.mean] * self.count)
 
 
@@ -1023,8 +1025,11 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+    def apply(
+        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
+    ) -> _SourceGalaxyArgsT:
         """Apply a shift & stretch to the photo-z distribution of a source."""
+        del tools
         new_z, new_dndz = self._transform(
             tracer_arg.z, tracer_arg.dndz, self.delta_z, self.sigma_z
         )

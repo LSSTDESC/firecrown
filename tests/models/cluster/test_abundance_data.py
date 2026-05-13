@@ -7,6 +7,8 @@ from firecrown.models.cluster import (
     ClusterProperty,
 )
 
+CLUSTER_COUNTS = getattr(sacc.standard_types, "cluster_counts", "cluster_counts")
+
 
 def test_create_abundance_data():
     s = sacc.Sacc()
@@ -109,7 +111,7 @@ def test_observed_data_and_indices_by_survey_cluster_counts_and_mass(
 
 def test_observed_data_and_indices_no_data_throws():
     # pylint: disable=no-member
-    cc = sacc.standard_types.cluster_counts
+    cc = CLUSTER_COUNTS
 
     s = sacc.Sacc()
     s.add_tracer("survey", "my_survey", 4000)

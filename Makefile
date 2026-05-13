@@ -8,7 +8,7 @@ SHELL := /bin/bash
 .PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
-	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
+	lint-pylint-tests lint-pylint-examples lint-ty pre-commit install all-checks \
 	test-updatable test-utils test-parameters test-modeling-tools \
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
@@ -146,7 +146,7 @@ conda-lock-check:  ## Verify generated lockfiles are up to date
 
 ##@ Linting
 
-lint: lint-black lint-flake8 lint-mypy lint-pylint  ## Run all linting tools
+lint: lint-black lint-flake8 lint-ty lint-pylint  ## Run all linting tools
 	@echo "✅ All linters passed!"
 
 lint-black:  ## Check code formatting with black
@@ -159,10 +159,10 @@ lint-flake8:  ## Run flake8 linter
 	@flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
 	@echo "✅ flake8 passed"
 
-lint-mypy:  ## Run mypy type checker
-	@echo "Running mypy..."
-	@mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) || (echo "❌ mypy failed" && exit 1)
-	@echo "✅ mypy passed"
+lint-ty:  ## Run ty type checker
+	@echo "Running ty..."
+	@ty check || (echo "❌ ty failed" && exit 1)
+	@echo "✅ ty passed"
 
 lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-examples ## Run all pylint checks
 	@echo "✅ All pylint checks passed!"
@@ -187,7 +187,7 @@ lint-pylint-examples:  ## Run pylint on examples
 	@pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) || (echo "❌ pylint failed for examples" && exit 1)
 	@echo "✅ pylint passed for examples"
 
-typecheck: lint-mypy  ## Alias for mypy type checking
+typecheck: lint-ty  ## Alias for ty type checking
 
 ##@ Testing
 
@@ -239,7 +239,6 @@ test-models-two-point unit-tests-core test-slow test-example test-integration: |
 unit-tests-post: test-updatable test-utils test-parameters test-modeling-tools test-models-cluster test-models-two-point
 	@echo "Combining coverage data..."
 	@COVERAGE_FILE=$(UNIT_COVERAGE_COMBINED) coverage combine $(UNIT_COVERAGE_FILES)
-	@COVERAGE_FILE=$(UNIT_COVERAGE_COMBINED) coverage report
 
 test-updatable:  ## Run tests for firecrown.updatable module with coverage
 	@COVERAGE_FILE=$(UNIT_COVERAGE_UPDATABLE) $(PYTEST) tests/test_updatable.py \

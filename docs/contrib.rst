@@ -63,12 +63,12 @@ Type checking
 -------------
 
 We are using type-hinting in (most of) the code, to help ensure correct use of the framework.
-We are using :bash:`mypy` to verify the code is conforming to these type hints.
+We are using :bash:`ty` to verify the code is conforming to these type hints.
 Please run:
 
 .. code:: bash
 
-    mypy -p firecrown -p examples -p tests
+    ty check
 
 and fix any errors reported before pushing commits to the GitHub repository.
 
@@ -84,4 +84,3 @@ To run the same set of tests that will be run by the CI system, use:
 
 Please note that when the CI system runs the tests, it will also ensure that all modified or newly-added code is actually tested.
 For a PR to be reviewed, it must pass this requirement.
-

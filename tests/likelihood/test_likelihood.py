@@ -15,7 +15,8 @@ class LikelihoodThatThrowsIntegrationError(like.Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         pass
 
-    def compute_loglike(self, _: like.ModelingTools) -> float:
+    def compute_loglike(self, tools: like.ModelingTools) -> float:
+        del tools
         pyccl.pyutils.check(pyccl.lib.CCL_ERROR_INTEG)
         return -1.0
 
@@ -26,7 +27,8 @@ class LikelihoodThatThrowsUnhandledError(like.Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         pass
 
-    def compute_loglike(self, _: like.ModelingTools) -> float:
+    def compute_loglike(self, tools: like.ModelingTools) -> float:
+        del tools
         pyccl.pyutils.check(pyccl.lib.CCL_ERROR_FILE_READ)
         return -1.0
 

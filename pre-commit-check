@@ -44,10 +44,10 @@ else
   exit 1
 fi
 
-if mypy -p firecrown -p examples -p tests; then
-  echo "mypy ok"
+if ty check; then
+  echo "ty ok"
 else
-  echo "mypy failed"
+  echo "ty failed"
   exit 1
 fi
 

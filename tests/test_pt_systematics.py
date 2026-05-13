@@ -756,8 +756,8 @@ def test_linear_bias_systematic(tools_with_vanilla_cosmology: ModelingTools):
     nca = a.apply(tools_with_vanilla_cosmology, orig_nca)
     # Answer values determined by code inspection and hand calculation.
     expected_bias: npt.NDArray[np.float64] = np.array([0.27835299, 0.39158961])
-    assert nca.bias is not None  # needed for mypy
-    new_bias: npt.NDArray[np.float64] = nca.bias  # needed for mypy
+    assert nca.bias is not None  # needed for type checker
+    new_bias: npt.NDArray[np.float64] = nca.bias  # needed for type checker
     assert np.allclose(expected_bias, new_bias)
 
     a.reset()

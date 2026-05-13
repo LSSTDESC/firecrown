@@ -362,7 +362,7 @@ def test_derived_parameters_collection():
 def test_derived_parameters_collection_rejects_bad_list():
     badlist = [1, 3, 5]
     with pytest.raises(TypeError):
-        # We have to tell mypy to ignore the type error on the
+        # We have to tell type checker to ignore the type error on the
         # next line, because it is the very type error we are
         # testing.
         _ = DerivedParameterCollection(badlist)  # type: ignore

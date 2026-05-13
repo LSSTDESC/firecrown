@@ -57,8 +57,8 @@ black --check firecrown tests examples
 echo "  - Running flake8..."
 flake8 firecrown examples tests
 
-echo "  - Running mypy..."
-mypy -p firecrown -p examples -p tests
+echo "  - Running ty..."
+ty check
 
 echo "  - Running pylint on firecrown..."
 pylint firecrown

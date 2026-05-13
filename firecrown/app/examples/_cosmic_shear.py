@@ -293,7 +293,10 @@ class ExampleCosmicShear(AnalysisBuilder):
         table.add_row("Format", "diagonal")
 
     def _create_tracers(
-        self, sacc_data: sacc.Sacc, cosmo: pyccl.Cosmology, z_range: np.ndarray
+        self,
+        sacc_data: sacc.Sacc,
+        cosmo: pyccl.Cosmology,
+        z_range: np.ndarray,
     ) -> tuple[np.ndarray, list[pyccl.WeakLensingTracer]]:
         """Create tomographic redshift bins and weak lensing tracers.
 
@@ -375,16 +378,20 @@ class ExampleCosmicShear(AnalysisBuilder):
         covariance = np.diag(cov_diag)
         sacc_data.add_covariance(covariance)
 
-    def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
+    # pylint: disable=redefined-outer-name
+    def generate_factory(self, output_path: Path, sacc: Path) -> Path:
         """Copy cosmic shear factory template.
 
         :param output_path: Output directory
-        :param _sacc: SACC file path (unused)
+        :param sacc: SACC file path (unused)
         :return: Path to factory file
         """
+        del sacc
         output_file = output_path / f"{self.prefix}_factory.py"
         copy_template(_cosmic_shear_template, output_file)
         return output_file
+
+    # pylint: enable=redefined-outer-name
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
         """Return SACC file path for likelihood construction."""

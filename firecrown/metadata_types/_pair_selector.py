@@ -269,12 +269,13 @@ class BadSelector(BinPairSelector):
 
     kind: str = "bad-selector"
 
-    def keep(self, _zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Raise NotImplementedError always.
 
         :raise NotImplementedError: Always raised since this selector should not be
             used.
         """
+        del zdist, m
         raise NotImplementedError("BadSelector should not be used directly.")
 
 
@@ -351,7 +352,7 @@ class AutoNameBinPairSelector(BinPairSelector):
 
     kind: str = "auto-name"
 
-    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if both bins have the same bin name.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
@@ -359,6 +360,7 @@ class AutoNameBinPairSelector(BinPairSelector):
 
         :return: True if both bins have the same name, False otherwise.
         """
+        del m
         return zdist[0].bin_name == zdist[1].bin_name
 
 
@@ -386,7 +388,7 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
 
     kind: str = "auto-measurement"
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if both measurements are the same.
 
         :param _zdist: Pair of InferredGalaxyZDist objects (unused).
@@ -394,6 +396,7 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
 
         :return: True if both measurements are identical, False otherwise.
         """
+        del zdist
         return m[0] == m[1]
 
 
@@ -457,7 +460,7 @@ class LeftMeasurementBinPairSelector(BinPairSelector):
     kind: str = "left-measurement"
     measurement_set: set[Measurement]
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if the left measurement is in the configured set.
 
         :param _zdist: Pair of InferredGalaxyZDist objects (unused).
@@ -465,6 +468,7 @@ class LeftMeasurementBinPairSelector(BinPairSelector):
 
         :return: True if the left measurement is in the set, False otherwise.
         """
+        del zdist
         return m[0] in self.measurement_set
 
 
@@ -483,7 +487,7 @@ class RightMeasurementBinPairSelector(BinPairSelector):
     kind: str = "right-measurement"
     measurement_set: set[Measurement]
 
-    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if the right measurement is in the configured set.
 
         :param _zdist: Pair of InferredGalaxyZDist objects (unused).
@@ -491,6 +495,7 @@ class RightMeasurementBinPairSelector(BinPairSelector):
 
         :return: True if the right measurement is in the set, False otherwise.
         """
+        del zdist
         return m[1] in self.measurement_set
 
 
@@ -597,7 +602,7 @@ class NameDiffBinPairSelector(BinPairSelector):
     same_name_prefix: bool = True
     neighbors_diff: int | list[int] = 1
 
-    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if bin name indices differ by an allowed amount.
 
         Both bin names must match the pattern <text><number>. The numeric parts are
@@ -609,6 +614,7 @@ class NameDiffBinPairSelector(BinPairSelector):
 
         :return: True if bins are neighbors, False otherwise.
         """
+        del m
         pattern = re.compile(r"^(?P<text>.*?)(?P<number>\d+)$")
         allowed_neighbors = (
             [self.neighbors_diff]
@@ -768,7 +774,7 @@ class TypeSourceBinPairSelector(BinPairSelector):
     kind: str = "type-source"
     type_source: TypeSource
 
-    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if both bins have the same matching type-source.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
@@ -776,6 +782,7 @@ class TypeSourceBinPairSelector(BinPairSelector):
 
         :return: True if both bins have matching type-sources, False otherwise.
         """
+        del m
         return (zdist[0].type_source == zdist[1].type_source) and (
             self.type_source == zdist[0].type_source
         )

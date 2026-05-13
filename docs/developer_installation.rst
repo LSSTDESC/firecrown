@@ -121,8 +121,8 @@ All of these are used as part of the CI system as part of the checking of all pu
     pylint firecrown
     pylint --rcfile tests/pylintrc tests
 
-    # We are using type hints and mypy to help catch type-related errors.
-    mypy -p firecrown -p examples -p tests
+    # We are using type hints and type checker to help catch type-related errors.
+    ty check
 
 Keeping your conda environment up-to-date
 =========================================

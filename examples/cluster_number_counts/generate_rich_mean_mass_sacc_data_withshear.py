@@ -15,6 +15,12 @@ from scipy import stats
 import sacc
 import pyccl as ccl
 
+CLUSTER_COUNTS = getattr(sacc.standard_types, "cluster_counts", "cluster_counts")
+CLUSTER_MEAN_LOG_MASS = getattr(
+    sacc.standard_types, "cluster_mean_log_mass", "cluster_mean_log_mass"
+)
+CLUSTER_SHEAR = getattr(sacc.standard_types, "cluster_shear", "cluster_shear")
+
 os.environ["CLMM_MODELING_BACKEND"] = "ccl"
 # pylint: disable=C0413
 import clmm  # noqa: E402
@@ -322,11 +328,11 @@ def generate_sacc_file() -> None:
         bin_radius_labels.append(bin_radius_label)
 
     #  pylint: disable-next=no-member
-    cluster_count = sacc.standard_types.cluster_counts
+    cluster_count = CLUSTER_COUNTS
     #  pylint: disable-next=no-member
-    cluster_mean_log_mass = sacc.standard_types.cluster_mean_log_mass
+    cluster_mean_log_mass = CLUSTER_MEAN_LOG_MASS
     #  pylint: disable-next=no-member
-    cluster_mean_DeltaSigma = sacc.standard_types.cluster_shear
+    cluster_mean_DeltaSigma = CLUSTER_SHEAR
 
     counts_and_edges = zip(
         cluster_counts.flatten(), itertools.product(bin_z_labels, bin_richness_labels)

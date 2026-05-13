@@ -5,7 +5,7 @@ This is the procedure we use for create a new release of Firecrown.
 1. Create a local branch in your clone of the repo to be used for the PR that will be started later. Name it for the new release, e.g.:  prep-v1.10. Note that this is not the branch that would be used for bug fixes. A bug fix branch would only be created at the time it becomes necessary.
 1. Make sure you have updated the `environment.yml` file to release, or force, any versioning required.
 1. Update your local conda environment using `conda env update --file environment.yml --prune -q --json`.
-1. Make sure any new directories are being processed by black, flake8, mypy, and pylint.
+1. Make sure any new directories are being processed by black, flake8, ty, and pylint.
 1. Update the version in `firecrown/version.py` (this is the ONLY file you need to edit manually).
 1. Update the tutorial version metadata by running:
 
