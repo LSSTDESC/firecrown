@@ -6,7 +6,7 @@ from typing import cast
 from unittest import mock
 import pytest
 import numpy as np
-from cobaya.model import get_model, Model
+from cobaya.model import get_model, Model, LogPosterior
 from cobaya.log import LoggedError
 from cobaya.typing import InputDict
 from firecrown.connector.cobaya.likelihood import LikelihoodConnector
@@ -101,7 +101,7 @@ def test_cobaya_ccl_likelihood(fiducial_params):
 
     model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
-    assert model_fiducial.logposterior({}).logpost == -3.0
+    assert cast(LogPosterior, model_fiducial.logposterior({})).logpost == -3.0
 
 
 def test_resetting_after_exception_in_log_likelihood(fiducial_params):
@@ -139,7 +139,7 @@ def test_resetting_after_exception_in_log_likelihood(fiducial_params):
         model_fiducial.logposterior({})
 
     # A second call should work
-    assert np.isfinite(model_fiducial.logposterior({}).logpost)
+    assert np.isfinite(cast(LogPosterior, model_fiducial.logposterior({})).logpost)
 
 
 def test_parameterized_likelihood_missing(fiducial_params):
@@ -195,7 +195,7 @@ def test_parameterized_likelihood_dict(fiducial_params):
 
     model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
-    assert model_fiducial.logposterior({}).logpost == -1.5
+    assert cast(LogPosterior, model_fiducial.logposterior({})).logpost == -1.5
 
 
 def test_parameterized_likelihood_namedparameters(fiducial_params):
@@ -216,7 +216,7 @@ def test_parameterized_likelihood_namedparameters(fiducial_params):
 
     model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
-    assert model_fiducial.logposterior({}).logpost == -1.5
+    assert cast(LogPosterior, model_fiducial.logposterior({})).logpost == -1.5
 
 
 def test_sampler_parameter_likelihood_missing(fiducial_params):
@@ -254,7 +254,7 @@ def test_sampler_parameter_likelihood(fiducial_params):
 
     model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
-    assert model_fiducial.logposterior({}).logpost == -2.1
+    assert cast(LogPosterior, model_fiducial.logposterior({})).logpost == -2.1
 
 
 def test_derived_parameter_likelihood(fiducial_params):
@@ -274,7 +274,7 @@ def test_derived_parameter_likelihood(fiducial_params):
 
     model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
-    logpost = model_fiducial.logposterior({})
+    logpost = cast(LogPosterior, model_fiducial.logposterior({}))
     assert logpost.logpost == -3.14
     assert logpost.derived[0] == 1.0
 
@@ -365,7 +365,7 @@ def test_logp_with_pure_ccl_mode():
     model_fiducial = get_model(cast(InputDict, info_fiducial))
     assert isinstance(model_fiducial, Model)
     # This will test the else branch in logp() method (lines 280-283)
-    logpost = model_fiducial.logposterior({})
+    logpost = cast(LogPosterior, model_fiducial.logposterior({}))
     assert logpost.logpost == -3.0
 
 
