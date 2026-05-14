@@ -98,5 +98,5 @@ class BinnedCluster(Statistic):
             )
             if np.any(sigma < 0.0):
                 raise ValueError(
-                f"Negative sigma detected. Skipping likelihood evaluation."
+                    f"Negative sigma detected. Skipping likelihood evaluation."
                 )
