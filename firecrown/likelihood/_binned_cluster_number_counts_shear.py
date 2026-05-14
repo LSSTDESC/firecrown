@@ -65,7 +65,6 @@ class BinnedClusterShearProfile(BinnedCluster):
         a single point of the parameter space, and returns the predicted
         mean deltasigma of the clusters in each bin.
         """
-
         grouped = self._group_bins_by_edges()
 
         results = {}
