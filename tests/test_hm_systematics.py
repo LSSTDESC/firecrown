@@ -21,7 +21,7 @@ from firecrown.likelihood._two_point import (
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
+from firecrown.modeling_tools import CCLFactory
 
 
 @pytest.fixture(name="weak_lensing_source")
@@ -37,7 +37,7 @@ def fixture_sacc_data() -> sacc.Sacc:
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
     saccfile = os.path.join(
         os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/sacc_data.hdf5",
+        "../tests/sacc_data.hdf5",
     )
     return load_sacc_data(saccfile)
 

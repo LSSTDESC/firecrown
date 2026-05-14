@@ -11,6 +11,7 @@ py-version=3.11
 
 # Discover python modules and packages in the file system subtree.
 recursive=yes
+ignore-paths=examples/srd_sn/sndata
 
 [MESSAGES CONTROL]
 

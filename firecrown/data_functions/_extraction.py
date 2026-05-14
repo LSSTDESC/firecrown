@@ -18,8 +18,16 @@ def extract_all_harmonic_data(
     sacc_data: sacc.Sacc,
     allow_mixed_types: bool = False,
     allowed_data_type: None | list[str] = None,
+    normalize: bool = True,
 ) -> list[TwoPointMeasurement]:
-    """Extract the two-point function metadata and data from a sacc file."""
+    """Extract the two-point function metadata and data from a sacc file.
+
+    :param sacc_data: The SACC file containing the data.
+    :param allow_mixed_types: Whether to allow mixed tracer types.
+    :param allowed_data_type: List of allowed data types to extract.
+    :param normalize: If True, normalize the window function weights to sum to 1.
+    :return: A list of TwoPointMeasurement objects.
+    """
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
         raise ValueError("The SACC object does not have a dense covariance matrix.")
 
@@ -41,7 +49,9 @@ def extract_all_harmonic_data(
             data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
         )
 
-        ells, weights, window_ells = maybe_enforce_window(ells, indices, sacc_data)
+        ells, weights, window_ells = maybe_enforce_window(
+            ells, indices, sacc_data, normalize
+        )
 
         result.append(
             TwoPointMeasurement(

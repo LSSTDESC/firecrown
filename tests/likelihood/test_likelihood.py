@@ -6,7 +6,7 @@ import types
 import firecrown.likelihood._likelihood as like
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood._likelihood import NamedParameters
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 
 
 class LikelihoodThatThrowsIntegrationError(like.Likelihood):

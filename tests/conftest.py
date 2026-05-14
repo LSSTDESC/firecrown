@@ -19,7 +19,7 @@ import numpy.typing as npt
 from firecrown.updatable import get_default_params_map
 from firecrown.utils import upper_triangle_indices
 from firecrown.likelihood._statistic import TrivialStatistic
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (
@@ -44,7 +44,6 @@ import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._cmb as cmb
 from firecrown.metadata_types import Clusters, CMB
-
 
 # Helper function for creating AST ClassDef nodes across Python versions
 if sys.version_info >= (3, 12):

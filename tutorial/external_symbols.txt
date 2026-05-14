@@ -23,3 +23,9 @@ FIRECROWN_DIR
 
 # Type variables and generic terms
 T
+
+# Names of enumerations that are used in tutorials but not by their full name
+FKEM
+LIMBER
+FKEM_AUTO
+FKEM_L_LIMBER

@@ -13,6 +13,9 @@ import pyccl
 import pyccl.nl_pt
 
 from firecrown.ccl_factory import CCLCalculatorArgs, CCLFactory
+from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
+from firecrown.modeling_tools._ccl_factory import CCLFactory
+from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 from firecrown.updatable import Updatable, UpdatableCollection
 
 

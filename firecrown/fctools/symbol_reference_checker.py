@@ -21,7 +21,6 @@ from firecrown.fctools.docs_helpers import (
     print_success,
 )
 
-
 app = typer.Typer()
 
 

@@ -1258,16 +1258,17 @@ def test_three_two_bin_pair_selector_distance_parameters():
         measurements={mt.Galaxies.COUNTS},
     )
 
-    # Source-source: allowed diffs are -1 and 0 (range(-1,1))
+    # Source-source: allowed diffs are -1, 0, and 1 (range(-1,2))
     assert selector.keep((src0, src1), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
     assert selector.keep((src0, src0), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
-    assert not selector.keep((src1, src0), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert selector.keep((src1, src0), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not selector.keep((src0, src2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
     assert not selector.keep((src0, src3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
 
-    # Lens-lens: allowed diffs are -1 and 0
+    # Lens-lens: allowed diffs are -1, 0, and 1
     assert selector.keep((lens0, lens1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
     assert selector.keep((lens0, lens0), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
-    assert not selector.keep((lens1, lens0), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert selector.keep((lens1, lens0), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
     assert not selector.keep((lens0, lens3), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
 
     # Source-lens: allowed diffs are 1..2 (positive only, different prefixes)

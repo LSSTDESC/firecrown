@@ -25,8 +25,8 @@ from firecrown.likelihood._two_point import (
 )
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
-import firecrown.parameters as fcp
+from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
+import firecrown.updatable as fcp
 
 
 @pytest.fixture(name="weak_lensing_source")

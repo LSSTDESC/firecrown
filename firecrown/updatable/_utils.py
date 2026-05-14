@@ -3,7 +3,7 @@
 from __future__ import annotations
 import warnings
 
-from firecrown.parameters import ParamsMap
+from firecrown.updatable._parameters_map import ParamsMap
 
 from firecrown.updatable._base import Updatable
 from firecrown.updatable._collection import UpdatableCollection

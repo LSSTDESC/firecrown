@@ -1,0 +1,18 @@
+# Automatically keep GitHub Actions up to date.
+# Dependabot will open a single grouped pull request each month for all
+# outdated action references found in .github/workflows/.
+#
+# NOTE: After committing this file, Dependabot version updates must be enabled
+# in the repository settings:
+#   Settings → Advanced Security → Dependabot version updates → Enable
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

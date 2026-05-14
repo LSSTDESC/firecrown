@@ -31,7 +31,7 @@ from firecrown.likelihood._source import (
 )
 from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.updatable import get_default_params
 
 

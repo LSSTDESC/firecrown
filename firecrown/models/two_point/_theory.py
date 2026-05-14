@@ -12,7 +12,7 @@ from numpy import typing as npt
 from firecrown.generators import EllOrThetaConfig, LogLinearElls
 from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.updatable import ParamsMap
 from firecrown.updatable import Updatable
 from firecrown.utils import ClIntegrationOptions
 from firecrown.models.two_point._interpolation import ApplyInterpolationWhen
