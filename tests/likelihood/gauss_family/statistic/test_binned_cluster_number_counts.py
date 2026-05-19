@@ -1,21 +1,20 @@
 """Tests for the binned cluster number counts module."""
 
-import sacc
-import pytest
 import pyccl
+import pytest
+import sacc
 from crow import ClusterAbundance, ClusterShearProfile, kernel, mass_proxy
+from crow.properties import ClusterProperty
 from crow.recipes.binned_exact import ExactBinnedClusterRecipe
 from crow.recipes.binned_grid import GridBinnedClusterRecipe
-from crow.properties import ClusterProperty
-from firecrown.updatable import get_default_params_map
+
+from firecrown.likelihood._binned_cluster_number_counts import \
+    BinnedClusterNumberCounts
+from firecrown.likelihood._binned_cluster_number_counts_shear import \
+    BinnedClusterShearProfile
 from firecrown.likelihood._source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood._binned_cluster_number_counts import (
-    BinnedClusterNumberCounts,
-)
-from firecrown.likelihood._binned_cluster_number_counts_shear import (
-    BinnedClusterShearProfile,
-)
+from firecrown.updatable import get_default_params_map
 
 
 def get_base_binned_exact(completeness, purity) -> ExactBinnedClusterRecipe:
@@ -332,3 +331,23 @@ def test_compute_theory_vector(
     tv = bns.compute_theory_vector(tools)
     assert tv is not None
     assert len(tv) == 2
+
+
+def test_check_mor_murata_variance_raises_on_negative_sigma(
+    cluster_sacc_data: sacc.Sacc, binned_exact: ExactBinnedClusterRecipe
+) -> None:
+    """Test that check_mor_murata_variance raises on negative sigma."""
+    recipe = binned_exact
+    # Set sigma parameters to produce negative sigma
+    recipe.mass_distribution.parameters["sigma0"] = -10.0
+    recipe.mass_distribution.parameters["sigma1"] = 0.0
+    recipe.mass_distribution.parameters["sigma2"] = 0.0
+
+    bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", recipe)
+    bnc.read(cluster_sacc_data)
+
+    with pytest.raises(ValueError, match="Negative sigma detected"):
+        bnc.check_mor_murata_variance()
+    # Set sigma parameters to produce positive sigma
+    bnc.cluster_recipe.mass_distribution.parameters["sigma0"] = 1.0
+    bnc.check_mor_murata_variance()
