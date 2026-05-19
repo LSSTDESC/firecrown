@@ -1,30 +1,32 @@
 """Likelihood factory function for cluster number counts."""
 
 import os
-import pyccl
+
+import pyccl as ccl
+import sacc
 
 from crow import ClusterShearProfile, kernel, mass_proxy
 from crow.properties import ClusterProperty
-from crow.recipes.binned_exact import ExactBinnedClusterRecipe
+from crow.recipes.binned_grid import GridBinnedClusterRecipe
 
-from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood import (
-    BinnedClusterNumberCounts,
-    BinnedClusterShearProfile,
     ConstGaussian,
+    BinnedClusterShearProfile,
+    BinnedClusterNumberCounts,
     Likelihood,
     NamedParameters,
 )
+
 from firecrown.modeling_tools import ModelingTools
 
 
 def get_cluster_shear_profile() -> ClusterShearProfile:
     """Creates and returns a ClusterShearProfile object."""
     cluster_theory = ClusterShearProfile(
-        cosmo=pyccl.CosmologyVanillaLCDM(),
-        halo_mass_function=pyccl.halos.MassFuncTinker08(mass_def="200c"),
+        cosmo=ccl.CosmologyVanillaLCDM(),
+        halo_mass_function=ccl.halos.MassFuncTinker08(mass_def="200c"),
         cluster_concentration=None,
-        is_delta_sigma=True,
+        is_delta_sigma=False,
         use_beta_s_interp=True,
     )
 
@@ -51,11 +53,12 @@ def get_cluster_recipe(
     """
     if cluster_theory is None:
         cluster_theory = get_cluster_shear_profile()
-
+    cluster_theory.set_beta_parameters(10.0, 5.0)
+    cluster_theory.set_beta_s_interp(true_z_interval[0], true_z_interval[1])
     redshift_distribution = kernel.SpectroscopicRedshift()
-    mass_distribution = mass_proxy.MurataBinned(pivot_mass, pivot_redshift)
+    mass_distribution = mass_proxy.MurataUnbinned(pivot_mass, pivot_redshift)
 
-    recipe = ExactBinnedClusterRecipe(
+    recipe = GridBinnedClusterRecipe(
         cluster_theory=cluster_theory,
         redshift_distribution=redshift_distribution,
         mass_distribution=mass_distribution,
@@ -80,6 +83,8 @@ def build_likelihood(
         average_on |= ClusterProperty.MASS
     if build_parameters.get_bool("use_mean_deltasigma", True):
         average_on |= ClusterProperty.DELTASIGMA
+    if build_parameters.get_bool("use_mean_reduced_shear", True):
+        average_on |= ClusterProperty.SHEAR
 
     survey_name = "numcosmo_sim_red_richness_shear_dsigma"
 
@@ -105,7 +110,7 @@ def build_likelihood(
     sacc_path = os.path.expanduser(
         os.path.expandvars("${FIRECROWN_DIR}/examples/cluster_number_counts/")
     )
-    sacc_data = load_sacc_data(os.path.join(sacc_path, sacc_file_nm))
+    sacc_data = sacc.Sacc.load_fits(os.path.join(sacc_path, sacc_file_nm))
     likelihood.read(sacc_data)
 
     modeling_tools = ModelingTools()
