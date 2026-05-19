@@ -88,6 +88,23 @@ def test_observed_data_and_indices_by_survey_cluster_deltasigma(
     assert len(indices) == 2
 
 
+def test_get_bin_edges_cluster_shear(cluster_sacc_data: sacc.Sacc):
+    dsd = ShearData(cluster_sacc_data)
+    bins = dsd.get_bin_edges("my_survey", ClusterProperty.SHEAR)
+    assert len(bins) == 2
+
+
+def test_observed_data_and_indices_by_survey_cluster_shear(
+    cluster_sacc_data: sacc.Sacc,
+):
+    dsd = ShearData(cluster_sacc_data)
+    data, indices = dsd.get_observed_data_and_indices_by_survey(
+        "my_survey", ClusterProperty.SHEAR
+    )
+    assert len(data) == 2
+    assert len(indices) == 2
+
+
 def test_observed_data_and_indices_wrong_property():
     """Test error when wrong property used with ShearData."""
     s = sacc.Sacc()
