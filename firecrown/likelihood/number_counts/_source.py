@@ -25,7 +25,6 @@ from firecrown.updatable import (
     UpdatableCollection,
 )
 
-
 NUMBER_COUNTS_DEFAULT_BIAS = 1.5
 
 

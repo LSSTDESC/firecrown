@@ -90,8 +90,7 @@ class TestAnalysisBuilderInitialization:
         """Test initialization with custom cosmology specification."""
         # Create a cosmology spec file
         cosmo_file = tmp_path / "cosmology.yaml"
-        cosmo_file.write_text(
-            r"""
+        cosmo_file.write_text(r"""
 name: test_cosmology
 description: Test cosmology
 parameters:
@@ -155,8 +154,7 @@ parameters:
     upper_bound: 1.0
     default_value: 0.0
     free: false
-"""
-        )
+""")
 
         with patch.object(ConcreteAnalysisBuilder, "_proceed_generation"):
             builder = ConcreteAnalysisBuilder(

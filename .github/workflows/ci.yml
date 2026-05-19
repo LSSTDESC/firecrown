@@ -13,8 +13,72 @@
 name: firecrown-ci
 on:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   ci:
     uses: ./.github/workflows/ci-reusable.yml
     secrets: inherit
+
+  pr-drift-paths:
+    name: Detect PR drift-relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.filter.outputs.drift }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Detect dependency-impacting changes
+        id: filter
+        uses: dorny/paths-filter@v4.0.1
+        with:
+          filters: |
+            drift:
+              - 'environment.yml'
+              - '.github/update_ci.py'
+              - '.github/conda-lock/**'
+              - '.github/scripts/generate_conda_locks.sh'
+              - '.github/workflows/ci-reusable.yml'
+              - '.github/ci-branches.json'
+
+  pr-rebuild-drift:
+    name: PR rebuild drift canary
+    needs: [ pr-drift-paths ]
+    if: ${{ needs.pr-drift-paths.outputs.should_run == 'true' }}
+    continue-on-error: true
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4.0.1
+        with:
+          miniforge-version: latest
+          python-version: "3.12"
+          activate-environment: firecrown_developer
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Rebuild environment from environment.yml
+        shell: bash -l {0}
+        run: |
+          set -o pipefail
+          python .github/update_ci.py 3.12
+          conda deactivate
+          conda env remove --name firecrown_developer -y -q || true
+          conda env create --file env_tmp.yml --name firecrown_developer -v -q 2>&1 | tee pr-rebuild-drift.log
+      - name: Summarize drift failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          {
+            echo "## PR Rebuild Drift Canary Failure"
+            echo ""
+            echo "This check is non-blocking and runs only for dependency-impacting changes."
+            echo "See artifact: pr-rebuild-drift-log"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload drift log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: pr-rebuild-drift-log
+          path: pr-rebuild-drift.log

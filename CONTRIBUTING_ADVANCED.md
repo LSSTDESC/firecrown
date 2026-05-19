@@ -26,7 +26,6 @@ graph TD
     pre-commit --> test-ci
     
     %% Test-CI dependencies
-    test-ci --> unit-tests-pre["unit-tests-pre"]
     test-ci --> test-all-coverage["make test-all-coverage"]
     test-ci --> test-slow["make test-slow"]
     test-ci --> test-integration["make test-integration"]
@@ -54,13 +53,10 @@ graph TD
     lint --> lint-pylint["lint-pylint"]
     
     %% Documentation dependencies
-    docs --> docs-build["make docs-build"]
     docs --> docs-verify
     
-    docs-build --> tutorials["make tutorials"]
     docs-build --> api-docs["make api-docs"]
     
-    docs-verify --> docs-generate-symbol-map["docs-generate-symbol-map"]
     docs-verify --> docs-code-check["docs-code-check"]
     docs-verify --> docs-symbol-check["docs-symbol-check"]
     docs-verify --> docs-linkcheck["make docs-linkcheck"]
@@ -125,7 +121,6 @@ graph TD
     unit-post --> t-two["test-models-two-point<br/>(100% cov)"]:::sequential
     
     %% Docs verify parallelism
-    docs-verify --> dg-map["docs-generate-symbol-map"]:::sequential
     docs-verify --> d-code["docs-code-check"]:::sequential
     docs-verify --> d-sym["docs-symbol-check"]:::sequential
     docs-verify --> d-link["docs-linkcheck"]:::sequential
@@ -158,7 +153,7 @@ to target multiple branches without any duplication.
 | :--- | :--- |
 | `ci-branches.json` | **The single source of truth** for which long-lived branches are tested nightly. Edit only this file to add or remove a branch. |
 | `workflows/ci-reusable.yml` | The single source of truth for all CI job definitions (all three stages). Called by the other two workflows. Never triggered directly by GitHub events. |
-| `workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` unconditionally. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
+| `workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` for main PR validation and also defines a non-blocking, path-filtered rebuild-drift canary job for dependency-impacting changes. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
 | `workflows/nightly.yml` | Triggered by the daily cron schedule. Reads `ci-branches.json` at runtime to build the branch matrix, then calls `ci-reusable.yml` once per branch. |
 
 ### How it works
@@ -175,6 +170,43 @@ to test any branch other than `master`.
 The reusable workflow definition used is always the one on `master`,
 but the source code and `environment.yml` checked out during testing
 come from the branch named in `ref`.
+
+### Nightly mode and rebuild-drift jobs
+
+The nightly workflow in `.github/workflows/nightly.yml`
+calls the reusable CI workflow with `ci_mode` set to `nightly`.
+In nightly mode, primary CI jobs in `.github/workflows/ci-reusable.yml`
+prefer lockfile-based environment creation and lock-hash cache keys,
+which reduces repeated full conda solves in routine nightly validation.
+
+Nightly also runs advisory rebuild-drift jobs on Linux and macOS.
+These jobs intentionally regenerate `env_tmp.yml` via `.github/update_ci.py`
+and rebuild the environment from that file,
+so they do exercise a fresh conda solve against current channels.
+
+These drift jobs are non-blocking by design.
+They set `continue-on-error` to `true` and use a 45-minute timeout.
+If a solve fails or times out, the jobs upload logs and a step summary
+so drift can be diagnosed without failing the core nightly signal.
+
+### Pull request mode and drift canary
+
+Pull request runs also use lockfile-based environment creation and lock-hash
+cache keys in `.github/workflows/ci-reusable.yml`.
+This avoids routine conda solves on standard pull request cache misses and
+aligns pull request environment behavior with nightly mode.
+
+To preserve dependency-drift signal in pull request context,
+`.github/workflows/ci.yml` defines a non-blocking rebuild-drift canary job.
+That canary is path-filtered and runs only when dependency-impacting files
+change,
+such as `environment.yml`, lockfiles, CI environment scripts, or reusable
+workflow dependency setup.
+
+When it runs,
+the canary performs a fresh rebuild from `environment.yml`-derived `env_tmp.yml`.
+Failures are reported with summary text and an uploaded log artifact,
+but do not fail the pull request check suite.
 
 ### Adding or removing a supported branch
 

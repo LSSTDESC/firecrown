@@ -448,14 +448,12 @@ def test_main_traces_script(tmp_path):
     """Test main traces a Python script."""
     # Create a simple test script
     script_file = tmp_path / "test_script.py"
-    script_file.write_text(
-        """
+    script_file.write_text("""
 def simple_function():
     return 42
 
 result = simple_function()
-"""
-    )
+""")
 
     trace_file = tmp_path / "output.tsv"
 
@@ -835,14 +833,12 @@ def test_tracing_with_nested_calls(tmp_path):
 def test_cli_produces_valid_tsv(tmp_path):
     """Test that CLI produces valid TSV file."""
     script_file = tmp_path / "test_script.py"
-    script_file.write_text(
-        """
+    script_file.write_text("""
 def func():
     return 1
 
 func()
-"""
-    )
+""")
     trace_file = tmp_path / "output.tsv"
 
     result = subprocess.run(

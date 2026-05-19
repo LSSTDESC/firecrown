@@ -150,14 +150,12 @@ class TestImportModuleFromFile:
     def test_import_valid_module(self, tmp_path, console):
         """Test importing a valid Python module from a file."""
         module_file = tmp_path / "test_module.py"
-        module_file.write_text(
-            """
+        module_file.write_text("""
 def test_function():
     return 42
 
 TEST_CONSTANT = "hello"
-"""
-        )
+""")
 
         module = import_module_from_file(console, module_file)
 

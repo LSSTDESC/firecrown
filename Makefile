@@ -9,9 +9,10 @@ SHELL := /bin/bash
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
 	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
-	test-updatable test-utils test-parameters test-modeling-tools test-models \
+	test-updatable test-utils test-parameters test-modeling-tools \
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
+	conda-lock conda-lock-check \
 	docs-verify docs-code-check docs-symbol-check docs-linkcheck
 
 # Default target
@@ -19,7 +20,7 @@ SHELL := /bin/bash
 
 # Parallel execution configuration
 JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-MAKEFLAGS += -j$(JOBS)
+MAKEFLAGS += -j$(JOBS) --output-sync=target
 
 # Ensure 'clean' targets run before any other targets on the same command line
 # to avoid race conditions (e.g., 'make clean test -j').
@@ -31,7 +32,7 @@ endif
 PYTHON := python3
 PYTEST := pytest
 RM := rm -f
-find := find
+BASH := bash
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
@@ -46,6 +47,20 @@ COVERAGE_ID ?=
 COVERAGE_JSON := coverage$(if $(COVERAGE_ID),_$(COVERAGE_ID),).json
 HTMLCOV_DIR := htmlcov$(if $(COVERAGE_ID),_$(COVERAGE_ID),)
 DOCS_BUILD_DIR := $(DOCS_DIR)/_build
+UNIT_COVERAGE_DIR := covdata
+UNIT_COVERAGE_UPDATABLE := $(UNIT_COVERAGE_DIR)/updatable
+UNIT_COVERAGE_UTILS := $(UNIT_COVERAGE_DIR)/utils
+UNIT_COVERAGE_PARAMETERS := $(UNIT_COVERAGE_DIR)/parameters
+UNIT_COVERAGE_MODELING_TOOLS := $(UNIT_COVERAGE_DIR)/modeling-tools
+UNIT_COVERAGE_MODELS_CLUSTER := $(UNIT_COVERAGE_DIR)/models-cluster
+UNIT_COVERAGE_MODELS_TWO_POINT := $(UNIT_COVERAGE_DIR)/models-two-point
+UNIT_COVERAGE_COMBINED := $(UNIT_COVERAGE_DIR)/combined
+UNIT_COVERAGE_FILES := $(UNIT_COVERAGE_UPDATABLE) \
+	$(UNIT_COVERAGE_UTILS) \
+	$(UNIT_COVERAGE_PARAMETERS) \
+	$(UNIT_COVERAGE_MODELING_TOOLS) \
+	$(UNIT_COVERAGE_MODELS_CLUSTER) \
+	$(UNIT_COVERAGE_MODELS_TWO_POINT)
 
 # Patterns to preserve during 'make clean'
 CLEAN_EXCLUDES := --exclude=.venv \
@@ -58,11 +73,16 @@ CLEAN_EXCLUDES := --exclude=.venv \
 AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
 # Tutorial configuration
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
+CONDA_LOCK_DIR := .github/conda-lock
+CONDA_LOCK_SCRIPT := .github/scripts/generate_conda_locks.sh
 
 # Test configuration
 PYTEST_PARALLEL := $(PYTEST) -n auto
 PYTEST_DURATIONS := --durations 10
 PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json:$(COVERAGE_JSON) --cov-report html:$(HTMLCOV_DIR) --cov-report term-missing --cov-branch
+
+# These targets create shared temporary files and should always run serially.
+.NOTPARALLEL: conda-lock conda-lock-check
 
 help:  ## Show common developer targets
 	@echo "Firecrown Developer Quick Reference"
@@ -114,6 +134,15 @@ format:  ## Format code with black
 
 format-check:  ## Check code formatting without modifying files
 	black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/
+
+##@ Conda Lockfiles
+
+conda-lock:  ## Generate committed conda lockfiles for CI matrix
+	@$(BASH) $(CONDA_LOCK_SCRIPT)
+
+conda-lock-check:  ## Verify generated lockfiles are up to date
+	@$(BASH) $(CONDA_LOCK_SCRIPT)
+	@git diff --exit-code -- $(CONDA_LOCK_DIR)
 
 ##@ Linting
 
@@ -199,6 +228,8 @@ unit-tests: unit-tests-post ## Run all unit tests in parallel
 
 unit-tests-pre:
 	@$(RM) .coverage.* .coverage
+	@$(RM) -r $(UNIT_COVERAGE_DIR)
+	@mkdir -p $(UNIT_COVERAGE_DIR)
 
 # Order-only prerequisite ensures unit-tests-pre runs before any test target
 # but doesn't force a rebuild if it's already "complete".
@@ -207,11 +238,11 @@ test-models-two-point unit-tests-core test-slow test-example test-integration: |
 
 unit-tests-post: test-updatable test-utils test-parameters test-modeling-tools test-models-cluster test-models-two-point
 	@echo "Combining coverage data..."
-	@coverage combine
-	@coverage report
+	@COVERAGE_FILE=$(UNIT_COVERAGE_COMBINED) coverage combine $(UNIT_COVERAGE_FILES)
+	@COVERAGE_FILE=$(UNIT_COVERAGE_COMBINED) coverage report
 
 test-updatable:  ## Run tests for firecrown.updatable module with coverage
-	@COVERAGE_FILE=.coverage.updatable $(PYTEST) tests/test_updatable.py \
+	@COVERAGE_FILE=$(UNIT_COVERAGE_UPDATABLE) $(PYTEST) tests/test_updatable.py \
 		tests/test_assert_updatable_interface.py \
 		tests/test_updatable_parameters.py \
 		--cov=firecrown.updatable \
@@ -221,7 +252,7 @@ test-updatable:  ## Run tests for firecrown.updatable module with coverage
 	@echo "✅ test-updatable passed"
 
 test-utils:  ## Run tests for firecrown.utils module with coverage
-	@COVERAGE_FILE=.coverage.utils $(PYTEST) tests/test_utils.py \
+	@COVERAGE_FILE=$(UNIT_COVERAGE_UTILS) $(PYTEST) tests/test_utils.py \
 		--cov=firecrown.utils \
 		--cov-report=term-missing \
 		--cov-branch \
@@ -229,7 +260,7 @@ test-utils:  ## Run tests for firecrown.utils module with coverage
 	@echo "✅ test-utils passed"
 
 test-parameters:  ## Run tests for firecrown.parameters module with coverage
-	@COVERAGE_FILE=.coverage.parameters $(PYTEST) tests/test_parameters_deprecated.py \
+	@COVERAGE_FILE=$(UNIT_COVERAGE_PARAMETERS) $(PYTEST) tests/test_parameters_deprecated.py \
 		--cov=firecrown.parameters \
 		--cov-report=term-missing \
 		--cov-branch \
@@ -237,7 +268,7 @@ test-parameters:  ## Run tests for firecrown.parameters module with coverage
 	@echo "✅ test-parameters passed"
 
 test-modeling-tools:  ## Run tests for firecrown.modeling_tools module with coverage
-	@COVERAGE_FILE=.coverage.modeling-tools $(PYTEST) tests/test_modeling_tools.py \
+	@COVERAGE_FILE=$(UNIT_COVERAGE_MODELING_TOOLS) $(PYTEST) tests/test_modeling_tools.py \
 		tests/test_modeling_tools_ccl_factory.py \
 		--cov=firecrown.modeling_tools \
 		--cov-report=term-missing \
@@ -246,7 +277,7 @@ test-modeling-tools:  ## Run tests for firecrown.modeling_tools module with cove
 	@echo "✅ test-modeling-tools passed"
 
 test-models-cluster:  ## Run unit tests for firecrown.models.cluster package with coverage
-	@COVERAGE_FILE=.coverage.models-cluster $(PYTEST) tests/models/cluster/ \
+	@COVERAGE_FILE=$(UNIT_COVERAGE_MODELS_CLUSTER) $(PYTEST) tests/models/cluster/ \
 		--cov=firecrown.models.cluster \
 		--cov-report=term-missing \
 		--cov-branch \
@@ -254,7 +285,7 @@ test-models-cluster:  ## Run unit tests for firecrown.models.cluster package wit
 	@echo "✅ test-models-cluster passed"
 
 test-models-two-point:  ## Run unit tests for firecrown.models.two_point package with coverage
-	@COVERAGE_FILE=.coverage.models-two-point $(PYTEST) tests/models/two_point/ \
+	@COVERAGE_FILE=$(UNIT_COVERAGE_MODELS_TWO_POINT) $(PYTEST) tests/models/two_point/ \
 		--cov=firecrown.models.two_point \
 		--cov-report=term-missing \
 		--cov-branch \
@@ -278,11 +309,11 @@ tutorials: docs-generate-symbol-map ## Render all tutorials with quarto (safe se
 api-docs: tutorials ## Build API documentation with Sphinx
 	@$(MAKE) -C $(DOCS_DIR) html
 
-docs-build: tutorials api-docs  ## Build tutorials and API docs
+docs-build: api-docs  ## Build tutorials and API docs
 
-docs: docs-build docs-verify ## Build and check all documentation
+docs: docs-verify ## Build and check all documentation
 
-docs-verify: docs-generate-symbol-map docs-code-check docs-symbol-check docs-linkcheck ## Run all documentation verification checks
+docs-verify: docs-code-check docs-symbol-check docs-linkcheck ## Run all documentation verification checks
 
 docs-code-check: tutorials ## Check Python code blocks in .qmd files
 	@echo "Checking tutorial code blocks for syntax errors..."
@@ -336,7 +367,7 @@ test-serial:  ## Run tests serially (no parallelization, useful for debugging)
 test-failfast:  ## Run tests and stop at first failure
 	$(PYTEST) -x -n auto
 
-test-ci: unit-tests-pre test-all-coverage test-slow test-integration test-example ## Run exactly what CI runs
+test-ci: test-all-coverage test-slow test-integration test-example ## Run exactly what CI runs
 
 test-all-coverage: unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
 
