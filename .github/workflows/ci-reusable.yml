@@ -1,0 +1,539 @@
+# Reusable CI Workflow
+# ====================
+# This workflow contains the full CI pipeline for Firecrown.
+# It is called by ci.yml (for push/PR events) and nightly.yml
+# (for scheduled multi-branch testing).  All job definitions
+# live here so that adding a new supported branch never requires
+# duplicating job steps.
+#
+# STAGE 1: QUICK VALIDATION (Parallel with Stage 2)
+# - Goal: 2-3 minute feedback on common PR issues.
+# - Actions: Linting, formatting, and Jupyter Notebook cleanliness checks.
+# - Optimization: Uses a dedicated conda cache (key suffix "-lint") that is
+#   intentionally separate from the full-matrix cache.  The two jobs run in
+#   parallel and would otherwise race to write the same cache key; because
+#   quick-validation finishes first it would overwrite the key with an
+#   incomplete environment (no CosmoSIS/Cobaya), breaking the matrix job on
+#   every subsequent run until CACHE_VERSION was bumped.  Do NOT remove the
+#   "-lint" suffix.
+#
+# STAGE 2: FULL COMPATIBILITY MATRIX
+# - Goal: Verify Firecrown across all supported environments.
+# - Actions: Comprehensive unit and integration testing.
+# - Matrix: Covers OS (Linux/macOS) and Python versions defined in the job below.
+# - Optimization: Ubuntu + Python 3.12 performs coverage analysis.
+#
+# STAGE 3: DOWNSTREAM & DOCUMENTATION (Sequential - depends on Stage 2)
+# - Goal: Verify ecosystem integration and build stability.
+# - Actions: Tests with Smokescreen and Augur; full documentation verification.
+# - Optimization: Only runs if the main matrix succeeds to save resources.
+#
+# MAINTENANCE NOTE:
+# When updating supported Python versions, only the matrix configuration
+# in Stage 2 needs to be changed. This header is intentionally abstract.
+#
+# MacOS Note:
+# Stage 2 includes a workaround for RPATH issues in 'isitgr' on macOS to
+# ensure libraries are correctly loaded during integration tests.
+
+name: firecrown-ci-reusable
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: >
+          Git ref (branch name, tag, or SHA) to check out and test.
+          Defaults to the ref that triggered the calling workflow.
+        required: false
+        type: string
+        default: ""
+      ci_mode:
+        description: "CI mode selector: pr or nightly"
+        required: false
+        type: string
+        default: "pr"
+    secrets:
+      CODECOV_TOKEN:
+        description: "Codecov upload token"
+        required: false
+
+env:
+  CONDA_ENV: firecrown_developer
+  CACHE_VERSION: 33
+
+jobs:
+  quick-validation:
+    name: Quick validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4.0.1
+        with:
+          miniforge-version: latest
+          python-version: "3.12"
+          activate-environment: ${{ env.CONDA_ENV }}
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Report environment and Python
+        shell: bash -l {0}
+        run: |
+          echo "starting report environment and python"
+          echo "job=quick-validation"
+          echo "requested conda environment=${{ env.CONDA_ENV }}"
+          echo "active conda environment=${CONDA_DEFAULT_ENV}"
+          echo "requested python version=3.12"
+          echo "starting python --version"
+          python --version
+          echo "done with python --version"
+          echo "done with report environment and python"
+      - name: Compute lock metadata
+        id: lock-meta
+        run: |
+          lockfile_path=".github/conda-lock/conda-linux-64-py3.12.lock"
+
+          if [[ ! -f "${lockfile_path}" ]]; then
+            echo "Missing lockfile: ${lockfile_path}" >&2
+            exit 1
+          fi
+
+          if command -v sha256sum &>/dev/null 2>&1; then
+            lockfile_hash=$(sha256sum "${lockfile_path}" | cut -d' ' -f1)
+          else
+            lockfile_hash=$(shasum -a 256 "${lockfile_path}" | cut -d' ' -f1)
+          fi
+
+          echo "lockfile_path=${lockfile_path}" >> "$GITHUB_OUTPUT"
+          echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Cache Conda env (lockfile)
+        uses: actions/cache/restore@v5.0.5
+        id: cache-lock
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-Linux-X64-py3.12-lock-${{ steps.lock-meta.outputs.lockfile_hash
+            }}-v${{ env.CACHE_VERSION }}-pipdeps2-lint
+          restore-keys: |
+            conda-Linux-X64-py3.12-
+      - name: Install environment from lockfile
+        shell: bash -l {0}
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Installing from lockfile ==="
+          echo "starting conda deactivate"
+          conda deactivate
+          echo "done with conda deactivate"
+          echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
+          echo "starting conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
+          echo "done with conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda activate ${{ env.CONDA_ENV }}"
+          conda activate ${{ env.CONDA_ENV }}
+          echo "done with conda activate ${{ env.CONDA_ENV }}"
+          echo "starting python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
+          python -m pip install --no-deps cobaya isitgr lsstdesc-crow "pygobject-stubs<2.17"
+          echo "done with python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+      - name: Save conda environment
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5.0.5
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: ${{ steps.cache-lock.outputs.cache-primary-key }}
+      - name: Quick setup and linting
+        shell: bash -l {0}
+        run: |
+          echo "starting pip install --no-deps -e ."
+          pip install --no-deps -e .
+          echo "done with pip install --no-deps -e ."
+          echo "starting make lint"
+          make lint
+          echo "done with make lint"
+      - name: Ensure clear Jupyter Notebooks
+        uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
+
+  firecrown-miniforge:
+    name: (${{ matrix.os }}, py${{ matrix.python-version }})${{ matrix.coverage && ' + coverage' || '' }}
+    runs-on: ${{ matrix.os }}-latest
+    timeout-minutes: ${{ inputs.ci_mode == 'nightly' && 60 || 360 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu", "macos"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: ubuntu
+            python-version: "3.12"
+            coverage: true
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4.0.1
+        with:
+          miniforge-version: latest
+          python-version: ${{ matrix.python-version }}
+          activate-environment: ${{ env.CONDA_ENV }}
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Report environment and Python
+        shell: bash -l {0}
+        run: |
+          echo "starting report environment and python"
+          echo "job=firecrown-miniforge"
+          echo "requested conda environment=${{ env.CONDA_ENV }}"
+          echo "active conda environment=${CONDA_DEFAULT_ENV}"
+          echo "requested python version=${{ matrix.python-version }}"
+          echo "starting python --version"
+          python --version
+          echo "done with python --version"
+          echo "done with report environment and python"
+      - name: Compute lock metadata
+        id: lock-meta
+        run: |
+          case "${{ matrix.os }}" in
+            ubuntu)
+              platform="linux-64"
+              ;;
+            macos)
+              platform="osx-arm64"
+              ;;
+            *)
+              echo "Unsupported matrix.os value: ${{ matrix.os }}" >&2
+              exit 1
+              ;;
+          esac
+
+          lockfile_path=".github/conda-lock/conda-${platform}-py${{ matrix.python-version }}.lock"
+
+          if [[ ! -f "${lockfile_path}" ]]; then
+            echo "Missing lockfile: ${lockfile_path}" >&2
+            exit 1
+          fi
+
+          if command -v sha256sum &>/dev/null 2>&1; then
+            lockfile_hash=$(sha256sum "${lockfile_path}" | cut -d' ' -f1)
+          else
+            lockfile_hash=$(shasum -a 256 "${lockfile_path}" | cut -d' ' -f1)
+          fi
+
+          echo "lockfile_path=${lockfile_path}" >> "$GITHUB_OUTPUT"
+          echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Cache Conda env (lockfile)
+        uses: actions/cache/restore@v5.0.5
+        id: cache-lock
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version
+            }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{
+            env.CACHE_VERSION }}-pipdeps2
+          restore-keys: |
+            conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-
+      - name: Install environment from lockfile
+        shell: bash -l {0}
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Installing from lockfile ==="
+          echo "starting conda deactivate"
+          conda deactivate
+          echo "done with conda deactivate"
+          echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
+          echo "starting conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
+          echo "done with conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda activate ${{ env.CONDA_ENV }}"
+          conda activate ${{ env.CONDA_ENV }}
+          echo "done with conda activate ${{ env.CONDA_ENV }}"
+          echo "starting python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
+          python -m pip install --no-deps cobaya isitgr lsstdesc-crow "pygobject-stubs<2.17"
+          echo "done with python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+      - name: Setting up CosmoSIS and Cobaya
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        shell: bash -l {0}
+        run: |
+          # Sequential setup of dependencies to avoid environment corruption
+          echo "starting source ${CONDA_PREFIX}/bin/cosmosis-configure"
+          source ${CONDA_PREFIX}/bin/cosmosis-configure
+          echo "done with source ${CONDA_PREFIX}/bin/cosmosis-configure"
+          pushd ${CONDA_PREFIX}
+          echo "starting cosmosis-build-standard-library"
+          cosmosis-build-standard-library
+          echo "done with cosmosis-build-standard-library"
+          export CSL_DIR=${PWD}/cosmosis-standard-library
+          conda env config vars set CSL_DIR=${CSL_DIR}
+          popd
+          echo "starting python -m pip install cobaya --no-deps"
+          python -m pip install cobaya --no-deps
+          echo "done with python -m pip install cobaya --no-deps"
+      - name: Remove redundant rpath and import isitgr
+        if: ${{ (matrix.os == 'macos') && (steps.cache-lock.outputs.cache-hit != 'true') }}
+        shell: bash -l {0}
+        run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+            python -c "import isitgr"
+      - name: Save conda-forge, CosmoSIS and Cobaya environment
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        id: cache-primes-save
+        uses: actions/cache/save@v5.0.5
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: ${{ steps.cache-lock.outputs.cache-primary-key }}
+      - name: Setting up Firecrown
+        shell: bash -l {0}
+        run: |
+          export FIRECROWN_DIR=${PWD}
+          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
+          echo "starting pip install --no-deps -e ."
+          pip install --no-deps -e .
+          echo "done with pip install --no-deps -e ."
+          echo "starting conda list"
+          conda list
+          echo "done with conda list"
+      - name: Code quality checks
+        shell: bash -l {0}
+        run: |
+          echo "starting make lint"
+          make lint
+          echo "done with make lint"
+      - name: Run CI tests
+        shell: bash -l {0}
+        run: |
+          if [[ "${{ matrix.coverage || false }}" == "true" ]]; then
+            echo "starting make test-ci"
+            make test-ci
+            echo "done with make test-ci"
+          else
+            echo "starting make test-all"
+            make test-all
+            echo "done with make test-all"
+          fi
+      - name: Upload coverage reports to Codecov
+        if: ${{ matrix.coverage == true }}
+        uses: codecov/codecov-action@v6.0.0
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: true
+          verbose: true
+          use_oidc: false
+          # TODO: Remove the following two lines when GPG verification is fixed
+          disable_search: true
+          disable_file_fixes: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          # TODO: Remove when GPG key verification issue is resolved upstream
+          CODECOV_SKIP_GPG_VERIFY: true
+
+  external-dependencies:
+    name: External dependencies and documentation
+    needs: [firecrown-miniforge]
+    runs-on: macos-latest
+    timeout-minutes: ${{ inputs.ci_mode == 'nightly' && 60 || 360 }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4.0.1
+        with:
+          miniforge-version: latest
+          python-version: "3.13"
+          activate-environment: ${{ env.CONDA_ENV }}
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Report environment and Python
+        shell: bash -l {0}
+        run: |
+          echo "starting report environment and python"
+          echo "job=external-dependencies"
+          echo "requested conda environment=${{ env.CONDA_ENV }}"
+          echo "active conda environment=${CONDA_DEFAULT_ENV}"
+          echo "requested python version=3.13"
+          echo "starting python --version"
+          python --version
+          echo "done with python --version"
+          echo "done with report environment and python"
+      - name: Compute lock metadata
+        id: lock-meta
+        run: |
+          lockfile_path=".github/conda-lock/conda-osx-arm64-py3.13.lock"
+
+          if [[ ! -f "${lockfile_path}" ]]; then
+            echo "Missing lockfile: ${lockfile_path}" >&2
+            exit 1
+          fi
+
+          if command -v sha256sum &>/dev/null 2>&1; then
+            lockfile_hash=$(sha256sum "${lockfile_path}" | cut -d' ' -f1)
+          else
+            lockfile_hash=$(shasum -a 256 "${lockfile_path}" | cut -d' ' -f1)
+          fi
+
+          echo "lockfile_path=${lockfile_path}" >> "$GITHUB_OUTPUT"
+          echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Cache Conda env (lockfile)
+        uses: actions/cache/restore@v5.0.5
+        id: cache-lock
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-lock-${{
+            steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}-pipdeps2
+          restore-keys: |
+            conda-${{ runner.os }}-${{ runner.arch }}-py3.13-
+      - name: Install environment from lockfile
+        shell: bash -l {0}
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        run: |
+          echo "=== Conda diagnostics ==="
+          conda --version
+          conda info
+          conda config --show solver
+          conda config --show channels
+          conda list conda || true
+          conda list conda-libmamba-solver || true
+          echo "=== Python (base) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+          echo "=== Installing from lockfile ==="
+          echo "starting conda deactivate"
+          conda deactivate
+          echo "done with conda deactivate"
+          echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
+          conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
+          echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
+          echo "starting conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
+          echo "done with conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda activate ${{ env.CONDA_ENV }}"
+          conda activate ${{ env.CONDA_ENV }}
+          echo "done with conda activate ${{ env.CONDA_ENV }}"
+          echo "starting python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
+          python -m pip install --no-deps cobaya isitgr lsstdesc-crow "pygobject-stubs<2.17"
+          echo "done with python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
+          echo "=== Python (updated) ==="
+          which python
+          echo $CONDA_DEFAULT_ENV
+          python --version
+      - name: Remove redundant rpath and import isitgr
+        shell: bash -l {0}
+        run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+          python -c "import isitgr"
+      - name: Setting up CosmoSIS and Cobaya
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        shell: bash -l {0}
+        run: |
+          # Sequential setup of dependencies to avoid environment corruption
+          echo "starting source ${CONDA_PREFIX}/bin/cosmosis-configure"
+          source ${CONDA_PREFIX}/bin/cosmosis-configure
+          echo "done with source ${CONDA_PREFIX}/bin/cosmosis-configure"
+          pushd ${CONDA_PREFIX}
+          echo "starting cosmosis-build-standard-library"
+          cosmosis-build-standard-library
+          echo "done with cosmosis-build-standard-library"
+          export CSL_DIR=${PWD}/cosmosis-standard-library
+          conda env config vars set CSL_DIR=${CSL_DIR}
+          popd
+          echo "starting python -m pip install cobaya --no-deps"
+          python -m pip install cobaya --no-deps
+          echo "done with python -m pip install cobaya --no-deps"
+      - name: Save conda-forge, CosmoSIS and Cobaya environment
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        id: cache-primes-save
+        uses: actions/cache/save@v5.0.5
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: ${{ steps.cache-lock.outputs.cache-primary-key }}
+      - name: Create firecrown_developer environment
+        shell: bash -l {0}
+        run: |
+          export FIRECROWN_DIR=${PWD}
+          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
+          echo "starting pip install --no-deps -e ."
+          pip install --no-deps -e .
+          echo "done with pip install --no-deps -e ."
+          echo "starting conda list"
+          conda list
+          echo "done with conda list"
+      - name: Cloning Smokescreen
+        uses: actions/checkout@v6.0.2
+        with:
+          repository: "marcpaterno/smokescreen"
+          path: "smokescreen"
+          ref: "adjust-to-firecrown-pr-586"
+      - name: Cloning Augur
+        uses: actions/checkout@v6.0.2
+        with:
+          repository: "lsstdesc/augur"
+          path: "augur"
+          ref: "b59cfaf3dec90aa606a4add453a5a77e0c8ea942"
+      - name: Build and verify tutorials and documentation
+        shell: bash -l {0}
+        run: |
+          echo "starting make docs-verify"
+          make docs-verify
+          echo "done with make docs-verify"
+      - name: Pip-install Augur and test it
+        shell: bash -l {0}
+        run: |
+          echo "starting conda install jinja2 tjpcov"
+          conda install jinja2 tjpcov
+          echo "done with conda install jinja2 tjpcov"
+          cd augur
+          echo "starting pip install -e . (Augur)"
+          pip install -e .
+          echo "done with pip install -e . (Augur)"
+          echo "starting python -m pytest . (Augur)"
+          python -m pytest .
+          echo "done with python -m pytest . (Augur)"
+      - name: Pip-install Smokescreen and test it
+        shell: bash -l {0}
+        run: |
+          cd smokescreen
+          echo "starting pip install -e . (Smokescreen)"
+          pip install -e .
+          echo "done with pip install -e . (Smokescreen)"
+          echo "starting python -m pytest tests (Smokescreen)"
+          python -m pytest tests
+          echo "done with python -m pytest tests (Smokescreen)"

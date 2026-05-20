@@ -6,7 +6,6 @@ from firecrown.metadata_types import (
     Galaxies,
 )
 
-
 mappings = [
     (
         "clusterGalaxy_densityShear_cl_e",

@@ -3,6 +3,7 @@
 from firecrown.models.two_point import TwoPointTheory
 from firecrown.updatable import ParamsMap
 from firecrown.likelihood import Source
+import pytest
 
 
 class FakeSource(Source):
@@ -24,6 +25,7 @@ class FakeSource(Source):
         return []
 
 
+@pytest.mark.integration
 def test_two_point_theory_update_integration():
     """Integration test: update method updates real sources."""
     source1 = FakeSource("tracer_1")
@@ -42,6 +44,7 @@ def test_two_point_theory_update_integration():
     assert source2.is_updated()
 
 
+@pytest.mark.integration
 def test_two_point_theory_reset_integration():
     """Integration test: reset method resets real sources."""
     source1 = FakeSource("tracer_1")

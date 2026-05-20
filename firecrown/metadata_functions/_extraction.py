@@ -461,14 +461,18 @@ def extract_all_harmonic_metadata(
     allowed_data_type: None | list[str] = None,
     allow_mixed_types: bool = False,
     bin_pair_selector: None | mdt.BinPairSelector = None,
+    normalize: bool = True,
 ) -> list[mdt.TwoPointHarmonic]:
     """Extract two-point harmonic-space metadata and data from a SACC file.
 
     :param sacc_data: The SACC object containing tracers and data points.
     :param allowed_data_type: Optional list of SACC data type strings to include.
         If None, all harmonic-space data types are extracted.
+    :param allow_mixed_types: If True, allow extraction when tracers contain mixed
+        measurement types; otherwise require consistent tracer measurement typing.
     :param bin_pair_selector: Optional selector to filter which bin pairs to include.
         If None, all valid bin pairs are returned.
+    :param normalize: If True, normalize the window function weights to sum to 1.
     :return: List of TwoPointHarmonic objects with metadata and ell values.
     """
     inferred_galaxy_zdists_dict = {
@@ -501,7 +505,9 @@ def extract_all_harmonic_metadata(
             return_cov=False,
             return_ind=True,
         )
-        ells, weights, window_ells = maybe_enforce_window(ells, indices, sacc_data)
+        ells, weights, window_ells = maybe_enforce_window(
+            ells, indices, sacc_data, normalize
+        )
 
         result.append(
             mdt.TwoPointHarmonic(
@@ -593,16 +599,18 @@ def extract_all_photoz_bin_combinations(
 
 
 def extract_window_function(
-    sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64]
+    sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64], normalize: bool = True
 ) -> tuple[None | npt.NDArray[np.int64], None | npt.NDArray[np.float64]]:
     """Extract ells and weights for a window function.
 
-    :params sacc_data: the Sacc object from which we read.
-    :params indices: the indices of the data points in the Sacc object which
+    :param sacc_data: the Sacc object from which we read.
+    :param indices: the indices of the data points in the Sacc object which
         are computed by the window function.
+    :param normalize: if True, normalize the window function weights to sum to 1.
     :return: the ells and weights of the window function that match the
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
+    :raises ValueError: if any window function column has zero total weight.
     """
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -613,21 +621,41 @@ def extract_window_function(
     if bandpower_window is None:
         return None, None
     ells = bandpower_window.values
-    weights = bandpower_window.weight / bandpower_window.weight.sum(axis=0)
+
+    # Check for zero-weight columns
+    weight_sums = bandpower_window.weight.sum(axis=0)
+    zero_weight_indices = np.where(np.isclose(weight_sums, 0.0))[0]
+    if len(zero_weight_indices) > 0:
+        raise ValueError(
+            f"Window function has zero total weight for column(s) at index/indices: "
+            f"{zero_weight_indices.tolist()}. Each window function column must have "
+            f"non-zero total weight."
+        )
+
+    if normalize:
+        weights = bandpower_window.weight / weight_sums
+    else:
+        weights = bandpower_window.weight
     return ells, weights
 
 
 def maybe_enforce_window(
-    ells: npt.NDArray, indices: npt.NDArray[np.int64], sacc_data: sacc.Sacc
+    ells: npt.NDArray,
+    indices: npt.NDArray[np.int64],
+    sacc_data: sacc.Sacc,
+    normalize: bool = True,
 ) -> tuple[npt.NDArray[np.int64], None | npt.NDArray[np.float64], None | npt.NDArray]:
     """Possibly enforce a window function on the given ells.
 
     :param ells: The original ell values.
     :param indices: The indices of the data points in the SACC object.
     :param sacc_data: The SACC object containing the data.
-    :return: A tuple containing the possibly replaced ells and the window weights.
+    :param normalize: if True, normalize the window function weights to sum to 1.
+    :return: A tuple containing the possibly replaced ells, the window weights, and
+        `window_ells`, the original ell grid used by the window (or None if no window
+        function is applied).
     """
-    replacement_ells, weights = extract_window_function(sacc_data, indices)
+    replacement_ells, weights = extract_window_function(sacc_data, indices, normalize)
     if replacement_ells is not None:
         window_ells = ells
         ells = replacement_ells

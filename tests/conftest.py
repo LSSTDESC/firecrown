@@ -48,7 +48,6 @@ import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._cmb as cmb
 
-
 # Helper function for creating AST ClassDef nodes across Python versions
 if sys.version_info >= (3, 12):
 
@@ -518,6 +517,8 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
     mlm = sacc.standard_types.cluster_mean_log_mass
     # pylint: disable=no-member
     cs = sacc.standard_types.cluster_shear
+    # pylint: disable=no-member
+    cds = sacc.standard_types.cluster_delta_sigma
 
     s = sacc.Sacc()
     s.add_tracer("survey", "my_survey", 4000)
@@ -555,6 +556,27 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
     )
     s.add_data_point(
         cs,
+        ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1", "radius_bin_tracer_2"),
+        1,
+    )
+    s.add_data_point(
+        cds,
+        ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1", "radius_bin_tracer_1"),
+        1,
+    )
+
+    s.add_data_point(
+        cds,
+        ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1", "radius_bin_tracer_2"),
+        1,
+    )
+    s.add_data_point(
+        cds,
+        ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1", "radius_bin_tracer_1"),
+        1,
+    )
+    s.add_data_point(
+        cds,
         ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1", "radius_bin_tracer_2"),
         1,
     )

@@ -193,6 +193,7 @@ class TwoPoint(Statistic):
         tracers: None | TracerNames = None,
         int_options: ClIntegrationOptions | None = None,
         apply_interp: ApplyInterpolationWhen = ApplyInterpolationWhen.DEFAULT,
+        normalize_window: bool = True,
     ) -> None:
         super().__init__()
         self.theory = TwoPointTheory(
@@ -205,6 +206,7 @@ class TwoPoint(Statistic):
             apply_interp=apply_interp,
         )
         self._data: None | DataVector = None
+        self.normalize_window = normalize_window
 
     @classmethod
     def from_metadata_index(
@@ -464,7 +466,9 @@ class TwoPoint(Statistic):
                 )
             replacement_ells: None | npt.NDArray[np.int64]
             window: None | npt.NDArray[np.float64]
-            replacement_ells, window = extract_window_function(sacc_data, sacc_indices)
+            replacement_ells, window = extract_window_function(
+                sacc_data, sacc_indices, self.normalize_window
+            )
             if window is not None:
                 # When using a window function, we do not calculate all Cl's.
                 # For this reason we have a default set of ells that we use
@@ -723,8 +727,10 @@ def read_reals(
     :param sacc_data: The SACC data object to be read.
     :return: The theta and xi values.
     """
+    tracers = theory.sacc_tracers
+    assert tracers is not None
     thetas, xis = sacc_data.get_theta_xi(
-        theory.sacc_data_type, *theory.sacc_tracers, return_cov=False
+        theory.sacc_data_type, *tracers, return_cov=False
     )
     # As version 0.13 of sacc, the method get_real returns the
     # theta values and the xi values in arrays of the same length.
@@ -733,9 +739,7 @@ def read_reals(
     common_length = len(thetas)
     if common_length == 0:
         return None
-    sacc_indices = np.atleast_1d(
-        sacc_data.indices(theory.sacc_data_type, theory.sacc_tracers)
-    )
+    sacc_indices = np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
     assert sacc_indices is not None  # Needed for mypy
     assert len(sacc_indices) == common_length
     return thetas, xis, sacc_indices
@@ -754,6 +758,7 @@ def read_ell_cells(
     :return: The ell and Cell values.
     """
     tracers = theory.sacc_tracers
+    assert tracers is not None
     ells, cells = sacc_data.get_ell_cl(
         theory.sacc_data_type, *tracers, return_cov=False
     )
