@@ -13,8 +13,8 @@
 version: 1
 metadata:
   content_hash:
-    linux-64: 29fb31b573be7ac714b0753e16242d304b08c4e55c87742e7f83ed9895aeeb23
-    osx-arm64: f8389ea5d8dba3d814264962ce284c1bf419b7813e827838fc4d1873f08c5d08
+    linux-64: 65a1f3ee068f1c69137140b7c5d1e7c8ae196e5e40f65f40d26b2a110a9682c0
+    osx-arm64: ab7af9640d0795ef3ec8cb8dd5f86f5aea7b4bd906426fc2e65e6593fe62174b
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -3078,10 +3078,10 @@ package:
     binutils_linux-64: ''
     gcc_impl_linux-64: 14.3.0.*
     sysroot_linux-64: ''
-  url: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_24.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_25.conda
   hash:
-    md5: 91b0f19212d79a1a4dca034aac729e4f
-    sha256: 5f73bc0ce1729466f99d072678fb1bc13d5424d03a34cb2e69fbafbfd5e27ab2
+    md5: 0a9089d9eeeeb23313a9ce670fb89052
+    sha256: 95d22db25f0b8875febe63073f809c0c64f4026cc9e6aa0cca7130de51e4d044
   category: main
   optional: false
 - name: gdk-pixbuf
@@ -3258,10 +3258,10 @@ package:
     gcc_linux-64: ==14.3.0
     gfortran_impl_linux-64: 14.3.0.*
     sysroot_linux-64: ''
-  url: https://conda.anaconda.org/conda-forge/linux-64/gfortran_linux-64-14.3.0-h6b77fdb_24.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/gfortran_linux-64-14.3.0-h8bb2d51_25.conda
   hash:
-    md5: 491f76c26b2d032b21ba0b79cc324c4f
-    sha256: 3d68ccd46b0717ffad267e9224866086859cc304c9d3f10f321d2099b445c489
+    md5: 8f6215a6040fd3c2e03e85a6583d3100
+    sha256: dd3712c75de3b07ee5cfd9ae88a3bc2c87a1c2683256c24b27e012e3f9f22cdf
   category: main
   optional: false
 - name: gfortran_osx-arm64
@@ -3730,10 +3730,10 @@ package:
     gcc_linux-64: ==14.3.0
     gxx_impl_linux-64: 14.3.0.*
     sysroot_linux-64: ''
-  url: https://conda.anaconda.org/conda-forge/linux-64/gxx_linux-64-14.3.0-h8a413ad_24.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/gxx_linux-64-14.3.0-h72ca5df_25.conda
   hash:
-    md5: ea3921760f33250a1c12926fce1660eb
-    sha256: 66e357fad69998624d24ed52d7e1550f8159dc78418fff044377790f29e0fee3
+    md5: 4718c7fefd927621bad46a8bcc6387d6
+    sha256: 369abc77d74a8275c734f9ca2375892b86d3163a541b1f5a2de946083a9e3ab0
   category: main
   optional: false
 - name: h11
@@ -7160,6 +7160,38 @@ package:
   hash:
     md5: 8237b150fcd7baf65258eef9a0fc76ef
     sha256: 73f9506f7c32a448071340e73a0e8461e349082d63ecc4849e3eb2d1efc357dd
+  category: main
+  optional: false
+- name: lsstdesc-crow
+  version: 1.0.9
+  manager: conda
+  platform: linux-64
+  dependencies:
+    clmm: ''
+    numpy: '>=2.0'
+    pyccl: '>=2.8.0'
+    python: ''
+    scipy: '>=1.12'
+  url: https://conda.anaconda.org/conda-forge/noarch/lsstdesc-crow-1.0.9-pyhc364b38_0.conda
+  hash:
+    md5: 880ac91d38027d37d47a8e1bf8198c21
+    sha256: 39c634c615a32cfb95c1cc4f7c890ee0e14978beb5d82f738f9b9abd3235db3f
+  category: main
+  optional: false
+- name: lsstdesc-crow
+  version: 1.0.9
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    clmm: ''
+    numpy: '>=2.0'
+    pyccl: '>=2.8.0'
+    python: ''
+    scipy: '>=1.12'
+  url: https://conda.anaconda.org/conda-forge/noarch/lsstdesc-crow-1.0.9-pyhc364b38_0.conda
+  hash:
+    md5: 880ac91d38027d37d47a8e1bf8198c21
+    sha256: 39c634c615a32cfb95c1cc4f7c890ee0e14978beb5d82f738f9b9abd3235db3f
   category: main
   optional: false
 - name: lz4-c
@@ -12932,34 +12964,6 @@ package:
   url: https://files.pythonhosted.org/packages/82/cd/aa7a9ef44cb7d100538b99ded5234eb675f3a9996ad5b0f3826e105cd2e1/isitgr-1.6.5.tar.gz
   hash:
     sha256: 87890cd59c7befa5d244dee6598ef6ceccd099210dd86547951cf87b682fe366
-  category: main
-  optional: false
-- name: lsstdesc-crow
-  version: 1.0.9
-  manager: pip
-  platform: linux-64
-  dependencies:
-    clmm: '*'
-    numpy: '>=2.0'
-    pyccl: '>=2.8.0'
-    scipy: '>=1.12'
-  url: https://files.pythonhosted.org/packages/b2/89/66b120710a7ca717afbbf98a1e1e49dbd37ce032a84145cccda0a7aa3709/lsstdesc_crow-1.0.9-py3-none-any.whl
-  hash:
-    sha256: a91191099ac2b4e862473d1d1a09116d32afea05a13f1ab4a67d65291e1a65e6
-  category: main
-  optional: false
-- name: lsstdesc-crow
-  version: 1.0.9
-  manager: pip
-  platform: osx-arm64
-  dependencies:
-    clmm: '*'
-    numpy: '>=2.0'
-    pyccl: '>=2.8.0'
-    scipy: '>=1.12'
-  url: https://files.pythonhosted.org/packages/b2/89/66b120710a7ca717afbbf98a1e1e49dbd37ce032a84145cccda0a7aa3709/lsstdesc_crow-1.0.9-py3-none-any.whl
-  hash:
-    sha256: a91191099ac2b4e862473d1d1a09116d32afea05a13f1ab4a67d65291e1a65e6
   category: main
   optional: false
 - name: mpmath

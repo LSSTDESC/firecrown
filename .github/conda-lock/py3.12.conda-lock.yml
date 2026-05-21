@@ -13,8 +13,8 @@
 version: 1
 metadata:
   content_hash:
-    linux-64: 57786f7c4f41f54f532a2d12eb56d66437d250dd9b840f60b9a37426072e2a1d
-    osx-arm64: a3ce5b658bd8906ff891b859156636079574f66637ca9ec2971158c2f39cff71
+    linux-64: fbe67988b5a3620fa1d97bde52d8f9ae420ec78b03bc71b34d39ffb35b1259bf
+    osx-arm64: 4f1b7d56f88b2e2f65f80868d85e98b329a2e0bb1d69198c104e1b3a0eb57506
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -1606,18 +1606,6 @@ package:
     sha256: 01f02e9baa51ef2debfdc55df57ea6a7fce9b5fb9356c3267afb517e1dc4363a
   category: main
   optional: false
-- name: conda-gcc-specs
-  version: 14.3.0
-  manager: conda
-  platform: linux-64
-  dependencies:
-    gcc_impl_linux-64: '>=14.3.0,<14.3.1.0a0'
-  url: https://conda.anaconda.org/conda-forge/linux-64/conda-gcc-specs-14.3.0-he8ccf15_19.conda
-  hash:
-    md5: fd57230e9a97b97bf20dd63aeae6fe61
-    sha256: 769357d82d19f59c23888d935d92b67739bdb2acaacaa7bbe7c4fe4ee5346287
-  category: main
-  optional: false
 - name: contourpy
   version: 1.3.3
   manager: conda
@@ -3058,12 +3046,11 @@ package:
   manager: conda
   platform: linux-64
   dependencies:
-    conda-gcc-specs: ''
     gcc_impl_linux-64: 14.3.0
-  url: https://conda.anaconda.org/conda-forge/linux-64/gcc-14.3.0-h0dff253_19.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/gcc-14.3.0-h6f77f03_19.conda
   hash:
-    md5: 2dd149aa693db92758af3e685ef30439
-    sha256: e3f541c4be7296b800a972482b7a5e399614d5e3310d3d083257fbdb4df81ea0
+    md5: 444fafd4d1acdfe80c49b559a2569ba1
+    sha256: 5c86862941a44b2554e23e623ddb8f18c95474cacf536635e38ee431385b7d4a
   category: main
   optional: false
 - name: gcc_impl_linux-64
@@ -3093,10 +3080,10 @@ package:
     binutils_linux-64: ''
     gcc_impl_linux-64: 14.3.0.*
     sysroot_linux-64: ''
-  url: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_24.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/gcc_linux-64-14.3.0-h50e9bb6_25.conda
   hash:
-    md5: 91b0f19212d79a1a4dca034aac729e4f
-    sha256: 5f73bc0ce1729466f99d072678fb1bc13d5424d03a34cb2e69fbafbfd5e27ab2
+    md5: 0a9089d9eeeeb23313a9ce670fb89052
+    sha256: 95d22db25f0b8875febe63073f809c0c64f4026cc9e6aa0cca7130de51e4d044
   category: main
   optional: false
 - name: gdk-pixbuf
@@ -3201,13 +3188,13 @@ package:
   manager: conda
   platform: linux-64
   dependencies:
-    gcc: 14.3.0.*
-    gcc_impl_linux-64: 14.3.0.*
-    gfortran_impl_linux-64: 14.3.0.*
-  url: https://conda.anaconda.org/conda-forge/linux-64/gfortran-14.3.0-he448592_7.conda
+    gcc: 14.3.0
+    gcc_impl_linux-64: 14.3.0
+    gfortran_impl_linux-64: 14.3.0
+  url: https://conda.anaconda.org/conda-forge/linux-64/gfortran-14.3.0-h76987e4_19.conda
   hash:
-    md5: 94394acdc56dcb4d55dddf0393134966
-    sha256: 7ab008dd3dc5e6ca0de2614771019a1d35480d51df6216c96b1cf6a5e660ee40
+    md5: e4715f9886de7b78aefdfe74f01e739b
+    sha256: 84b3b7863dbafb651a2ef989d50f5e3d985b8ebe78bb3df2f17c614f22cdc090
   category: main
   optional: false
 - name: gfortran
@@ -3273,10 +3260,10 @@ package:
     gcc_linux-64: ==14.3.0
     gfortran_impl_linux-64: 14.3.0.*
     sysroot_linux-64: ''
-  url: https://conda.anaconda.org/conda-forge/linux-64/gfortran_linux-64-14.3.0-h6b77fdb_24.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/gfortran_linux-64-14.3.0-h8bb2d51_25.conda
   hash:
-    md5: 491f76c26b2d032b21ba0b79cc324c4f
-    sha256: 3d68ccd46b0717ffad267e9224866086859cc304c9d3f10f321d2099b445c489
+    md5: 8f6215a6040fd3c2e03e85a6583d3100
+    sha256: dd3712c75de3b07ee5cfd9ae88a3bc2c87a1c2683256c24b27e012e3f9f22cdf
   category: main
   optional: false
 - name: gfortran_osx-arm64
@@ -3713,12 +3700,12 @@ package:
   manager: conda
   platform: linux-64
   dependencies:
-    gcc: 14.3.0.*
-    gxx_impl_linux-64: 14.3.0.*
-  url: https://conda.anaconda.org/conda-forge/linux-64/gxx-14.3.0-he448592_7.conda
+    gcc: 14.3.0
+    gxx_impl_linux-64: 14.3.0
+  url: https://conda.anaconda.org/conda-forge/linux-64/gxx-14.3.0-h76987e4_19.conda
   hash:
-    md5: 91dc0abe7274ac5019deaa6100643265
-    sha256: 7acf0ee3039453aa69f16da063136335a3511f9c157e222def8d03c8a56a1e03
+    md5: 1167f6b6bfaf9ba5a450c5c8f3a21795
+    sha256: 32ff46517d91ee041287687d65140f7b0e8d08bb3fca141e5f97cc4a7ad7e255
   category: main
   optional: false
 - name: gxx_impl_linux-64
@@ -3745,10 +3732,10 @@ package:
     gcc_linux-64: ==14.3.0
     gxx_impl_linux-64: 14.3.0.*
     sysroot_linux-64: ''
-  url: https://conda.anaconda.org/conda-forge/linux-64/gxx_linux-64-14.3.0-h8a413ad_24.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/gxx_linux-64-14.3.0-h72ca5df_25.conda
   hash:
-    md5: ea3921760f33250a1c12926fce1660eb
-    sha256: 66e357fad69998624d24ed52d7e1550f8159dc78418fff044377790f29e0fee3
+    md5: 4718c7fefd927621bad46a8bcc6387d6
+    sha256: 369abc77d74a8275c734f9ca2375892b86d3163a541b1f5a2de946083a9e3ab0
   category: main
   optional: false
 - name: h11
@@ -7136,6 +7123,38 @@ package:
   hash:
     md5: 8237b150fcd7baf65258eef9a0fc76ef
     sha256: 73f9506f7c32a448071340e73a0e8461e349082d63ecc4849e3eb2d1efc357dd
+  category: main
+  optional: false
+- name: lsstdesc-crow
+  version: 1.0.9
+  manager: conda
+  platform: linux-64
+  dependencies:
+    clmm: ''
+    numpy: '>=2.0'
+    pyccl: '>=2.8.0'
+    python: ''
+    scipy: '>=1.12'
+  url: https://conda.anaconda.org/conda-forge/noarch/lsstdesc-crow-1.0.9-pyhc364b38_0.conda
+  hash:
+    md5: 880ac91d38027d37d47a8e1bf8198c21
+    sha256: 39c634c615a32cfb95c1cc4f7c890ee0e14978beb5d82f738f9b9abd3235db3f
+  category: main
+  optional: false
+- name: lsstdesc-crow
+  version: 1.0.9
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    clmm: ''
+    numpy: '>=2.0'
+    pyccl: '>=2.8.0'
+    python: ''
+    scipy: '>=1.12'
+  url: https://conda.anaconda.org/conda-forge/noarch/lsstdesc-crow-1.0.9-pyhc364b38_0.conda
+  hash:
+    md5: 880ac91d38027d37d47a8e1bf8198c21
+    sha256: 39c634c615a32cfb95c1cc4f7c890ee0e14978beb5d82f738f9b9abd3235db3f
   category: main
   optional: false
 - name: lz4-c
@@ -12962,34 +12981,6 @@ package:
   url: https://files.pythonhosted.org/packages/82/cd/aa7a9ef44cb7d100538b99ded5234eb675f3a9996ad5b0f3826e105cd2e1/isitgr-1.6.5.tar.gz
   hash:
     sha256: 87890cd59c7befa5d244dee6598ef6ceccd099210dd86547951cf87b682fe366
-  category: main
-  optional: false
-- name: lsstdesc-crow
-  version: 1.0.9
-  manager: pip
-  platform: linux-64
-  dependencies:
-    clmm: '*'
-    numpy: '>=2.0'
-    pyccl: '>=2.8.0'
-    scipy: '>=1.12'
-  url: https://files.pythonhosted.org/packages/b2/89/66b120710a7ca717afbbf98a1e1e49dbd37ce032a84145cccda0a7aa3709/lsstdesc_crow-1.0.9-py3-none-any.whl
-  hash:
-    sha256: a91191099ac2b4e862473d1d1a09116d32afea05a13f1ab4a67d65291e1a65e6
-  category: main
-  optional: false
-- name: lsstdesc-crow
-  version: 1.0.9
-  manager: pip
-  platform: osx-arm64
-  dependencies:
-    clmm: '*'
-    numpy: '>=2.0'
-    pyccl: '>=2.8.0'
-    scipy: '>=1.12'
-  url: https://files.pythonhosted.org/packages/b2/89/66b120710a7ca717afbbf98a1e1e49dbd37ce032a84145cccda0a7aa3709/lsstdesc_crow-1.0.9-py3-none-any.whl
-  hash:
-    sha256: a91191099ac2b4e862473d1d1a09116d32afea05a13f1ab4a67d65291e1a65e6
   category: main
   optional: false
 - name: mpmath
