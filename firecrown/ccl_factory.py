@@ -167,12 +167,12 @@ class MuSigmaModel(Updatable):
         """Initialize the MuSigmaModel object."""
         super().__init__(parameter_prefix="mg_musigma")
 
-        self.mu = register_new_updatable_parameter(default_value=1.0)
-        self.sigma = register_new_updatable_parameter(default_value=1.0)
+        self.mu = register_new_updatable_parameter(default_value=0.0)
+        self.sigma = register_new_updatable_parameter(default_value=0.0)
         self.c1 = register_new_updatable_parameter(default_value=1.0)
         self.c2 = register_new_updatable_parameter(default_value=1.0)
         # We cannot clash with the lambda keyword
-        self.lambda0 = register_new_updatable_parameter(default_value=1.0)
+        self.lambda0 = register_new_updatable_parameter(default_value=0.0)
 
     def create(self) -> MuSigmaMG:
         """Create a `pyccl.modified_gravity.MuSigmaMG` object."""
