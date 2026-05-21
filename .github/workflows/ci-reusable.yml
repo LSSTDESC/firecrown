@@ -81,7 +81,7 @@ jobs:
           use-mamba: false
       - name: Install conda-lock
         shell: bash -l {0}
-        run: python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
+        run: conda run -n base python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
       - name: Report environment and Python
         shell: bash -l {0}
         run: |
@@ -144,9 +144,9 @@ jobs:
           echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
-          echo "starting conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
-          conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
-          echo "done with conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "done with conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
           echo "starting conda activate ${{ env.CONDA_ENV }}"
           conda activate ${{ env.CONDA_ENV }}
           echo "done with conda activate ${{ env.CONDA_ENV }}"
@@ -200,7 +200,7 @@ jobs:
           use-mamba: false
       - name: Install conda-lock
         shell: bash -l {0}
-        run: python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
+        run: conda run -n base python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
       - name: Report environment and Python
         shell: bash -l {0}
         run: |
@@ -257,8 +257,6 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Installing conda-lock ==="
-          python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
           echo "=== Installing from unified lockfile ==="
           echo "starting conda deactivate"
           conda deactivate
@@ -266,9 +264,9 @@ jobs:
           echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
-          echo "starting conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
-          conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
-          echo "done with conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "done with conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
           echo "starting conda activate ${{ env.CONDA_ENV }}"
           conda activate ${{ env.CONDA_ENV }}
           echo "done with conda activate ${{ env.CONDA_ENV }}"
@@ -369,7 +367,7 @@ jobs:
           use-mamba: false
       - name: Install conda-lock
         shell: bash -l {0}
-        run: python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
+        run: conda run -n base python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
       - name: Report environment and Python
         shell: bash -l {0}
         run: |
@@ -425,8 +423,6 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Installing conda-lock ==="
-          python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
           echo "=== Installing from unified lockfile ==="
           echo "starting conda deactivate"
           conda deactivate
@@ -434,9 +430,9 @@ jobs:
           echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
-          echo "starting conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
-          conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
-          echo "done with conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "done with conda run -n base conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
           echo "starting conda activate ${{ env.CONDA_ENV }}"
           conda activate ${{ env.CONDA_ENV }}
           echo "done with conda activate ${{ env.CONDA_ENV }}"
