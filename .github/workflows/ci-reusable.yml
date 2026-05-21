@@ -59,7 +59,8 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 33
+  CACHE_VERSION: 34
+  CONDA_LOCK_VERSION: "4.0.0"
 
 jobs:
   quick-validation:
@@ -93,7 +94,7 @@ jobs:
       - name: Compute lock metadata
         id: lock-meta
         run: |
-          lockfile_path=".github/conda-lock/conda-linux-64-py3.12.lock"
+          lockfile_path=".github/conda-lock/py3.12.conda-lock.yml"
 
           if [[ ! -f "${lockfile_path}" ]]; then
             echo "Missing lockfile: ${lockfile_path}" >&2
@@ -115,7 +116,7 @@ jobs:
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-Linux-X64-py3.12-lock-${{ steps.lock-meta.outputs.lockfile_hash
-            }}-v${{ env.CACHE_VERSION }}-pipdeps2-lint
+            }}-v${{ env.CACHE_VERSION }}-lint
           restore-keys: |
             conda-Linux-X64-py3.12-
       - name: Install environment from lockfile
@@ -133,22 +134,21 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Installing from lockfile ==="
+          echo "=== Installing conda-lock ==="
+          python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
+          echo "=== Installing from unified lockfile ==="
           echo "starting conda deactivate"
           conda deactivate
           echo "done with conda deactivate"
           echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
-          echo "starting conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
-          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
-          echo "done with conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "done with conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
           echo "starting conda activate ${{ env.CONDA_ENV }}"
           conda activate ${{ env.CONDA_ENV }}
           echo "done with conda activate ${{ env.CONDA_ENV }}"
-          echo "starting python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
-          python -m pip install --no-deps cobaya isitgr lsstdesc-crow "pygobject-stubs<2.17"
-          echo "done with python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -212,20 +212,7 @@ jobs:
       - name: Compute lock metadata
         id: lock-meta
         run: |
-          case "${{ matrix.os }}" in
-            ubuntu)
-              platform="linux-64"
-              ;;
-            macos)
-              platform="osx-arm64"
-              ;;
-            *)
-              echo "Unsupported matrix.os value: ${{ matrix.os }}" >&2
-              exit 1
-              ;;
-          esac
-
-          lockfile_path=".github/conda-lock/conda-${platform}-py${{ matrix.python-version }}.lock"
+          lockfile_path=".github/conda-lock/py${{ matrix.python-version }}.conda-lock.yml"
 
           if [[ ! -f "${lockfile_path}" ]]; then
             echo "Missing lockfile: ${lockfile_path}" >&2
@@ -248,7 +235,7 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version
             }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{
-            env.CACHE_VERSION }}-pipdeps2
+            env.CACHE_VERSION }}
           restore-keys: |
             conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-
       - name: Install environment from lockfile
@@ -266,22 +253,21 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Installing from lockfile ==="
+          echo "=== Installing conda-lock ==="
+          python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
+          echo "=== Installing from unified lockfile ==="
           echo "starting conda deactivate"
           conda deactivate
           echo "done with conda deactivate"
           echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
-          echo "starting conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
-          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
-          echo "done with conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "done with conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
           echo "starting conda activate ${{ env.CONDA_ENV }}"
           conda activate ${{ env.CONDA_ENV }}
           echo "done with conda activate ${{ env.CONDA_ENV }}"
-          echo "starting python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
-          python -m pip install --no-deps cobaya isitgr lsstdesc-crow "pygobject-stubs<2.17"
-          echo "done with python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -301,9 +287,6 @@ jobs:
           export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
           popd
-          echo "starting python -m pip install cobaya --no-deps"
-          python -m pip install cobaya --no-deps
-          echo "done with python -m pip install cobaya --no-deps"
       - name: Remove redundant rpath and import isitgr
         if: ${{ (matrix.os == 'macos') && (steps.cache-lock.outputs.cache-hit != 'true') }}
         shell: bash -l {0}
@@ -395,7 +378,7 @@ jobs:
       - name: Compute lock metadata
         id: lock-meta
         run: |
-          lockfile_path=".github/conda-lock/conda-osx-arm64-py3.13.lock"
+          lockfile_path=".github/conda-lock/py3.13.conda-lock.yml"
 
           if [[ ! -f "${lockfile_path}" ]]; then
             echo "Missing lockfile: ${lockfile_path}" >&2
@@ -417,7 +400,7 @@ jobs:
         with:
           path: ${{ env.CONDA }}/envs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-lock-${{
-            steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}-pipdeps2
+            steps.lock-meta.outputs.lockfile_hash }}-v${{ env.CACHE_VERSION }}
           restore-keys: |
             conda-${{ runner.os }}-${{ runner.arch }}-py3.13-
       - name: Install environment from lockfile
@@ -435,22 +418,21 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-          echo "=== Installing from lockfile ==="
+          echo "=== Installing conda-lock ==="
+          python -m pip install conda-lock==${{ env.CONDA_LOCK_VERSION }}
+          echo "=== Installing from unified lockfile ==="
           echo "starting conda deactivate"
           conda deactivate
           echo "done with conda deactivate"
           echo "starting conda env remove --name ${{ env.CONDA_ENV }}"
           conda env remove --name ${{ env.CONDA_ENV }} -y -q || true
           echo "done with conda env remove --name ${{ env.CONDA_ENV }}"
-          echo "starting conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
-          conda create --name ${{ env.CONDA_ENV }} --file "${{ steps.lock-meta.outputs.lockfile_path }}" -y -q
-          echo "done with conda create --name ${{ env.CONDA_ENV }} --file ${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "starting conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
+          conda-lock install --name ${{ env.CONDA_ENV }} "${{ steps.lock-meta.outputs.lockfile_path }}"
+          echo "done with conda-lock install --name ${{ env.CONDA_ENV }} ${{ steps.lock-meta.outputs.lockfile_path }}"
           echo "starting conda activate ${{ env.CONDA_ENV }}"
           conda activate ${{ env.CONDA_ENV }}
           echo "done with conda activate ${{ env.CONDA_ENV }}"
-          echo "starting python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
-          python -m pip install --no-deps cobaya isitgr lsstdesc-crow "pygobject-stubs<2.17"
-          echo "done with python -m pip install --no-deps cobaya isitgr lsstdesc-crow pygobject-stubs<2.17"
           echo "=== Python (updated) ==="
           which python
           echo $CONDA_DEFAULT_ENV
@@ -475,9 +457,6 @@ jobs:
           export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
           popd
-          echo "starting python -m pip install cobaya --no-deps"
-          python -m pip install cobaya --no-deps
-          echo "done with python -m pip install cobaya --no-deps"
       - name: Save conda-forge, CosmoSIS and Cobaya environment
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         id: cache-primes-save
