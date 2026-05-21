@@ -179,7 +179,13 @@ class MuSigmaModel(Updatable):
         if not self.is_updated():
             raise ValueError("Parameters have not been updated yet.")
 
-        return MuSigmaMG(self.mu, self.sigma, self.c1, self.c2, self.lambda0)
+        return MuSigmaMG(
+            mu_0=self.mu,
+            sigma_0=self.sigma,
+            c1_mg=self.c1,
+            c2_mg=self.c2,
+            lambda_mg=self.lambda0,
+        )
 
 
 class CAMBExtraParams(BaseModel):
