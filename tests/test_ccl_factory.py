@@ -934,12 +934,23 @@ def test_mu_sigma_model() -> None:
     assert mu_sigma_model is not None
 
     default_params = get_default_params_map(mu_sigma_model)
+    default_params["mg_musigma_mu"] = 1.0
+    default_params["mg_musigma_sigma"] = 2.0
+    default_params["mg_musigma_c1"] = 3.0
+    default_params["mg_musigma_c2"] = 4.0
+    default_params["mg_musigma_lambda0"] = 5.0
 
     mu_sigma_model.update(default_params)
 
     musigma = mu_sigma_model.create()
 
     assert musigma is not None
+    assert musigma.parametrization == "mu_Sigma"
+    assert musigma.mu_0 == 1.0
+    assert musigma.sigma_0 == 2.0
+    assert musigma.c1_mg == 3.0
+    assert musigma.c2_mg == 4.0
+    assert musigma.lambda_mg == 5.0
     assert isinstance(musigma, pyccl.modified_gravity.MuSigmaMG)
 
 
