@@ -1,5 +1,6 @@
 ---
 title: "An Introduction to Firecrown"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 execute:
   eval: false
 format: html

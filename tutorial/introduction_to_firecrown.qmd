@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: "Version {firecrown-version}"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 authors:
   - Marc Paterno
   - Sandro Vitenti

@@ -1,5 +1,6 @@
 ---
 title: "Two-Point Workflow Guide"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

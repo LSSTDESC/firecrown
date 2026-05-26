@@ -1,5 +1,6 @@
 ---
 title: "Loading SACC Data with TwoPointFactory"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

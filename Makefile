@@ -30,6 +30,7 @@ endif
 
 # Tools
 PYTHON := python3
+export FIRECROWN_VERSION := $(shell python3 -c "import importlib.metadata; print(importlib.metadata.version('firecrown'))" 2>/dev/null || echo "dev")
 PYTEST := pytest
 RM := rm -f
 BASH := bash
@@ -303,7 +304,7 @@ docs-generate-symbol-map:  ## Generate the firecrown symbol-to-URL map for docum
 # leading to race conditions and "No such file or directory" errors.
 # We build the entire project in a single Quarto process for safety and reliability.
 tutorials: docs-generate-symbol-map ## Render all tutorials with quarto (safe sequential build)
-	quarto render $(TUTORIAL_DIR) --output-dir=$(CURDIR)/$(TUTORIAL_OUTPUT_DIR) --to html --metadata "quarto-filters=[$(TUTORIAL_DIR)/link_symbols.lua]"
+	quarto render $(TUTORIAL_DIR) --output-dir=$(CURDIR)/$(TUTORIAL_OUTPUT_DIR) --to html --metadata "firecrown-version=$(FIRECROWN_VERSION)" --metadata "quarto-filters=[$(TUTORIAL_DIR)/version_filter.lua,$(TUTORIAL_DIR)/link_symbols.lua]"
 	@echo "✅ All tutorials rendered"
 
 api-docs: tutorials ## Build API documentation with Sphinx
