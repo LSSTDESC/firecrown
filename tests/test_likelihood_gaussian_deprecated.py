@@ -31,7 +31,7 @@ def test_gaussian_deprecation_warning():
 
 
 def test_const_gaussian_importable():
-    """ConstGaussian can be imported from the deprecated module."""
+    """Verify ConstGaussian is importable from the deprecated module."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood.gaussian import ConstGaussian
 
@@ -39,7 +39,7 @@ def test_const_gaussian_importable():
 
 
 def test_const_gaussian_identical_to_new_location():
-    """ConstGaussian from deprecated module is the same object as from _gaussian."""
+    """Verify ConstGaussian from deprecated module is the same as from _gaussian."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood.gaussian import ConstGaussian as OldConstGaussian
     from firecrown.likelihood._gaussian import ConstGaussian
@@ -48,7 +48,7 @@ def test_const_gaussian_identical_to_new_location():
 
 
 def test_const_gaussian_in_all():
-    """ConstGaussian is listed in __all__ of the deprecated module."""
+    """Verify ConstGaussian is listed in __all__ of the deprecated module."""
     # pylint: disable=import-outside-toplevel
     import firecrown.likelihood.gaussian as gaussian_module
 
