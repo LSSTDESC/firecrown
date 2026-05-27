@@ -70,6 +70,7 @@ jobs:
       - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
+          fetch-depth: 0
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v4.0.1
         with:
@@ -189,6 +190,7 @@ jobs:
       - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
+          fetch-depth: 0
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v4.0.1
         with:
@@ -356,6 +358,7 @@ jobs:
       - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ inputs.ref }}
+          fetch-depth: 0
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v4.0.1
         with:
