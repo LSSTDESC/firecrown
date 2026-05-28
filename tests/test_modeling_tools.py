@@ -34,6 +34,25 @@ def test_default_constructed_no_tools() -> None:
         _ = tools.get_pk("nonesuch")
 
 
+@pytest.mark.parametrize(
+    ("deprecated_kwarg", "warning_fragment"),
+    [
+        ("cluster_abundance", "The cluster_abundance parameter of ModelingTools"),
+        (
+            "cluster_deltasigma",
+            "The cluster_deltasigma parameter of ModelingTools",
+        ),
+    ],
+)
+def test_modeling_tools_deprecated_constructor_args_warn(
+    deprecated_kwarg: str, warning_fragment: str
+) -> None:
+    kwargs = {deprecated_kwarg: object()}
+
+    with pytest.warns(DeprecationWarning, match=warning_fragment):
+        ModelingTools(**kwargs)
+
+
 def test_adding_pk_and_getting(dummy_powerspectrum: pyccl.Pk2D) -> None:
     tools = ModelingTools()
     tools.add_pk("silly", dummy_powerspectrum)
