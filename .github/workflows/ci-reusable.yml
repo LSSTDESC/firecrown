@@ -86,15 +86,15 @@ jobs:
       - name: Report environment and Python
         shell: bash -l {0}
         run: |
-           echo "starting report environment and python"
-           echo "job=quick-validation"
-           echo "requested conda environment=${{ env.CONDA_ENV }}"
-           echo "active conda environment=${CONDA_DEFAULT_ENV}"
-           echo "requested python version=3.12"
-           echo "starting python --version"
-           python --version
-           echo "done with python --version"
-           echo "done with report environment and python"
+          echo "starting report environment and python"
+          echo "job=quick-validation"
+          echo "requested conda environment=${{ env.CONDA_ENV }}"
+          echo "active conda environment=${CONDA_DEFAULT_ENV}"
+          echo "requested python version=3.12"
+          echo "starting python --version"
+          python --version
+          echo "done with python --version"
+          echo "done with report environment and python"
       - name: Compute lock metadata
         id: lock-meta
         run: |
@@ -119,7 +119,8 @@ jobs:
         id: cache-lock
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-Linux-X64-py3.12-lock-${{ steps.lock-meta.outputs.lockfile_hash
+          key:
+            conda-Linux-X64-py3.12-lock-${{ steps.lock-meta.outputs.lockfile_hash
             }}-v${{ env.CACHE_VERSION }}-lint
           restore-keys: |
             conda-Linux-X64-py3.12-
@@ -239,7 +240,8 @@ jobs:
         id: cache-lock
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version
+          key:
+            conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version
             }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{
             env.CACHE_VERSION }}
           restore-keys: |
@@ -492,7 +494,6 @@ jobs:
         with:
           repository: "lsstdesc/augur"
           path: "augur"
-          ref: "b59cfaf3dec90aa606a4add453a5a77e0c8ea942"
       - name: Build and verify tutorials and documentation
         shell: bash -l {0}
         run: |
@@ -510,7 +511,7 @@ jobs:
           pip install -e .
           echo "done with pip install -e . (Augur)"
           echo "starting python -m pytest . (Augur)"
-          python -m pytest .
+          python -m pytest augur/tests
           echo "done with python -m pytest . (Augur)"
       - name: Pip-install Smokescreen and test it
         shell: bash -l {0}
