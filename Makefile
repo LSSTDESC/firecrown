@@ -12,7 +12,10 @@ SHELL := /bin/bash
 	test-updatable test-utils test-parameters test-modeling-tools \
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
-	conda-lock conda-lock-check \
+	release-build-check release-gh-check conda-lock conda-lock-check \
+	release-check release-tag release-sdist release-verify-sdist release-push \
+	release-github \
+	release-conda-forge \
 	docs-verify docs-code-check docs-symbol-check docs-linkcheck
 
 # Default target
@@ -29,11 +32,14 @@ ifneq ($(filter clean%,$(MAKECMDGOALS)),)
 endif
 
 # Tools
-PYTHON := python3
-export FIRECROWN_VERSION := $(shell python3 -c "import importlib.metadata; print(importlib.metadata.version('firecrown'))" 2>/dev/null || echo "dev")
+PYTHON ?= python
+export FIRECROWN_VERSION := $(shell $(PYTHON) -c "import importlib.metadata; print(importlib.metadata.version('firecrown'))" 2>/dev/null || echo "dev")
 PYTEST := pytest
 RM := rm -f
 BASH := bash
+GH := gh
+GH_HOST := github.com
+BUILD := $(PYTHON) -m build
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
@@ -76,6 +82,10 @@ AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
 CONDA_LOCK_DIR := .github/conda-lock
 CONDA_LOCK_SCRIPT := .github/scripts/generate_conda_locks.sh
+GITHUB_RELEASE_REPO := LSSTDESC/firecrown
+CONDA_FORGE_FEEDSTOCK_REPO := conda-forge/firecrown-feedstock
+RELEASE_DIST_DIR := dist
+RELEASE_SDIST := $(RELEASE_DIST_DIR)/firecrown-$(VERSION).tar.gz
 
 # Test configuration
 PYTEST_PARALLEL := $(PYTEST) -n auto
@@ -83,7 +93,7 @@ PYTEST_DURATIONS := --durations 10
 PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json:$(COVERAGE_JSON) --cov-report html:$(HTMLCOV_DIR) --cov-report term-missing --cov-branch
 
 # These targets create shared temporary files and should always run serially.
-.NOTPARALLEL: conda-lock conda-lock-check
+.NOTPARALLEL: conda-lock conda-lock-check release-sdist release-verify-sdist
 
 help:  ## Show common developer targets
 	@echo "Firecrown Developer Quick Reference"
@@ -103,6 +113,15 @@ help:  ## Show common developer targets
 	@echo "  make pre-commit      - Comprehensive check (format, lint, docs, full tests)"
 	@echo "  make test-ci         - Run exactly what CI will run"
 	@echo ""
+	@echo "Release process:"
+	@echo "  make release-check VERSION=x.y.z      - Validate release state"
+	@echo "  make release-tag VERSION=x.y.z        - Create local release tag and .0 support branch"
+	@echo "  make release-sdist VERSION=x.y.z      - Build the release sdist"
+	@echo "  make release-verify-sdist VERSION=x.y.z - Verify the release sdist"
+	@echo "  make release-push VERSION=x.y.z       - Push the verified tag and support branch"
+	@echo "  make release-github VERSION=x.y.z     - Publish GitHub release and upload sdist"
+	@echo "  make release-conda-forge VERSION=x.y.z - Start feedstock handoff"
+	@echo ""
 	@echo "Other useful targets:"
 	@echo "  make help-all        - Show all available targets"
 	@echo "  make clean           - Remove all generated files"
@@ -121,6 +140,13 @@ help-all:  ## Show this help message
 	@echo "  make test-ci         - Run the full CI suite (all tests, slow, examples)"
 	@echo "  make docs            - Build and verify all documentation (tutorials + API)"
 	@echo "  make pre-commit      - Comprehensive pre-push check (format, lint, docs, test-ci)"
+	@echo "  make release-check VERSION=x.y.z      - Validate feature or maintenance release state"
+	@echo "  make release-tag VERSION=x.y.z        - Create the local tag and any required support branch"
+	@echo "  make release-sdist VERSION=x.y.z      - Build dist/firecrown-x.y.z.tar.gz from the tagged checkout"
+	@echo "  make release-verify-sdist VERSION=x.y.z - Install the sdist into a temp target and verify version metadata"
+	@echo "  make release-push VERSION=x.y.z       - Push the verified tag and any required support branch"
+	@echo "  make release-github VERSION=x.y.z     - Create a GitHub release and upload the verified sdist"
+	@echo "  make release-conda-forge VERSION=x.y.z - Create the conda-forge handoff issue"
 	@echo ""
 	@echo "Parallel execution:"
 	@echo "  Parallel execution is ENABLED by default using $(JOBS) jobs."
@@ -356,6 +382,197 @@ all-checks: pre-commit test-slow test-integration ## Run everything
 install:  ## Install firecrown in development mode
 	pip uninstall -y firecrown || true
 	pip install --no-deps -e .
+
+##@ Release
+
+release-build-check:  ## Verify that the Python build frontend is installed
+	@set -euo pipefail; \
+	if ! $(BUILD) --version >/dev/null 2>&1; then \
+		echo "Python package 'build' is required for release artifact targets."; \
+		echo "Install it in the active environment with: python -m pip install build"; \
+		exit 1; \
+	fi
+
+release-gh-check:  ## Verify that GitHub CLI is installed and authenticated
+	@set -euo pipefail; \
+	if ! command -v $(GH) >/dev/null 2>&1; then \
+		echo "GitHub CLI 'gh' is required for release targets."; \
+		echo "Install it first, for example with: brew install gh"; \
+		echo "Then log in with: gh auth login --hostname $(GH_HOST) --web"; \
+		exit 1; \
+	fi; \
+	if ! $(GH) auth status --hostname $(GH_HOST) >/dev/null 2>&1; then \
+		echo "GitHub CLI is installed but not authenticated for $(GH_HOST)."; \
+		echo "Log in with: gh auth login --hostname $(GH_HOST) --web"; \
+		echo "Then verify with: gh auth status --hostname $(GH_HOST)"; \
+		exit 1; \
+	fi
+
+release-check: release-build-check release-gh-check ## Validate the checkout for release VERSION=x.y.z
+	@set -euo pipefail; \
+	if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	if [[ ! "$(VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]]; then \
+		echo "VERSION must have the form x.y.z"; \
+		exit 1; \
+	fi; \
+	if ! git diff --quiet || ! git diff --cached --quiet; then \
+		echo "Release checkout must be clean."; \
+		exit 1; \
+	fi; \
+	if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
+		echo "Tag v$(VERSION) already exists locally."; \
+		exit 1; \
+	fi; \
+	if git remote get-url origin >/dev/null 2>&1 && \
+		git ls-remote --exit-code --tags origin "refs/tags/v$(VERSION)" >/dev/null 2>&1; then \
+		echo "Tag v$(VERSION) already exists on origin."; \
+		exit 1; \
+	fi; \
+	IFS=. read -r major minor patch <<< "$(VERSION)"; \
+	support_branch="v$${major}_$${minor}_support"; \
+	if [[ "$$patch" == "0" ]]; then \
+		if git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then \
+			echo "Support branch $$support_branch already exists locally."; \
+			exit 1; \
+		fi; \
+		if git remote get-url origin >/dev/null 2>&1 && \
+			git ls-remote --exit-code --heads origin "$$support_branch" >/dev/null 2>&1; then \
+			echo "Support branch $$support_branch already exists on origin."; \
+			exit 1; \
+		fi; \
+	else \
+		current_branch="$$(git branch --show-current)"; \
+		if [[ "$$current_branch" != "$$support_branch" ]]; then \
+			echo "Maintenance releases for v$(VERSION) must be created from $$support_branch."; \
+			exit 1; \
+		fi; \
+		if git remote get-url origin >/dev/null 2>&1 && \
+			! git ls-remote --exit-code --heads origin "$$support_branch" >/dev/null 2>&1; then \
+			echo "Support branch $$support_branch was not found on origin."; \
+			exit 1; \
+		fi; \
+	fi; \
+	$(MAKE) pre-commit conda-lock-check; \
+	echo "✅ Release checks passed for v$(VERSION)"
+
+	release-tag:  ## Create local tag, plus .0 support branch VERSION=x.y.z
+	@set -euo pipefail; \
+	$(MAKE) release-check VERSION=$(VERSION); \
+	IFS=. read -r major minor patch <<< "$(VERSION)"; \
+	if [[ "$$patch" == "0" ]]; then \
+		support_branch="v$${major}_$${minor}_support"; \
+	fi; \
+	git tag -a "v$(VERSION)" -m "Release $(VERSION)"; \
+	if [[ "$$patch" == "0" ]]; then \
+		git branch "$$support_branch" HEAD; \
+		echo "✅ Created local v$(VERSION) and $$support_branch"; \
+	else \
+		echo "✅ Created local v$(VERSION)"; \
+	fi
+
+release-sdist: release-build-check ## Build the release sdist VERSION=x.y.z
+	@set -euo pipefail; \
+	if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
+		echo "Local tag v$(VERSION) was not found. Run: make release-tag VERSION=$(VERSION)"; \
+		exit 1; \
+	fi; \
+	tag_commit="$$(git rev-list -n 1 "v$(VERSION)")"; \
+	head_commit="$$(git rev-parse HEAD)"; \
+	if [[ "$$head_commit" != "$$tag_commit" ]]; then \
+		echo "HEAD does not match local tag v$(VERSION). Check out the tagged release commit before building the sdist."; \
+		exit 1; \
+	fi; \
+	rm -rf "$(RELEASE_DIST_DIR)"; \
+	$(BUILD) --sdist --outdir "$(RELEASE_DIST_DIR)"; \
+	if [[ ! -f "$(RELEASE_SDIST)" ]]; then \
+		echo "Expected sdist was not created: $(RELEASE_SDIST)"; \
+		exit 1; \
+	fi; \
+	echo "✅ Built $(RELEASE_SDIST)"
+
+release-verify-sdist: release-sdist ## Verify the release sdist VERSION=x.y.z
+	@set -euo pipefail; \
+	if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	tmpdir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$tmpdir"' EXIT; \
+	target_dir="$$tmpdir/site"; \
+	mkdir -p "$$target_dir"; \
+	$(PYTHON) -m pip install --no-deps --target "$$target_dir" "$(RELEASE_SDIST)" >/dev/null; \
+	(
+		cd "$$tmpdir"; \
+		PYTHONPATH="$$target_dir" $(PYTHON) -c "import importlib.metadata; import firecrown; expected='$(VERSION)'; assert importlib.metadata.version('firecrown') == expected, importlib.metadata.version('firecrown'); assert firecrown.__version__ == expected, firecrown.__version__"
+	); \
+	echo "✅ Verified $(RELEASE_SDIST)"
+
+release-push:  ## Push the verified tag, plus .0 support branch VERSION=x.y.z
+	@set -euo pipefail; \
+	$(MAKE) release-verify-sdist VERSION=$(VERSION); \
+	if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
+		echo "Local tag v$(VERSION) was not found. Run: make release-tag VERSION=$(VERSION)"; \
+		exit 1; \
+	fi; \
+	IFS=. read -r major minor patch <<< "$(VERSION)"; \
+	if [[ "$$patch" == "0" ]]; then \
+		support_branch="v$${major}_$${minor}_support"; \
+		if ! git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then \
+			echo "Local support branch $$support_branch was not found. Run: make release-tag VERSION=$(VERSION)"; \
+			exit 1; \
+		fi; \
+		git push origin "v$(VERSION)" "$$support_branch"; \
+		echo "✅ Pushed v$(VERSION) and $$support_branch"; \
+	else \
+		git push origin "v$(VERSION)"; \
+		echo "✅ Pushed v$(VERSION)"; \
+	fi
+
+release-github: release-gh-check ## Create GitHub release VERSION=x.y.z
+	@set -euo pipefail; \
+	if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	if [[ ! -f "$(RELEASE_SDIST)" ]]; then \
+		echo "Release sdist was not found: $(RELEASE_SDIST)"; \
+		echo "Run: make release-verify-sdist VERSION=$(VERSION)"; \
+		exit 1; \
+	fi; \
+	if ! git remote get-url origin >/dev/null 2>&1 || \
+		! git ls-remote --exit-code --tags origin "refs/tags/v$(VERSION)" >/dev/null 2>&1; then \
+		echo "Remote tag v$(VERSION) was not found on origin."; \
+		echo "Run: make release-push VERSION=$(VERSION)"; \
+		exit 1; \
+	fi; \
+	latest_version="$$( { git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//'; echo '$(VERSION)'; } | sort -uV | tail -n 1 )"; \
+	if [[ "$$latest_version" == "$(VERSION)" ]]; then \
+		latest_flag="--latest"; \
+	else \
+		latest_flag="--latest=false"; \
+	fi; \
+	$(GH) release create "v$(VERSION)" --repo "$(GITHUB_RELEASE_REPO)" --verify-tag --generate-notes $$latest_flag "$(RELEASE_SDIST)"
+
+release-conda-forge: release-gh-check ## Create conda-forge handoff issue for VERSION=x.y.z
+	@set -euo pipefail; \
+	if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	$(GH) issue create --repo "$(CONDA_FORGE_FEEDSTOCK_REPO)" \
+		--title "@conda-forge-admin, please update version" \
+		--body "Please update firecrown to v$(VERSION)."
 
 ##@ Advanced
 
