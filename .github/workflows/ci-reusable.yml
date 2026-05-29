@@ -511,6 +511,7 @@ jobs:
           pip install -e .
           echo "done with pip install -e . (Augur)"
           echo "starting python -m pytest . (Augur)"
+          export AUGUR_DIR=${PWD}
           python -m pytest augur/tests
           echo "done with python -m pytest . (Augur)"
       - name: Pip-install Smokescreen and test it
