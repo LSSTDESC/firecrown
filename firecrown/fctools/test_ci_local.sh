@@ -18,7 +18,7 @@ fi
 if [ "$CONDA_DEFAULT_ENV" != "firecrown_developer" ]; then
     echo "❌ Error: firecrown_developer conda environment is not active"
     echo "Please run: conda activate firecrown_developer"
-    echo "If the environment doesn't exist, create it with: conda env create -f environment.yml"
+    echo "If the environment doesn't exist, create it with: conda env create --name firecrown_developer --file environment.yml"
     exit 1
 fi
 

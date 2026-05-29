@@ -14,7 +14,7 @@ We recommend using `conda` (or `mamba`/`miniforge`) to manage your development e
 
 2. **Create and activate the environment:**
    ```bash
-   conda env create -f environment.yml
+   conda env create --name firecrown_developer --file environment.yml
    conda activate firecrown_developer
    ```
 
