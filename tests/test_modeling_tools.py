@@ -50,7 +50,7 @@ def test_modeling_tools_deprecated_constructor_args_warn(
     kwargs = {deprecated_kwarg: object()}
 
     with pytest.warns(DeprecationWarning, match=warning_fragment):
-        ModelingTools(**kwargs)
+        ModelingTools(**kwargs)  # type: ignore[arg-type]
 
 
 def test_adding_pk_and_getting(dummy_powerspectrum: pyccl.Pk2D) -> None:

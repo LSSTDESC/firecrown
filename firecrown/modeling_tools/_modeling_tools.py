@@ -47,6 +47,7 @@ class ModelingTools(Updatable):
         ccl_factory: None | CCLFactory = None,
         cluster_abundance: object = _UNSET,
         cluster_deltasigma: object = _UNSET,
+        **_: object,
     ):
         if cluster_abundance is not _UNSET:
             warnings.warn(
