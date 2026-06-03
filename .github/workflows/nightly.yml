@@ -29,7 +29,7 @@ jobs:
     outputs:
       matrix: ${{ steps.load.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Read ci-branches.json
         id: load
         run: echo "matrix=$(cat .github/ci-branches.json)" >> $GITHUB_OUTPUT
@@ -59,7 +59,7 @@ jobs:
         branch: ${{ fromJson(needs.load-branches.outputs.matrix) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
         with:
           ref: ${{ matrix.branch }}
           fetch-depth: 0
@@ -111,7 +111,7 @@ jobs:
         branch: ${{ fromJson(needs.load-branches.outputs.matrix) }}
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
         with:
           ref: ${{ matrix.branch }}
           fetch-depth: 0
