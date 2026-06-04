@@ -30,10 +30,10 @@ dependencies:
   - mypy
   - numcosmo >= 0.27
   - numpy >= 2.0, < 2.4
-  - pip >= 20.1  # pip is needed as dependency
+  - pip >= 20.1 # pip is needed as dependency
   - pip:
-    - cobaya
-    - https://files.pythonhosted.org/packages/source/i/isitgr/isitgr-1.6.5.tar.gz
+      - cobaya
+      - isitgr @ https://files.pythonhosted.org/packages/source/i/isitgr/isitgr-1.6.5.tar.gz
   - plotnine
   - portalocker
   - pybobyqa
