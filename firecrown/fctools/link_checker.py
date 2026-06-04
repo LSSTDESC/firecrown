@@ -324,7 +324,6 @@ def main(
     download_timeout: int = 20,
     verbose: bool = False,
     skip_external: bool = False,
-    fail_on_broken_links: bool = True,
 ) -> int:
     """Main function.
 
@@ -348,7 +347,6 @@ def main(
             missing_links = html_pages.check_anchors()
     elapsed = time.perf_counter() - start
 
-    # Early exit if no broken links were found.
     if not missing_links:
         console.print(
             Panel(
@@ -358,9 +356,6 @@ def main(
             )
         )
         return 0
-
-    # Some broken links were found. We will print a summary table, and the program
-    # will exit with a non-zero code if `fail_on_broken_links` is True (default).
 
     # Now we print how many downloaded files there were, number of valid/invalid links
     # and anchors.
@@ -385,10 +380,9 @@ def main(
 
     console.print(table)
 
-    # Return non-zero exit code if requested (default behavior).
-    if fail_on_broken_links:
-        return 1
-    return 0
+    # Return non-zero exit code so CI (e.g. GitHub Actions) fails when broken links are
+    # found.
+    return 1
 
 
 app = typer.Typer(help="Check for broken anchor links in a directory of HTML files.")
@@ -427,13 +421,6 @@ def cli(
             ),
         ),
     ] = False,
-    fail_on_broken_links: Annotated[
-        bool,
-        typer.Option(
-            "--fail-on-broken-links/--no-fail-on-broken-links",
-            help="Fail CI exit code when broken links are found",
-        ),
-    ] = True,
 ):
     """Command-line entry point using Typer and Rich for output."""
     code = main(
@@ -441,6 +428,5 @@ def cli(
         download_timeout=download_timeout,
         verbose=verbose,
         skip_external=skip_external,
-        fail_on_broken_links=fail_on_broken_links,
     )
     raise typer.Exit(code=code)
