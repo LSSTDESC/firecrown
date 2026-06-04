@@ -34,7 +34,7 @@ dependencies:
   - pip:
     - cobaya
     - https://files.pythonhosted.org/packages/source/i/isitgr/isitgr-1.6.5.tar.gz
-  - plotnine < 0.15
+  - plotnine
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
