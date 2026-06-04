@@ -1,5 +1,6 @@
 ---
 title: "Factory Basics: Constructing TwoPoint Objects"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

@@ -6,6 +6,7 @@ together a :class:`pyccl.Cosmology` object and associated objects.
 
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Collection
 
@@ -15,6 +16,8 @@ import pyccl.nl_pt
 from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
 from firecrown.modeling_tools._ccl_factory import CCLFactory
 from firecrown.updatable import Updatable, UpdatableCollection
+
+_UNSET = object()
 
 
 class PowerspectrumModifier(Updatable, ABC):
@@ -42,7 +45,26 @@ class ModelingTools(Updatable):
         cM_relation: None | str = None,
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         ccl_factory: None | CCLFactory = None,
+        cluster_abundance: object = _UNSET,
+        cluster_deltasigma: object = _UNSET,
+        **_: object,
     ):
+        if cluster_abundance is not _UNSET:
+            warnings.warn(
+                "The cluster_abundance parameter of ModelingTools is deprecated "
+                "and will be removed in a future version. "
+                "Remove this argument from your ModelingTools call.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if cluster_deltasigma is not _UNSET:
+            warnings.warn(
+                "The cluster_deltasigma parameter of ModelingTools is deprecated "
+                "and will be removed in a future version. "
+                "Remove this argument from your ModelingTools call.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
         self.pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = pt_calculator

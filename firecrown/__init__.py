@@ -21,4 +21,6 @@ Main Submodules:
     - :mod:`updatable`: Base classes for parameter updates
 """
 
-from firecrown.version import __version__  # noqa: F401
+import importlib.metadata
+
+__version__ = importlib.metadata.version("firecrown")

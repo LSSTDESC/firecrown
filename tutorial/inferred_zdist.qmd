@@ -1,5 +1,6 @@
 ---
 title: "Using Firecrown InferredGalaxyZDist objects"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

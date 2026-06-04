@@ -10,15 +10,11 @@ project = "Firecrown"
 copyright = "2025, LSST DESC Firecrown Contributors"
 author = "LSST DESC Firecrown Contributors"
 
-# Import version from firecrown package to maintain single source of truth
-import sys
-from pathlib import Path
+import importlib.metadata
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from firecrown.version import __version__
-
+__version__ = importlib.metadata.version("firecrown")
 release = __version__
-version = __version__
+version = release
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -1,55 +1,83 @@
 # Making a new release
 
-This is the procedure we use for create a new release of Firecrown.
+Firecrown release versions are derived from git tags through `setuptools-scm`.
+This guide covers feature-line releases, maintenance releases, GitHub releases, and the conda-forge handoff.
 
-1. Create a local branch in your clone of the repo to be used for the PR that will be started later. Name it for the new release, e.g.:  prep-v1.10. Note that this is not the branch that would be used for bug fixes. A bug fix branch would only be created at the time it becomes necessary.
-1. Make sure you have updated the `environment.yml` file to release, or force, any versioning required.
-1. Update your local conda environment using `conda env update --file environment.yml --prune -q --json`.
-1. Make sure any new directories are being processed by black, flake8, mypy, and pylint.
-1. Update the version in `firecrown/version.py` (this is the ONLY file you need to edit manually).
-1. Update the tutorial version metadata by running:
+## Feature-line release `x.y.0`
 
-    ```bash
-    python tutorial/update_quarto_version.py
-    ```
+1. Create a local branch named for the release, such as `prep-v1.15.0`, from `master`.
+2. Update any code, documentation, dependency constraints, and tutorial content that belong in the release.
+3. If `environment.yml` changes, run `make conda-lock` and commit the regenerated lockfiles.
+4. Commit and push the branch.
+5. Open a PR targeting `master` and let CI run.
+6. Merge the PR after CI passes.
+7. Check out a clean local copy of `master` at the merged release commit.
+8. Run `make release-check VERSION=x.y.0`.
+9. Run `make release-tag VERSION=x.y.0`.
+10. Run `make release-sdist VERSION=x.y.0`.
+11. Run `make release-verify-sdist VERSION=x.y.0`.
+12. Run `make release-push VERSION=x.y.0`.
 
-1. Make sure all tests pass, all code checking is passed, all examples are working.
-   Run these commands to verify:
+For `x.y.0` releases, `release-tag` creates the annotated tag `vX.Y.0` locally and creates the support branch `vx_y_support` locally from the same release commit.
+After the sdist is verified, `release-push` pushes both refs to `origin`.
 
-   ```bash
-   bash pre-commit-check
-   ```
+## Maintenance release `x.y.z` where `z > 0`
 
-1. Make sure the documentation builds:
+1. Create a local branch named for the maintenance release, such as `prep-v1.15.1`, from `vx_y_support`.
+2. Update the code, documentation, and dependency constraints needed for the maintenance release.
+3. If `environment.yml` changes, run `make conda-lock` and commit the regenerated lockfiles.
+4. Commit and push the branch.
+5. Open a PR targeting `vx_y_support` and let CI run.
+6. Merge the PR after CI passes.
+7. Check out a clean local copy of `vx_y_support` at the merged release commit.
+8. Run `make release-check VERSION=x.y.z`.
+9. Run `make release-tag VERSION=x.y.z`.
+10. Run `make release-sdist VERSION=x.y.z`.
+11. Run `make release-verify-sdist VERSION=x.y.z`.
+12. Run `make release-push VERSION=x.y.z`.
 
-   ```bash
-   bash check-docs
-   ```
+For maintenance releases, `release-check` requires the checked-out branch to be `vx_y_support` and confirms that the support branch exists on `origin` before validation continues.
 
-1. Make sure that any new features introduced are described, and any features removed from the code have been removed, in the tutorial.
-1. Commit and push all the changes to the new branch for the PR.
-    This can be done either through the web interface, or through the `gh` command line utility.
-1. Create a PR for the generation of the new release.
-    The CI system will automatically run on the PR.
-1. If the CI system complains, fix things and iterate as needed.
-1. When the CI system passes, merge the PR.
-1. Use the GitHub web interface to tag the commit.
-    Allow the automated system to generate the release notes.
-    Make sure "Set as the latest release" is checked (or Conda will not find it).
-1. Create the new `conda` release.
-   This can be done through the web interface at <https://github.com/conda-forge/firecrown-feedstock>.
-   Create a new issue.
-   From the pop-up window, choose "Bot commands"
-   In the next pop-up, set the title to be "@conda-forge-admin, please update version" (without the quotes).
+## Shared validation and tagging behavior
 
-   The PR will be created by the bot.
-   Look at the files modified in the PR.
-   In the recipe directory, look at meta.yaml. Update any versions needed.
-   Then add a comment "@conda-forge-admin, please rerender" to the PR.
-   Wait for the github actions to do their thing.
-   Check and approve the PR.
-   When they are all done, merge th PR.
+Before running any release target, ensure that GitHub CLI is installed and authenticated for `github.com`.
+Run `gh auth status --hostname github.com` to confirm the current login.
+If needed, run `gh auth login --hostname github.com --web` before continuing.
 
-1. Immediately change the version in `firecrown/version.py` to the next development version, then run `python tutorial/update_quarto_version.py` to update the tutorial.
-    If the release just made is x.y.z, the new development version should be x.y.(z+1)a0 (where 'a0' indicates alpha/development status).
-    For example: if you just released 1.8.3, change to 1.8.4a0.
+The `release-check` target verifies that the checkout is clean, confirms that `VERSION` has the expected `x.y.z` form, confirms that the tag does not already exist, and runs `make pre-commit` plus `make conda-lock-check`.
+It also fails immediately when `gh` is not installed or not authenticated for `github.com`.
+It also fails immediately when the Python `build` frontend is not installed in the active environment.
+For `x.y.0` releases, it also confirms that the support branch name is available.
+For maintenance releases, it confirms that the current branch is `vx_y_support`.
+
+The `release-tag` target creates the annotated tag `vX.Y.Z` locally.
+For `x.y.0` releases, it also creates `vx_y_support` locally.
+
+The `release-sdist` target builds `dist/firecrown-X.Y.Z.tar.gz` from the tagged checkout.
+It requires the local tag to exist and requires `HEAD` to match that tag.
+
+The `release-verify-sdist` target installs the sdist into a temporary target directory and verifies both `importlib.metadata.version("firecrown")` and `firecrown.__version__` against `x.y.z`.
+
+The `release-push` target reruns the sdist verification and then pushes the tag to `origin`.
+For `x.y.0` releases, it also pushes `vx_y_support`.
+
+## Publish the GitHub release
+
+1. Run `make release-github VERSION=x.y.z`.
+2. The target requires an authenticated `gh` session and fails with login instructions when authentication is missing.
+3. The target requires the verified sdist `dist/firecrown-X.Y.Z.tar.gz` to exist.
+4. The target requires `vX.Y.Z` to be present on `origin` and fails with instructions to run `make release-push VERSION=x.y.z` when it is missing.
+5. The target creates the GitHub release with generated notes, uploads the sdist as a release asset, and sets the latest flag from version ordering.
+
+## Start the conda-forge handoff
+
+1. Run `make release-conda-forge VERSION=x.y.z`.
+2. The target requires an authenticated `gh` session and fails with login instructions when authentication is missing.
+3. The target creates the issue in [conda-forge/firecrown-feedstock](https://github.com/conda-forge/firecrown-feedstock).
+4. Review the PR created by the bot.
+5. In `recipe/meta.yaml`, confirm that the `version`, release-asset `source.url`, and `sha256` match the new sdist.
+6. Update any dependency versions required for the release.
+7. Add the comment `@conda-forge-admin, please rerender` to the PR.
+8. Wait for GitHub Actions to finish, approve the PR, and merge it.
+
+The same conda-forge handoff applies to feature-line releases and maintenance releases.

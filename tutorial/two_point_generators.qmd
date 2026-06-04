@@ -1,5 +1,6 @@
 ---
 title: "Using Firecrown to Generate Two-Point Statistics for LSST"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 
