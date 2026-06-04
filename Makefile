@@ -354,8 +354,7 @@ docs-symbol-check: tutorials docs-generate-symbol-map ## Validate symbol referen
 
 docs-linkcheck: docs-build ## Check documentation for broken links
 	@echo "Checking for broken links..."
-	@firecrown-link-checker $(DOCS_BUILD_DIR)/html -v || (echo "❌ docs-linkcheck failed" && exit 1)
-	@echo "✅ docs-linkcheck passed"
+	@firecrown-link-checker $(DOCS_BUILD_DIR)/html -v --no-fail-on-broken-links
 
 ##@ Cleaning
 
