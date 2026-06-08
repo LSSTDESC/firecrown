@@ -117,6 +117,7 @@ class SiteChecker:
         self.invalid_links: int = 0
         self.valid_anchors: int = 0
         self.invalid_anchors: int = 0
+        self.rate_limited_urls: dict[str, str] = {}
         self.console = console
         self.download_timeout = download_timeout
         self.verbose = verbose
@@ -183,6 +184,12 @@ class SiteChecker:
         try:
             resp = self.session.get(url_str, timeout=self.download_timeout)
             resp.raise_for_status()
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code == 429:
+                self.rate_limited_urls[url_str] = str(e)
+                self.console.print(f"[yellow][Rate limited][/yellow] {url_str}: {e}")
+            else:
+                self.console.print(f"[red][Download failed][/red] {url_str}: {e}")
         except (requests.RequestException, OSError) as e:
             self.console.print(f"[red][Download failed][/red] {url_str}: {e}")
         else:
@@ -278,6 +285,8 @@ class SiteChecker:
 
                 if not page_anchors.path.exists():
                     if "http" in url_str:
+                        if url_str in self.rate_limited_urls:
+                            continue
                         missing_links.append(
                             (str(file_path), url_str, "unreachable link")
                         )
@@ -369,6 +378,15 @@ def main(
         f"Invalid anchors: {html_pages.invalid_anchors}"
     )
     console.print(Panel(summary, title="Summary", style="blue"))
+
+    if html_pages.rate_limited_urls:
+        console.print(
+            Panel(
+                "\n".join(f"- {url}" for url in html_pages.rate_limited_urls.keys()),
+                title="Rate-limited URLs (not counted as failures)",
+                style="yellow",
+            )
+        )
 
     table = Table(title="Broken links")
     table.add_column("Source", style="cyan")
