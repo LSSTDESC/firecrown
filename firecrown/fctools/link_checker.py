@@ -63,13 +63,13 @@ def _extract_ids_from_soup(soup: BeautifulSoup) -> set[str]:
     :returns: Set of found anchor identifier strings.
     """
     ids: list[str] = []
-    for tag in soup.find_all(attrs={"id": True}):
+    for tag in soup.find_all(True, id=True):
         assert isinstance(tag, bs4.Tag)
         val = tag.get("id")
         if val:
             assert isinstance(val, str)
             ids.append(val)
-    for tag in soup.find_all(attrs={"name": True}):
+    for tag in soup.find_all(True, attrs={"name": True}):
         assert isinstance(tag, bs4.Tag)
         val = tag.get("name")
         if val:
