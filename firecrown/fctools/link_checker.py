@@ -284,7 +284,7 @@ class SiteChecker:
                 page_anchors = self.targets[url_str]
 
                 if not page_anchors.path.exists():
-                    if "http" in url_str:
+                    if url_str.startswith("http"):
                         if url_str in self.rate_limited_urls:
                             continue
                         missing_links.append(
