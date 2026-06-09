@@ -257,11 +257,25 @@ def test_download_url_writes_file_when_ok(sample_site: Path, mock_requests_ok):
         sc.close()
 
 
-def test_download_url_handles_failure_and_returns_path(sample_site: Path, monkeypatch):
+@pytest.mark.parametrize(
+    "exc_type,exc_msg,status_code",
+    [
+        (requests.RequestException, "network boom", None),
+        (requests.HTTPError, "404 Client Error: Not Found", 404),
+    ],
+)
+def test_download_url_handles_failure_and_returns_path(
+    sample_site: Path, monkeypatch, exc_type, exc_msg, status_code
+):
     console = Console(record=True)
 
-    def _raise(self, url, timeout=None, **_kwargs):
-        raise requests.RequestException("network boom")
+    def _raise(_self, _url, _timeout=None, **_kwargs):
+        if status_code is not None:
+            exc = exc_type(exc_msg)
+            exc.response = type("FakeResp", (), {"status_code": status_code})()
+        else:
+            exc = exc_type(exc_msg)
+        raise exc
 
     monkeypatch.setattr(requests.Session, "get", _raise)
 
