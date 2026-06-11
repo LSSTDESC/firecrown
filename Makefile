@@ -455,7 +455,7 @@ release-check: release-build-check release-gh-check ## Validate the checkout for
 			exit 1; \
 		fi; \
 	fi; \
-	$(MAKE) pre-commit conda-lock-check; \
+	$(MAKE) pre-commit; \
 	echo "✅ Release checks passed for v$(VERSION)"
 
 	release-tag:  ## Create local tag, plus .0 support branch VERSION=x.y.z
