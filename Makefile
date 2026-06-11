@@ -13,7 +13,7 @@ SHELL := /bin/bash
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
 	release-build-check release-gh-check conda-lock conda-lock-check \
-	release-check release-tag release-sdist release-verify-sdist release-push \
+	release-validate release-check release-tag release-sdist release-verify-sdist release-push \
 	release-github \
 	release-conda-forge \
 	docs-verify docs-code-check docs-symbol-check docs-linkcheck
@@ -86,6 +86,9 @@ GITHUB_RELEASE_REPO := LSSTDESC/firecrown
 CONDA_FORGE_FEEDSTOCK_REPO := conda-forge/firecrown-feedstock
 RELEASE_DIST_DIR := dist
 RELEASE_SDIST := $(RELEASE_DIST_DIR)/firecrown-$(VERSION).tar.gz
+RELEASE_STATE_DIR := .git/firecrown-release
+RELEASE_HEAD := $(shell git rev-parse --verify HEAD 2>/dev/null || echo no-head)
+RELEASE_CHECK_STAMP := $(RELEASE_STATE_DIR)/release-check-$(VERSION)-$(RELEASE_HEAD).ok
 
 # Test configuration
 PYTEST_PARALLEL := $(PYTEST) -n auto
@@ -408,7 +411,7 @@ release-gh-check:  ## Verify that GitHub CLI is installed and authenticated
 		exit 1; \
 	fi
 
-release-check: release-build-check release-gh-check ## Validate the checkout for release VERSION=x.y.z
+release-validate: release-build-check release-gh-check ## Run fast release-specific validation VERSION=x.y.z
 	@set -euo pipefail; \
 	if [[ -z "$(VERSION)" ]]; then \
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
@@ -454,13 +457,24 @@ release-check: release-build-check release-gh-check ## Validate the checkout for
 			echo "Support branch $$support_branch was not found on origin."; \
 			exit 1; \
 		fi; \
-	fi; \
-	$(MAKE) pre-commit; \
-	echo "✅ Release checks passed for v$(VERSION)"
+	fi
 
-	release-tag:  ## Create local tag, plus .0 support branch VERSION=x.y.z
+$(RELEASE_CHECK_STAMP):
 	@set -euo pipefail; \
-	$(MAKE) release-check VERSION=$(VERSION); \
+	if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Use: make release-check VERSION=x.y.z"; \
+		exit 1; \
+	fi; \
+	mkdir -p "$(RELEASE_STATE_DIR)"; \
+	$(RM) "$(RELEASE_STATE_DIR)"/release-check-*.ok; \
+	$(MAKE) pre-commit; \
+	touch "$@"
+
+release-check: release-validate $(RELEASE_CHECK_STAMP) ## Validate the checkout for release VERSION=x.y.z
+	@echo "✅ Release checks passed for v$(VERSION)"
+
+release-tag: release-validate $(RELEASE_CHECK_STAMP) ## Create local tag, plus .0 support branch VERSION=x.y.z
+	@set -euo pipefail; \
 	IFS=. read -r major minor patch <<< "$(VERSION)"; \
 	if [[ "$$patch" == "0" ]]; then \
 		support_branch="v$${major}_$${minor}_support"; \

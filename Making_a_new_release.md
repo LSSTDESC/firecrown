@@ -12,11 +12,11 @@ This guide covers feature-line releases, maintenance releases, GitHub releases, 
 5. Open a PR targeting `master` and let CI run.
 6. Merge the PR after CI passes.
 7. Check out a clean local copy of `master` at the merged release commit.
-8. Run `make release-check VERSION=x.y.0`.
-9. Run `make release-tag VERSION=x.y.0`.
-10. Run `make release-sdist VERSION=x.y.0`.
-11. Run `make release-verify-sdist VERSION=x.y.0`.
-12. Run `make release-push VERSION=x.y.0`.
+8. Run `make release-tag VERSION=x.y.0`.
+   This reruns the fast release-specific checks and reuses the successful full check for the same `HEAD` and `VERSION` instead of rerunning `make pre-commit`.
+9. Run `make release-sdist VERSION=x.y.0`.
+10. Run `make release-verify-sdist VERSION=x.y.0`.
+11. Run `make release-push VERSION=x.y.0`.
 
 For `x.y.0` releases, `release-tag` creates the annotated tag `vX.Y.0` locally and creates the support branch `vx_y_support` locally from the same release commit.
 After the sdist is verified, `release-push` pushes both refs to `origin`.
@@ -30,11 +30,11 @@ After the sdist is verified, `release-push` pushes both refs to `origin`.
 5. Open a PR targeting `vx_y_support` and let CI run.
 6. Merge the PR after CI passes.
 7. Check out a clean local copy of `vx_y_support` at the merged release commit.
-8. Run `make release-check VERSION=x.y.z`.
-9. Run `make release-tag VERSION=x.y.z`.
-10. Run `make release-sdist VERSION=x.y.z`.
-11. Run `make release-verify-sdist VERSION=x.y.z`.
-12. Run `make release-push VERSION=x.y.z`.
+8. Run `make release-tag VERSION=x.y.z`.
+   This reruns the fast release-specific checks and reuses the successful full check for the same `HEAD` and `VERSION` instead of rerunning `make pre-commit`.
+9. Run `make release-sdist VERSION=x.y.z`.
+10. Run `make release-verify-sdist VERSION=x.y.z`.
+11. Run `make release-push VERSION=x.y.z`.
 
 For maintenance releases, `release-check` requires the checked-out branch to be `vx_y_support` and confirms that the support branch exists on `origin` before validation continues.
 
@@ -44,13 +44,12 @@ Before running any release target, ensure that GitHub CLI is installed and authe
 Run `gh auth status --hostname github.com` to confirm the current login.
 If needed, run `gh auth login --hostname github.com --web` before continuing.
 
-The `release-check` target verifies that the checkout is clean, confirms that `VERSION` has the expected `x.y.z` form, confirms that the tag does not already exist, and runs `make pre-commit` plus `make conda-lock-check`.
-It also fails immediately when `gh` is not installed or not authenticated for `github.com`.
-It also fails immediately when the Python `build` frontend is not installed in the active environment.
+The `release-check` target runs the release-specific validation for `VERSION=x.y.z`, including checkout cleanliness, version format, tag absence, support-branch checks, GitHub CLI authentication, and Python `build` availability.
+It also runs `make pre-commit` once for the current `HEAD` and `VERSION` and records the successful result in `.git/`.
 For `x.y.0` releases, it also confirms that the support branch name is available.
 For maintenance releases, it confirms that the current branch is `vx_y_support`.
 
-The `release-tag` target creates the annotated tag `vX.Y.Z` locally.
+The `release-tag` target reruns the fast release-specific checks, reuses the successful full check for the same `HEAD` and `VERSION`, and creates the annotated tag `vX.Y.Z` locally.
 For `x.y.0` releases, it also creates `vx_y_support` locally.
 
 The `release-sdist` target builds `dist/firecrown-X.Y.Z.tar.gz` from the tagged checkout.
