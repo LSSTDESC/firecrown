@@ -40,16 +40,20 @@ For maintenance releases, `release-check` requires the checked-out branch to be 
 
 ## Shared validation and tagging behavior
 
-Before running any release target, ensure that GitHub CLI is installed and authenticated for `github.com`.
+Before running any release target, activate the `firecrown_developer` conda environment so the release tooling, documentation tools, and test dependencies come from the project developer environment.
+Run `conda activate firecrown_developer` before invoking the release targets.
+Ensure that GitHub CLI is installed and authenticated for `github.com`.
 Run `gh auth status --hostname github.com` to confirm the current login.
 If needed, run `gh auth login --hostname github.com --web` before continuing.
 
-The `release-check` target runs the release-specific validation for `VERSION=x.y.z`, including checkout cleanliness, version format, tag absence, support-branch checks, GitHub CLI authentication, and Python `build` availability.
+The `release-check` target first confirms that the active conda environment is `firecrown_developer`.
+It then runs the release-specific validation for `VERSION=x.y.z`, including checkout cleanliness, version format, tag absence, support-branch checks, GitHub CLI authentication, and Python `build` availability.
 It also runs `make pre-commit` once for the current `HEAD` and `VERSION` and records the successful result in `.git/`.
 For `x.y.0` releases, it also confirms that the support branch name is available.
 For maintenance releases, it confirms that the current branch is `vx_y_support`.
 
 The `release-tag` target reruns the fast release-specific checks, reuses the successful full check for the same `HEAD` and `VERSION`, and creates the annotated tag `vX.Y.Z` locally.
+If the wrong conda environment is active, it fails immediately with instructions to activate `firecrown_developer`.
 For `x.y.0` releases, it also creates `vx_y_support` locally.
 
 The `release-sdist` target builds `dist/firecrown-X.Y.Z.tar.gz` from the tagged checkout.

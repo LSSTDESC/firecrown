@@ -32,6 +32,7 @@ dependencies:
   - numpy >= 2.0, < 2.4
   - pip >= 20.1 # pip is needed as dependency
   - pip:
+      - build
       - cobaya
       - isitgr
   - plotnine

@@ -12,7 +12,7 @@ SHELL := /bin/bash
 	test-updatable test-utils test-parameters test-modeling-tools \
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
-	release-build-check release-gh-check conda-lock conda-lock-check \
+	release-env-check release-build-check release-gh-check conda-lock conda-lock-check \
 	release-validate release-check release-tag release-sdist release-verify-sdist release-push \
 	release-github \
 	release-conda-forge \
@@ -40,6 +40,7 @@ BASH := bash
 GH := gh
 GH_HOST := github.com
 BUILD := $(PYTHON) -m build
+RELEASE_CONDA_ENV := firecrown_developer
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
@@ -388,15 +389,30 @@ install:  ## Install firecrown in development mode
 
 ##@ Release
 
-release-build-check:  ## Verify that the Python build frontend is installed
+release-env-check:  ## Verify that the expected developer environment is active
 	@set -euo pipefail; \
-	if ! $(BUILD) --version >/dev/null 2>&1; then \
-		echo "Python package 'build' is required for release artifact targets."; \
-		echo "Install it in the active environment with: python -m pip install build"; \
+	if [[ -z "$${CONDA_DEFAULT_ENV:-}" ]]; then \
+		echo "Activate the $(RELEASE_CONDA_ENV) conda environment before running release targets."; \
+		echo "Run: conda activate $(RELEASE_CONDA_ENV)"; \
+		exit 1; \
+	fi; \
+	if [[ "$${CONDA_DEFAULT_ENV}" != "$(RELEASE_CONDA_ENV)" ]]; then \
+		echo "Release targets must run from the $(RELEASE_CONDA_ENV) conda environment."; \
+		echo "Current environment: $${CONDA_DEFAULT_ENV}"; \
+		echo "Run: conda activate $(RELEASE_CONDA_ENV)"; \
 		exit 1; \
 	fi
 
-release-gh-check:  ## Verify that GitHub CLI is installed and authenticated
+release-build-check: release-env-check ## Verify that the Python build frontend is installed
+	@set -euo pipefail; \
+	if ! $(BUILD) --version >/dev/null 2>&1; then \
+		echo "Python package 'build' is required for release artifact targets."; \
+		echo "Update the $(RELEASE_CONDA_ENV) environment from environment.yml and reactivate it."; \
+		echo "Example: conda env update --name $(RELEASE_CONDA_ENV) --file environment.yml"; \
+		exit 1; \
+	fi
+
+release-gh-check: release-env-check ## Verify that GitHub CLI is installed and authenticated
 	@set -euo pipefail; \
 	if ! command -v $(GH) >/dev/null 2>&1; then \
 		echo "GitHub CLI 'gh' is required for release targets."; \

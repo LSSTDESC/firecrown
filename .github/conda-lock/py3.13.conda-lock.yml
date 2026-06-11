@@ -13,8 +13,8 @@
 version: 1
 metadata:
   content_hash:
-    linux-64: 8fa86cc70386d83bda4e2cb8a966c70f552d901ddf9e85b755b087aa100853f9
-    osx-arm64: f933c57ab9005ffbda3e8628e27b69cb137ffd563046867aeac5f5f4cd698633
+    linux-64: a92e245a653492722a66d13be080ce30e0dad539306107d0713e606851790c84
+    osx-arm64: 6bca5cc48c9dd01551391293e6aef1b3e5056a6e1eedb8ded9a0091acfaadaa3
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -6136,10 +6136,10 @@ package:
   dependencies:
     __glibc: '>=2.17,<3.0.a0'
     libgcc: '>=14'
-  url: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_0.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_1.conda
   hash:
-    md5: 93764a5ca80616e9c10106cdaec92f74
-    sha256: 363018b25fdb5534c79783d912bd4b685a3547f4fc5996357ad548899b0ee8e7
+    md5: b24d3c612f71e7aa74158d92106318b2
+    sha256: 16feffd9ddbbe5b718515d38ee376c685ba95491cd901244e24671d20b952a77
   category: main
   optional: false
 - name: libexpat
@@ -6148,10 +6148,10 @@ package:
   platform: osx-arm64
   dependencies:
     __osx: '>=11.0'
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/libexpat-2.8.1-hf6b4638_0.conda
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/libexpat-2.8.1-hf6b4638_1.conda
   hash:
-    md5: ef22e9ab1dc7c2f334252f565f90b3b8
-    sha256: 3133fb6bfa871288b92c8b8752696686a841bf4ffe035aa3038033c9e15b738e
+    md5: a915151d5d3c5bf039f5ccc8402a436f
+    sha256: 5af74261101e3c777399c6294b2b5d290e508153268eb2e9ff99c4d69834612f
   category: main
   optional: false
 - name: libfabric
@@ -13318,6 +13318,30 @@ package:
     sha256: 9485ba49e8f47d2b597dd399e88f4802e100851b27c21d7525625b0b4025a5d9
   category: main
   optional: false
+- name: build
+  version: 1.5.0
+  manager: pip
+  platform: linux-64
+  dependencies:
+    packaging: '>=24.0'
+    pyproject-hooks: '*'
+  url: https://files.pythonhosted.org/packages/0d/fe/6bea5c9162869c5beba5d9c8abbed835ec85bf1ec1fba05a3822325c45f3/build-1.5.0-py3-none-any.whl
+  hash:
+    sha256: 13f3eecb844759ab66efec90ca17639bbf14dc06cb2fdf37a9010322d9c50a6f
+  category: main
+  optional: false
+- name: build
+  version: 1.5.0
+  manager: pip
+  platform: osx-arm64
+  dependencies:
+    packaging: '>=24.0'
+    pyproject-hooks: '*'
+  url: https://files.pythonhosted.org/packages/0d/fe/6bea5c9162869c5beba5d9c8abbed835ec85bf1ec1fba05a3822325c45f3/build-1.5.0-py3-none-any.whl
+  hash:
+    sha256: 13f3eecb844759ab66efec90ca17639bbf14dc06cb2fdf37a9010322d9c50a6f
+  category: main
+  optional: false
 - name: cobaya
   version: 3.6.2
   manager: pip
@@ -13414,5 +13438,25 @@ package:
   url: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
   hash:
     sha256: 457afc04d6f2c9f1814934854dc4e542c5e5982a0f80add4b211fcdb0b5811e3
+  category: main
+  optional: false
+- name: pyproject-hooks
+  version: 1.2.0
+  manager: pip
+  platform: linux-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
+  hash:
+    sha256: 9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913
+  category: main
+  optional: false
+- name: pyproject-hooks
+  version: 1.2.0
+  manager: pip
+  platform: osx-arm64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl
+  hash:
+    sha256: 9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913
   category: main
   optional: false
