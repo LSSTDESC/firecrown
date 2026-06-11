@@ -58,7 +58,7 @@ max-positional-arguments=8
 max-args=13
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=14
+max-attributes=15
 
 [STRING]
 

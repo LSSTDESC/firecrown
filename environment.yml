@@ -33,7 +33,7 @@ dependencies:
   - pip >= 20.1 # pip is needed as dependency
   - pip:
       - cobaya
-      - isitgr @ https://files.pythonhosted.org/packages/source/i/isitgr/isitgr-1.6.5.tar.gz
+      - isitgr
   - plotnine
   - portalocker
   - pybobyqa
