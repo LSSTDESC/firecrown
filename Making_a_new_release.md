@@ -61,6 +61,12 @@ It requires the local tag to exist and requires `HEAD` to match that tag.
 
 The `release-verify-sdist` target installs the sdist into a temporary target directory and verifies both `importlib.metadata.version("firecrown")` and `firecrown.__version__` against `x.y.z`.
 
+The `release-clean` target removes local release state.
+Without `VERSION`, it removes `dist/` and `.git/firecrown-release/`.
+With `VERSION=x.y.z`, it also deletes the local `vX.Y.Z` tag if present.
+For `x.y.0` releases, it also deletes the local `vx_y_support` branch if it exists and is not the current branch.
+This target never changes remote refs.
+
 The `release-push` target reruns the sdist verification and then pushes the tag to `origin`.
 For `x.y.0` releases, it also pushes `vx_y_support`.
 

@@ -4,6 +4,8 @@
 # Run 'make help' for a list of available targets.
 
 SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
+.ONESHELL:
 
 .PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
@@ -14,7 +16,7 @@ SHELL := /bin/bash
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
 	release-env-check release-build-check release-gh-check conda-lock conda-lock-check \
 	release-validate release-check release-tag release-sdist release-verify-sdist release-push \
-	release-github \
+	release-github release-clean \
 	release-conda-forge \
 	docs-verify docs-code-check docs-symbol-check docs-linkcheck
 
@@ -390,216 +392,227 @@ install:  ## Install firecrown in development mode
 ##@ Release
 
 release-env-check:  ## Verify that the expected developer environment is active
-	@set -euo pipefail; \
-	if [[ -z "$${CONDA_DEFAULT_ENV:-}" ]]; then \
-		echo "Activate the $(RELEASE_CONDA_ENV) conda environment before running release targets."; \
-		echo "Run: conda activate $(RELEASE_CONDA_ENV)"; \
-		exit 1; \
-	fi; \
-	if [[ "$${CONDA_DEFAULT_ENV}" != "$(RELEASE_CONDA_ENV)" ]]; then \
-		echo "Release targets must run from the $(RELEASE_CONDA_ENV) conda environment."; \
-		echo "Current environment: $${CONDA_DEFAULT_ENV}"; \
-		echo "Run: conda activate $(RELEASE_CONDA_ENV)"; \
-		exit 1; \
+	@if [[ -z "$${CONDA_DEFAULT_ENV:-}" ]]; then
+		echo "Activate the $(RELEASE_CONDA_ENV) conda environment before running release targets."
+		echo "Run: conda activate $(RELEASE_CONDA_ENV)"
+		exit 1
+	fi
+	if [[ "$${CONDA_DEFAULT_ENV}" != "$(RELEASE_CONDA_ENV)" ]]; then
+		echo "Release targets must run from the $(RELEASE_CONDA_ENV) conda environment."
+		echo "Current environment: $${CONDA_DEFAULT_ENV}"
+		echo "Run: conda activate $(RELEASE_CONDA_ENV)"
+		exit 1
 	fi
 
 release-build-check: release-env-check ## Verify that the Python build frontend is installed
-	@set -euo pipefail; \
-	if ! $(BUILD) --version >/dev/null 2>&1; then \
-		echo "Python package 'build' is required for release artifact targets."; \
-		echo "Update the $(RELEASE_CONDA_ENV) environment from environment.yml and reactivate it."; \
-		echo "Example: conda env update --name $(RELEASE_CONDA_ENV) --file environment.yml"; \
-		exit 1; \
+	@if ! $(BUILD) --version >/dev/null 2>&1; then
+		echo "Python package 'build' is required for release artifact targets."
+		echo "Update the $(RELEASE_CONDA_ENV) environment from environment.yml and reactivate it."
+		echo "Example: conda env update --name $(RELEASE_CONDA_ENV) --file environment.yml"
+		exit 1
 	fi
 
 release-gh-check: release-env-check ## Verify that GitHub CLI is installed and authenticated
-	@set -euo pipefail; \
-	if ! command -v $(GH) >/dev/null 2>&1; then \
-		echo "GitHub CLI 'gh' is required for release targets."; \
-		echo "Install it first, for example with: brew install gh"; \
-		echo "Then log in with: gh auth login --hostname $(GH_HOST) --web"; \
-		exit 1; \
-	fi; \
-	if ! $(GH) auth status --hostname $(GH_HOST) >/dev/null 2>&1; then \
-		echo "GitHub CLI is installed but not authenticated for $(GH_HOST)."; \
-		echo "Log in with: gh auth login --hostname $(GH_HOST) --web"; \
-		echo "Then verify with: gh auth status --hostname $(GH_HOST)"; \
-		exit 1; \
+	@if ! command -v $(GH) >/dev/null 2>&1; then
+		echo "GitHub CLI 'gh' is required for release targets."
+		echo "Install it first, for example with: brew install gh"
+		echo "Then log in with: gh auth login --hostname $(GH_HOST) --web"
+		exit 1
+	fi
+	if ! $(GH) auth status --hostname $(GH_HOST) >/dev/null 2>&1; then
+		echo "GitHub CLI is installed but not authenticated for $(GH_HOST)."
+		echo "Log in with: gh auth login --hostname $(GH_HOST) --web"
+		echo "Then verify with: gh auth status --hostname $(GH_HOST)"
+		exit 1
 	fi
 
 release-validate: release-build-check release-gh-check ## Run fast release-specific validation VERSION=x.y.z
-	@set -euo pipefail; \
-	if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
-	if [[ ! "$(VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]]; then \
-		echo "VERSION must have the form x.y.z"; \
-		exit 1; \
-	fi; \
-	if ! git diff --quiet || ! git diff --cached --quiet; then \
-		echo "Release checkout must be clean."; \
-		exit 1; \
-	fi; \
-	if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
-		echo "Tag v$(VERSION) already exists locally."; \
-		exit 1; \
-	fi; \
+	@if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
+		exit 1
+	fi
+	if [[ ! "$(VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]]; then
+		echo "VERSION must have the form x.y.z"
+		exit 1
+	fi
+	if ! git diff --quiet || ! git diff --cached --quiet; then
+		echo "Release checkout must be clean."
+		exit 1
+	fi
+	if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
+		echo "Tag v$(VERSION) already exists locally."
+		exit 1
+	fi
 	if git remote get-url origin >/dev/null 2>&1 && \
-		git ls-remote --exit-code --tags origin "refs/tags/v$(VERSION)" >/dev/null 2>&1; then \
-		echo "Tag v$(VERSION) already exists on origin."; \
-		exit 1; \
-	fi; \
-	IFS=. read -r major minor patch <<< "$(VERSION)"; \
-	support_branch="v$${major}_$${minor}_support"; \
-	if [[ "$$patch" == "0" ]]; then \
-		if git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then \
-			echo "Support branch $$support_branch already exists locally."; \
-			exit 1; \
-		fi; \
+		git ls-remote --exit-code --tags origin "refs/tags/v$(VERSION)" >/dev/null 2>&1; then
+		echo "Tag v$(VERSION) already exists on origin."
+		exit 1
+	fi
+	IFS=. read -r major minor patch <<< "$(VERSION)"
+	support_branch="v$${major}_$${minor}_support"
+	if [[ "$$patch" == "0" ]]; then
+		if git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then
+			echo "Support branch $$support_branch already exists locally."
+			exit 1
+		fi
 		if git remote get-url origin >/dev/null 2>&1 && \
-			git ls-remote --exit-code --heads origin "$$support_branch" >/dev/null 2>&1; then \
-			echo "Support branch $$support_branch already exists on origin."; \
-			exit 1; \
-		fi; \
-	else \
-		current_branch="$$(git branch --show-current)"; \
-		if [[ "$$current_branch" != "$$support_branch" ]]; then \
-			echo "Maintenance releases for v$(VERSION) must be created from $$support_branch."; \
-			exit 1; \
-		fi; \
+			git ls-remote --exit-code --heads origin "$$support_branch" >/dev/null 2>&1; then
+			echo "Support branch $$support_branch already exists on origin."
+			exit 1
+		fi
+	else
+		current_branch="$$(git branch --show-current)"
+		if [[ "$$current_branch" != "$$support_branch" ]]; then
+			echo "Maintenance releases for v$(VERSION) must be created from $$support_branch."
+			exit 1
+		fi
 		if git remote get-url origin >/dev/null 2>&1 && \
-			! git ls-remote --exit-code --heads origin "$$support_branch" >/dev/null 2>&1; then \
-			echo "Support branch $$support_branch was not found on origin."; \
-			exit 1; \
-		fi; \
+			! git ls-remote --exit-code --heads origin "$$support_branch" >/dev/null 2>&1; then
+			echo "Support branch $$support_branch was not found on origin."
+			exit 1
+		fi
 	fi
 
 $(RELEASE_CHECK_STAMP):
-	@set -euo pipefail; \
-	if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Use: make release-check VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
-	mkdir -p "$(RELEASE_STATE_DIR)"; \
-	$(RM) "$(RELEASE_STATE_DIR)"/release-check-*.ok; \
-	$(MAKE) pre-commit; \
+	@if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make release-check VERSION=x.y.z"
+		exit 1
+	fi
+	mkdir -p "$(RELEASE_STATE_DIR)"
+	$(RM) "$(RELEASE_STATE_DIR)"/release-check-*.ok
+	$(MAKE) pre-commit
 	touch "$@"
 
 release-check: release-validate $(RELEASE_CHECK_STAMP) ## Validate the checkout for release VERSION=x.y.z
 	@echo "✅ Release checks passed for v$(VERSION)"
 
 release-tag: release-validate $(RELEASE_CHECK_STAMP) ## Create local tag, plus .0 support branch VERSION=x.y.z
-	@set -euo pipefail; \
-	IFS=. read -r major minor patch <<< "$(VERSION)"; \
-	if [[ "$$patch" == "0" ]]; then \
-		support_branch="v$${major}_$${minor}_support"; \
-	fi; \
-	git tag -a "v$(VERSION)" -m "Release $(VERSION)"; \
-	if [[ "$$patch" == "0" ]]; then \
-		git branch "$$support_branch" HEAD; \
-		echo "✅ Created local v$(VERSION) and $$support_branch"; \
-	else \
-		echo "✅ Created local v$(VERSION)"; \
+	@IFS=. read -r major minor patch <<< "$(VERSION)"
+	if [[ "$$patch" == "0" ]]; then
+		support_branch="v$${major}_$${minor}_support"
+	fi
+	git tag -a "v$(VERSION)" -m "Release $(VERSION)"
+	if [[ "$$patch" == "0" ]]; then
+		git branch "$$support_branch" HEAD
+		echo "✅ Created local v$(VERSION) and $$support_branch"
+	else
+		echo "✅ Created local v$(VERSION)"
 	fi
 
 release-sdist: release-build-check ## Build the release sdist VERSION=x.y.z
-	@set -euo pipefail; \
-	if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
-	if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
-		echo "Local tag v$(VERSION) was not found. Run: make release-tag VERSION=$(VERSION)"; \
-		exit 1; \
-	fi; \
-	tag_commit="$$(git rev-list -n 1 "v$(VERSION)")"; \
-	head_commit="$$(git rev-parse HEAD)"; \
-	if [[ "$$head_commit" != "$$tag_commit" ]]; then \
-		echo "HEAD does not match local tag v$(VERSION). Check out the tagged release commit before building the sdist."; \
-		exit 1; \
-	fi; \
-	rm -rf "$(RELEASE_DIST_DIR)"; \
-	$(BUILD) --sdist --outdir "$(RELEASE_DIST_DIR)"; \
-	if [[ ! -f "$(RELEASE_SDIST)" ]]; then \
-		echo "Expected sdist was not created: $(RELEASE_SDIST)"; \
-		exit 1; \
-	fi; \
+	@if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
+		exit 1
+	fi
+	if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
+		echo "Local tag v$(VERSION) was not found. Run: make release-tag VERSION=$(VERSION)"
+		exit 1
+	fi
+	tag_commit="$$(git rev-list -n 1 "v$(VERSION)")"
+	head_commit="$$(git rev-parse HEAD)"
+	if [[ "$$head_commit" != "$$tag_commit" ]]; then
+		echo "HEAD does not match local tag v$(VERSION). Check out the tagged release commit before building the sdist."
+		exit 1
+	fi
+	rm -rf "$(RELEASE_DIST_DIR)"
+	$(BUILD) --sdist --outdir "$(RELEASE_DIST_DIR)"
+	if [[ ! -f "$(RELEASE_SDIST)" ]]; then
+		echo "Expected sdist was not created: $(RELEASE_SDIST)"
+		exit 1
+	fi
 	echo "✅ Built $(RELEASE_SDIST)"
 
 release-verify-sdist: release-sdist ## Verify the release sdist VERSION=x.y.z
-	@set -euo pipefail; \
-	if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
-	tmpdir="$$(mktemp -d)"; \
-	trap 'rm -rf "$$tmpdir"' EXIT; \
-	target_dir="$$tmpdir/site"; \
-	mkdir -p "$$target_dir"; \
-	$(PYTHON) -m pip install --no-deps --target "$$target_dir" "$(RELEASE_SDIST)" >/dev/null; \
-	(
-		cd "$$tmpdir"; \
-		PYTHONPATH="$$target_dir" $(PYTHON) -c "import importlib.metadata; import firecrown; expected='$(VERSION)'; assert importlib.metadata.version('firecrown') == expected, importlib.metadata.version('firecrown'); assert firecrown.__version__ == expected, firecrown.__version__"
-	); \
+	@if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
+		exit 1
+	fi
+	tmpdir="$$(mktemp -d)"
+	trap 'rm -rf "$$tmpdir"' EXIT
+	target_dir="$$tmpdir/site"
+	mkdir -p "$$target_dir"
+	$(PYTHON) -m pip install --no-deps --target "$$target_dir" "$(RELEASE_SDIST)" >/dev/null
+	cd "$$tmpdir"
+	PYTHONPATH="$$target_dir" $(PYTHON) -c "import importlib.metadata; import firecrown; expected='$(VERSION)'; assert importlib.metadata.version('firecrown') == expected, importlib.metadata.version('firecrown'); assert firecrown.__version__ == expected, firecrown.__version__"
 	echo "✅ Verified $(RELEASE_SDIST)"
 
 release-push:  ## Push the verified tag, plus .0 support branch VERSION=x.y.z
-	@set -euo pipefail; \
-	$(MAKE) release-verify-sdist VERSION=$(VERSION); \
-	if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
-	if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
-		echo "Local tag v$(VERSION) was not found. Run: make release-tag VERSION=$(VERSION)"; \
-		exit 1; \
-	fi; \
-	IFS=. read -r major minor patch <<< "$(VERSION)"; \
-	if [[ "$$patch" == "0" ]]; then \
-		support_branch="v$${major}_$${minor}_support"; \
-		if ! git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then \
-			echo "Local support branch $$support_branch was not found. Run: make release-tag VERSION=$(VERSION)"; \
-			exit 1; \
-		fi; \
-		git push origin "v$(VERSION)" "$$support_branch"; \
-		echo "✅ Pushed v$(VERSION) and $$support_branch"; \
-	else \
-		git push origin "v$(VERSION)"; \
-		echo "✅ Pushed v$(VERSION)"; \
+	@$(MAKE) release-verify-sdist VERSION=$(VERSION)
+	if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
+		exit 1
+	fi
+	if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
+		echo "Local tag v$(VERSION) was not found. Run: make release-tag VERSION=$(VERSION)"
+		exit 1
+	fi
+	IFS=. read -r major minor patch <<< "$(VERSION)"
+	if [[ "$$patch" == "0" ]]; then
+		support_branch="v$${major}_$${minor}_support"
+		if ! git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then
+			echo "Local support branch $$support_branch was not found. Run: make release-tag VERSION=$(VERSION)"
+			exit 1
+		fi
+		git push origin "v$(VERSION)" "$$support_branch"
+		echo "✅ Pushed v$(VERSION) and $$support_branch"
+	else
+		git push origin "v$(VERSION)"
+		echo "✅ Pushed v$(VERSION)"
 	fi
 
 release-github: release-gh-check ## Create GitHub release VERSION=x.y.z
-	@set -euo pipefail; \
-	if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
-	if [[ ! -f "$(RELEASE_SDIST)" ]]; then \
-		echo "Release sdist was not found: $(RELEASE_SDIST)"; \
-		echo "Run: make release-verify-sdist VERSION=$(VERSION)"; \
-		exit 1; \
-	fi; \
+	@if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
+		exit 1
+	fi
+	if [[ ! -f "$(RELEASE_SDIST)" ]]; then
+		echo "Release sdist was not found: $(RELEASE_SDIST)"
+		echo "Run: make release-verify-sdist VERSION=$(VERSION)"
+		exit 1
+	fi
 	if ! git remote get-url origin >/dev/null 2>&1 || \
-		! git ls-remote --exit-code --tags origin "refs/tags/v$(VERSION)" >/dev/null 2>&1; then \
-		echo "Remote tag v$(VERSION) was not found on origin."; \
-		echo "Run: make release-push VERSION=$(VERSION)"; \
-		exit 1; \
-	fi; \
-	latest_version="$$( { git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//'; echo '$(VERSION)'; } | sort -uV | tail -n 1 )"; \
-	if [[ "$$latest_version" == "$(VERSION)" ]]; then \
-		latest_flag="--latest"; \
-	else \
-		latest_flag="--latest=false"; \
-	fi; \
+		! git ls-remote --exit-code --tags origin "refs/tags/v$(VERSION)" >/dev/null 2>&1; then
+		echo "Remote tag v$(VERSION) was not found on origin."
+		echo "Run: make release-push VERSION=$(VERSION)"
+		exit 1
+	fi
+	latest_version="$$( { git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//'; echo '$(VERSION)'; } | sort -uV | tail -n 1 )"
+	if [[ "$$latest_version" == "$(VERSION)" ]]; then
+		latest_flag="--latest"
+	else
+		latest_flag="--latest=false"
+	fi
 	$(GH) release create "v$(VERSION)" --repo "$(GITHUB_RELEASE_REPO)" --verify-tag --generate-notes $$latest_flag "$(RELEASE_SDIST)"
 
+release-clean:  ## Remove local release state. Use VERSION=x.y.z to also remove local tag and support branch
+	@rm -rf "$(RELEASE_DIST_DIR)"
+	rm -rf "$(RELEASE_STATE_DIR)"
+	if [[ -n "$(VERSION)" ]]; then
+		if [[ ! "$(VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]]; then
+			echo "VERSION must have the form x.y.z"
+			exit 1
+		fi
+		IFS=. read -r major minor patch <<< "$(VERSION)"
+		support_branch="v$${major}_$${minor}_support"
+		if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
+			git tag -d "v$(VERSION)"
+		fi
+		if [[ "$$patch" == "0" ]] && git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then
+			current_branch="$$(git branch --show-current)"
+			if [[ "$$current_branch" == "$$support_branch" ]]; then
+				echo "Refusing to delete current branch $$support_branch. Switch branches first."
+				exit 1
+			fi
+			git branch -D "$$support_branch"
+		fi
+	fi
+	echo "✅ Local release state cleaned"
+
 release-conda-forge: release-gh-check ## Create conda-forge handoff issue for VERSION=x.y.z
-	@set -euo pipefail; \
-	if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Use: make $@ VERSION=x.y.z"; \
-		exit 1; \
-	fi; \
+	@if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
+		exit 1
+	fi
 	$(GH) issue create --repo "$(CONDA_FORGE_FEEDSTOCK_REPO)" \
 		--title "@conda-forge-admin, please update version" \
 		--body "Please update firecrown to v$(VERSION)."
