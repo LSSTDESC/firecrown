@@ -15,7 +15,7 @@ SHELL := /bin/bash
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
 	release-env-check release-build-check release-gh-check conda-lock conda-lock-check \
-	release-validate release-check release-tag release-sdist release-verify-sdist release-push \
+	release-validate release-check release-tag release-sdist release-verify-sdist release-verify-archive release-push \
 	release-github release-clean \
 	release-conda-forge \
 	docs-verify docs-code-check docs-symbol-check docs-linkcheck
@@ -536,6 +536,37 @@ release-verify-sdist: release-sdist ## Verify the release sdist VERSION=x.y.z
 	PYTHONPATH="$$target_dir" $(PYTHON) -c "import importlib.metadata; import firecrown; expected='$(VERSION)'; assert importlib.metadata.version('firecrown') == expected, importlib.metadata.version('firecrown'); assert firecrown.__version__ == expected, firecrown.__version__"
 	echo "✅ Verified $(RELEASE_SDIST)"
 
+release-verify-archive: ## Confirm the GitHub auto-archive is NOT a valid conda-forge source VERSION=x.y.z
+	@if [[ -z "$(VERSION)" ]]; then
+		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
+		exit 1
+	fi
+	if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
+		echo "Local tag v$(VERSION) was not found. Run: make release-tag VERSION=$(VERSION)"
+		exit 1
+	fi
+	tmpdir="$$(mktemp -d)"
+	trap 'rm -rf "$$tmpdir"' EXIT
+	archive_dir="$$tmpdir/archive"
+	mkdir -p "$$archive_dir"
+	git archive "v$(VERSION)" | tar -x -C "$$archive_dir"
+	target_dir="$$tmpdir/site"
+	mkdir -p "$$target_dir"
+	echo "Installing from auto-archive tree (no .git, no PKG-INFO)..."
+	if $(PYTHON) -m pip install --no-deps --no-build-isolation --target "$$target_dir" "$$archive_dir" >/dev/null 2>&1; then
+		installed_version="$$(cd "$$tmpdir" && PYTHONPATH="$$target_dir" $(PYTHON) -c "import importlib.metadata; print(importlib.metadata.version('firecrown'))" 2>/dev/null || echo unknown)"
+		if [[ "$$installed_version" == "$(VERSION)" ]]; then
+			echo "❌ Auto-archive unexpectedly produced the correct version ($$installed_version)."
+			echo "   The assumption that the auto-archive is unsupported is no longer valid."
+			echo "   Re-evaluate whether setuptools-scm can now read version from the archive."
+			exit 1
+		else
+			echo "✅ Auto-archive produced version '$$installed_version' (not '$(VERSION)') — unsupported source confirmed."
+		fi
+	else
+		echo "✅ Auto-archive install failed (setuptools-scm could not determine version) — unsupported source confirmed."
+	fi
+
 release-push:  ## Push the verified tag, plus .0 support branch VERSION=x.y.z
 	@$(MAKE) release-verify-sdist VERSION=$(VERSION)
 	if [[ -z "$(VERSION)" ]]; then
@@ -608,14 +639,38 @@ release-clean:  ## Remove local release state. Use VERSION=x.y.z to also remove 
 	fi
 	echo "✅ Local release state cleaned"
 
-release-conda-forge: release-gh-check ## Create conda-forge handoff issue for VERSION=x.y.z
+release-conda-forge: release-gh-check ## Create conda-forge handoff issue for VERSION=x.y.z (requires verified sdist in dist/)
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
 		exit 1
 	fi
+	if [[ ! -f "$(RELEASE_SDIST)" ]]; then
+		echo "Release sdist was not found: $(RELEASE_SDIST)"
+		echo "Run: make release-verify-sdist VERSION=$(VERSION)"
+		exit 1
+	fi
+	sdist_sha256="$$(shasum -a 256 "$(RELEASE_SDIST)" | awk '{print $$1}')"
+	sdist_url="https://github.com/$(GITHUB_RELEASE_REPO)/releases/download/v$(VERSION)/firecrown-$(VERSION).tar.gz"
+	issue_body="$$(printf '%s\n' \
+		'Please update firecrown to v$(VERSION).' \
+		'' \
+		'**IMPORTANT**: The `source.url` in the recipe **must** point at the release sdist asset, NOT the GitHub auto-generated archive. The auto-archive (`/archive/v$(VERSION).tar.gz`) has no `PKG-INFO` and no `.git`, so `setuptools-scm` cannot determine the version — the package installs with `firecrown.__version__ == '"'"'0.0.0'"'"'`.' \
+		'' \
+		'Use the following `source` block verbatim:' \
+		'' \
+		'```yaml' \
+		'source:' \
+		"  url: $${sdist_url}" \
+		"  sha256: $${sdist_sha256}" \
+		'```' \
+		'' \
+		'Also ensure:' \
+		'- `setuptools-scm` is listed under `requirements.host`' \
+		'- `test.commands` asserts `firecrown.__version__ == '"'"'{{ version }}'"'"'` so any version mismatch fails the build immediately' \
+	)"
 	$(GH) issue create --repo "$(CONDA_FORGE_FEEDSTOCK_REPO)" \
-		--title "@conda-forge-admin, please update version" \
-		--body "Please update firecrown to v$(VERSION)."
+		--title "Update firecrown to v$(VERSION)" \
+		--body "$${issue_body}"
 
 ##@ Advanced
 

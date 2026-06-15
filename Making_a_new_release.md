@@ -70,6 +70,16 @@ This target never changes remote refs.
 The `release-push` target reruns the sdist verification and then pushes the tag to `origin`.
 For `x.y.0` releases, it also pushes `vx_y_support`.
 
+The `release-verify-archive` target confirms that the GitHub auto-archive
+(`/archive/vX.Y.Z.tar.gz`) is **not** a valid source for the conda-forge recipe.
+It produces a `.git`-less tree from the tag using `git archive`, installs it
+with `--no-deps --no-build-isolation`, and verifies that the installed version is
+**not** `x.y.z` (because the auto-archive has no `PKG-INFO` and `setuptools-scm`
+cannot determine the version).
+Run `make release-verify-archive VERSION=x.y.z` after tagging to document this
+constraint explicitly; a correct outcome prints a confirmation that the
+auto-archive source is unsupported.
+
 ## Publish the GitHub release
 
 1. Run `make release-github VERSION=x.y.z`.
@@ -80,13 +90,85 @@ For `x.y.0` releases, it also pushes `vx_y_support`.
 
 ## Start the conda-forge handoff
 
+### Required: use the release sdist, not the GitHub auto-archive
+
+The conda-forge recipe `source.url` **must** point at the **release sdist asset**
+uploaded to the GitHub release, not the GitHub auto-generated archive.
+
+| URL pattern | Acceptable? |
+|---|---|
+| `.../releases/download/vX.Y.Z/firecrown-X.Y.Z.tar.gz` | **Yes** — contains `PKG-INFO` with the correct version |
+| `.../archive/vX.Y.Z.tar.gz` | **No** — no `PKG-INFO`, no `.git`, `setuptools-scm` cannot resolve the version → `firecrown.__version__ == '0.0.0'` |
+
+The `make release-conda-forge` target (below) computes the sdist sha256 and
+emits the exact ready-to-paste `source` block so the correct URL is used
+every time.
+
+### Sync the feedstock fork before each handoff (manual git — no `make` target)
+
+Contributions to the conda-forge feedstock go through the fork
+`marcpaterno/firecrown-feedstock` via a PR to
+`conda-forge/firecrown-feedstock`.
+Never push branches directly to the conda-forge feedstock (conda-forge policy).
+There is no `make` target for fork lifecycle management; the steps below are
+intentionally manual.
+
+**One-time setup** (first time only):
+
+```sh
+# In your local firecrown-feedstock clone:
+git remote add upstream https://github.com/conda-forge/firecrown-feedstock.git
+```
+
+**Before each handoff** — bring the fork up to date with conda-forge `main`:
+
+```sh
+git fetch upstream
+git checkout main
+git merge --ff-only upstream/main
+git push origin main
+
+# Create the fix/update branch off the synced main
+git checkout -b update-firecrown-x.y.z
+```
+
+### Handoff steps
+
 1. Run `make release-conda-forge VERSION=x.y.z`.
-2. The target requires an authenticated `gh` session and fails with login instructions when authentication is missing.
-3. The target creates the issue in [conda-forge/firecrown-feedstock](https://github.com/conda-forge/firecrown-feedstock).
-4. Review the PR created by the bot.
-5. In `recipe/meta.yaml`, confirm that the `version`, release-asset `source.url`, and `sha256` match the new sdist.
-6. Update any dependency versions required for the release.
-7. Add the comment `@conda-forge-admin, please rerender` to the PR.
-8. Wait for GitHub Actions to finish, approve the PR, and merge it.
+   The target requires:
+   - An authenticated `gh` session; it fails with login instructions when missing.
+   - The verified sdist `dist/firecrown-X.Y.Z.tar.gz` to exist; it fails with
+     instructions to run `make release-verify-sdist VERSION=x.y.z` when missing.
+
+   The target computes the sha256 of the local sdist and files an issue in
+   [conda-forge/firecrown-feedstock](https://github.com/conda-forge/firecrown-feedstock)
+   with the exact `source.url` (release sdist) and `sha256` ready to paste into
+   the recipe, along with a note that the auto-archive URL is not acceptable.
+
+2. Sync the feedstock fork and create a branch (see above).
+
+3. In `recipe/meta.yaml` on the update branch:
+   - Set `source.url` to the release sdist URL from the issue body
+     (`.../releases/download/vX.Y.Z/firecrown-X.Y.Z.tar.gz`).
+   - Set `source.sha256` to the value from the issue body.
+   - Ensure `setuptools-scm` is listed under `requirements.host`.
+   - Ensure `test.commands` contains a version assertion:
+     ```yaml
+     commands:
+       - {{ PYTHON }} -c "import firecrown, importlib.metadata as md; assert firecrown.__version__ == '{{ version }}'; assert md.version('firecrown') == '{{ version }}'"
+     ```
+   - Update any dependency versions required for the release.
+   - Bump `build.number` when re-publishing the same version (corrected build);
+     reset to `0` for a new version.
+
+4. Push the branch to your fork and open a PR to `conda-forge/firecrown-feedstock`.
+
+5. Add the comment `@conda-forge-admin, please rerender` to the PR.
+
+6. Wait for GitHub Actions to finish on all variants.
+   The `test.commands` assertion will fail immediately on any build that does not
+   produce the correct version.
+
+7. Approve and merge the PR after CI passes.
 
 The same conda-forge handoff applies to feature-line releases and maintenance releases.
