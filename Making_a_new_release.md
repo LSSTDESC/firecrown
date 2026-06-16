@@ -154,8 +154,8 @@ git checkout -b update-firecrown-x.y.z
    - Ensure `setuptools-scm` is listed under `requirements.host`.
    - Ensure `test.commands` contains a version assertion:
      ```yaml
-     commands:
-       - {{ PYTHON }} -c "import firecrown, importlib.metadata as md; assert firecrown.__version__ == '{{ version }}'; assert md.version('firecrown') == '{{ version }}'"
+      commands:
+        - python -c "import firecrown, importlib.metadata as md; assert firecrown.__version__ == '{{ version }}'; assert md.version('firecrown') == '{{ version }}'"
      ```
    - Update any dependency versions required for the release.
    - Bump `build.number` when re-publishing the same version (corrected build);
