@@ -106,8 +106,8 @@ every time.
 
 ### Sync the feedstock fork before each handoff (manual git — no `make` target)
 
-Contributions to the conda-forge feedstock go through the fork
-`marcpaterno/firecrown-feedstock` via a PR to
+Contributions to the conda-forge feedstock go through your own fork of the feedstock repository, such as
+`<github-username>/firecrown-feedstock` via a PR to
 `conda-forge/firecrown-feedstock`.
 Never push branches directly to the conda-forge feedstock (conda-forge policy).
 There is no `make` target for fork lifecycle management; the steps below are
