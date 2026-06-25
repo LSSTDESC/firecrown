@@ -18,7 +18,7 @@ SHELL := /bin/bash
 	release-validate release-check release-tag release-sdist release-verify-sdist release-verify-archive release-push \
 	release-github release-clean \
 	release-conda-forge \
-	docs-verify docs-code-check docs-symbol-check docs-linkcheck
+	docs-verify docs-code-check docs-symbol-check docs-linkcheck docs-rtd-check
 
 # Default target
 .DEFAULT_GOAL := help
@@ -346,7 +346,7 @@ docs-build: api-docs  ## Build tutorials and API docs
 
 docs: docs-verify ## Build and check all documentation
 
-docs-verify: docs-code-check docs-symbol-check docs-linkcheck ## Run all documentation verification checks
+docs-verify: docs-code-check docs-symbol-check docs-linkcheck docs-rtd-check ## Run all documentation verification checks
 
 docs-code-check: tutorials ## Check Python code blocks in .qmd files
 	@echo "Checking tutorial code blocks for syntax errors..."
@@ -362,6 +362,12 @@ docs-linkcheck: docs-build ## Check documentation for broken links
 	@echo "Checking for broken links..."
 	@firecrown-link-checker $(DOCS_BUILD_DIR)/html -v || (echo "❌ docs-linkcheck failed" && exit 1)
 	@echo "✅ docs-linkcheck passed"
+
+docs-rtd-check: tutorials  ## Verify subtitle placeholders are resolved
+	@if grep -r "?env:FIRECROWN_VERSION" $(TUTORIAL_OUTPUT_DIR)/*.html; then \
+		echo "❌ Unresolved version placeholders found in tutorial HTML"; exit 1; \
+	fi
+	@echo "✅ No unresolved version placeholders"
 
 ##@ Cleaning
 
