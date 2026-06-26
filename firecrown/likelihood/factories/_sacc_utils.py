@@ -29,14 +29,14 @@ def load_sacc_data(filepath: str | Path) -> sacc.Sacc:
     hdf5_error = None
     try:
         return sacc.Sacc.load_hdf5(str(file_path))
-    except OSError as e:
+    except (OSError, ValueError) as e:
         hdf5_error = e
 
     # If HDF5 failed, try FITS (legacy format)
     fits_error = None
     try:
         return sacc.Sacc.load_fits(str(file_path))
-    except OSError as e:
+    except (OSError, ValueError) as e:
         fits_error = e
 
     # Both formats failed - provide helpful error message
