@@ -8,7 +8,7 @@ authors = [
     { name = "DESCs Firecrown Developers" },
 ]
 description = "DESC Cosmology Likelihood Framework"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license-files = ["LICENSE"]
 dependencies = [
     "astropy",
@@ -71,7 +71,7 @@ exclude_also = [
 # Ruff configuration - replaces flake8 and pylint (black still used for formatting)
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 # Enable rules equivalent to flake8 + pylint + additional useful rules
@@ -217,7 +217,7 @@ known-third-party = ["numpy", "scipy", "pandas", "matplotlib", "astropy", "pyccl
 # Black configuration - keep existing formatting tool
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py312']
 extend-exclude = 'examples/srd_sn/sndata'
 
 # Pyright configuration - runs alongside mypy without conflicts
@@ -237,7 +237,7 @@ exclude = [
 ]
 
 # Python version (should match your target)
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 
 # Type checking configuration
 typeCheckingMode = "off"  # Can be "off", "basic", or "strict"
