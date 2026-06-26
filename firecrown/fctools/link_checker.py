@@ -308,7 +308,7 @@ class SiteChecker:
                         (
                             str(file_path),
                             url_str,
-                            f"missing ids: '{', '.join(missing_ids)}'",
+                            f"missing ids: {", ".join(missing_ids)}",
                         )
                     )
                     continue
