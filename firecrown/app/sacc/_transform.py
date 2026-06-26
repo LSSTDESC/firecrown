@@ -171,12 +171,12 @@ data.h5
                 try:
                     sacc.Sacc.load_fits(str(filepath))
                     return SaccFormat.FITS
-                except (OSError, ValueError):
+                except OSError:
                     pass
                 try:
                     sacc.Sacc.load_hdf5(str(filepath))
                     return SaccFormat.HDF5
-                except (OSError, ValueError):
+                except OSError:
                     pass
                 raise ValueError(
                     f"Cannot detect format from extension '{suffix}'. "
@@ -264,7 +264,7 @@ data.h5
                     return sacc.Sacc.load_hdf5(str(self.sacc_file))
                 case _:
                     raise ValueError(f"Unknown input format: {src_format}")
-        except (OSError, ValueError):
+        except OSError:
             self.console.print(
                 "[bold red]ERROR: Failed to read input file as SACC data.[/bold red]"
             )
