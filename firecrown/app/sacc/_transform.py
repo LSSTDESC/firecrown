@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Annotated, assert_never
 
 import sacc
+from sacc.utils import detect_sacc_file_type
 import typer
 
 from firecrown.metadata_functions import (
@@ -159,29 +160,14 @@ data.h5
 
     @staticmethod
     def detect_format(filepath: Path) -> SaccFormat:
-        """Detect file format from extension or file contents."""
-        suffix = filepath.suffix.lower()
+        """Detect file format from extension or file contents.
 
-        match suffix:
-            case ".fits":
-                return SaccFormat.FITS
-            case ".hdf5" | ".h5":
-                return SaccFormat.HDF5
-            case _:
-                try:
-                    sacc.Sacc.load_fits(str(filepath))
-                    return SaccFormat.FITS
-                except OSError:
-                    pass
-                try:
-                    sacc.Sacc.load_hdf5(str(filepath))
-                    return SaccFormat.HDF5
-                except OSError:
-                    pass
-                raise ValueError(
-                    f"Cannot detect format from extension '{suffix}'. "
-                    "Use --input-format to specify."
-                )
+        Delegates to SACC's own detection, which inspects the file extension
+        and, when ambiguous, the file contents. Raises ValueError when the
+        format cannot be determined.
+        """
+        file_type = detect_sacc_file_type(str(filepath))
+        return SaccFormat(file_type)
 
     def _determine_output_path(
         self, input_path: Path, output: Path | None, target_format: SaccFormat
@@ -256,15 +242,17 @@ data.h5
         self.console.print(
             f"Reading {src_format.upper()} file: [cyan]{self.sacc_file}[/cyan]"
         )
+        match src_format:
+            case SaccFormat.FITS | "fits":
+                loader = sacc.Sacc.load_fits
+            case SaccFormat.HDF5 | "hdf5":
+                loader = sacc.Sacc.load_hdf5
+            case _:
+                raise ValueError(f"Unknown input format: {src_format}")
+
         try:
-            match src_format:
-                case SaccFormat.FITS | "fits":
-                    return sacc.Sacc.load_fits(str(self.sacc_file))
-                case SaccFormat.HDF5 | "hdf5":
-                    return sacc.Sacc.load_hdf5(str(self.sacc_file))
-                case _:
-                    raise ValueError(f"Unknown input format: {src_format}")
-        except OSError:
+            return loader(str(self.sacc_file))
+        except (OSError, ValueError):
             self.console.print(
                 "[bold red]ERROR: Failed to read input file as SACC data.[/bold red]"
             )
