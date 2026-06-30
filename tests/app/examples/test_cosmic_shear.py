@@ -10,7 +10,7 @@ import importlib.util
 
 from firecrown.likelihood import NamedParameters, ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-from firecrown.app.examples._cosmic_shear import ExampleCosmicShear
+from firecrown.app.examples import ExampleCosmicShear
 from firecrown.app.analysis import (
     FrameworkCosmology,
     Frameworks,

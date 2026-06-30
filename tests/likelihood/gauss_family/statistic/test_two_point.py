@@ -18,22 +18,19 @@ from firecrown.updatable import get_default_params_map
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
-from firecrown.likelihood.number_counts import (
-    NumberCounts,
-)
-from firecrown.likelihood._weak_lensing import (
-    WeakLensing,
-)
+from firecrown.likelihood.number_counts import NumberCounts
+from firecrown.likelihood.weak_lensing import WeakLensing, WeakLensingFactory
 import firecrown.metadata_types as mdt
-import firecrown.likelihood._two_point as tp
-from firecrown.likelihood._two_point import (
-    NumberCountsFactory,
+from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.likelihood.factories import (
     TwoPointFactory,
     use_source_factory,
     use_source_factory_metadata_index,
 )
-from firecrown.models.two_point import TwoPointTheory
-from firecrown.generators._two_point import (
+from firecrown.likelihood import TwoPoint
+from firecrown.models.two_point import ApplyInterpolationWhen, TwoPointTheory
+import firecrown.models.two_point as tp
+from firecrown.generators import (
     generate_bin_centers,
     EllOrThetaConfig,
     LogLinearElls,
@@ -72,9 +69,9 @@ def fixture_tools() -> ModelingTools:
 @pytest.fixture(name="two_point_with_window")
 def fixture_two_point_with_window(
     harmonic_data_with_window: TwoPointMeasurement, tp_factory: TwoPointFactory
-) -> tp.TwoPoint:
+) -> TwoPoint:
     """Return a TwoPoint object with a window."""
-    two_points = tp.TwoPoint.from_measurement(
+    two_points = TwoPoint.from_measurement(
         [harmonic_data_with_window], tp_factory=tp_factory
     )
     return two_points.pop()
@@ -83,16 +80,16 @@ def fixture_two_point_with_window(
 @pytest.fixture(name="two_point_without_window")
 def fixture_two_point_without_window(
     harmonic_data_no_window: TwoPointMeasurement, tp_factory: TwoPointFactory
-) -> tp.TwoPoint:
+) -> TwoPoint:
     """Return a TwoPoint object without a window."""
-    two_points = tp.TwoPoint.from_measurement(
+    two_points = TwoPoint.from_measurement(
         [harmonic_data_no_window], tp_factory=tp_factory
     )
     return two_points.pop()
 
 
-@pytest.fixture(name="apply_interp_when", params=list(tp.ApplyInterpolationWhen))
-def fixture_apply_interp_when(request) -> tp.ApplyInterpolationWhen:
+@pytest.fixture(name="apply_interp_when", params=list(ApplyInterpolationWhen))
+def fixture_apply_interp_when(request) -> ApplyInterpolationWhen:
     return request.param
 
 
@@ -129,8 +126,8 @@ def test_log_linear_ells_generate_all() -> None:
 
 def test_compute_theory_vector(source_0: NumberCounts) -> None:
     # To create the TwoPoint object we need at least one source.
-    statistic = tp.TwoPoint("galaxy_density_xi", source_0, source_0)
-    assert isinstance(statistic, tp.TwoPoint)
+    statistic = TwoPoint("galaxy_density_xi", source_0, source_0)
+    assert isinstance(statistic, TwoPoint)
 
     # Before calling compute_theory_vector, we must get the TwoPoint object
     # into the correct state.
@@ -139,13 +136,13 @@ def test_compute_theory_vector(source_0: NumberCounts) -> None:
 
 
 def test_tracer_names() -> None:
-    assert tp.TracerNames("", "") == mdt.TRACER_NAMES_TOTAL
+    assert mdt.TracerNames("", "") == mdt.TRACER_NAMES_TOTAL
 
-    tn1 = tp.TracerNames("cow", "pig")
+    tn1 = mdt.TracerNames("cow", "pig")
     assert tn1[0] == "cow"
     assert tn1[1] == "pig"
 
-    tn2 = tp.TracerNames("cat", "dog")
+    tn2 = mdt.TracerNames("cat", "dog")
     assert tn1 != tn2
     assert hash(tn1) != hash(tn2)
 
@@ -168,7 +165,7 @@ def test_two_point_src0_src0_window_parameterized(
 
     src0 = WeakLensing(sacc_tracer="src0")
 
-    statistic = tp.TwoPoint("galaxy_shear_cl_ee", src0, src0)
+    statistic = TwoPoint("galaxy_shear_cl_ee", src0, src0)
     statistic.read(sacc_data)
 
     tools = ModelingTools()
@@ -228,7 +225,7 @@ def test_two_point_src0_src0_no_data_binning(
         "binning": binning_type,
     }
 
-    statistic = tp.TwoPoint(
+    statistic = TwoPoint(
         "galaxy_shear_cl_ee",
         src0,
         src0,
@@ -257,7 +254,7 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
         "binning": "lin",
     }
 
-    statistic = tp.TwoPoint(
+    statistic = TwoPoint(
         "galaxy_density_xi",
         src0,
         src0,
@@ -338,7 +335,7 @@ def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
-    statistic = tp.TwoPoint(
+    statistic = TwoPoint(
         "galaxy_density_xi",
         src0,
         src0,
@@ -370,7 +367,7 @@ def test_two_point_src0_src0_no_data_error(sacc_galaxy_cells_src0_src0_no_data) 
 
     src0 = WeakLensing(sacc_tracer="src0")
 
-    statistic = tp.TwoPoint("galaxy_shear_cl_ee", src0, src0)
+    statistic = TwoPoint("galaxy_shear_cl_ee", src0, src0)
     with pytest.warns(UserWarning, match="Empty index selected"):
         with pytest.raises(
             RuntimeError,
@@ -389,7 +386,7 @@ def test_two_point_lens0_lens0_no_data_error(
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
-    statistic = tp.TwoPoint("galaxy_density_xi", src0, src0)
+    statistic = TwoPoint("galaxy_density_xi", src0, src0)
     with pytest.warns(UserWarning, match="Empty index selected"):
         with pytest.raises(
             RuntimeError,
@@ -415,7 +412,7 @@ def test_two_point_src0_src0_data_and_conf_warn(
         "binning": "lin",
     }
 
-    statistic = tp.TwoPoint("galaxy_shear_cl_ee", src0, src0, ell_or_theta=ell_config)
+    statistic = TwoPoint("galaxy_shear_cl_ee", src0, src0, ell_or_theta=ell_config)
     with pytest.warns(
         UserWarning,
         match=re.escape(
@@ -438,7 +435,7 @@ def test_two_point_lens0_lens0_data_and_conf_warn(sacc_galaxy_xis_lens0_lens0) -
         "binning": "lin",
     }
 
-    statistic = tp.TwoPoint("galaxy_density_xi", src0, src0, ell_or_theta=theta_config)
+    statistic = TwoPoint("galaxy_density_xi", src0, src0, ell_or_theta=theta_config)
     with pytest.warns(
         UserWarning,
         match=re.escape(
@@ -491,7 +488,7 @@ def test_use_source_factory_metadata_only_shear(tp_factory: TwoPointFactory) -> 
         "bin1", Galaxies.SHEAR_E, tp_factory=tp_factory
     )
     factory = tp_factory.get_factory(Galaxies.SHEAR_E)
-    assert isinstance(factory, tp.WeakLensingFactory)
+    assert isinstance(factory, WeakLensingFactory)
     assert isinstance(source, WeakLensing)
 
 
@@ -504,7 +501,7 @@ def test_use_source_factory_metadata_only_invalid_measurement(
 
 def test_two_point_wrong_type() -> None:
     with pytest.raises(ValueError, match="The SACC data type cow is not supported!"):
-        tp.TwoPoint(
+        TwoPoint(
             "cow", WeakLensing(sacc_tracer="calma"), WeakLensing(sacc_tracer="fernando")
         )
 
@@ -513,7 +510,7 @@ def test_from_metadata_harmonic_wrong_metadata(tp_factory: TwoPointFactory) -> N
     with pytest.raises(
         ValueError, match=re.escape("Metadata of type <class 'str'> is not supported")
     ):
-        tp.TwoPoint._from_metadata_single(  # pylint: disable=protected-access
+        TwoPoint._from_metadata_single(  # pylint: disable=protected-access
             metadata="NotAMetadata", tp_factory=tp_factory  # type: ignore
         )
 
@@ -531,29 +528,29 @@ def test_use_source_factory_metadata_only_wrong_measurement(
 def test_from_metadata_only_harmonic(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
-        "tracer_names": tp.TracerNames("lens0", "lens0"),
+        "tracer_names": mdt.TracerNames("lens0", "lens0"),
         "tracer_types": (Galaxies.COUNTS, Galaxies.COUNTS),
     }
-    two_point = tp.TwoPoint.from_metadata_index([metadata], tp_factory).pop()
-    assert isinstance(two_point, tp.TwoPoint)
+    two_point = TwoPoint.from_metadata_index([metadata], tp_factory).pop()
+    assert isinstance(two_point, TwoPoint)
     assert not two_point.ready
 
 
 def test_from_metadata_only_real(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointRealIndex = {
         "data_type": "galaxy_shear_xi_plus",
-        "tracer_names": tp.TracerNames("src0", "src0"),
+        "tracer_names": mdt.TracerNames("src0", "src0"),
         "tracer_types": (Galaxies.PART_OF_XI_PLUS, Galaxies.PART_OF_XI_PLUS),
     }
-    two_point = tp.TwoPoint.from_metadata_index([metadata], tp_factory).pop()
-    assert isinstance(two_point, tp.TwoPoint)
+    two_point = TwoPoint.from_metadata_index([metadata], tp_factory).pop()
+    assert isinstance(two_point, TwoPoint)
     assert not two_point.ready
 
 
 def test_from_measurement_compute_theory_vector_window(
-    two_point_with_window: tp.TwoPoint,
+    two_point_with_window: TwoPoint,
 ) -> None:
-    assert isinstance(two_point_with_window, tp.TwoPoint)
+    assert isinstance(two_point_with_window, TwoPoint)
     assert two_point_with_window.ready
 
     tools = ModelingTools()
@@ -574,12 +571,12 @@ def test_from_measurement_compute_theory_vector_window(
 
 
 def test_from_measurement_compute_theory_vector_window_check(
-    two_point_with_window: tp.TwoPoint, two_point_without_window: tp.TwoPoint
+    two_point_with_window: TwoPoint, two_point_without_window: TwoPoint
 ) -> None:
-    assert isinstance(two_point_with_window, tp.TwoPoint)
+    assert isinstance(two_point_with_window, TwoPoint)
     assert two_point_with_window.ready
 
-    assert isinstance(two_point_without_window, tp.TwoPoint)
+    assert isinstance(two_point_without_window, TwoPoint)
     assert two_point_without_window.ready
 
     tools = ModelingTools()
@@ -715,7 +712,7 @@ def test_two_point_src0_src0_window_aiw(
 
     src0 = WeakLensing(sacc_tracer="src0")
 
-    statistic = tp.TwoPoint(
+    statistic = TwoPoint(
         "galaxy_shear_cl_ee", src0, src0, apply_interp=apply_interp_when
     )
     statistic.read(sacc_data)
@@ -747,7 +744,7 @@ def test_two_point_src0_src0_no_window_aiw(
 
     src0 = WeakLensing(sacc_tracer="src0")
 
-    statistic = tp.TwoPoint(
+    statistic = TwoPoint(
         "galaxy_shear_cl_ee", src0, src0, apply_interp=apply_interp_when
     )
     statistic.read(sacc_data)
@@ -780,7 +777,7 @@ def test_two_point_src0_src0_real_aiw(
     sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_real
 
     lens0 = WeakLensing(sacc_tracer="lens0")
-    statistic = tp.TwoPoint(
+    statistic = TwoPoint(
         "galaxy_density_xi", lens0, lens0, apply_interp=apply_interp_when
     )
     statistic.read(sacc_data)
@@ -867,7 +864,7 @@ def test_calculate_pk_with_halo_model():
 def test_two_point_normalize_window_default():
     """Test that TwoPoint.normalize_window defaults to True."""
     source = NumberCounts(sacc_tracer="lens_0")
-    two_point = tp.TwoPoint(
+    two_point = TwoPoint(
         sacc_data_type="galaxy_density_cl",
         source0=source,
         source1=source,
@@ -878,7 +875,7 @@ def test_two_point_normalize_window_default():
 def test_two_point_normalize_window_false():
     """Test that TwoPoint.normalize_window can be set to False."""
     source = NumberCounts(sacc_tracer="lens_0")
-    two_point = tp.TwoPoint(
+    two_point = TwoPoint(
         sacc_data_type="galaxy_density_cl",
         source0=source,
         source1=source,
@@ -890,7 +887,7 @@ def test_two_point_normalize_window_false():
 def test_two_point_normalize_window_true_explicit():
     """Test that TwoPoint.normalize_window can be explicitly set to True."""
     source = NumberCounts(sacc_tracer="lens_0")
-    two_point = tp.TwoPoint(
+    two_point = TwoPoint(
         sacc_data_type="galaxy_density_cl",
         source0=source,
         source1=source,
@@ -961,14 +958,14 @@ def test_two_point_normalize_window_used_in_read(sacc_with_window_for_two_point)
     # Create two TwoPoint objects: one with normalize_window=True, one False
     source = WeakLensing(sacc_tracer="src0")
 
-    two_point_normalized = tp.TwoPoint(
+    two_point_normalized = TwoPoint(
         sacc_data_type="galaxy_shear_cl_ee",
         source0=source,
         source1=source,
         normalize_window=True,
     )
 
-    two_point_unnormalized = tp.TwoPoint(
+    two_point_unnormalized = TwoPoint(
         sacc_data_type="galaxy_shear_cl_ee",
         source0=source,
         source1=source,

@@ -12,13 +12,10 @@ import pyccl as ccl
 import sacc
 
 from firecrown.updatable import get_default_params_map
-import firecrown.likelihood._weak_lensing as wl
+import firecrown.likelihood.weak_lensing as wl
 import firecrown.metadata_types as mdt
-from firecrown.likelihood._two_point import (
-    TwoPoint,
-    TracerNames,
-)
-from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood import ConstGaussian, TwoPoint
+from firecrown.metadata_types import TracerNames
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
 from firecrown.modeling_tools import CCLFactory

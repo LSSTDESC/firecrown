@@ -10,7 +10,7 @@ import importlib.util
 
 from firecrown.likelihood import NamedParameters, ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-from firecrown.app.examples._sn_srd import ExampleSupernovaSRD
+from firecrown.app.examples import ExampleSupernovaSRD
 from firecrown.app.analysis import (
     Model,
     Parameter,

@@ -16,12 +16,10 @@ from numpy.testing import assert_allclose
 from scipy.interpolate import Akima1DInterpolator
 
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood.number_counts._factories as nc_factories
-import firecrown.likelihood.number_counts._systematics as nc_sys
-import firecrown.likelihood._weak_lensing as wl
-from firecrown.likelihood.number_counts._args import NumberCountsArgs
-from firecrown.likelihood._weak_lensing import WeakLensingArgs
-from firecrown.likelihood._source import (
+import firecrown.likelihood.weak_lensing as wl
+from firecrown.likelihood.number_counts import NumberCountsArgs
+from firecrown.likelihood.weak_lensing import WeakLensingArgs
+from firecrown.likelihood import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxySelectField,
@@ -38,12 +36,12 @@ from firecrown.updatable import get_default_params
 @pytest.fixture(
     name="nc_sys_factory",
     params=[
-        nc_factories.PhotoZShiftFactory(),
-        nc_factories.PhotoZShiftandStretchFactory(),
-        nc_factories.LinearBiasSystematicFactory(),
-        nc_factories.PTNonLinearBiasSystematicFactory(),
-        nc_factories.MagnificationBiasSystematicFactory(),
-        nc_factories.ConstantMagnificationBiasSystematicFactory(),
+        wl.PhotoZShiftFactory(),
+        wl.PhotoZShiftandStretchFactory(),
+        nc.LinearBiasSystematicFactory(),
+        nc.PTNonLinearBiasSystematicFactory(),
+        nc.MagnificationBiasSystematicFactory(),
+        nc.ConstantMagnificationBiasSystematicFactory(),
     ],
     ids=[
         "PhotoZShiftFactory",
@@ -54,7 +52,7 @@ from firecrown.updatable import get_default_params
         "ConstantMagnificationBiasSystematicFactory",
     ],
 )
-def fixture_nc_sys_factory(request) -> nc_factories.NumberCountsSystematicFactory:
+def fixture_nc_sys_factory(request) -> nc.NumberCountsSystematicFactory:
     """Fixture for the NumberCountsSystematicFactory class."""
     return request.param
 
@@ -123,8 +121,8 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
 
 
 def test_nc_linear_bias_systematic():
-    a = nc_sys.LinearBiasSystematic("xxx")
-    assert isinstance(a, nc_sys.LinearBiasSystematic)
+    a = nc.LinearBiasSystematic("xxx")
+    assert isinstance(a, nc.LinearBiasSystematic)
     assert a.parameter_prefix == "xxx"
     assert a.alphag is None
     assert a.alphaz is None
@@ -148,7 +146,7 @@ def test_nc_linear_bias_systematic():
 def test_nc_nonlinear_bias_systematic_tracer_args_missing(
     tools_with_vanilla_cosmology: ModelingTools,
 ):
-    a = nc_sys.LinearBiasSystematic("xxx")
+    a = nc.LinearBiasSystematic("xxx")
     # The values in the ParamsMap and the tracer_args are set to allow easy verification
     # that a tracer_args of None is handled correctly.
     a.update(ParamsMap({"xxx_alphag": 1.0, "xxx_alphaz": 1.0, "xxx_z_piv": 0.0}))
@@ -358,7 +356,7 @@ def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
-    global_systematics = [nc_factories.PTNonLinearBiasSystematicFactory()]
+    global_systematics = [nc.PTNonLinearBiasSystematicFactory()]
     nc_factory = nc.NumberCountsFactory(
         per_bin_systematics=[],
         global_systematics=global_systematics,
@@ -386,7 +384,7 @@ def test_number_counts_source_init_wrong_name(sacc_galaxy_cells_lens0_lens0):
 
 
 def test_number_counts_systematic_factory(
-    nc_sys_factory: nc_factories.NumberCountsSystematicFactory,
+    nc_sys_factory: nc.NumberCountsSystematicFactory,
 ):
     sys_pz_shift = nc_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"
@@ -411,25 +409,25 @@ def test_wl_multiplicativeshearbiasfactory_no_globals():
 
 
 def test_nc_photozshiftfactory_no_globals():
-    factory = nc_factories.PhotoZShiftFactory()
+    factory = wl.PhotoZShiftFactory()
     with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
         _ = factory.create_global()
 
 
 def test_nc_photozshiftandstretchfactory_no_globals():
-    factory = nc_factories.PhotoZShiftandStretchFactory()
+    factory = wl.PhotoZShiftandStretchFactory()
     with pytest.raises(ValueError, match="PhotoZShiftandStretch cannot be global"):
         _ = factory.create_global()
 
 
 def test_nc_linearbiassystematicfactory_no_globals():
-    factory = nc_factories.LinearBiasSystematicFactory()
+    factory = nc.LinearBiasSystematicFactory()
     with pytest.raises(ValueError, match="LinearBiasSystematic cannot be global"):
         _ = factory.create_global()
 
 
 def test_nc_magnificationbiassystematicfactory_no_globals():
-    factory = nc_factories.MagnificationBiasSystematicFactory()
+    factory = nc.MagnificationBiasSystematicFactory()
     with pytest.raises(
         ValueError, match="MagnificationBiasSystematic cannot be global"
     ):
@@ -437,7 +435,7 @@ def test_nc_magnificationbiassystematicfactory_no_globals():
 
 
 def test_nc_constantmagnificationbiassystematicfactory_no_globals():
-    factory = nc_factories.ConstantMagnificationBiasSystematicFactory()
+    factory = nc.ConstantMagnificationBiasSystematicFactory()
     with pytest.raises(
         ValueError, match="ConstantMagnificationBiasSystematic cannot be global"
     ):
@@ -489,8 +487,8 @@ def test_wl_photozshiftandstretch_systematic(
 def test_nc_photozshiftandstretch_systematic(
     tools_with_vanilla_cosmology: ModelingTools,
 ):
-    a = nc_sys.PhotoZShiftandStretch("xxx")
-    assert isinstance(a, nc_sys.PhotoZShiftandStretch)
+    a = nc.PhotoZShiftandStretch("xxx")
+    assert isinstance(a, nc.PhotoZShiftandStretch)
     assert a.parameter_prefix == "xxx"
     assert a.delta_z is None
     assert a.sigma_z is None
@@ -586,7 +584,7 @@ def test_dndz_shift_and_stretch_passive_negative_sigma():
 def test_photoz_shift(
     tools_with_vanilla_cosmology: ModelingTools, shift: float, active: bool
 ):
-    photoz_shift = nc_sys.PhotoZShift("John", active=active)
+    photoz_shift = nc.PhotoZShift("John", active=active)
     photoz_shift.update(ParamsMap({"John_delta_z": shift}))
     sigma = 0.05
     mu = 0.5
@@ -618,7 +616,7 @@ def test_photoz_shift_stretch(
     stretch: float,
     active: bool,
 ):
-    photoz_shift_stretch = nc_sys.PhotoZShiftandStretch("John", active=active)
+    photoz_shift_stretch = nc.PhotoZShiftandStretch("John", active=active)
     photoz_shift_stretch.update(
         ParamsMap({"John_delta_z": shift, "John_sigma_z": stretch})
     )

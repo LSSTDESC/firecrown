@@ -37,12 +37,12 @@ def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
     return True
 
 
-def _measurement_supports_real(x: Measurement) -> bool:
+def measurement_supports_real(x: Measurement) -> bool:
     """Return True if x supports real-space calculations."""
     return x not in HARMONIC_ONLY_MEASUREMENTS
 
 
-def _measurement_supports_harmonic(x: Measurement) -> bool:
+def measurement_supports_harmonic(x: Measurement) -> bool:
     """Return True if x supports harmonic-space calculations."""
     return x not in REAL_ONLY_MEASUREMENTS
 
@@ -54,8 +54,8 @@ def measurement_is_compatible_real(a: Measurement, b: Measurement) -> bool:
     function.
     """
     return (
-        _measurement_supports_real(a)
-        and _measurement_supports_real(b)
+        measurement_supports_real(a)
+        and measurement_supports_real(b)
         and measurement_is_compatible(a, b)
     )
 
@@ -67,8 +67,8 @@ def measurement_is_compatible_harmonic(a: Measurement, b: Measurement) -> bool:
     two-point function.
     """
     return (
-        _measurement_supports_harmonic(a)
-        and _measurement_supports_harmonic(b)
+        measurement_supports_harmonic(a)
+        and measurement_supports_harmonic(b)
         and measurement_is_compatible(a, b)
     )
 

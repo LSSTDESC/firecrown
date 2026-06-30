@@ -24,7 +24,7 @@ from firecrown.app.analysis._cosmosis import (
     NAME_MAP,
     COSMOLOGICAL_PARAMETERS,
 )
-from firecrown.app.analysis._types import (
+from firecrown.app.analysis import (
     Frameworks,
     FrameworkCosmology,
     CCLCosmologySpec,

@@ -5,14 +5,11 @@ import pyccl
 import sacc
 
 from firecrown.updatable import get_default_params_map
-from firecrown.likelihood.number_counts import NumberCounts
-from firecrown.likelihood.number_counts._systematics import (
-    PTNonLinearBiasSystematic,
-)
-from firecrown.likelihood._two_point import TwoPoint
+from firecrown.likelihood.number_counts import NumberCounts, PTNonLinearBiasSystematic
+from firecrown.likelihood import TwoPoint
 from firecrown.models.two_point import calculate_pk
 from firecrown.modeling_tools import ModelingTools
-import firecrown.generators._two_point as gen
+import firecrown.generators as gen
 
 
 def make_twopoint_with_optional_systematics(

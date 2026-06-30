@@ -15,7 +15,7 @@ from firecrown.app.analysis._numcosmo import (
     _param_to_nc_dict,
     _setup_models,
 )
-from firecrown.app.analysis._types import (
+from firecrown.app.analysis import (
     FrameworkCosmology,
     CCLCosmologySpec,
     Parameter,

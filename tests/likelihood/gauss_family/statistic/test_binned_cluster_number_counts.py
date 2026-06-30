@@ -8,11 +8,8 @@ from crow.properties import ClusterProperty
 from crow.recipes.binned_exact import ExactBinnedClusterRecipe
 from crow.recipes.binned_grid import GridBinnedClusterRecipe
 
-from firecrown.likelihood._binned_cluster_number_counts import BinnedClusterNumberCounts
-from firecrown.likelihood._binned_cluster_number_counts_shear import (
-    BinnedClusterShearProfile,
-)
-from firecrown.likelihood._source import SourceSystematic
+from firecrown.likelihood import BinnedClusterNumberCounts, BinnedClusterShearProfile
+from firecrown.likelihood import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import get_default_params_map
 

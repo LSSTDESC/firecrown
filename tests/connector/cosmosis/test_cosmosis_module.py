@@ -13,7 +13,7 @@ import numpy as np
 import pyccl
 from cosmosis.datablock import DataBlock, option_section, names as section_names
 
-from firecrown.likelihood._likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import (
     FirecrownLikelihood,
     MissingSamplerParameterError,

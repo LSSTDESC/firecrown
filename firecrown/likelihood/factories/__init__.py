@@ -17,7 +17,12 @@ SACC file is being used without the need for complex customization.
 from firecrown.likelihood.factories._sacc_utils import load_sacc_data
 from firecrown.likelihood.factories._models import DataSourceSacc, TwoPointExperiment
 from firecrown.likelihood.factories._builders import build_two_point_likelihood
-from firecrown.likelihood._two_point import TwoPointFactory
+from firecrown.likelihood._two_point import (
+    TwoPointFactory,
+    use_source_factory,
+    use_source_factory_metadata_index,
+)
+from firecrown.likelihood.number_counts import NumberCountsFactory
 
 __all__ = [
     # SACC utilities
@@ -29,4 +34,7 @@ __all__ = [
     "build_two_point_likelihood",
     # Two-point factory
     "TwoPointFactory",
+    "NumberCountsFactory",
+    "use_source_factory",
+    "use_source_factory_metadata_index",
 ]

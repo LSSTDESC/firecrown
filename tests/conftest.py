@@ -18,7 +18,7 @@ import numpy.typing as npt
 
 from firecrown.updatable import get_default_params_map
 from firecrown.utils import upper_triangle_indices
-from firecrown.likelihood._statistic import TrivialStatistic
+from firecrown.likelihood import TrivialStatistic
 from firecrown.updatable import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
@@ -32,17 +32,17 @@ from firecrown.metadata_types import (
     TwoPointReal,
     ALL_MEASUREMENTS,
 )
-from firecrown.metadata_types._compatibility import (
+from firecrown.metadata_types import (
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
-    _measurement_supports_real,
-    _measurement_supports_harmonic,
+    measurement_supports_real,
+    measurement_supports_harmonic,
 )
 from firecrown.data_types import TwoPointMeasurement
-import firecrown.likelihood._weak_lensing as wl
+import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood._two_point as tp
-import firecrown.likelihood._cmb as cmb
+from firecrown.likelihood import TwoPointFactory, CMBConvergenceFactory
+from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.metadata_types import Clusters, CMB
 
 # Helper function for creating AST ClassDef nodes across Python versions
@@ -1292,13 +1292,13 @@ def fixture_nc_factory() -> nc.NumberCountsFactory:
 @pytest.fixture(name="tp_factory")
 def fixture_tp_factory(
     wl_factory: wl.WeakLensingFactory, nc_factory: nc.NumberCountsFactory
-) -> tp.TwoPointFactory:
+) -> TwoPointFactory:
     """Generate a TwoPointFactory object."""
-    return tp.TwoPointFactory(
-        correlation_space=tp.TwoPointCorrelationSpace.REAL,
+    return TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.REAL,
         weak_lensing_factories=[wl_factory],
         number_counts_factories=[nc_factory],
-        cmb_factories=[cmb.CMBConvergenceFactory()],
+        cmb_factories=[CMBConvergenceFactory()],
     )
 
 
@@ -1330,10 +1330,10 @@ def _discover_measurements_by_space():
     real_measurements = [
         m
         for m in supported_measurements
-        if _measurement_supports_real(m) and m != CMB.CONVERGENCE
+        if measurement_supports_real(m) and m != CMB.CONVERGENCE
     ]
     harmonic_measurements = [
-        m for m in supported_measurements if _measurement_supports_harmonic(m)
+        m for m in supported_measurements if measurement_supports_harmonic(m)
     ]
 
     return real_measurements, harmonic_measurements
