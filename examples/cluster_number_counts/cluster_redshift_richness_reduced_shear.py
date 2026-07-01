@@ -110,7 +110,7 @@ def build_likelihood(
     sacc_path = os.path.expanduser(
         os.path.expandvars("${FIRECROWN_DIR}/examples/cluster_number_counts/")
     )
-    sacc_data = sacc.Sacc.load_fits(os.path.join(sacc_path, sacc_file_nm))
+    sacc_data = sacc.Sacc.load(os.path.join(sacc_path, sacc_file_nm))
     likelihood.read(sacc_data)
 
     modeling_tools = ModelingTools()

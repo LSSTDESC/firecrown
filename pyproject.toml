@@ -23,7 +23,7 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "rich",
-    "sacc",
+    "sacc>=2.3",
     "scipy",
     "typer",
 ]
