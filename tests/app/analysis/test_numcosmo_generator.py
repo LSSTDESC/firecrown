@@ -17,7 +17,7 @@ from firecrown.app.analysis._numcosmo import (
     NumCosmoConfigGenerator,
     _set_standard_params,
 )
-from firecrown.app.analysis._types import (
+from firecrown.app.analysis import (
     Frameworks,
     FrameworkCosmology,
     CCLCosmologySpec,

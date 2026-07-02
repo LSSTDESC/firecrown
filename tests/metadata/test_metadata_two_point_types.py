@@ -27,11 +27,11 @@ from firecrown.metadata_types import (
     measurement_is_compatible as is_compatible,
     measurements_types,
 )
-from firecrown.metadata_types._compatibility import (
+from firecrown.metadata_types import (
     measurement_is_compatible_harmonic as is_compatible_harmonic,
     measurement_is_compatible_real as is_compatible_real,
-    _measurement_supports_harmonic as supports_harmonic,
-    _measurement_supports_real as supports_real,
+    measurement_supports_harmonic as supports_harmonic,
+    measurement_supports_real as supports_real,
 )
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic as harmonic,

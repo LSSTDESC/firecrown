@@ -14,16 +14,11 @@ import pyccl.nl_pt as pt
 import sacc
 
 from firecrown.updatable import get_default_params_map
-import firecrown.likelihood._weak_lensing as wl
+import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood.number_counts._systematics as nc_sys
-import firecrown.likelihood.number_counts._args as nc_args
 import firecrown.metadata_types as mdt
-from firecrown.likelihood._two_point import (
-    TwoPoint,
-    TracerNames,
-)
-from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood import ConstGaussian, TwoPoint
+from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
 from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
 import firecrown.updatable as fcp
@@ -38,9 +33,9 @@ def fixture_weak_lensing_source() -> wl.WeakLensing:
 
 @pytest.fixture(name="number_counts_source")
 def fixture_number_counts_source() -> nc.NumberCounts:
-    pzshift = nc_sys.PhotoZShift(sacc_tracer="lens0")
-    magnification = nc_sys.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
-    nl_bias = nc_sys.PTNonLinearBiasSystematic(sacc_tracer="lens0")
+    pzshift = nc.PhotoZShift(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
     return nc.NumberCounts(
         sacc_tracer="lens0", has_rsd=True, systematics=[pzshift, magnification, nl_bias]
     )
@@ -261,7 +256,7 @@ def test_pt_mixed_systematics(sacc_data):
     ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
 
-    magnification = nc_sys.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
     nc_source = nc.NumberCounts(
         sacc_tracer="lens0", has_rsd=True, systematics=[magnification]
     )
@@ -393,7 +388,7 @@ def test_pt_mixed_systematics_zdep(sacc_data):
     ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
 
-    magnification = nc_sys.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
     nc_source = nc.NumberCounts(
         sacc_tracer="lens0", has_rsd=True, systematics=[magnification]
     )
@@ -729,8 +724,8 @@ def test_pt_systematics_zdep(weak_lensing_source, number_counts_source, sacc_dat
 
 
 def test_linear_bias_systematic(tools_with_vanilla_cosmology: ModelingTools):
-    a = nc_sys.LinearBiasSystematic("xxx")
-    assert isinstance(a, nc_sys.LinearBiasSystematic)
+    a = nc.LinearBiasSystematic("xxx")
+    assert isinstance(a, nc.LinearBiasSystematic)
     assert a.parameter_prefix == "xxx"
     assert a.alphag is None
     assert a.alphaz is None
@@ -742,7 +737,7 @@ def test_linear_bias_systematic(tools_with_vanilla_cosmology: ModelingTools):
     assert a.alphaz == 2.0
     assert a.z_piv == 1.5
 
-    orig_nca = nc_args.NumberCountsArgs(
+    orig_nca = nc.NumberCountsArgs(
         z=np.array([0.5, 1.0]),
         dndz=np.array([5.0, 4.0]),
         bias=np.array([1.0, 1.0]),

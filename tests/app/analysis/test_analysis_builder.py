@@ -8,8 +8,8 @@ from unittest.mock import patch
 import pytest
 
 from firecrown.likelihood import NamedParameters
-from firecrown.app.analysis._analysis_builder import AnalysisBuilder
-from firecrown.app.analysis._types import (
+from firecrown.app.analysis import (
+    AnalysisBuilder,
     Frameworks,
     FrameworkCosmology,
     CCLCosmologySpec,

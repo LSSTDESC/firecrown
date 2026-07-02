@@ -17,7 +17,7 @@ from firecrown.app.analysis._cobaya import (
     CobayaConfigGenerator,
     NAME_MAP,
 )
-from firecrown.app.analysis._types import (
+from firecrown.app.analysis import (
     Frameworks,
     FrameworkCosmology,
     CCLCosmologySpec,

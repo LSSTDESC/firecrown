@@ -3,7 +3,7 @@
 import re
 
 import pytest
-import firecrown.likelihood._gaussian as g
+from firecrown.likelihood import ConstGaussian
 
 
 def test_init_rejects_non_statistics():
@@ -13,4 +13,4 @@ def test_init_rejects_non_statistics():
             "statistics[0] is not an instance of Statistic. It is a <class 'int'>."
         ),
     ):
-        g.ConstGaussian([1])  # type: ignore[list-item]
+        ConstGaussian([1])  # type: ignore[list-item]

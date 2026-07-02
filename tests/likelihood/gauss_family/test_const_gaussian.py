@@ -11,16 +11,18 @@ from scipy.stats import chi2
 import sacc
 
 import firecrown.updatable
-from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._gaussfamily import Statistic
-from firecrown.likelihood._statistic import TrivialStatistic
+from firecrown.likelihood import (
+    ConstGaussian,
+    Statistic,
+    TrivialStatistic,
+    TwoPoint,
+)
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import (
     RequiredParameters,
     DerivedParameterCollection,
     SamplerParameter,
 )
-from firecrown.likelihood._two_point import TwoPoint
 from firecrown.metadata_types import TracerNames, Galaxies
 from firecrown.metadata_functions import TwoPointHarmonicIndex
 from firecrown.data_functions import extract_all_harmonic_data

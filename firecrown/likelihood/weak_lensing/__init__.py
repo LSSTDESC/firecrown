@@ -21,6 +21,7 @@ from firecrown.likelihood._weak_lensing import (
     WeakLensingArgs,
     WeakLensingFactory,
     WeakLensingSystematic,
+    WeakLensingSystematicFactory,
 )
 
 # Re-export shared factories from base module
@@ -47,4 +48,5 @@ __all__ = [
     "WeakLensingArgs",
     "WeakLensingFactory",
     "WeakLensingSystematic",
+    "WeakLensingSystematicFactory",
 ]

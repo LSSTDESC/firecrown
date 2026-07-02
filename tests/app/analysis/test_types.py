@@ -21,7 +21,7 @@ from firecrown.app.analysis._types import (
     PoweSpecAmplitudeParameter,
     get_path_str,
 )
-from firecrown.app.analysis._cobaya import CobayaConfigGenerator
+from firecrown.app.analysis import CobayaConfigGenerator
 from firecrown.likelihood import NamedParameters
 from firecrown.modeling_tools import CAMBExtraParams
 

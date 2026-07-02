@@ -32,13 +32,21 @@ Subpackages:
 from firecrown.likelihood._base import (
     Likelihood,
     NamedParameters,
+    PhotoZShiftFactory,
+    PhotoZShiftandStretchFactory,
     Source,
+    SourceGalaxy,
     SourceGalaxyArgs,
+    SourceGalaxyPhotoZShift,
+    SourceGalaxyPhotoZShiftandStretch,
+    SourceGalaxySelectField,
     SourceGalaxySystematic,
     SourceSystematic,
     Statistic,
     Tracer,
     TrivialStatistic,
+    dndz_shift_and_stretch_active,
+    dndz_shift_and_stretch_passive,
 )
 from firecrown.likelihood._likelihood import (
     load_likelihood,
@@ -53,7 +61,15 @@ from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM
 from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
 
 # Two-point statistics
-from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
+from firecrown.likelihood._two_point import (
+    TwoPoint,
+    TwoPointFactory,
+    use_source_factory,
+    use_source_factory_metadata_index,
+)
+
+# CMB statistics
+from firecrown.likelihood._cmb import CMBConvergenceFactory
 
 # Cluster statistics
 from firecrown.likelihood._binned_cluster import BinnedCluster
@@ -95,6 +111,10 @@ __all__ = [
     # Two-point statistics
     "TwoPoint",
     "TwoPointFactory",
+    "use_source_factory",
+    "use_source_factory_metadata_index",
+    # CMB statistics
+    "CMBConvergenceFactory",
     # Cluster statistics
     "BinnedCluster",
     "BinnedClusterNumberCounts",
@@ -102,11 +122,19 @@ __all__ = [
     # Supernova statistics
     "Supernova",
     # Source infrastructure
+    "PhotoZShiftFactory",
+    "PhotoZShiftandStretchFactory",
     "Source",
+    "SourceGalaxy",
     "SourceGalaxyArgs",
+    "SourceGalaxyPhotoZShift",
+    "SourceGalaxyPhotoZShiftandStretch",
+    "SourceGalaxySelectField",
     "SourceGalaxySystematic",
     "Tracer",
     "SourceSystematic",
+    "dndz_shift_and_stretch_active",
+    "dndz_shift_and_stretch_passive",
     # Base statistic class
     "Statistic",
     "TrivialStatistic",

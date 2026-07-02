@@ -6,9 +6,7 @@ for testing purposes.
 import numpy as np
 import sacc
 
-from firecrown.likelihood._likelihood import NamedParameters
-from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._two_point import TwoPoint
+from firecrown.likelihood import NamedParameters, ConstGaussian, TwoPoint
 from firecrown.likelihood.number_counts import (
     NumberCounts,
 )

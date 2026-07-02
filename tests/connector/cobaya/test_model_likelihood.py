@@ -8,10 +8,8 @@ import numpy as np
 from cobaya.model import get_model, Model
 from cobaya.log import LoggedError
 from firecrown.connector.cobaya.likelihood import LikelihoodConnector
-from firecrown.likelihood._likelihood import NamedParameters
-from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood import TrivialStatistic, ConstGaussian, NamedParameters
 from firecrown.modeling_tools import ModelingTools
-import firecrown.likelihood._statistic as stat
 import firecrown.modeling_tools as ccl_factory
 
 
@@ -278,7 +276,7 @@ def test_derived_parameter_likelihood(fiducial_params):
 
 
 def _factory_as(_: NamedParameters):
-    return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
+    return ConstGaussian([TrivialStatistic()]), ModelingTools(
         ccl_factory=ccl_factory.CCLFactory(
             amplitude_parameter=ccl_factory.PoweSpecAmplitudeParameter.AS
         )
@@ -286,7 +284,7 @@ def _factory_as(_: NamedParameters):
 
 
 def _factory_sigma8(_: NamedParameters):
-    return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
+    return ConstGaussian([TrivialStatistic()]), ModelingTools(
         ccl_factory=ccl_factory.CCLFactory(
             amplitude_parameter=ccl_factory.PoweSpecAmplitudeParameter.SIGMA8
         )

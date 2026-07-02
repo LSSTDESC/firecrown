@@ -18,7 +18,7 @@ from firecrown.app.analysis._numcosmo import (
     _set_amplitude_sigma8,
     _set_neutrino_masses,
 )
-from firecrown.app.analysis._types import (
+from firecrown.app.analysis import (
     FrameworkCosmology,
     CCLCosmologySpec,
     Parameter,

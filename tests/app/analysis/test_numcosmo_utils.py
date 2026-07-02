@@ -11,7 +11,7 @@ from firecrown.app.analysis._numcosmo import (
     _param_to_nc_dict,
     _to_pascal,
 )
-from firecrown.app.analysis._types import Parameter
+from firecrown.app.analysis import Parameter
 
 
 @pytest.fixture(name="sample_parameter")

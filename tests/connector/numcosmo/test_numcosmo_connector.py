@@ -10,7 +10,7 @@ from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoGaussCov,
 )
 
-from firecrown.likelihood._likelihood import (
+from firecrown.likelihood import (
     NamedParameters,
     Likelihood,
 )
