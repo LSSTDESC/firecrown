@@ -8,5 +8,3 @@
 """
 
 from firecrown.utils import ensure_path, load_sacc_data
-
-__all__ = ["load_sacc_data", "ensure_path"]

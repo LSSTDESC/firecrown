@@ -170,3 +170,7 @@ coverage.json
 
 **/*.quarto_ipynb
 .ruff_cache
+.github/instructions/
+.headroom
+.kilo
+plans/

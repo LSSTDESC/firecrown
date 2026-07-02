@@ -50,7 +50,7 @@ dependencies:
   - quarto
   - requests
   - rich
-  - sacc > 2.2
+  - sacc >= 2.4
   - scipy >= 1.13
   - sphinx
   - sphinx-autoapi

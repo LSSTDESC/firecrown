@@ -21,3 +21,4 @@ systematics_files/
 _freeze/
 
 **/*.quarto_ipynb
+docs/

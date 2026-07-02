@@ -10,6 +10,8 @@ import sacc
 from sacc.utils import detect_sacc_file_type
 import typer
 
+from sacc.utils import detect_sacc_file_type
+
 from firecrown.metadata_functions import (
     extract_all_real_metadata_indices,
     extract_all_harmonic_metadata_indices,
@@ -160,14 +162,19 @@ data.h5
 
     @staticmethod
     def detect_format(filepath: Path) -> SaccFormat:
-        """Detect file format from extension or file contents.
+        """Detect file format using sacc's own file-type detection."""
+        try:
+            file_type = detect_sacc_file_type(str(filepath))
+        except ValueError as e:
+            raise ValueError(f"Cannot detect format of '{filepath}': {e}") from e
 
-        Delegates to SACC's own detection, which inspects the file extension
-        and, when ambiguous, the file contents. Raises ValueError when the
-        format cannot be determined.
-        """
-        file_type = detect_sacc_file_type(str(filepath))
-        return SaccFormat(file_type)
+        match file_type:
+            case "fits":
+                return SaccFormat.FITS
+            case "hdf5":
+                return SaccFormat.HDF5
+            case _ as unreachable:
+                assert_never(unreachable)
 
     def _determine_output_path(
         self, input_path: Path, output: Path | None, target_format: SaccFormat
