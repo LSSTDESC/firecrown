@@ -316,6 +316,18 @@ class TestTransformFormatDetection:
 
         assert output_file.exists()
 
+    def test_detect_sacc_file_type_importable(self) -> None:
+        """Guard test: sacc.utils.detect_sacc_file_type must remain importable.
+
+        Transform.detect_format relies on this internal-but-stable sacc
+        helper. If a future sacc release renames or removes it, this test
+        will fail loudly instead of Transform.detect_format failing silently.
+        """
+        # pylint: disable=import-outside-toplevel
+        from sacc.utils import detect_sacc_file_type
+
+        assert callable(detect_sacc_file_type)
+
 
 class TestTransformIntegration:
     """Integration tests for Transform functionality."""
