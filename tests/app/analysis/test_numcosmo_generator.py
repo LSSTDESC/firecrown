@@ -5,23 +5,23 @@ in firecrown.app.analysis._numcosmo module.
 """
 
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
+from numcosmo_py import Nc, Ncm
 
-from numcosmo_py import Ncm, Nc
-
-from firecrown.likelihood import NamedParameters
 from firecrown.app.analysis._numcosmo import (
-    ConfigOptions,
     NAME_MAP,
+    ConfigOptions,
     NumCosmoConfigGenerator,
     _set_standard_params,
 )
 from firecrown.app.analysis._types import (
-    Frameworks,
-    FrameworkCosmology,
     CCLCosmologySpec,
+    FrameworkCosmology,
+    Frameworks,
 )
+from firecrown.likelihood import NamedParameters
 
 
 @pytest.fixture(name="numcosmo_init", scope="session")

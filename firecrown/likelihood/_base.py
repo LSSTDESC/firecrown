@@ -10,9 +10,15 @@ compatibility with code that imports from firecrown.likelihood._base directly.
 """
 
 from firecrown.likelihood_base import (
+    SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z,
+    SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z,
     GuardedStatistic,
     Likelihood,
     NamedParameters,
+    PhotoZShift,
+    PhotoZShiftandStretch,
+    PhotoZShiftandStretchFactory,
+    PhotoZShiftFactory,
     Source,
     SourceGalaxy,
     SourceGalaxyArgs,
@@ -25,12 +31,6 @@ from firecrown.likelihood_base import (
     StatisticUnreadError,
     Tracer,
     TrivialStatistic,
-    PhotoZShift,
-    PhotoZShiftFactory,
-    PhotoZShiftandStretch,
-    PhotoZShiftandStretchFactory,
-    SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z,
-    SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z,
     dndz_shift_and_stretch_active,
     dndz_shift_and_stretch_passive,
 )

@@ -4,19 +4,17 @@ import os
 
 import pyccl as ccl
 import sacc
-
 from crow import ClusterShearProfile, kernel, mass_proxy
 from crow.properties import ClusterProperty
 from crow.recipes.binned_grid import GridBinnedClusterRecipe
 
 from firecrown.likelihood import (
-    ConstGaussian,
-    BinnedClusterShearProfile,
     BinnedClusterNumberCounts,
+    BinnedClusterShearProfile,
+    ConstGaussian,
     Likelihood,
     NamedParameters,
 )
-
 from firecrown.modeling_tools import ModelingTools
 
 

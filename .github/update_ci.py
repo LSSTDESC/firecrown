@@ -1,7 +1,7 @@
 """Update the CI environment file."""
 
-import sys
 import re
+import sys
 
 python_re = re.compile(
     r"^(?P<prefix>\s*-\s*python)(?P<rest>(\s*[=<>!].*)$)", re.IGNORECASE

@@ -1,6 +1,7 @@
 """Tests for factories for number counts systematics."""
 
 import pytest
+
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.number_counts._factories as nc_factories
 import firecrown.utils as fcutils

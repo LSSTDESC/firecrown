@@ -23,12 +23,10 @@ from rich.console import Console
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     Measurement,
-)
-from firecrown.metadata_types._compatibility import (
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
-    _measurement_supports_harmonic,
-    _measurement_supports_real,
+    measurement_supports_harmonic,
+    measurement_supports_real,
 )
 
 
@@ -49,9 +47,9 @@ def discover_measurements_by_space() -> tuple[list[Measurement], list[Measuremen
     all_measurements = ALL_MEASUREMENTS
 
     # Categorize by space support
-    real_measurements = [m for m in all_measurements if _measurement_supports_real(m)]
+    real_measurements = [m for m in all_measurements if measurement_supports_real(m)]
     harmonic_measurements = [
-        m for m in all_measurements if _measurement_supports_harmonic(m)
+        m for m in all_measurements if measurement_supports_harmonic(m)
     ]
 
     return real_measurements, harmonic_measurements

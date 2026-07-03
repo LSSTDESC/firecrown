@@ -1,11 +1,12 @@
 """Type definitions for the updatable module."""
 
 from __future__ import annotations
+
 from typing import Protocol, runtime_checkable
 
+from firecrown.updatable._parameters_derived import DerivedParameterCollection
 from firecrown.updatable._parameters_map import ParamsMap
 from firecrown.updatable._parameters_required import RequiredParameters
-from firecrown.updatable._parameters_derived import DerivedParameterCollection
 from firecrown.updatable._records import UpdatableUsageRecord
 
 

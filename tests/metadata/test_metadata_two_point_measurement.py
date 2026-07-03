@@ -2,20 +2,22 @@
 Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
-import pytest
 import numpy as np
+import pytest
 from numpy.testing import assert_array_equal
 
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_types import (
     TwoPointHarmonic,
-    TwoPointXY,
     TwoPointReal,
+    TwoPointXY,
 )
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic as harmonic,
+)
+from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
-from firecrown.data_types import TwoPointMeasurement
 
 
 def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):

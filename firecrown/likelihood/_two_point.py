@@ -22,10 +22,10 @@ from pydantic import (
 import firecrown.generators as gen
 import firecrown.metadata_types as mdt
 from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
-from firecrown.likelihood_base import Source, Statistic, Tracer
 from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceFactory
 from firecrown.likelihood._weak_lensing import WeakLensing, WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCounts, NumberCountsFactory
+from firecrown.likelihood_base import Source, Statistic, Tracer
 from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,
     TwoPointRealIndex,

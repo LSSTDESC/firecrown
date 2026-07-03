@@ -7,7 +7,6 @@ import yaml
 from pydantic import BaseModel
 from typing_extensions import assert_never
 
-from firecrown.modeling_tools import CCLFactory
 from firecrown.data_functions import (
     TwoPointBinFilterCollection,
     check_two_point_consistence_harmonic,
@@ -16,9 +15,10 @@ from firecrown.data_functions import (
     extract_all_real_data,
 )
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood_base import Likelihood
 from firecrown.likelihood._two_point import TwoPointFactory
+from firecrown.likelihood_base import Likelihood
 from firecrown.metadata_types import TwoPointCorrelationSpace
+from firecrown.modeling_tools import CCLFactory
 from firecrown.utils import ensure_path, load_sacc_data
 
 

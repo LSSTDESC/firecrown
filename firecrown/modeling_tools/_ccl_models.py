@@ -6,8 +6,7 @@ import pyccl
 from pyccl.modified_gravity import MuSigmaMG
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
-from firecrown.updatable import ParamsMap, register_new_updatable_parameter
-from firecrown.updatable import Updatable
+from firecrown.updatable import ParamsMap, Updatable, register_new_updatable_parameter
 
 
 class MuSigmaModel(Updatable):

@@ -1,19 +1,20 @@
 """Functions for extracting two-point metadata from SACC objects."""
 
 import warnings
+
 import numpy as np
 import numpy.typing as npt
 import sacc
 from sacc.data_types import required_tags
 
 import firecrown.metadata_types as mdt
-from firecrown.metadata_functions._type_defs import (
-    TwoPointRealIndex,
-    TwoPointHarmonicIndex,
-)
-from firecrown.metadata_functions._matching import make_two_point_xy
 from firecrown.metadata_functions._combination_utils import (
     make_all_photoz_bin_combinations,
+)
+from firecrown.metadata_functions._matching import make_two_point_xy
+from firecrown.metadata_functions._type_defs import (
+    TwoPointHarmonicIndex,
+    TwoPointRealIndex,
 )
 
 

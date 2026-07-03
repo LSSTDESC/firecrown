@@ -4,8 +4,12 @@ The likelihood created requires a string parameter named "sacc_file".
 """
 
 from firecrown.likelihood._likelihood import NamedParameters
-from firecrown.modeling_tools import ModelingTools
-from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.modeling_tools import (
+    CCLFactory,
+    ModelingTools,
+    PoweSpecAmplitudeParameter,
+)
+
 from . import lkmodule
 
 

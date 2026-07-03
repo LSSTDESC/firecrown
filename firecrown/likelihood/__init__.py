@@ -28,16 +28,6 @@ Subpackages:
     - :mod:`factories`: Factory functions for creating likelihood components
 """
 
-from firecrown.likelihood._likelihood import (
-    load_likelihood,
-    load_likelihood_from_module_type,
-)
-from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._gaussfamily import GaussFamily, State
-from firecrown.likelihood._student_t import StudentT
-from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM
-from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
-from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
 from firecrown.likelihood._binned_cluster import BinnedCluster
 from firecrown.likelihood._binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
@@ -45,11 +35,23 @@ from firecrown.likelihood._binned_cluster_number_counts import (
 from firecrown.likelihood._binned_cluster_number_counts_shear import (
     BinnedClusterShearProfile,
 )
+from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceArgs
+from firecrown.likelihood._gaussfamily import GaussFamily, State
+from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM, PointMassData
+from firecrown.likelihood._likelihood import (
+    load_likelihood,
+    load_likelihood_from_module_type,
+)
+from firecrown.likelihood._student_t import StudentT
+from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
+from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
 from firecrown.likelihood.supernova._supernova import Supernova
 from firecrown.likelihood_base import (
     Likelihood,
     NamedParameters,
     Source,
+    SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxySystematic,
     SourceSystematic,
@@ -57,10 +59,8 @@ from firecrown.likelihood_base import (
     Tracer,
     TrivialStatistic,
 )
-from . import number_counts
-from . import factories
-from . import weak_lensing
-from . import supernova
+
+from . import factories, number_counts, supernova, weak_lensing
 
 __all__ = [
     "Likelihood",
@@ -71,8 +71,9 @@ __all__ = [
     "GaussFamily",
     "State",
     "StudentT",
-    "ConstGaussianPM",
     "UpdatableClusterObjects",
+    "ConstGaussianPM",
+    "PointMassData",
     "TwoPoint",
     "TwoPointFactory",
     "BinnedCluster",
@@ -80,7 +81,10 @@ __all__ = [
     "BinnedClusterShearProfile",
     "Supernova",
     "Source",
+    "SourceGalaxy",
     "SourceGalaxyArgs",
+    "CMBConvergence",
+    "CMBConvergenceArgs",
     "SourceGalaxySystematic",
     "Tracer",
     "SourceSystematic",

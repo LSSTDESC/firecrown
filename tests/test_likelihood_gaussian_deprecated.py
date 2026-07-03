@@ -10,6 +10,7 @@ warning on subsequent imports.
 """
 
 import sys
+
 import pytest
 
 
@@ -41,8 +42,8 @@ def test_const_gaussian_importable():
 def test_const_gaussian_identical_to_new_location():
     """Verify ConstGaussian from deprecated module is the same as from _gaussian."""
     # pylint: disable=import-outside-toplevel
-    from firecrown.likelihood.gaussian import ConstGaussian as OldConstGaussian
     from firecrown.likelihood._gaussian import ConstGaussian
+    from firecrown.likelihood.gaussian import ConstGaussian as OldConstGaussian
 
     assert OldConstGaussian is ConstGaussian
 

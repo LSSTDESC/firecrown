@@ -1,6 +1,7 @@
 """Required parameters functionality."""
 
 from __future__ import annotations
+
 from collections.abc import Iterable, Iterator
 
 from ._parameters_types import SamplerParameter

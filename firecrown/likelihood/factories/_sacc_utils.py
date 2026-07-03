@@ -7,6 +7,6 @@
     ``firecrown.utils`` instead.
 """
 
-from firecrown.utils._sacc_ops import ensure_path, load_sacc_data
+from firecrown.utils import ensure_path, load_sacc_data
 
 __all__ = ["ensure_path", "load_sacc_data"]

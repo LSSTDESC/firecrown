@@ -1,7 +1,7 @@
 """Tests for the class firecrown.likelihood.NamedParameters."""
 
-import pytest
 import numpy as np
+import pytest
 
 from firecrown.likelihood._likelihood import NamedParameters
 

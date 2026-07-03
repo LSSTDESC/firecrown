@@ -3,25 +3,26 @@
 Tests type definitions, enums, and data models for framework configuration.
 """
 
+import pyccl
 import pytest
 from pydantic import ValidationError
-import pyccl
+
 from firecrown.app.analysis import (
-    Frameworks,
-    FrameworkCosmology,
-    Parameter,
-    Model,
-    PriorUniform,
-    PriorGaussian,
-    COSMO_DESC,
     CCL_COSMOLOGY_MINIMAL_SET,
+    COSMO_DESC,
     CCLCosmologySpec,
+    FrameworkCosmology,
+    Frameworks,
+    Model,
+    Parameter,
+    PriorGaussian,
+    PriorUniform,
 )
+from firecrown.app.analysis._cobaya import CobayaConfigGenerator
 from firecrown.app.analysis._types import (
     PoweSpecAmplitudeParameter,
     get_path_str,
 )
-from firecrown.app.analysis._cobaya import CobayaConfigGenerator
 from firecrown.likelihood import NamedParameters
 from firecrown.modeling_tools import CAMBExtraParams
 

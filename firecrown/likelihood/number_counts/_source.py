@@ -9,7 +9,6 @@ from typing import final
 import numpy as np
 import pyccl
 
-from firecrown.updatable import register_new_updatable_parameter
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood_base import (
     SourceGalaxy,
@@ -23,6 +22,7 @@ from firecrown.updatable import (
     DerivedParameterCollection,
     ParamsMap,
     UpdatableCollection,
+    register_new_updatable_parameter,
 )
 
 NUMBER_COUNTS_DEFAULT_BIAS = 1.5

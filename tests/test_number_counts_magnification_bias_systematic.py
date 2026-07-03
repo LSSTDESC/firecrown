@@ -5,10 +5,10 @@ Tests for the module firecrown.likelihood.number_counts_magnification_bias_syste
 import numpy as np
 import numpy.typing as npt
 
-import firecrown.likelihood.number_counts._systematics as nc_sys
 import firecrown.likelihood.number_counts._args as nc_args
-import firecrown.updatable as fp
+import firecrown.likelihood.number_counts._systematics as nc_sys
 import firecrown.modeling_tools as mt
+import firecrown.updatable as fp
 
 
 def test_creation_nc_magnification_bias_systematic():

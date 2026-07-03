@@ -4,18 +4,19 @@ Tests cosmology configuration generation, parameter parsing, and prior handling.
 """
 
 from pathlib import Path
+
 import pytest
 import yaml
 
+from firecrown.app.analysis import PriorGaussian, PriorUniform
 from firecrown.app.cosmology import (
     Cosmology,
+    Generate,
     PriorWrapper,
     _parse_key_value,
-    _parse_prior_dict,
     _parse_prior,
-    Generate,
+    _parse_prior_dict,
 )
-from firecrown.app.analysis import PriorUniform, PriorGaussian
 
 
 class TestCosmologyEnum:

@@ -6,44 +6,41 @@ Fixtures defined here are available to any test in Firecrown.
 
 # pylint: disable=too-many-lines
 import ast
-from itertools import product
 import sys
-import pytest
-
-import pyccl
-import sacc
+from itertools import product
 
 import numpy as np
 import numpy.typing as npt
+import pyccl
+import pytest
+import sacc
 
-from firecrown.updatable import get_default_params_map
-from firecrown.utils import upper_triangle_indices
-from firecrown.likelihood._statistic import TrivialStatistic
-from firecrown.updatable import ParamsMap
-from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
-from firecrown.modeling_tools import ModelingTools
-from firecrown.metadata_types import (
-    Measurement,
-    Galaxies,
-    InferredGalaxyZDist,
-    TracerNames,
-    TwoPointHarmonic,
-    TwoPointXY,
-    TwoPointReal,
-    ALL_MEASUREMENTS,
-)
-from firecrown.metadata_types._compatibility import (
-    measurement_is_compatible_harmonic,
-    measurement_is_compatible_real,
-    _measurement_supports_real,
-    _measurement_supports_harmonic,
-)
-from firecrown.data_types import TwoPointMeasurement
+import firecrown.likelihood._cmb as cmb
+import firecrown.likelihood._two_point as tp
 import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood._two_point as tp
-import firecrown.likelihood._cmb as cmb
-from firecrown.metadata_types import Clusters, CMB
+from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
+from firecrown.data_types import TwoPointMeasurement
+from firecrown.likelihood._statistic import TrivialStatistic
+from firecrown.metadata_types import (
+    ALL_MEASUREMENTS,
+    CMB,
+    Clusters,
+    Galaxies,
+    InferredGalaxyZDist,
+    Measurement,
+    TracerNames,
+    TwoPointHarmonic,
+    TwoPointReal,
+    TwoPointXY,
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
+    measurement_supports_harmonic,
+    measurement_supports_real,
+)
+from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import ParamsMap, get_default_params_map
+from firecrown.utils import upper_triangle_indices
 
 # Helper function for creating AST ClassDef nodes across Python versions
 if sys.version_info >= (3, 12):
@@ -1330,10 +1327,10 @@ def _discover_measurements_by_space():
     real_measurements = [
         m
         for m in supported_measurements
-        if _measurement_supports_real(m) and m != CMB.CONVERGENCE
+        if measurement_supports_real(m) and m != CMB.CONVERGENCE
     ]
     harmonic_measurements = [
-        m for m in supported_measurements if _measurement_supports_harmonic(m)
+        m for m in supported_measurements if measurement_supports_harmonic(m)
     ]
 
     return real_measurements, harmonic_measurements

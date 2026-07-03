@@ -4,13 +4,14 @@ Tests for the module firecrown.likelihood.likelihood.
 
 import os
 import sys
+
 import pytest
 
 from firecrown.likelihood._likelihood import (
-    load_likelihood_from_script,
-    load_likelihood_from_module,
-    load_likelihood,
     NamedParameters,
+    load_likelihood,
+    load_likelihood_from_module,
+    load_likelihood_from_script,
 )
 
 

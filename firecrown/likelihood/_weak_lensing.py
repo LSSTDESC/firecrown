@@ -14,7 +14,6 @@ import pyccl.nl_pt
 import sacc
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from firecrown.updatable import register_new_updatable_parameter
 from firecrown.likelihood_base import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
@@ -28,7 +27,7 @@ from firecrown.likelihood_base import (
 )
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import ParamsMap
+from firecrown.updatable import ParamsMap, register_new_updatable_parameter
 
 
 @dataclass(frozen=True)

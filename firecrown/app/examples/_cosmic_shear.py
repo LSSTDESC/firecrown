@@ -4,24 +4,25 @@ Generates synthetic weak lensing cosmic shear data with realistic
 noise and covariance for testing and demonstration purposes.
 """
 
-from typing import Annotated, ClassVar, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Annotated, ClassVar, Sequence
 
 import numpy as np
-import sacc
 import pyccl
+import sacc
 import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from firecrown.likelihood import NamedParameters
+
 from ...utils import upper_triangle_indices
 from ..analysis import (
     AnalysisBuilder,
+    FrameworkCosmology,
     Model,
     Parameter,
-    FrameworkCosmology,
     copy_template,
 )
 from . import _cosmic_shear_template

@@ -2,10 +2,11 @@
 
 import subprocess
 from pathlib import Path
+
 import pytest
 
 from firecrown.app.analysis import Frameworks
-from firecrown.app.examples import ExampleDESY13x2pt, DESY1FactoryType
+from firecrown.app.examples import DESY1FactoryType, ExampleDESY13x2pt
 
 
 @pytest.fixture(name="target_framework", params=Frameworks)

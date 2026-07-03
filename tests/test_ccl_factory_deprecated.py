@@ -10,6 +10,7 @@ caches modules and won't re-execute the module-level code that emits the warning
 """
 
 import sys
+
 import pytest
 
 
@@ -55,8 +56,8 @@ def test_all_items_importable():
         CCLPureModeTransferFunction,
         CCLSplineParams,
         MuSigmaModel,
-        PoweSpecAmplitudeParameter,
         PowerSpec,
+        PoweSpecAmplitudeParameter,
     )
 
     # Verify all imports succeeded and are not None
@@ -79,17 +80,34 @@ def test_items_identical_to_new_location():
     # Import from both locations
     from firecrown.ccl_factory import (
         Background as OldBackground,
+    )
+    from firecrown.ccl_factory import (
         CAMBExtraParams as OldCAMBExtraParams,
+    )
+    from firecrown.ccl_factory import (
         CCLCalculatorArgs as OldCCLCalculatorArgs,
+    )
+    from firecrown.ccl_factory import (
         CCLCreationMode as OldCCLCreationMode,
+    )
+    from firecrown.ccl_factory import (
         CCLFactory as OldCCLFactory,
+    )
+    from firecrown.ccl_factory import (
         CCLPureModeTransferFunction as OldCCLPureModeTransferFunction,
+    )
+    from firecrown.ccl_factory import (
         CCLSplineParams as OldCCLSplineParams,
+    )
+    from firecrown.ccl_factory import (
         MuSigmaModel as OldMuSigmaModel,
-        PoweSpecAmplitudeParameter as OldPoweSpecAmplitudeParameter,
+    )
+    from firecrown.ccl_factory import (
         PowerSpec as OldPowerSpec,
     )
-
+    from firecrown.ccl_factory import (
+        PoweSpecAmplitudeParameter as OldPoweSpecAmplitudeParameter,
+    )
     from firecrown.modeling_tools import (
         Background,
         CAMBExtraParams,
@@ -99,8 +117,8 @@ def test_items_identical_to_new_location():
         CCLPureModeTransferFunction,
         CCLSplineParams,
         MuSigmaModel,
-        PoweSpecAmplitudeParameter,
         PowerSpec,
+        PoweSpecAmplitudeParameter,
     )
 
     # Verify they are the same objects (identity, not just equality)

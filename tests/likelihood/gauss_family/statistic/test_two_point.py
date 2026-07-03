@@ -4,51 +4,49 @@ Tests for the TwoPoint module.
 
 import re
 from unittest.mock import MagicMock
-import numpy as np
-from numpy.testing import assert_allclose
-import pytest
-import pyccl
-import sacc
-from hypothesis import given, assume
-from hypothesis.strategies import floats, integers
 
+import numpy as np
+import pyccl
+import pytest
+import sacc
+from hypothesis import assume, given
+from hypothesis.strategies import floats, integers
+from numpy.testing import assert_allclose
 from pydantic import BaseModel
 
-from firecrown.updatable import get_default_params_map
-from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import ParamsMap
-
-from firecrown.likelihood.number_counts import (
-    NumberCounts,
-)
-from firecrown.likelihood._weak_lensing import (
-    WeakLensing,
-)
-import firecrown.metadata_types as mdt
 import firecrown.likelihood._two_point as tp
+import firecrown.metadata_types as mdt
+from firecrown.data_types import TheoryVector, TwoPointMeasurement
+from firecrown.generators._two_point import (
+    EllOrThetaConfig,
+    LogLinearElls,
+    generate_bin_centers,
+)
 from firecrown.likelihood._two_point import (
     NumberCountsFactory,
     TwoPointFactory,
     use_source_factory,
     use_source_factory_metadata_index,
 )
-from firecrown.models.two_point import TwoPointTheory
-from firecrown.generators._two_point import (
-    generate_bin_centers,
-    EllOrThetaConfig,
-    LogLinearElls,
+from firecrown.likelihood._weak_lensing import (
+    WeakLensing,
 )
-from firecrown.metadata_types import (
-    Galaxies,
-    InferredGalaxyZDist,
-    GALAXY_LENS_TYPES,
-    GALAXY_SOURCE_TYPES,
+from firecrown.likelihood.number_counts import (
+    NumberCounts,
 )
 from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,
     TwoPointRealIndex,
 )
-from firecrown.data_types import TwoPointMeasurement, TheoryVector
+from firecrown.metadata_types import (
+    GALAXY_LENS_TYPES,
+    GALAXY_SOURCE_TYPES,
+    Galaxies,
+    InferredGalaxyZDist,
+)
+from firecrown.modeling_tools import ModelingTools
+from firecrown.models.two_point import TwoPointTheory
+from firecrown.updatable import ParamsMap, get_default_params_map
 
 
 @pytest.fixture(name="include_rsd", params=[True, False], ids=["rsd", "no_rsd"])
@@ -805,8 +803,9 @@ def test_two_point_src0_src0_real_aiw(
 def test_calculate_pk_with_halo_model():
     """Test calculate_pk function when tracers have halo model (covers line 126)."""
     from unittest.mock import Mock, patch
-    from firecrown.models.two_point import calculate_pk
+
     from firecrown.likelihood._source import Tracer
+    from firecrown.models.two_point import calculate_pk
 
     # Create mock tools with halo model capabilities
     tools = Mock(spec=ModelingTools)

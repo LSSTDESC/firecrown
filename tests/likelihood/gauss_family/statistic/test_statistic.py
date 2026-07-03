@@ -3,9 +3,9 @@ Tests for the module firecrown.likelihood.statistic.
 """
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 import sacc
+from numpy.testing import assert_allclose
 
 import firecrown.data_types
 import firecrown.likelihood._statistic as stat

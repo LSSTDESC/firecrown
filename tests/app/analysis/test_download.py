@@ -4,11 +4,12 @@ Tests download and file utility functions.
 """
 
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
 from rich.console import Console
 
-from firecrown.app.analysis import download_from_url, copy_template
+from firecrown.app.analysis import copy_template, download_from_url
 from firecrown.app.analysis._download import get_cache_dir, get_cached_filename
 
 
