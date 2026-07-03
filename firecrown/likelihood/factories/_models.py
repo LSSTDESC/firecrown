@@ -14,8 +14,7 @@ from firecrown.data_functions import (
     extract_all_harmonic_data,
     extract_all_real_data,
 )
-from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._two_point import TwoPointFactory
+from firecrown.likelihood import ConstGaussian, TwoPointFactory
 from firecrown.likelihood_base import Likelihood
 from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.modeling_tools import CCLFactory
