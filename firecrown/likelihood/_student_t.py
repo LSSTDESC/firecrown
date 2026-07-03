@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from firecrown.updatable import register_new_updatable_parameter
-from firecrown.likelihood._base import Statistic
+from firecrown.likelihood_base import Statistic
 from firecrown.likelihood._gaussfamily import GaussFamily
 from firecrown.modeling_tools import ModelingTools
 

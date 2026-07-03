@@ -11,7 +11,7 @@ import pyccl
 
 from firecrown.updatable import register_new_updatable_parameter
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
-from firecrown.likelihood._base import (
+from firecrown.likelihood_base import (
     SourceGalaxy,
     SourceGalaxySystematic,
     Tracer,

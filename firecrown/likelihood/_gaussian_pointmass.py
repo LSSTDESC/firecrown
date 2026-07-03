@@ -12,7 +12,7 @@ from scipy.integrate import simpson
 import pyccl
 
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._base import Statistic
+from firecrown.likelihood_base import Statistic
 
 # Default values for point mass marginalization
 DEFAULT_SIGMA_B = 10000.0

@@ -15,7 +15,7 @@ import sacc
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from firecrown.updatable import register_new_updatable_parameter
-from firecrown.likelihood._base import (
+from firecrown.likelihood_base import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
     SourceGalaxy,

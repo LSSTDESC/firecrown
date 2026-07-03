@@ -14,7 +14,7 @@ import sacc
 import scipy.linalg
 from typing_extensions import ParamSpec
 
-from firecrown.likelihood._base import (
+from firecrown.likelihood_base import (
     GuardedStatistic,
     Likelihood,
     Statistic,

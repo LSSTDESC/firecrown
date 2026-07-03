@@ -15,7 +15,7 @@ import firecrown  # pylint: disable=unused-import # noqa: F401
 
 from firecrown.models.cluster import ClusterData, SaccBin
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood._base import SourceSystematic, Statistic
+from firecrown.likelihood_base import SourceSystematic, Statistic
 from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
 
 
