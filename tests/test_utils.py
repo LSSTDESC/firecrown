@@ -2,14 +2,20 @@
 Tests for the firecrown.utils modle.
 """
 
+import re
+from pathlib import Path
+
 import pytest
 import numpy as np
 import pyccl
+import sacc
 from numpy.testing import assert_allclose
 
 from firecrown.utils import (
     upper_triangle_indices,
     save_to_sacc,
+    load_sacc_data,
+    ensure_path,
     compare_optional_arrays,
     compare_optionals,
     base_model_from_yaml,
@@ -75,6 +81,92 @@ def test_save_to_sacc_non_sttrict(trivial_stats, sacc_data_for_trivial_stat):
         strict=False,
     )
     assert all(new_sacc.data[i].value == d for i, d in zip(idx, new_data_vector))
+
+
+def _make_minimal_sacc() -> sacc.Sacc:
+    """Build a minimal but valid SACC object for round-trip tests."""
+    s = sacc.Sacc()
+    s.add_tracer("misc", "tracer1")
+    return s
+
+
+# Extensions that do not announce a specific SACC format, so the format must
+# be determined from the file contents. ``.sacc`` is used by several examples.
+_AMBIGUOUS_SUFFIXES = [".sacc", ""]
+
+
+@pytest.mark.parametrize("suffix", [".fits", *_AMBIGUOUS_SUFFIXES])
+def test_load_sacc_data_loads_fits(tmp_path, suffix):
+    """load_sacc_data reads FITS content, including from ambiguous extensions.
+
+    When the extension does not announce a format (e.g. the ``.sacc`` files
+    used by several examples, or a file with no extension), SACC detects FITS
+    from the file contents and the file is loaded successfully.
+    """
+    input_file = tmp_path / f"data{suffix}"
+    _make_minimal_sacc().save_fits(str(input_file), overwrite=True)
+
+    loaded = load_sacc_data(input_file)
+
+    assert isinstance(loaded, sacc.Sacc)
+    assert len(loaded.tracers) == 1
+
+
+@pytest.mark.parametrize("suffix", [".hdf5", ".h5", *_AMBIGUOUS_SUFFIXES])
+def test_load_sacc_data_loads_hdf5(tmp_path, suffix):
+    """load_sacc_data reads HDF5 content, including from ambiguous extensions.
+
+    This is the case that regressed under SACC 2.2: an HDF5 file named with an
+    extension that does not announce HDF5 (e.g. ``.sacc``) must still be loaded
+    successfully via content detection.
+    """
+    input_file = tmp_path / f"data{suffix}"
+    _make_minimal_sacc().save_hdf5(str(input_file))
+
+    loaded = load_sacc_data(input_file)
+
+    assert isinstance(loaded, sacc.Sacc)
+    assert len(loaded.tracers) == 1
+
+
+def test_load_sacc_data_accepts_string_path(tmp_path):
+    """load_sacc_data accepts a string path as well as a Path object."""
+    input_file = tmp_path / "data.sacc"
+    _make_minimal_sacc().save_fits(str(input_file), overwrite=True)
+
+    loaded = load_sacc_data(str(input_file))
+
+    assert isinstance(loaded, sacc.Sacc)
+
+
+def test_load_sacc_data_missing_file_raises(tmp_path):
+    """load_sacc_data raises FileNotFoundError for a non-existent file."""
+    with pytest.raises(FileNotFoundError, match="SACC file not found"):
+        load_sacc_data(tmp_path / "does_not_exist.sacc")
+
+
+def test_load_sacc_data_unrecognized_content_raises(tmp_path):
+    """load_sacc_data raises ValueError when content is neither FITS nor HDF5."""
+    bad_file = tmp_path / "corrupted.sacc"
+    bad_file.write_text("This is not a valid SACC file format")
+
+    with pytest.raises(
+        ValueError,
+        match=re.compile(
+            "Failed to load SACC data from file.*"
+            "could not be read as either HDF5 or FITS format",
+            re.DOTALL,
+        ),
+    ):
+        load_sacc_data(bad_file)
+
+
+@pytest.mark.parametrize("value", ["some/path.sacc", Path("some/path.sacc")])
+def test_ensure_path_returns_path(value):
+    """ensure_path returns a Path for both str and Path inputs."""
+    result = ensure_path(value)
+    assert isinstance(result, Path)
+    assert result == Path("some/path.sacc")
 
 
 def test_compare_optional_arrays_():

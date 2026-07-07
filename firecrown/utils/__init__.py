@@ -8,7 +8,12 @@ from firecrown.utils._angular_cl import (
 )
 from firecrown.utils._comparisons import compare_optional_arrays, compare_optionals
 from firecrown.utils._interpolation import make_log_interpolator
-from firecrown.utils._sacc_ops import save_to_sacc, upper_triangle_indices
+from firecrown.utils._sacc_ops import (
+    ensure_path,
+    load_sacc_data,
+    save_to_sacc,
+    upper_triangle_indices,
+)
 from firecrown.utils._yaml_serialization import (
     YAMLSerializable,
     base_model_from_yaml,
@@ -21,6 +26,8 @@ __all__ = [
     "base_model_to_yaml",
     "upper_triangle_indices",
     "save_to_sacc",
+    "load_sacc_data",
+    "ensure_path",
     "compare_optional_arrays",
     "compare_optionals",
     "ClLimberMethod",

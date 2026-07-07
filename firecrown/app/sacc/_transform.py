@@ -7,9 +7,8 @@ from pathlib import Path
 from typing import Annotated, assert_never
 
 import sacc
-import typer
-
 from sacc.utils import detect_sacc_file_type
+import typer
 
 from firecrown.metadata_functions import (
     extract_all_real_metadata_indices,

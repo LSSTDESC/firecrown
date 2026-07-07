@@ -45,12 +45,12 @@ dependencies:
   - pytest-cov
   - pytest-json-report
   - pytest-xdist
-  - python >=3.11
+  - python >=3.12
   - pyyaml
   - quarto
   - requests
   - rich
-  - sacc >= 2.3
+  - sacc >= 2.4
   - scipy >= 1.13
   - sphinx
   - sphinx-autoapi

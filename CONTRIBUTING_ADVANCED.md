@@ -155,7 +155,7 @@ to target multiple branches without any duplication.
 | `.github/workflows/ci-reusable.yml` | The single source of truth for all CI job definitions (all three stages). Called by the other two workflows. Never triggered directly by GitHub events. |
 | `.github/workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` for main PR validation and also defines a non-blocking, path-filtered rebuild-drift canary job for dependency-impacting changes. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
 | `.github/workflows/nightly.yml` | Triggered by the daily cron schedule. Reads `ci-branches.json` at runtime to build the branch matrix, then calls `ci-reusable.yml` once per branch. |
-| `.github/conda-lock/` | Contains unified lockfiles (`py{version}.conda-lock.yml`) for all supported Python versions (3.11-3.14). |
+| `.github/conda-lock/` | Contains unified lockfiles (`py{version}.conda-lock.yml`) for all supported Python versions (3.12-3.14). |
 | `.github/scripts/generate_conda_locks.sh` | Script to regenerate lockfiles. Run via `make conda-lock`. |
 
 ### How it works
@@ -175,7 +175,7 @@ come from the branch named in `ref`.
 
 ### Conda lockfiles
 
-Firecrown uses `conda-lock` to generate reproducible lockfiles stored in `.github/conda-lock/`. The lockfiles use the unified multi-platform format (`py{version}.conda-lock.yml`) which bundles all supported Python versions (3.11-3.14) and platforms (linux-64, osx-arm64) in a single file per Python version.
+Firecrown uses `conda-lock` to generate reproducible lockfiles stored in `.github/conda-lock/`. The lockfiles use the unified multi-platform format (`py{version}.conda-lock.yml`) which bundles all supported Python versions (3.12-3.14) and platforms (linux-64, osx-arm64) in a single file per Python version.
 
 **Generating lockfiles**: Run `make conda-lock` to regenerate all lockfiles. This requires `conda-lock==4.0.0` installed in your development environment:
 

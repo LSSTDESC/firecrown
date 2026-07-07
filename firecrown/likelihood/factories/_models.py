@@ -19,7 +19,7 @@ from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._base import Likelihood
 from firecrown.likelihood._two_point import TwoPointFactory
 from firecrown.metadata_types import TwoPointCorrelationSpace
-from firecrown.likelihood.factories._sacc_utils import ensure_path, load_sacc_data
+from firecrown.utils import ensure_path, load_sacc_data
 
 
 def _build_two_point_likelihood_harmonic(

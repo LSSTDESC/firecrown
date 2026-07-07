@@ -131,7 +131,7 @@ def main(
         try:
             cls = import_class_from_path(console, class_name)
             if len(class_names) > 1:
-                print(f"\n{'=' * 60}")
+                print(f"\n{"=" * 60}")
                 richprint(f"Class: {class_name}")
                 richprint("=" * 60)
             display_class_attributes_func(cls)

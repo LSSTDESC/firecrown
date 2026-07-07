@@ -7,18 +7,21 @@ Thank you for your interest in contributing to Firecrown! This document provides
 We recommend using `conda` (or `mamba`/`miniforge`) to manage your development environment.
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/LSSTDESC/firecrown.git
    cd firecrown
    ```
 
 2. **Create and activate the environment:**
+
    ```bash
    conda env create --name firecrown_developer --file environment.yml
    conda activate firecrown_developer
    ```
 
 3. **Install Firecrown in development mode:**
+
    ```bash
    make install
    ```
@@ -51,7 +54,7 @@ Before pushing, verify the lockfiles are up to date:
 make conda-lock-check
 ```
 
-This ensures CI can install the environment from the committed lockfiles. The lockfiles are stored in `.github/conda-lock/` as unified format files (`py{version}.conda-lock.yml`) that support Python versions 3.11-3.14 on both Linux and macOS.
+This ensures CI can install the environment from the committed lockfiles. The lockfiles are stored in `.github/conda-lock/` as unified format files (`py{version}.conda-lock.yml`) that support Python versions 3.12-3.14 on both Linux and macOS.
 
 > [!TIP]
 > The `Makefile` automatically runs targets in parallel and detects the number of available CPUs. Use `make -j1 <target>` to run serially (useful for debugging), or `JOBS=N make <target>` to override the number of jobs.
@@ -87,4 +90,3 @@ pip install conda-lock==4.0.0
 ```
 
 The `CONTRIBUTING_ADVANCED.md` file contains detailed information about lockfile management and the CI system.
-
