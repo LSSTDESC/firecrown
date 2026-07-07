@@ -84,7 +84,7 @@ def main(
         # import_class_from_path handles errors via cli_error (exits on failure)
         type_ = import_class_from_path(console, typename)
         if len(typenames) > 1:
-            richprint(f"\n{'=' * 60}")
+            richprint(f"\n{"=" * 60}")
         print_type_hierarchy(type_)
 
 

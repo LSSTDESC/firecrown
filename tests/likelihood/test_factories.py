@@ -1174,12 +1174,35 @@ def test_load_sacc_data_both_formats_fail(tmp_path):
     with pytest.raises(
         ValueError,
         match=re.compile(
-            "Failed to load SACC data from file.*"
-            "The file could not be read as either HDF5 or FITS format",
+            "Failed to load SACC data from file.*Could not detect file type",
             re.DOTALL,
         ),
     ):
         load_sacc_data(bad_file)
+
+
+def test_load_sacc_data_ambiguous_extension_hdf5_content(tmp_path):
+    """Test load_sacc_data loads a .sacc-suffixed file with HDF5 content."""
+    hdf5_file = tmp_path / "data.sacc"
+    s = sacc.Sacc()
+    s.add_tracer("misc", "tracer1")
+    s.save_hdf5(str(hdf5_file))
+
+    sacc_data = load_sacc_data(hdf5_file)
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
+
+
+def test_load_sacc_data_ambiguous_extension_fits_content(tmp_path):
+    """Test load_sacc_data loads a .sacc-suffixed file with FITS content."""
+    fits_file = tmp_path / "data.sacc"
+    s = sacc.Sacc()
+    s.add_tracer("misc", "tracer1")
+    s.save_fits(str(fits_file))
+
+    sacc_data = load_sacc_data(fits_file)
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
 
 
 def test_load_sacc_data_with_path_object():

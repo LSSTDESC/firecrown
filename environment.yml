@@ -24,18 +24,18 @@ dependencies:
   - idna
   - jupyter
   - linkchecker
+  - lsstdesc-crow
   - matplotlib-base
   - more-itertools
   - mypy
-  - numcosmo >= 0.21.1
+  - numcosmo >= 0.27
   - numpy >= 2.0, < 2.4
-  - pip >= 20.1  # pip is needed as dependency
+  - pip >= 20.1 # pip is needed as dependency
   - pip:
-    - cobaya
-    - lsstdesc-crow
-    - isitgr
-    - pygobject-stubs < 2.17
-  - plotnine < 0.15
+      - build
+      - cobaya
+      - isitgr
+  - plotnine
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
@@ -45,13 +45,13 @@ dependencies:
   - pytest-cov
   - pytest-json-report
   - pytest-xdist
-  - python >=3.11
+  - python >=3.12
   - pyyaml
   - quarto
   - requests
   - rich
-  - sacc >= 2.1
-  - scipy >= 1.12
+  - sacc >= 2.4
+  - scipy >= 1.13
   - sphinx
   - sphinx-autoapi
   - sphinx-autodoc-typehints

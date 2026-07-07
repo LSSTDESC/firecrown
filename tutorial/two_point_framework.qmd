@@ -1,5 +1,6 @@
 ---
 title: "Firecrown's Two-Point Framework"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

@@ -245,7 +245,7 @@ def _validate_tracer_types(
         if has_mixed and not allow_mixed_types:
             raise ValueError(
                 f"Tracer '{tracer}' has multiple measurement types: "
-                f"[{', '.join(list_types)}]. This may indicate inconsistent labeling "
+                f"[{", ".join(list_types)}]. This may indicate inconsistent labeling "
                 f"in the SACC file/object. If this is intentional (mixed-type "
                 f"measurements), set allow_mixed_types=True. Otherwise, please verify "
                 f"that measurements were correctly associated with tracers. See the "

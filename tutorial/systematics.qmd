@@ -1,5 +1,6 @@
 ---
 title: "Handling Systematic Uncertainties"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

@@ -169,7 +169,7 @@ class Updatable(ABC):
         if internal_params:
             raise TypeError(
                 f"Items of type InternalParameter cannot be modified through "
-                f"update, but {','.join(internal_params)} was specified."
+                f"update, but {",".join(internal_params)} was specified."
             )
 
         for parameter in self._sampler_parameters:

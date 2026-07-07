@@ -1,5 +1,6 @@
 ---
 title: "Using Firecrown to Serialize Redshift Distributions"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

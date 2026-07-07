@@ -1,5 +1,6 @@
 ---
 title: "Controlling Integration Methods"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

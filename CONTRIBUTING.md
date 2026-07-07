@@ -7,18 +7,21 @@ Thank you for your interest in contributing to Firecrown! This document provides
 We recommend using `conda` (or `mamba`/`miniforge`) to manage your development environment.
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/LSSTDESC/firecrown.git
    cd firecrown
    ```
 
 2. **Create and activate the environment:**
+
    ```bash
-   conda env create -f environment.yml
+   conda env create --name firecrown_developer --file environment.yml
    conda activate firecrown_developer
    ```
 
 3. **Install Firecrown in development mode:**
+
    ```bash
    make install
    ```
@@ -37,6 +40,22 @@ To maintain high code quality and consistency, we use several automated tools. W
 | `make docs` | Build and verify all documentation (tutorials + API) | When changing tutorials or docstrings |
 | `make pre-commit` | A comprehensive check: format, lint, docs-verify, and full tests | Recommended pre-push check |
 
+### Conda Lockfiles
+
+When updating dependencies in `environment.yml`, regenerate the lockfiles:
+
+```bash
+make conda-lock
+```
+
+Before pushing, verify the lockfiles are up to date:
+
+```bash
+make conda-lock-check
+```
+
+This ensures CI can install the environment from the committed lockfiles. The lockfiles are stored in `.github/conda-lock/` as unified format files (`py{version}.conda-lock.yml`) that support Python versions 3.12-3.14 on both Linux and macOS.
+
 > [!TIP]
 > The `Makefile` automatically runs targets in parallel and detects the number of available CPUs. Use `make -j1 <target>` to run serially (useful for debugging), or `JOBS=N make <target>` to override the number of jobs.
 
@@ -44,11 +63,14 @@ For detailed diagrams of how `Makefile` targets relate to each other, how parall
 works, and how the CI pipeline is structured, see
 [CONTRIBUTING_ADVANCED.md](CONTRIBUTING_ADVANCED.md).
 
+To regenerate lockfiles and manage the lockfile generation process, see
+[CONTRIBUTING_ADVANCED.md#conda-lock](CONTRIBUTING_ADVANCED.md#conda-lock).
+
 ## Pull Request Process
 
 1. **Create a Branch**: Always work on a new branch for your feature or bug fix.
 2. **Write Tests**: Ensure your changes are covered by unit tests. We aim for 100% coverage on new code.
-3. **Verify Locally**: Run `make pre-commit` to ensure everything is in order.
+3. **Verify Locally**: Run `make pre-commit` to ensure everything is in order. If you modified `environment.yml`, also run `make conda-lock` and commit the updated lockfiles.
 4. **Submit PR**: Once your tests pass locally, submit a Pull Request to the `master` branch.
 5. **CI Pipeline**: Our CI system will run the full test matrix on Ubuntu and macOS with various Python versions. Your PR must pass all CI checks before it can be merged.
 
@@ -59,3 +81,12 @@ works, and how the CI pipeline is structured, see
 - Use type hints wherever possible (checked by `mypy`).
 - Ensure `pylint` passes without warnings in the relevant packages.
 
+## Conda Lockfiles
+
+Developers must have `conda-lock` installed to regenerate lockfiles. Install it with:
+
+```bash
+pip install conda-lock==4.0.0
+```
+
+The `CONTRIBUTING_ADVANCED.md` file contains detailed information about lockfile management and the CI system.

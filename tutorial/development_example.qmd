@@ -1,5 +1,6 @@
 ---
 title: "Developing a New Likelihood"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 execute:
   EFL: false
 format: html

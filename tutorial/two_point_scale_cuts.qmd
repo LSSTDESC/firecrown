@@ -1,5 +1,6 @@
 ---
 title: "Scale Cuts and Data Filtering"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

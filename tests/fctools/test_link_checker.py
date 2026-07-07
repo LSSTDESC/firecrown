@@ -8,10 +8,11 @@ method when necessary.
 """
 
 from pathlib import Path
+import io
+from contextlib import redirect_stdout
+
 import requests
-
 import pytest
-
 from rich.console import Console
 from typer.testing import CliRunner
 
@@ -73,6 +74,26 @@ def fixture_mock_requests_ok(monkeypatch):
 
     monkeypatch.setattr(requests.Session, "get", _fake_get)
     return _fake_get
+
+
+def make_429_response(_: str):
+    """Factory to create a mock response that raises HTTPError for 429."""
+
+    class Fake429Resp:
+        """Fake response object for requests.get() that returns 429."""
+
+        def __init__(self):
+            """Create fake response."""
+            self.status_code = 429
+            self.reason = "Too Many Requests"
+
+        def raise_for_status(self):
+            """Simulate HTTP 429 error."""
+            http_error = requests.HTTPError("429 Client Error: Too Many Requests")
+            http_error.response = self
+            raise http_error
+
+    return Fake429Resp()
 
 
 def test_extract_ids_basic(site_dir: Path):
@@ -236,11 +257,25 @@ def test_download_url_writes_file_when_ok(sample_site: Path, mock_requests_ok):
         sc.close()
 
 
-def test_download_url_handles_failure_and_returns_path(sample_site: Path, monkeypatch):
+@pytest.mark.parametrize(
+    "exc_type,exc_msg,status_code",
+    [
+        (requests.RequestException, "network boom", None),
+        (requests.HTTPError, "404 Client Error: Not Found", 404),
+    ],
+)
+def test_download_url_handles_failure_and_returns_path(
+    sample_site: Path, monkeypatch, exc_type, exc_msg, status_code
+):
     console = Console(record=True)
 
-    def _raise(self, url, timeout=None, **_kwargs):
-        raise requests.RequestException("network boom")
+    def _raise(_self, _url, _timeout=None, **_kwargs):
+        if status_code is not None:
+            exc = exc_type(exc_msg)
+            exc.response = type("FakeResp", (), {"status_code": status_code})()
+        else:
+            exc = exc_type(exc_msg)
+        raise exc
 
     monkeypatch.setattr(requests.Session, "get", _raise)
 
@@ -261,6 +296,195 @@ def test_download_url_handles_failure_and_returns_path(sample_site: Path, monkey
         assert "Download failed" in out
     finally:
         sc.close()
+
+
+def test_download_url_records_429_error(sample_site: Path, monkeypatch):
+    """Test that _download_url records 429 errors in rate_limited_urls dict."""
+    console = Console(record=True)
+
+    def _raise_429(self, url, _=None, **_kwargs):
+        assert self is not None  # to silence pylint
+        resp = make_429_response(url)
+        return resp
+
+    monkeypatch.setattr(requests.Session, "get", _raise_429)
+
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=True,
+        skip_external=False,
+    )
+    try:
+        # pylint: disable-next=protected-access
+        path = sc._download_url("http://en.wikipedia.org/wiki/Abstract_type")
+        # Path should be returned but file should not exist
+        assert not path.exists()
+        # URL should be in rate_limited_urls with error message
+        assert "http://en.wikipedia.org/wiki/Abstract_type" in sc.rate_limited_urls
+        assert (
+            "429" in sc.rate_limited_urls["http://en.wikipedia.org/wiki/Abstract_type"]
+            or "Too Many Requests"
+            in sc.rate_limited_urls["http://en.wikipedia.org/wiki/Abstract_type"]
+        )
+        # Console should have rate-limited message
+        out = console.export_text()
+        assert "Rate limited" in out
+    finally:
+        sc.close()
+
+
+def test_rate_limited_links_dont_count_as_invalid(sample_site: Path, monkeypatch):
+    """Test that 429 rate-limited links don't increment invalid_links counter."""
+    (sample_site / "link.html").write_text(
+        '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
+    )
+
+    def _raise_429(self, url, _=None, **_kwargs):
+        assert self is not None  # to silence pylint
+        resp = make_429_response(url)
+        return resp
+
+    monkeypatch.setattr(requests.Session, "get", _raise_429)
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=False,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # 429 should not create missing link entries
+    assert not missing
+    # 429 should not count as invalid link
+    assert sc.invalid_links == 0
+    # 429 should record the URL
+    assert any("en.wikipedia.org" in u for u in sc.rate_limited_urls)
+
+
+def test_main_returns_zero_for_429_failures_only(site_dir: Path, monkeypatch):
+    """Test that main() returns 0 when only 429 failures occur (not broken links)."""
+    (site_dir / "link.html").write_text(
+        '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
+    )
+
+    def _raise_429(self, url, _=None, **_kwargs):
+        assert self is not None  # to silence pylint
+        resp = make_429_response(url)
+        return resp
+
+    monkeypatch.setattr(requests.Session, "get", _raise_429)
+
+    # Should return 0 because 429 is not a broken link
+    code = link_checker.main(
+        site_dir, download_timeout=1, verbose=False, skip_external=False
+    )
+    assert code == 0
+
+
+def test_mixed_429_and_real_failure_uses_404_exit_code(site_dir: Path, monkeypatch):
+    """Test that a mix of 429 and real failures uses the real failure exit code."""
+    # Create a real broken link (missing file)
+    (site_dir / "link.html").write_text('<a href="missing.html">broken</a>')
+    # Create an external link that will be 429
+    (site_dir / "wiki.html").write_text(
+        '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
+    )
+
+    def _raise_or_404(self, url, _=None, **_kwargs):
+        assert self is not None  # to silence pylint
+        if "en.wikipedia.org" in url:
+            resp = make_429_response(url)
+            return resp
+        # For local files, let check_anchors handle it (file doesn't exist)
+        return None
+
+    monkeypatch.setattr(requests.Session, "get", _raise_or_404)
+
+    code = link_checker.main(
+        site_dir, download_timeout=1, verbose=False, skip_external=False
+    )
+    # Should fail because of missing.html (real broken link)
+    assert code != 0
+
+
+def test_rate_limited_urls_appear_in_report(sample_site: Path, monkeypatch):
+    """Test that rate-limited URLs appear in verbose output."""
+    (sample_site / "link.html").write_text(
+        '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
+    )
+
+    def _raise_429(self, url, _=None, **_kwargs):
+        assert self is not None  # to silence pylint
+        resp = make_429_response(url)
+        return resp
+
+    monkeypatch.setattr(requests.Session, "get", _raise_429)
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        code = link_checker.main(
+            sample_site,
+            download_timeout=1,
+            verbose=True,
+            skip_external=False,
+        )
+
+    # Should return 0
+    assert code == 0
+
+    # Should contain rate-limited information in output
+    out = f.getvalue()
+    assert "wikipedia" in out.lower()
+
+
+def test_429_responses_are_cached_like_other_failures(sample_site: Path, monkeypatch):
+    """Test that 429 responses get cached like other failed downloads."""
+    (sample_site / "link.html").write_text(
+        '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
+    )
+
+    call_count = 0
+
+    def _raise_429_count(self, url, _=None, **_kwargs):
+        assert self is not None  # to silence pylint
+        nonlocal call_count
+        call_count += 1
+        resp = make_429_response(url)
+        return resp
+
+    monkeypatch.setattr(requests.Session, "get", _raise_429_count)
+
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=Console(),
+        download_timeout=1,
+        verbose=False,
+        skip_external=False,
+    )
+    try:
+        # First normalize should trigger download attempt
+        fp = sample_site / "link.html"
+        # pylint: disable-next=protected-access
+        sc._normalize_href(fp, "http://en.wikipedia.org/wiki/Abstract_type")
+        # Second normalize should use cached path (no second download)
+        # pylint: disable-next=protected-access
+        sc._normalize_href(fp, "http://en.wikipedia.org/wiki/Abstract_type")
+    finally:
+        sc.close()
+
+    # Should have attempted download only once (cached on first failure)
+    assert call_count == 1
+    # URL should be in both rate_limited_urls and downloaded_files
+    assert "http://en.wikipedia.org/wiki/Abstract_type" in sc.rate_limited_urls
+    assert "http://en.wikipedia.org/wiki/Abstract_type" in sc.downloaded_files
 
 
 def test_normalize_fragment_only(sample_site: Path):

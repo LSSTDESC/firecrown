@@ -26,7 +26,9 @@ jobs:
     outputs:
       should_run: ${{ steps.filter.outputs.drift }}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
       - name: Detect dependency-impacting changes
         id: filter
         uses: dorny/paths-filter@v4.0.1
@@ -48,7 +50,9 @@ jobs:
     timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v4.0.1
         with:

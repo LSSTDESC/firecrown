@@ -316,6 +316,18 @@ class TestTransformFormatDetection:
 
         assert output_file.exists()
 
+    def test_detect_sacc_file_type_importable(self) -> None:
+        """Guard test: sacc.utils.detect_sacc_file_type must remain importable.
+
+        Transform.detect_format relies on this internal-but-stable sacc
+        helper. If a future sacc release renames or removes it, this test
+        will fail loudly instead of Transform.detect_format failing silently.
+        """
+        # pylint: disable=import-outside-toplevel
+        from sacc.utils import detect_sacc_file_type
+
+        assert callable(detect_sacc_file_type)
+
 
 class TestTransformIntegration:
     """Integration tests for Transform functionality."""
@@ -513,14 +525,14 @@ class TestTransformErrorHandling:
     """Tests for Transform error handling edge cases."""
 
     def test_detect_format_no_extension_tries_both(self, tmp_path: Path) -> None:
-        """Test format detection without extension tries both formats."""
+        """Test format detection without extension uses file contents."""
         # Create a FITS file without extension
         input_file: Path = tmp_path / "test_no_ext"
         s: sacc.Sacc = sacc.Sacc()
         s.add_tracer("misc", "tracer1")
         s.save_fits(str(input_file))
 
-        # Should detect as FITS after trying (covers lines 170-181)
+        # Should detect as FITS from the file contents
         detected = Transform.detect_format(input_file)
         assert detected == SaccFormat.FITS
 
@@ -529,8 +541,8 @@ class TestTransformErrorHandling:
         input_file: Path = tmp_path / "invalid_no_ext"
         input_file.write_text("not a SACC file")
 
-        # Should raise ValueError after trying both formats (covers lines 170-181)
-        with pytest.raises(ValueError, match="Cannot detect format"):
+        # Should raise ValueError when the contents are not a known SACC format
+        with pytest.raises(ValueError, match="Could not detect file type"):
             Transform.detect_format(input_file)
 
     def test_transform_with_explicit_output_format(self, tmp_path: Path) -> None:

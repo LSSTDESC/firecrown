@@ -1,5 +1,6 @@
 ---
 title: "Bin Pair Selectors: Filtering Two-Point Correlations"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
 format: html
 ---
 

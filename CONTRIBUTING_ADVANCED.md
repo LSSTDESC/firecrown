@@ -151,10 +151,12 @@ to target multiple branches without any duplication.
 
 | File | Purpose |
 | :--- | :--- |
-| `ci-branches.json` | **The single source of truth** for which long-lived branches are tested nightly. Edit only this file to add or remove a branch. |
-| `workflows/ci-reusable.yml` | The single source of truth for all CI job definitions (all three stages). Called by the other two workflows. Never triggered directly by GitHub events. |
-| `workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` for main PR validation and also defines a non-blocking, path-filtered rebuild-drift canary job for dependency-impacting changes. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
-| `workflows/nightly.yml` | Triggered by the daily cron schedule. Reads `ci-branches.json` at runtime to build the branch matrix, then calls `ci-reusable.yml` once per branch. |
+| `.github/ci-branches.json` | **The single source of truth** for which long-lived branches are tested nightly. Edit only this file to add or remove a branch. |
+| `.github/workflows/ci-reusable.yml` | The single source of truth for all CI job definitions (all three stages). Called by the other two workflows. Never triggered directly by GitHub events. |
+| `.github/workflows/ci.yml` | Triggered on every `pull_request` event. Calls `ci-reusable.yml` for main PR validation and also defines a non-blocking, path-filtered rebuild-drift canary job for dependency-impacting changes. There is no push trigger: all commits to long-lived branches arrive via merged PRs (which have already run CI), and the nightly workflow covers ongoing health checks. |
+| `.github/workflows/nightly.yml` | Triggered by the daily cron schedule. Reads `ci-branches.json` at runtime to build the branch matrix, then calls `ci-reusable.yml` once per branch. |
+| `.github/conda-lock/` | Contains unified lockfiles (`py{version}.conda-lock.yml`) for all supported Python versions (3.12-3.14). |
+| `.github/scripts/generate_conda_locks.sh` | Script to regenerate lockfiles. Run via `make conda-lock`. |
 
 ### How it works
 
@@ -170,6 +172,22 @@ to test any branch other than `master`.
 The reusable workflow definition used is always the one on `master`,
 but the source code and `environment.yml` checked out during testing
 come from the branch named in `ref`.
+
+### Conda lockfiles
+
+Firecrown uses `conda-lock` to generate reproducible lockfiles stored in `.github/conda-lock/`. The lockfiles use the unified multi-platform format (`py{version}.conda-lock.yml`) which bundles all supported Python versions (3.12-3.14) and platforms (linux-64, osx-arm64) in a single file per Python version.
+
+**Generating lockfiles**: Run `make conda-lock` to regenerate all lockfiles. This requires `conda-lock==4.0.0` installed in your development environment:
+
+```bash
+pip install conda-lock==4.0.0
+```
+
+**Verifying lockfiles**: Before pushing, run `make conda-lock-check` to confirm the lockfiles match the current `environment.yml` and git HEAD.
+
+**CI behavior**: CI jobs install `conda-lock` via `python -m pip install conda-lock==4.0.0` and use `conda-lock install` to create environments from the lockfiles. This ensures pip dependencies (`cobaya`, `isitgr`, `lsstdesc-crow`, `pygobject-stubs`) are resolved and installed as part of the locked environment, not as a separate step.
+
+**Cache keys**: CI uses lockfile hashes in cache keys (e.g., `conda-Linux-X64-py3.12-lock-{hash}-v34-lint`) to invalidate caches when dependencies change.
 
 ### Nightly mode and rebuild-drift jobs
 
@@ -200,7 +218,7 @@ To preserve dependency-drift signal in pull request context,
 `.github/workflows/ci.yml` defines a non-blocking rebuild-drift canary job.
 That canary is path-filtered and runs only when dependency-impacting files
 change,
-such as `environment.yml`, lockfiles, CI environment scripts, or reusable
+such as `environment.yml`, lockfiles in `.github/conda-lock/`, CI environment scripts, or reusable
 workflow dependency setup.
 
 When it runs,
@@ -217,3 +235,12 @@ Edit `.github/ci-branches.json` only — for example, to add `v1.15`:
 ```
 
 No changes to any workflow file are needed.
+
+### Updating the lockfile version
+
+When `conda-lock` is updated to a new version:
+
+1. Update `CONDA_LOCK_VERSION` in `.github/workflows/ci-reusable.yml`
+2. Update `PINNED_CONDA_LOCK_VERSION` in `.github/scripts/generate_conda_locks.sh`
+3. Run `make conda-lock` to regenerate all lockfiles with the new version
+4. Commit the updated lockfiles and version pins

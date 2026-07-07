@@ -7,7 +7,7 @@ jobs=0
 
 # Minimum Python version to use for version dependent checks. Will default to
 # the version used to run pylint.
-py-version=3.11
+py-version=3.12
 
 # Discover python modules and packages in the file system subtree.
 recursive=yes
@@ -58,7 +58,7 @@ max-positional-arguments=8
 max-args=13
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=14
+max-attributes=15
 
 [STRING]
 

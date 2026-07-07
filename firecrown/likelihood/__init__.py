@@ -28,9 +28,6 @@ Subpackages:
     - :mod:`factories`: Factory functions for creating likelihood components
 """
 
-# Third-party imports
-from numcosmo_py import Ncm
-
 # Core likelihood infrastructure - base classes from _base.py
 from firecrown.likelihood._base import (
     Likelihood,
@@ -81,21 +78,6 @@ from . import weak_lensing
 from . import supernova
 
 # pylint: enable=unused-import
-
-# Compatibility layer for NumCosmo < 0.27
-# NumCosmo knowns aboud the old internal organization of Firecrown.
-if not Ncm.cfg_version_check(0, 27, 0):  # pragma: no branch
-    import types
-    import sys
-
-    # Create a new module 'likelihood.likelihood' for backwards compatibility
-    # with older NumCosmo versions
-    likelihood = types.ModuleType("likelihood.likelihood")
-    # Add NamedParameters class to the module, ignoring type checking since it
-    # is added dynamically
-    likelihood.NamedParameters = NamedParameters  # type: ignore[attr-defined]
-    # Register the module in sys.modules to make it importable
-    sys.modules["firecrown.likelihood.likelihood"] = likelihood
 
 __all__ = [
     # Core likelihood infrastructure
