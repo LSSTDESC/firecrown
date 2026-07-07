@@ -8,7 +8,7 @@ import pyccl.nl_pt
 import pytest
 import sacc
 
-import firecrown.likelihood._weak_lensing as wl
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.metadata_types import Galaxies, InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
