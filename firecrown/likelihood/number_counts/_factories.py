@@ -14,6 +14,7 @@ from firecrown.likelihood.number_counts._systematics import (
     MagnificationBiasSystematic,
     PTNonLinearBiasSystematic,
 )
+from firecrown.likelihood._source import SpecZStretchFactory
 from firecrown.likelihood.weak_lensing import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
@@ -123,7 +124,8 @@ NumberCountsSystematicFactory = Annotated[
     | LinearBiasSystematicFactory
     | PTNonLinearBiasSystematicFactory
     | MagnificationBiasSystematicFactory
-    | ConstantMagnificationBiasSystematicFactory,
+    | ConstantMagnificationBiasSystematicFactory
+    | SpecZStretchFactory,
     Field(discriminator="type", union_mode="left_to_right"),
 ]
 
