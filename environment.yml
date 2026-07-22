@@ -4,6 +4,7 @@ dependencies:
   - alabaster
   - babel
   - black
+  - camb < 2.0
   - charset-normalizer
   - clmm
   - compilers
