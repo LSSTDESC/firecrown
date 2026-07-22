@@ -10,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 
 
-class DataVector(npt.NDArray[np.float64]):
+class DataVector(np.ndarray):
     """Wrapper for a np.ndarray that represents some observed data values."""
 
     @classmethod
@@ -33,7 +33,7 @@ class DataVector(npt.NDArray[np.float64]):
         return cls.create(array)
 
 
-class TheoryVector(npt.NDArray[np.float64]):
+class TheoryVector(np.ndarray):
     """Wrapper for an np.ndarray that represents a prediction by some theory."""
 
     @classmethod
