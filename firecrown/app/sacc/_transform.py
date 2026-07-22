@@ -11,9 +11,10 @@ from sacc.utils import detect_sacc_file_type
 import typer
 
 from firecrown.metadata_functions import (
-    extract_all_real_metadata_indices,
     extract_all_harmonic_metadata_indices,
+    extract_all_real_metadata_indices,
 )
+
 from ._load import Load
 
 

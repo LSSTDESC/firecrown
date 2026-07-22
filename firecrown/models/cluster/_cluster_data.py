@@ -5,8 +5,8 @@ from abc import abstractmethod
 import numpy as np
 import numpy.typing as npt
 import sacc
-from sacc.tracers import SurveyTracer
 from crow.properties import ClusterProperty
+from sacc.tracers import SurveyTracer
 
 from firecrown.models.cluster._binning import SaccBin
 

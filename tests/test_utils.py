@@ -5,26 +5,26 @@ Tests for the firecrown.utils modle.
 import re
 from pathlib import Path
 
-import pytest
 import numpy as np
 import pyccl
+import pytest
 import sacc
 from numpy.testing import assert_allclose
 
 from firecrown.utils import (
-    upper_triangle_indices,
-    save_to_sacc,
-    load_sacc_data,
-    ensure_path,
-    compare_optional_arrays,
-    compare_optionals,
+    ClIntegrationMethod,
+    ClIntegrationOptions,
+    ClLimberMethod,
     base_model_from_yaml,
     base_model_to_yaml,
-    ClIntegrationMethod,
-    ClLimberMethod,
-    ClIntegrationOptions,
-    make_log_interpolator,
     cached_angular_cl,
+    compare_optional_arrays,
+    compare_optionals,
+    ensure_path,
+    load_sacc_data,
+    make_log_interpolator,
+    save_to_sacc,
+    upper_triangle_indices,
 )
 
 

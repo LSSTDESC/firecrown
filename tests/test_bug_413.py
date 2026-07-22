@@ -1,18 +1,19 @@
 """Test for TwoPoint calculate_pk."""
 
 from typing import Tuple
+
 import pyccl
 import sacc
 
-from firecrown.updatable import get_default_params_map
+import firecrown.generators._two_point as gen
+from firecrown.likelihood._two_point import TwoPoint
 from firecrown.likelihood.number_counts import NumberCounts
 from firecrown.likelihood.number_counts._systematics import (
     PTNonLinearBiasSystematic,
 )
-from firecrown.likelihood._two_point import TwoPoint
-from firecrown.models.two_point import calculate_pk
 from firecrown.modeling_tools import ModelingTools
-import firecrown.generators._two_point as gen
+from firecrown.models.two_point import calculate_pk
+from firecrown.updatable import get_default_params_map
 
 
 def make_twopoint_with_optional_systematics(

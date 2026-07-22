@@ -1,12 +1,12 @@
 """Generate a JSON map of Firecrown symbols to their documentation URLs."""
 
+import importlib
 import inspect
-import pkgutil
 import json
+import pkgutil
 import re
 import sys
 from pathlib import Path
-import importlib
 from types import ModuleType
 
 import typer

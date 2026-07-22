@@ -2,55 +2,63 @@
 Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
-from dataclasses import replace
-from itertools import product, chain
-from unittest.mock import MagicMock
 import re
 import warnings
-import pytest
+from dataclasses import replace
+from itertools import chain, product
+from unittest.mock import MagicMock
+
 import numpy as np
-
-
+import pytest
 import sacc
 import sacc_name_mapping as snm
-from firecrown.metadata_types import (
-    ALL_MEASUREMENTS,
-    Measurement,
-    CMB,
-    Clusters,
-    Galaxies,
-    LENS_REGEX,
-    SOURCE_REGEX,
-    TracerNames,
-    TwoPointHarmonic,
-    TwoPointReal,
-    measurement_is_compatible as is_compatible,
-    measurements_types,
-)
-from firecrown.metadata_types._compatibility import (
-    measurement_is_compatible_harmonic as is_compatible_harmonic,
-    measurement_is_compatible_real as is_compatible_real,
-    _measurement_supports_harmonic as supports_harmonic,
-    _measurement_supports_real as supports_real,
-)
-from firecrown.metadata_types._sacc_type_string import (
-    _type_to_sacc_string_harmonic as harmonic,
-    _type_to_sacc_string_real as real,
-)
-from firecrown.metadata_types._measurements import _compare_enums as compare_enums
 
+from firecrown.data_functions import (
+    check_two_point_consistence_harmonic,
+    check_two_point_consistence_real,
+    extract_all_harmonic_data,
+    extract_all_real_data,
+)
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_functions import (
     TwoPointRealIndex,
     extract_all_measured_types,
     measurements_from_index,
 )
-
-from firecrown.data_types import TwoPointMeasurement
-from firecrown.data_functions import (
-    extract_all_real_data,
-    extract_all_harmonic_data,
-    check_two_point_consistence_harmonic,
-    check_two_point_consistence_real,
+from firecrown.metadata_types import (
+    ALL_MEASUREMENTS,
+    CMB,
+    LENS_REGEX,
+    SOURCE_REGEX,
+    Clusters,
+    Galaxies,
+    Measurement,
+    TracerNames,
+    TwoPointHarmonic,
+    TwoPointReal,
+    measurements_types,
+)
+from firecrown.metadata_types import (
+    measurement_is_compatible as is_compatible,
+)
+from firecrown.metadata_types import (
+    measurement_is_compatible_harmonic as is_compatible_harmonic,
+)
+from firecrown.metadata_types import (
+    measurement_is_compatible_real as is_compatible_real,
+)
+from firecrown.metadata_types import (
+    measurement_supports_harmonic as supports_harmonic,
+)
+from firecrown.metadata_types import (
+    measurement_supports_real as supports_real,
+)
+from firecrown.metadata_types._measurements import _compare_enums as compare_enums
+from firecrown.metadata_types._sacc_type_string import (
+    _type_to_sacc_string_harmonic as harmonic,
+)
+from firecrown.metadata_types._sacc_type_string import (
+    _type_to_sacc_string_real as real,
 )
 
 

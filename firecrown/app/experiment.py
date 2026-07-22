@@ -1,13 +1,15 @@
 """Experiment visualization and analysis."""
 
-from typing import Annotated
 import dataclasses
 from pathlib import Path
+from typing import Annotated
+
 import typer
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from firecrown.likelihood import factories
+
 from . import logging
 
 

@@ -3,18 +3,18 @@
 Tests ExampleCosmicShear example generator and build_likelihood execution.
 """
 
+import importlib.util
 import sys
 from pathlib import Path
 from unittest.mock import patch
-import importlib.util
 
-from firecrown.likelihood import NamedParameters, ConstGaussian
-from firecrown.modeling_tools import ModelingTools
-from firecrown.app.examples._cosmic_shear import ExampleCosmicShear
 from firecrown.app.analysis import (
     FrameworkCosmology,
     Frameworks,
 )
+from firecrown.app.examples._cosmic_shear import ExampleCosmicShear
+from firecrown.likelihood import ConstGaussian, NamedParameters
+from firecrown.modeling_tools import ModelingTools
 
 
 class TestExampleCosmicShear:

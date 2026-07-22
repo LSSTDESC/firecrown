@@ -1,6 +1,7 @@
 """Unit tests for assert_updatable_interface in updatable.py."""
 
 import warnings
+
 import pytest
 
 from firecrown.updatable import (

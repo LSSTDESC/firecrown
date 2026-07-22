@@ -3,22 +3,24 @@ Tests for the parameter classes in firecrown.updatable.
 """
 
 import re
-import pytest
+
 import numpy as np
+import pytest
+
 from firecrown.updatable import (
-    RequiredParameters,
-    parameter_get_full_name,
-    ParamsMap,
-    handle_unused_params,
     DerivedParameter,
     DerivedParameterCollection,
-    register_new_updatable_parameter,
     InternalParameter,
+    ParamsMap,
+    RequiredParameters,
     SamplerParameter,
     Updatable,
     UpdatableUsageRecord,
     get_default_params,
     get_default_params_map,
+    handle_unused_params,
+    parameter_get_full_name,
+    register_new_updatable_parameter,
 )
 
 

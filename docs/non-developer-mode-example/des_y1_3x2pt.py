@@ -2,12 +2,11 @@
 
 import os
 
-import firecrown.likelihood.weak_lensing as wl
-import firecrown.likelihood.number_counts as nc
-
-from firecrown.likelihood import TwoPoint, ConstGaussian
-
 import sacc
+
+import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.weak_lensing as wl
+from firecrown.likelihood import ConstGaussian, TwoPoint
 
 # Sources
 

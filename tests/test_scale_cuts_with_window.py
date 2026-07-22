@@ -1,27 +1,24 @@
 """Test that the scale cuts with bandpower windows work correctly."""
 
 from pathlib import Path
-import pytest
+
 import numpy as np
-
 import pyccl as ccl
-
+import pytest
 import sacc
 
-from firecrown.likelihood import ConstGaussian
-from firecrown.likelihood import TwoPointFactory
+from firecrown.data_functions import (
+    TwoPointBinFilter,
+    TwoPointBinFilterCollection,
+)
+from firecrown.likelihood import ConstGaussian, TwoPointFactory
 from firecrown.likelihood.factories import (
     DataSourceSacc,
     TwoPointExperiment,
 )
-from firecrown.data_functions import (
-    TwoPointBinFilterCollection,
-    TwoPointBinFilter,
-)
 from firecrown.metadata_types import Galaxies, TwoPointFilterMethod
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import ParamsMap
-from firecrown.updatable import get_default_params
+from firecrown.updatable import ParamsMap, get_default_params
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 
 

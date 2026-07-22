@@ -28,34 +28,6 @@ Subpackages:
     - :mod:`factories`: Factory functions for creating likelihood components
 """
 
-# Core likelihood infrastructure - base classes from _base.py
-from firecrown.likelihood._base import (
-    Likelihood,
-    NamedParameters,
-    Source,
-    SourceGalaxyArgs,
-    SourceGalaxySystematic,
-    SourceSystematic,
-    Statistic,
-    Tracer,
-    TrivialStatistic,
-)
-from firecrown.likelihood._likelihood import (
-    load_likelihood,
-    load_likelihood_from_module_type,
-)
-
-# Gaussian family likelihoods
-from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._gaussfamily import GaussFamily, State
-from firecrown.likelihood._student_t import StudentT
-from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM
-from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
-
-# Two-point statistics
-from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
-
-# Cluster statistics
 from firecrown.likelihood._binned_cluster import BinnedCluster
 from firecrown.likelihood._binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
@@ -63,54 +35,61 @@ from firecrown.likelihood._binned_cluster_number_counts import (
 from firecrown.likelihood._binned_cluster_number_counts_shear import (
     BinnedClusterShearProfile,
 )
-
-# Supernova statistics
+from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceArgs
+from firecrown.likelihood._gaussfamily import GaussFamily, State
+from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM, PointMassData
+from firecrown.likelihood._likelihood import (
+    load_likelihood,
+    load_likelihood_from_module_type,
+)
+from firecrown.likelihood._student_t import StudentT
+from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
+from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
 from firecrown.likelihood.supernova._supernova import Supernova
+from firecrown.likelihood_base import (
+    Likelihood,
+    NamedParameters,
+    Source,
+    SourceGalaxy,
+    SourceGalaxyArgs,
+    SourceGalaxySystematic,
+    SourceSystematic,
+    Statistic,
+    Tracer,
+    TrivialStatistic,
+)
 
-# Source and Statistic classes now imported from _base.py above
-
-# Subpackages - make them accessible as module attributes
-# This allows: import firecrown.likelihood.weak_lensing
-# pylint: disable=unused-import
-from . import number_counts
-from . import factories
-from . import weak_lensing
-from . import supernova
-
-# pylint: enable=unused-import
+from . import factories, number_counts, supernova, weak_lensing
 
 __all__ = [
-    # Core likelihood infrastructure
     "Likelihood",
     "NamedParameters",
     "load_likelihood",
     "load_likelihood_from_module_type",
-    # Gaussian family likelihoods
     "ConstGaussian",
     "GaussFamily",
     "State",
     "StudentT",
-    "ConstGaussianPM",
     "UpdatableClusterObjects",
-    # Two-point statistics
+    "ConstGaussianPM",
+    "PointMassData",
     "TwoPoint",
     "TwoPointFactory",
-    # Cluster statistics
     "BinnedCluster",
     "BinnedClusterNumberCounts",
     "BinnedClusterShearProfile",
-    # Supernova statistics
     "Supernova",
-    # Source infrastructure
     "Source",
+    "SourceGalaxy",
     "SourceGalaxyArgs",
+    "CMBConvergence",
+    "CMBConvergenceArgs",
     "SourceGalaxySystematic",
     "Tracer",
     "SourceSystematic",
-    # Base statistic class
     "Statistic",
     "TrivialStatistic",
-    # Subpackages
     "weak_lensing",
     "number_counts",
     "factories",

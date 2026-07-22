@@ -8,15 +8,15 @@ This is an internal module. Use the public API from firecrown.app.analysis.
 
 from pathlib import Path
 
-from ._types import (
-    Frameworks,
-    ConfigGenerator,
-    FrameworkCosmology,
-    CCLCosmologySpec,
-)
+from ._cobaya import CobayaConfigGenerator
 from ._cosmosis import CosmosisConfigGenerator
 from ._numcosmo import NumCosmoConfigGenerator
-from ._cobaya import CobayaConfigGenerator
+from ._types import (
+    CCLCosmologySpec,
+    ConfigGenerator,
+    FrameworkCosmology,
+    Frameworks,
+)
 
 
 def get_generator(

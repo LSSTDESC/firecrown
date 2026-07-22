@@ -10,6 +10,7 @@ caches modules and won't re-execute the module-level code that emits the warning
 """
 
 import sys
+
 import pytest
 
 
@@ -69,16 +70,6 @@ def test_all_items_importable():
 def test_items_identical_to_new_location():
     """Test that imported items are the same objects as in _two_point."""
     # pylint: disable=import-outside-toplevel
-    from firecrown.likelihood.two_point import (
-        TwoPoint as OldTwoPoint,
-        TwoPointFactory as OldTwoPointFactory,
-        calculate_angular_cl as old_calculate_angular_cl,
-        read_ell_cells as old_read_ell_cells,
-        read_reals as old_read_reals,
-        use_source_factory as old_use_source_factory,
-        use_source_factory_metadata_index as old_use_source_factory_metadata_index,
-    )
-
     from firecrown.likelihood._two_point import (
         TwoPoint,
         TwoPointFactory,
@@ -87,6 +78,27 @@ def test_items_identical_to_new_location():
         read_reals,
         use_source_factory,
         use_source_factory_metadata_index,
+    )
+    from firecrown.likelihood.two_point import (
+        TwoPoint as OldTwoPoint,
+    )
+    from firecrown.likelihood.two_point import (
+        TwoPointFactory as OldTwoPointFactory,
+    )
+    from firecrown.likelihood.two_point import (
+        calculate_angular_cl as old_calculate_angular_cl,
+    )
+    from firecrown.likelihood.two_point import (
+        read_ell_cells as old_read_ell_cells,
+    )
+    from firecrown.likelihood.two_point import (
+        read_reals as old_read_reals,
+    )
+    from firecrown.likelihood.two_point import (
+        use_source_factory as old_use_source_factory,
+    )
+    from firecrown.likelihood.two_point import (
+        use_source_factory_metadata_index as old_use_source_factory_metadata_index,
     )
 
     # Verify they are the same objects (identity, not just equality)

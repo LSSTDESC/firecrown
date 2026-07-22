@@ -1,37 +1,36 @@
 """Tests for the module firecrown.generators.inferred_galaxy_zdist."""
 
-from typing import Any
-from itertools import pairwise, product
 import copy
-
 import re
-import pytest
+from itertools import pairwise, product
+from typing import Any
+
 import numpy as np
 import numpy.typing as npt
-from numpy.testing import assert_array_equal, assert_allclose
-from scipy.integrate import simpson
-from numcosmo_py import Ncm
-
+import pytest
 import yaml
+from numcosmo_py import Ncm
+from numpy.testing import assert_allclose, assert_array_equal
+from scipy.integrate import simpson
 
 from firecrown.generators._inferred_galaxy_zdist import (
-    ZDistLSSTSRD,
-    Y1_LENS_BINS,
-    Y10_LENS_BINS,
-    Y1_SOURCE_BINS,
-    Y10_SOURCE_BINS,
-    LinearGrid1D,
-    ZDistLSSTSRDBin,
-    ZDistLSSTSRDBinCollection,
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
     LSST_Y10_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION,
+    Y1_LENS_BINS,
+    Y1_SOURCE_BINS,
+    Y10_LENS_BINS,
+    Y10_SOURCE_BINS,
+    LinearGrid1D,
     Measurement,
+    ZDistLSSTSRD,
+    ZDistLSSTSRDBin,
+    ZDistLSSTSRDBinCollection,
     make_measurements,
     make_measurements_dict,
 )
-from firecrown.metadata_types import Galaxies, Clusters, CMB
+from firecrown.metadata_types import CMB, Clusters, Galaxies
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 

@@ -12,14 +12,13 @@ from numpy import typing as npt
 from firecrown.generators import EllOrThetaConfig, LogLinearElls
 from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import ParamsMap
-from firecrown.updatable import Updatable
-from firecrown.utils import ClIntegrationOptions
 from firecrown.models.two_point._interpolation import ApplyInterpolationWhen
 from firecrown.models.two_point._sacc_utils import determine_ccl_kind
+from firecrown.updatable import ParamsMap, Updatable
+from firecrown.utils import ClIntegrationOptions
 
 if TYPE_CHECKING:
-    from firecrown.likelihood._base import Source, Tracer
+    from firecrown.likelihood_base import Source, Tracer
 
 
 class TwoPointTheory(Updatable):

@@ -7,29 +7,34 @@ of a Cobaya likelihood.
 """
 
 import warnings
+
 import numpy as np
 import numpy.typing as npt
 import pyccl
 from cobaya.likelihood import Likelihood
 from pyccl.cosmology import Pk2D
 
-from firecrown.modeling_tools import (
-    CCLCalculatorArgs,
-    CCLCreationMode,
-    PoweSpecAmplitudeParameter,
-)
-
 # See comment in compute_pyccl_args_options
 # from pyccl.pyutils import loglin_spacing
 from firecrown.connector.mapping import Mapping, MappingCAMB, mapping_builder
 from firecrown.likelihood import (
     Likelihood as FirecrownLikelihood,
+)
+from firecrown.likelihood import (
     NamedParameters,
     load_likelihood,
 )
-from firecrown.updatable import ParamsMap, handle_unused_params
-from firecrown.updatable import UpdatableUsageRecord
-from firecrown.updatable import get_default_params_map
+from firecrown.modeling_tools import (
+    CCLCalculatorArgs,
+    CCLCreationMode,
+    PoweSpecAmplitudeParameter,
+)
+from firecrown.updatable import (
+    ParamsMap,
+    UpdatableUsageRecord,
+    get_default_params_map,
+    handle_unused_params,
+)
 
 
 def compute_pyccl_args_options(

@@ -31,8 +31,9 @@ import shutil
 import urllib.request
 from pathlib import Path
 from types import ModuleType
-from rich.progress import Progress, SpinnerColumn, TextColumn
+
 from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 
 def get_cache_dir() -> Path:

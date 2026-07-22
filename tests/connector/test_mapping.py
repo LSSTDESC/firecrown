@@ -3,14 +3,16 @@ Unit testing for the mapping module.
 """
 
 from typing import Any
-import pytest
+
 import numpy as np
+import pytest
+
 from firecrown.connector import mapping
 from firecrown.connector.mapping import (
     Mapping,
-    mapping_builder,
-    MappingCosmoSIS,
     MappingCAMB,
+    MappingCosmoSIS,
+    mapping_builder,
 )
 from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.modeling_tools import PoweSpecAmplitudeParameter

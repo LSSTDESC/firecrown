@@ -4,8 +4,8 @@ This module contains tests for the functions that generate and filter
 two-point correlation combinations from tomographic bins.
 """
 
-import pytest
 import numpy as np
+import pytest
 
 import firecrown.metadata_types as mt
 from firecrown.metadata_functions import (

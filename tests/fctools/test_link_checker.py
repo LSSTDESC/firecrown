@@ -7,12 +7,12 @@ These tests avoid real network access by mocking the requests.Session.get
 method when necessary.
 """
 
-from pathlib import Path
 import io
 from contextlib import redirect_stdout
+from pathlib import Path
 
-import requests
 import pytest
+import requests
 from rich.console import Console
 from typer.testing import CliRunner
 

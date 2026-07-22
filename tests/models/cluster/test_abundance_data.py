@@ -3,6 +3,7 @@
 import pytest
 import sacc
 from crow.properties import ClusterProperty
+
 from firecrown.models.cluster import (
     AbundanceData,
 )

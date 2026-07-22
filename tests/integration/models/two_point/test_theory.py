@@ -1,9 +1,10 @@
 """Integration tests for the TwoPointTheory class using real Source instances."""
 
+import pytest
+
+from firecrown.likelihood import Source
 from firecrown.models.two_point import TwoPointTheory
 from firecrown.updatable import ParamsMap
-from firecrown.likelihood import Source
-import pytest
 
 
 class FakeSource(Source):

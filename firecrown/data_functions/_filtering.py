@@ -7,12 +7,12 @@ import numpy.typing as npt
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 from typing_extensions import assert_never
 
-from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions._types import (
     BinSpec,
     TwoPointBinFilter,
     bin_spec_from_metadata,
 )
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_types import (
     TwoPointFilterMethod,
     TwoPointHarmonic,

@@ -9,11 +9,6 @@ import warnings
 import numpy as np
 from numcosmo_py import GObject, Nc, Ncm, dict_to_var_dict, var_dict_to_dict
 
-from firecrown.modeling_tools import (
-    CCLCalculatorArgs,
-    CCLCreationMode,
-    PoweSpecAmplitudeParameter,
-)
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.connector.numcosmo import helpers
 from firecrown.likelihood import (
@@ -22,9 +17,13 @@ from firecrown.likelihood import (
     NamedParameters,
     load_likelihood,
 )
-from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import ParamsMap, handle_unused_params
-from firecrown.updatable import UpdatableUsageRecord
+from firecrown.modeling_tools import (
+    CCLCalculatorArgs,
+    CCLCreationMode,
+    ModelingTools,
+    PoweSpecAmplitudeParameter,
+)
+from firecrown.updatable import ParamsMap, UpdatableUsageRecord, handle_unused_params
 
 
 class MappingNumCosmo(GObject.Object):

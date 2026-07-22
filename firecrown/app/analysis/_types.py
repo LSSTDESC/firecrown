@@ -8,13 +8,14 @@ This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
 import dataclasses
-from enum import StrEnum
 from abc import ABC, abstractmethod
+from enum import StrEnum
 from pathlib import Path
-from typing import ClassVar, Any
-from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
+from typing import Any, ClassVar
+
 import numpy as np
 import pyccl
+from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 
 from firecrown.likelihood import NamedParameters
 from firecrown.modeling_tools import CAMBExtraParams, PoweSpecAmplitudeParameter

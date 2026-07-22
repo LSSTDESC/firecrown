@@ -1,13 +1,12 @@
 """Likelihood factory function for cluster number counts."""
 
 import os
-import pyccl
 
+import pyccl
 from crow import ClusterShearProfile, kernel, mass_proxy
 from crow.properties import ClusterProperty
 from crow.recipes.binned_exact import ExactBinnedClusterRecipe
 
-from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood import (
     BinnedClusterNumberCounts,
     BinnedClusterShearProfile,
@@ -15,6 +14,7 @@ from firecrown.likelihood import (
     Likelihood,
     NamedParameters,
 )
+from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
 
 

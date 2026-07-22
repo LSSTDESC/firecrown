@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
+from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood.number_counts._source import NumberCounts
 from firecrown.likelihood.number_counts._systematics import (
     ConstantMagnificationBiasSystematic,
@@ -14,12 +15,11 @@ from firecrown.likelihood.number_counts._systematics import (
     MagnificationBiasSystematic,
     PTNonLinearBiasSystematic,
 )
-from firecrown.likelihood.weak_lensing import (
+from firecrown.likelihood_base import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
+    SourceGalaxySystematic,
 )
-from firecrown.likelihood._base import SourceGalaxySystematic
-from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 
 

@@ -18,8 +18,8 @@ from firecrown.fctools.print_code import (
     main,
 )
 
-from . import match_wrapped, strip_rich_markup
 from ..conftest import _make_class_def
+from . import match_wrapped, strip_rich_markup
 
 # Check Python version for type_params support (added in 3.12)
 _SUPPORTS_TYPE_PARAMS = sys.version_info >= (3, 12)

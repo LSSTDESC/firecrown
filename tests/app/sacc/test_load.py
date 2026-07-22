@@ -4,9 +4,11 @@ Tests for loading and initializing SACC files.
 """
 
 from pathlib import Path
-import pytest
+
 import numpy as np
+import pytest
 import sacc
+
 from firecrown.app.sacc import Load
 
 

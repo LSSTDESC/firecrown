@@ -8,15 +8,15 @@ from dataclasses import replace
 import numpy as np
 import pyccl
 
-from firecrown.updatable import register_new_updatable_parameter
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
-from firecrown.likelihood._base import (
+from firecrown.likelihood_base import (
     SourceGalaxyPhotoZShift,
     SourceGalaxyPhotoZShiftandStretch,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
 )
 from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import register_new_updatable_parameter
 
 
 class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):

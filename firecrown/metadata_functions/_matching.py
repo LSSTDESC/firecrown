@@ -2,8 +2,8 @@
 
 import firecrown.metadata_types as mdt
 from firecrown.metadata_functions._type_defs import (
-    TwoPointRealIndex,
     TwoPointHarmonicIndex,
+    TwoPointRealIndex,
 )
 
 
