@@ -54,49 +54,48 @@ Type Definitions
 """
 
 # Two-point statistics generators
-from ._two_point import (
-    LogLinearElls,
-    EllOrThetaConfig,
-    generate_bin_centers,
-    generate_ells_cells,
-    generate_reals,
-)
-
 # Inferred galaxy redshift distribution generators
 from ._inferred_galaxy_zdist import (
-    # Core classes
-    ZDistLSSTSRD,
-    ZDistLSSTSRDBin,
-    ZDistLSSTSRDBinCollection,
-    LinearGrid1D,
-    RawGrid1D,
-    Grid1D,
-    # Type definitions
-    BinsType,
-    ZDistLSSTSRDOpt,
-    # Year 1 constants
-    Y1_LENS_ALPHA,
-    Y1_LENS_BETA,
-    Y1_LENS_Z0,
-    Y1_SOURCE_ALPHA,
-    Y1_SOURCE_BETA,
-    Y1_SOURCE_Z0,
-    # Year 10 constants
-    Y10_LENS_ALPHA,
-    Y10_LENS_BETA,
-    Y10_LENS_Z0,
-    Y10_SOURCE_ALPHA,
-    Y10_SOURCE_BETA,
-    Y10_SOURCE_Z0,
-    # Lazy-loaded bins (via __getattr__)
-    Y1_LENS_BINS,
-    Y1_SOURCE_BINS,
-    Y10_LENS_BINS,
-    Y10_SOURCE_BINS,
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
     LSST_Y10_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION,
+    # Year 1 constants
+    Y1_LENS_ALPHA,
+    Y1_LENS_BETA,
+    # Lazy-loaded bins (via __getattr__)
+    Y1_LENS_BINS,
+    Y1_LENS_Z0,
+    Y1_SOURCE_ALPHA,
+    Y1_SOURCE_BETA,
+    Y1_SOURCE_BINS,
+    Y1_SOURCE_Z0,
+    # Year 10 constants
+    Y10_LENS_ALPHA,
+    Y10_LENS_BETA,
+    Y10_LENS_BINS,
+    Y10_LENS_Z0,
+    Y10_SOURCE_ALPHA,
+    Y10_SOURCE_BETA,
+    Y10_SOURCE_BINS,
+    Y10_SOURCE_Z0,
+    # Type definitions
+    BinsType,
+    Grid1D,
+    LinearGrid1D,
+    RawGrid1D,
+    # Core classes
+    ZDistLSSTSRD,
+    ZDistLSSTSRDBin,
+    ZDistLSSTSRDBinCollection,
+    ZDistLSSTSRDOpt,
+)
+from ._two_point import (
+    EllOrThetaConfig,
+    LogLinearElls,
+    generate_bin_centers,
+    generate_ells_cells,
+    generate_reals,
 )
 
 __all__ = [

@@ -1,14 +1,15 @@
 """Tests for the weak lensing source and systematics."""
 
-import pytest
-import numpy as np
-import sacc
 from unittest.mock import Mock, patch
+
+import numpy as np
 import pyccl
 import pyccl.nl_pt
+import pytest
+import sacc
 
-import firecrown.likelihood._weak_lensing as wl
-from firecrown.metadata_types import InferredGalaxyZDist, Galaxies
+import firecrown.likelihood.weak_lensing as wl
+from firecrown.metadata_types import Galaxies, InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 

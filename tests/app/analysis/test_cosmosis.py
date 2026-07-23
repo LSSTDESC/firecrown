@@ -3,36 +3,37 @@
 Tests CosmoSIS configuration generation, INI file formatting, and parameter handling.
 """
 
-from pathlib import Path
 import configparser
+from pathlib import Path
+
 import pytest
 
-from firecrown.likelihood import NamedParameters
 from firecrown.app.analysis._cosmosis import (
-    format_comment,
-    add_comment_block,
+    COSMOLOGICAL_PARAMETERS,
+    NAME_MAP,
+    CosmosisConfigGenerator,
     _add_cosmology_modules,
     _add_firecrown_likelihood,
-    create_config,
-    add_models,
-    format_float,
+    add_comment_block,
     add_firecrown_model,
-    create_values_config,
     add_model_priors,
+    add_models,
+    create_config,
     create_priors_config,
-    CosmosisConfigGenerator,
-    NAME_MAP,
-    COSMOLOGICAL_PARAMETERS,
+    create_values_config,
+    format_comment,
+    format_float,
 )
 from firecrown.app.analysis._types import (
-    Frameworks,
-    FrameworkCosmology,
     CCLCosmologySpec,
+    FrameworkCosmology,
+    Frameworks,
+    Model,
     Parameter,
     PriorGaussian,
     PriorUniform,
-    Model,
 )
+from firecrown.likelihood import NamedParameters
 
 
 @pytest.fixture(name="vanilla_cosmo")

@@ -5,18 +5,20 @@ parameter estimation and inference. The generated YAML contains cosmological
 parameter specifications with default values and optional prior constraints.
 """
 
-from typing import Annotated, assert_never
 import dataclasses
-from pathlib import Path
 from enum import StrEnum
-import typer
-from rich.syntax import Syntax
-from rich.panel import Panel
-from pydantic import BaseModel, ConfigDict
-import yaml
+from pathlib import Path
+from typing import Annotated, assert_never
+
 import pyccl
+import typer
+import yaml
+from pydantic import BaseModel, ConfigDict
+from rich.panel import Panel
+from rich.syntax import Syntax
 
 from firecrown.modeling_tools import CAMBExtraParams
+
 from . import logging
 from .analysis import CCLCosmologySpec, Prior
 

@@ -1,10 +1,11 @@
 """Tests for the sacc_utils module (determine_ccl_kind function)."""
 
-import pytest
 import pyccl
-import firecrown.models.two_point as models
+import pytest
+
 import firecrown.likelihood._source as source
 import firecrown.modeling_tools as mt
+import firecrown.models.two_point as models
 
 
 def test_determine_ccl_kind():

@@ -2,8 +2,8 @@
 
 import sacc
 
-from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions._utils import cov_hash
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_functions import (
     extract_all_harmonic_metadata_indices,
     extract_all_real_metadata_indices,

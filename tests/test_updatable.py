@@ -3,22 +3,23 @@ Tests for the Updatable class.
 """
 
 from itertools import permutations
-import pytest
-import numpy as np
 
+import numpy as np
+import pytest
+
+from firecrown import parameters
 from firecrown.updatable import (
+    DerivedParameter,
+    DerivedParameterCollection,
+    ParamsMap,
+    RequiredParameters,
+    SamplerParameter,
     Updatable,
     UpdatableCollection,
     UpdatableUsageRecord,
     get_default_params,
     get_default_params_map,
-    RequiredParameters,
-    ParamsMap,
-    DerivedParameter,
-    DerivedParameterCollection,
-    SamplerParameter,
 )
-from firecrown import parameters
 
 
 class MinimalUpdatable(Updatable):

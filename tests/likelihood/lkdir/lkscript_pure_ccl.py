@@ -2,12 +2,13 @@
 Provides a trivial likelihood factory function with PURE_CCL_MODE for testing purposes.
 """
 
-from firecrown.modeling_tools import ModelingTools
 from firecrown.modeling_tools import (
-    CCLFactory,
-    PoweSpecAmplitudeParameter,
     CCLCreationMode,
+    CCLFactory,
+    ModelingTools,
+    PoweSpecAmplitudeParameter,
 )
+
 from . import lkmodule
 
 

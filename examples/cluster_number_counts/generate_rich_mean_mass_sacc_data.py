@@ -7,18 +7,15 @@
 # This notebook examplifies the creation of a SACC file for cluster count, using
 # NumCosmo facilities to simulate cluster data.
 
-import math
 import itertools
+import math
 
 import numpy as np
-
-from numcosmo_py import Nc, Ncm
-
-from astropy.table import Table
-
-from astropy.io import fits
-from scipy import stats
 import sacc
+from astropy.io import fits
+from astropy.table import Table
+from numcosmo_py import Nc, Ncm
+from scipy import stats
 
 
 def setup_cosmology(

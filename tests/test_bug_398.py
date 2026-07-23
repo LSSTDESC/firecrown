@@ -13,17 +13,20 @@ changes.
 """
 
 import os
-import sacc
 
+import sacc
 from numpy.testing import assert_allclose
 
-from firecrown.updatable import get_default_params_map
-import firecrown.likelihood._weak_lensing as wl
-from firecrown.likelihood._two_point import TwoPoint
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood._likelihood import Likelihood, NamedParameters
-from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.likelihood._two_point import TwoPoint
+from firecrown.modeling_tools import (
+    CCLFactory,
+    ModelingTools,
+    PoweSpecAmplitudeParameter,
+)
+from firecrown.updatable import get_default_params_map
 
 
 def build_likelihood(

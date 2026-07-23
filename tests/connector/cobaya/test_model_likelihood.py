@@ -1,18 +1,20 @@
 """Unit tests for the cobaya Mapping connector."""
 
-import types
 import sys
+import types
 from unittest import mock
-import pytest
+
 import numpy as np
-from cobaya.model import get_model, Model
+import pytest
 from cobaya.log import LoggedError
-from firecrown.connector.cobaya.likelihood import LikelihoodConnector
-from firecrown.likelihood._likelihood import NamedParameters
-from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.modeling_tools import ModelingTools
+from cobaya.model import Model, get_model
+
 import firecrown.likelihood._statistic as stat
 import firecrown.modeling_tools as ccl_factory
+from firecrown.connector.cobaya.likelihood import LikelihoodConnector
+from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood._likelihood import NamedParameters
+from firecrown.modeling_tools import ModelingTools
 
 
 def test_cobaya_ccl_initialize():

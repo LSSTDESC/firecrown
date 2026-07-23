@@ -4,29 +4,30 @@ Generates a complete DES Y1 3x2pt analysis example with cosmic shear,
 galaxy-galaxy lensing, and galaxy clustering.
 """
 
-from typing import ClassVar, Annotated, Sequence, assert_never
-from types import ModuleType
 from dataclasses import dataclass
-from pathlib import Path
 from enum import StrEnum
+from pathlib import Path
+from types import ModuleType
+from typing import Annotated, ClassVar, Sequence, assert_never
 
 import typer
 
 from firecrown.likelihood import NamedParameters
+
 from ..analysis import (
     AnalysisBuilder,
+    FrameworkCosmology,
     Model,
     Parameter,
-    FrameworkCosmology,
-    download_from_url,
     copy_template,
+    download_from_url,
 )
 from . import (
-    _des_y1_3x2pt_template,
     _des_y1_3x2pt_pt_template,
-    _des_y1_cosmic_shear_tatt_template,
+    _des_y1_3x2pt_template,
     _des_y1_cosmic_shear_hmia_template,
     _des_y1_cosmic_shear_pk_modifier_template,
+    _des_y1_cosmic_shear_tatt_template,
 )
 
 

@@ -6,14 +6,17 @@ for testing purposes.
 import numpy as np
 import sacc
 
-from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.likelihood._two_point import TwoPoint
 from firecrown.likelihood.number_counts import (
     NumberCounts,
 )
-from firecrown.modeling_tools import ModelingTools
-from firecrown.modeling_tools import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.modeling_tools import (
+    CCLFactory,
+    ModelingTools,
+    PoweSpecAmplitudeParameter,
+)
 
 
 def build_likelihood(params: NamedParameters):

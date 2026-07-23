@@ -7,7 +7,7 @@ data and theory vectors for a :class:`GaussFamily` subclass.
 from __future__ import annotations
 
 # Import base classes from _base.py
-from firecrown.likelihood._base import (
+from firecrown.likelihood_base import (
     GuardedStatistic,
     Statistic,
     StatisticUnreadError,

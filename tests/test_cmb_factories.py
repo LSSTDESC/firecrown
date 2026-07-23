@@ -1,17 +1,17 @@
 """Tests for the CMB convergence module."""
 
 from unittest import mock
-import pytest
-import numpy as np
-import sacc
 
+import numpy as np
+import pytest
+import sacc
 
 from firecrown.likelihood._cmb import (
     CMBConvergence,
-    CMBConvergenceFactory,
     CMBConvergenceArgs,
+    CMBConvergenceFactory,
 )
-from firecrown.metadata_types import InferredGalaxyZDist, CMB
+from firecrown.metadata_types import CMB, InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 

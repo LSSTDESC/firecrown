@@ -3,7 +3,9 @@ Tests for the module firecrown.descriptors.
 """
 
 import math
+
 import pytest
+
 from firecrown.descriptors import TypeFloat, TypeString
 
 
@@ -269,8 +271,9 @@ def test_base_module_exports_callable():
     """Test that _base module exports Callable."""
     # Import the module to ensure coverage
     # pylint: disable=import-outside-toplevel
-    import firecrown.descriptors._base as base_module
     from collections.abc import Callable
+
+    import firecrown.descriptors._base as base_module
 
     assert hasattr(base_module, "Callable")
     assert base_module.Callable is Callable

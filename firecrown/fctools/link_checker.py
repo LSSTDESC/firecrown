@@ -11,22 +11,22 @@ Usage example::
 
 """
 
-from typing import Annotated
-from dataclasses import dataclass
-from pathlib import Path
-from hashlib import sha1
-import time
-import tempfile
 import os
 import shutil
+import tempfile
+import time
+from dataclasses import dataclass
+from hashlib import sha1
+from pathlib import Path
+from typing import Annotated
+
+import bs4
 import requests
 import typer
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-
 from bs4 import BeautifulSoup
-import bs4
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 
 @dataclass

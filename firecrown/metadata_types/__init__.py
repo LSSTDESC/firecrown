@@ -6,12 +6,16 @@ This module contains metadata types definitions.
 # Import all public types and classes from private submodules
 from firecrown.metadata_types._compatibility import (
     measurement_is_compatible,
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
+    measurement_supports_harmonic,
+    measurement_supports_real,
     measurements_types,
 )
 from firecrown.metadata_types._inferred_galaxy_zdist import InferredGalaxyZDist
 from firecrown.metadata_types._measurements import (
-    ALL_MEASUREMENTS,
     ALL_MEASUREMENT_TYPES,
+    ALL_MEASUREMENTS,
     CMB,
     CMB_TYPES,
     GALAXY_LENS_TYPES,
@@ -45,8 +49,8 @@ from firecrown.metadata_types._pair_selector import (
     SourceBinPairSelector,
     SourceLensBinPairSelector,
     ThreeTwoBinPairSelector,
-    TypeSourceBinPairSelector,
     TomographicBinPair,
+    TypeSourceBinPairSelector,
     register_bin_pair_selector,
 )
 from firecrown.metadata_types._sacc_type_string import MEASURED_TYPE_STRING_MAP
@@ -92,6 +96,10 @@ __all__ = [
     "TwoPointFilterMethod",
     # Compatibility function (public)
     "measurement_is_compatible",
+    "measurement_is_compatible_harmonic",
+    "measurement_is_compatible_real",
+    "measurement_supports_harmonic",
+    "measurement_supports_real",
     "measurements_types",
     # SACC conversion constant
     "MEASURED_TYPE_STRING_MAP",

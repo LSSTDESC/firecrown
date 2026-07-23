@@ -3,6 +3,7 @@ Tests for the module firecrown.likelihood.likelihood
 """
 
 import pytest
+
 import firecrown.likelihood._likelihood as lk
 
 

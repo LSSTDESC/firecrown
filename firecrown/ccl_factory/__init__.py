@@ -17,8 +17,8 @@ from firecrown.modeling_tools import (  # noqa: E402
     CCLPureModeTransferFunction,
     CCLSplineParams,
     MuSigmaModel,
-    PoweSpecAmplitudeParameter,
     PowerSpec,
+    PoweSpecAmplitudeParameter,
 )
 
 # Emit deprecation warning when module is imported

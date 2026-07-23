@@ -1,18 +1,18 @@
 """Unit tests for the theory module (TwoPointTheory class)."""
 
 from unittest.mock import Mock
+
 import numpy as np
 import pytest
 import sacc
 
-from firecrown.models.two_point import TwoPointTheory
-from firecrown.generators import LogLinearElls, EllOrThetaConfig
+from firecrown.generators import EllOrThetaConfig, LogLinearElls
+from firecrown.likelihood import Source
 from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
+from firecrown.models.two_point import ApplyInterpolationWhen, TwoPointTheory
 from firecrown.updatable import ParamsMap
 from firecrown.utils import ClIntegrationOptions
-from firecrown.models.two_point import ApplyInterpolationWhen
-from firecrown.likelihood import Source
 
 # pylint: disable=protected-access
 

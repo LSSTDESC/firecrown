@@ -5,18 +5,19 @@ Tests AnalysisBuilder base class and workflow orchestration.
 
 from pathlib import Path
 from unittest.mock import patch
+
 import pytest
 
-from firecrown.likelihood import NamedParameters
 from firecrown.app.analysis._analysis_builder import AnalysisBuilder
 from firecrown.app.analysis._types import (
-    Frameworks,
-    FrameworkCosmology,
     CCLCosmologySpec,
+    FrameworkCosmology,
+    Frameworks,
     Model,
     Parameter,
 )
 from firecrown.app.sacc import SaccFormat
+from firecrown.likelihood import NamedParameters
 
 
 class ConcreteAnalysisBuilder(AnalysisBuilder):

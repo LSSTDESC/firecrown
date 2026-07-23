@@ -6,16 +6,16 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
 import pyccl
+import pytest
 
+from firecrown.likelihood._source import Tracer
+from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import (
     at_least_one_tracer_has_hm,
     at_least_one_tracer_has_pt,
     calculate_pk,
 )
-from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood._source import Tracer
 
 
 @pytest.fixture

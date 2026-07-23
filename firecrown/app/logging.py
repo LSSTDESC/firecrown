@@ -1,9 +1,10 @@
 """Logging configuration for Firecrown."""
 
-from io import TextIOWrapper
-from typing import Annotated, Optional
 import dataclasses
+from io import TextIOWrapper
 from pathlib import Path
+from typing import Annotated, Optional
+
 import typer
 from rich.console import Console
 

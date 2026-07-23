@@ -3,6 +3,7 @@
 import re
 
 import pytest
+
 import firecrown.likelihood._gaussian as g
 
 

@@ -1,20 +1,21 @@
 """Base class for updatable objects."""
 
 from __future__ import annotations
+
 from abc import ABC
 from collections.abc import Iterable
 from typing import Any, final
 
 from typing_extensions import assert_never
 
+from firecrown.updatable._exceptions import MissingSamplerParameterError
+from firecrown.updatable._parameters_derived import DerivedParameterCollection
+from firecrown.updatable._parameters_map import ParamsMap
+from firecrown.updatable._parameters_required import RequiredParameters
 from firecrown.updatable._parameters_types import (
     InternalParameter,
     SamplerParameter,
 )
-from firecrown.updatable._parameters_map import ParamsMap
-from firecrown.updatable._parameters_required import RequiredParameters
-from firecrown.updatable._parameters_derived import DerivedParameterCollection
-from firecrown.updatable._exceptions import MissingSamplerParameterError
 from firecrown.updatable._records import UpdatableUsageRecord
 from firecrown.updatable._types import UpdatableProtocol
 

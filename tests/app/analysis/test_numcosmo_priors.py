@@ -5,10 +5,10 @@ and prior integration with the generator in firecrown.app.analysis._numcosmo mod
 """
 
 from pathlib import Path
-import pytest
 
+import pytest
 from numcosmo_py import Ncm
-from firecrown.likelihood import NamedParameters
+
 from firecrown.app.analysis._numcosmo import (
     ConfigOptions,
     NumCosmoConfigGenerator,
@@ -16,13 +16,14 @@ from firecrown.app.analysis._numcosmo import (
     _setup_models,
 )
 from firecrown.app.analysis._types import (
-    FrameworkCosmology,
     CCLCosmologySpec,
+    FrameworkCosmology,
+    Model,
     Parameter,
     PriorGaussian,
     PriorUniform,
-    Model,
 )
+from firecrown.likelihood import NamedParameters
 
 
 @pytest.fixture(name="numcosmo_init", scope="session")

@@ -2,40 +2,43 @@
 Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
+import numpy as np
 import pytest
 import sacc
-import numpy as np
 from numpy.testing import assert_array_equal
+
+from firecrown.data_types import TwoPointMeasurement
+from firecrown.likelihood._cmb import CMBConvergenceFactory
+from firecrown.likelihood._source import SourceGalaxy
+from firecrown.likelihood._two_point import (
+    TwoPoint,
+    TwoPointCorrelationSpace,
+    TwoPointFactory,
+)
+from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.likelihood.weak_lensing import WeakLensingFactory
+from firecrown.metadata_functions import (
+    extract_all_harmonic_metadata_indices,
+    extract_all_real_metadata_indices,
+    make_two_point_xy,
+)
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
-    Clusters,
     CMB,
+    Clusters,
     Galaxies,
     InferredGalaxyZDist,
     TracerNames,
     TwoPointHarmonic,
-    TwoPointXY,
     TwoPointReal,
-)
-from firecrown.metadata_functions import (
-    make_two_point_xy,
-    extract_all_real_metadata_indices,
-    extract_all_harmonic_metadata_indices,
+    TwoPointXY,
 )
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic as harmonic,
+)
+from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
-from firecrown.data_types import TwoPointMeasurement
-from firecrown.likelihood._source import SourceGalaxy
-from firecrown.likelihood._two_point import (
-    TwoPoint,
-    TwoPointFactory,
-    TwoPointCorrelationSpace,
-)
-from firecrown.likelihood._cmb import CMBConvergenceFactory
-from firecrown.likelihood._weak_lensing import WeakLensingFactory
-from firecrown.likelihood.number_counts import NumberCountsFactory
 
 
 def test_inferred_galaxy_z_dist():

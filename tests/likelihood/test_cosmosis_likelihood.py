@@ -1,7 +1,8 @@
 """Tests for the CosmoSIS likelihood module."""
 
-from pytest import fixture
 from cosmosis.datablock import DataBlock
+from pytest import fixture
+
 import firecrown.connector.cosmosis.likelihood as like
 
 

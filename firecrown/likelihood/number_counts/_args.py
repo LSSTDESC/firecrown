@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
-from firecrown.likelihood._base import SourceGalaxyArgs
+from firecrown.likelihood_base import SourceGalaxyArgs
 
 
 @dataclass(frozen=True)

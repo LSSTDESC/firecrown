@@ -3,12 +3,12 @@
 Test imports must be inside functions to avoid circular dependencies.
 """
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 from typer.testing import CliRunner
 
-from firecrown.fctools.code_block_checker import check_qmd_file, app
+from firecrown.fctools.code_block_checker import app, check_qmd_file
 
 # Create CliRunner instance for testing
 runner = CliRunner()

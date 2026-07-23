@@ -6,9 +6,10 @@
 # in Costanzi et al. 2019, https://arxiv.org/pdf/1810.09456
 
 import itertools
+
 import numpy as np
-from numcosmo_py import Ncm
 import sacc
+from numcosmo_py import Ncm
 
 
 def generate_SDSSCL_sacc_file() -> None:

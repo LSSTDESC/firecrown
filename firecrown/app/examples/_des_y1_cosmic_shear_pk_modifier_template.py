@@ -5,13 +5,13 @@ modifications, such as baryonic effects using van Daalen et al. 2019 model.
 """
 
 import os
+
 import pyccl
 
-from firecrown.likelihood.factories import load_sacc_data
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
-from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
-from firecrown.modeling_tools import CCLFactory
+from firecrown.likelihood.factories import load_sacc_data
+from firecrown.modeling_tools import CCLFactory, ModelingTools, PowerspectrumModifier
 from firecrown.updatable import register_new_updatable_parameter
 
 

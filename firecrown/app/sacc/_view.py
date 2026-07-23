@@ -22,12 +22,12 @@ from firecrown import metadata_types as mdt
 from firecrown.likelihood import factories
 
 from ._handlers import (
-    MessageHandler,
-    OutputHandler,
     STDERR_HANDLERS,
     STDOUT_HANDLERS,
-    StreamHandler,
     WARNING_HANDLERS,
+    MessageHandler,
+    OutputHandler,
+    StreamHandler,
 )
 from ._load import Load
 from ._utils import mean_std_tracer

@@ -4,29 +4,32 @@ This subpackage provides weak lensing source classes and systematics
 for use in likelihood calculations.
 """
 
-# Re-export all public classes from the private module
-from firecrown.likelihood._weak_lensing import (
+# Re-export all public classes from private submodules
+from firecrown.likelihood.weak_lensing._args import WeakLensingArgs
+from firecrown.likelihood.weak_lensing._factories import (
+    LinearAlignmentSystematicFactory,
+    MultiplicativeShearBiasFactory,
+    TattAlignmentSystematicFactory,
+    WeakLensingFactory,
+    WeakLensingSystematicFactory,
+)
+from firecrown.likelihood.weak_lensing._source import WeakLensing
+from firecrown.likelihood.weak_lensing._systematics import (
     HMAlignmentSystematic,
     LinearAlignmentSystematic,
     MassDependentLinearAlignmentSystematic,
-    LinearAlignmentSystematicFactory,
     MultiplicativeShearBias,
-    MultiplicativeShearBiasFactory,
     PhotoZShift,
     PhotoZShiftandStretch,
     SelectField,
     TattAlignmentSystematic,
-    TattAlignmentSystematicFactory,
-    WeakLensing,
-    WeakLensingArgs,
-    WeakLensingFactory,
     WeakLensingSystematic,
 )
 
 # Re-export shared factories from base module
-from firecrown.likelihood._base import (
-    PhotoZShiftFactory,
+from firecrown.likelihood_base import (
     PhotoZShiftandStretchFactory,
+    PhotoZShiftFactory,
 )
 
 __all__ = [
@@ -46,5 +49,6 @@ __all__ = [
     "WeakLensing",
     "WeakLensingArgs",
     "WeakLensingFactory",
+    "WeakLensingSystematicFactory",
     "WeakLensingSystematic",
 ]

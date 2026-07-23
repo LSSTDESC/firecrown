@@ -1,12 +1,13 @@
 """Tests for the symbol_reference_checker module."""
 
 import json
+
 from typer.testing import CliRunner
 
 from firecrown.fctools.symbol_reference_checker import (
-    extract_code_spans,
-    check_qmd_file,
     app,
+    check_qmd_file,
+    extract_code_spans,
 )
 
 # Create CliRunner instance for testing

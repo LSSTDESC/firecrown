@@ -1,18 +1,17 @@
 """Unit testsing for Student-t distribution"""
 
-import pytest
 import numpy as np
-
+import pytest
 import sacc
 
 import firecrown.updatable
-from firecrown.likelihood._student_t import StudentT
 from firecrown.likelihood._gaussfamily import Statistic
+from firecrown.likelihood._student_t import StudentT
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import (
-    RequiredParameters,
     DerivedParameterCollection,
     ParamsMap,
+    RequiredParameters,
     SamplerParameter,
 )
 

@@ -2,6 +2,7 @@
 
 import subprocess
 from pathlib import Path
+
 import pytest
 
 from firecrown.app.analysis import Frameworks

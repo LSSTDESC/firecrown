@@ -16,14 +16,14 @@ import numpy.typing as npt
 from pyccl import physical_constants as physics
 from typing_extensions import assert_never
 
+from firecrown.descriptors import TypeFloat, TypeString
+from firecrown.likelihood import NamedParameters
 from firecrown.modeling_tools import (
     Background,
     CCLCalculatorArgs,
     PowerSpec,
     PoweSpecAmplitudeParameter,
 )
-from firecrown.descriptors import TypeFloat, TypeString
-from firecrown.likelihood import NamedParameters
 from firecrown.updatable import ParamsMap
 
 

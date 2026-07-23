@@ -6,20 +6,23 @@ complete analysis examples with data files and framework configurations.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
-from typing import Annotated, ClassVar, Sequence
+import dataclasses
 from abc import abstractmethod
 from pathlib import Path
-import dataclasses
-from rich.panel import Panel
-from rich.table import Table
-from rich.rule import Rule
-import yaml
+from typing import Annotated, ClassVar, Sequence
+
 import typer
+import yaml
+from rich.panel import Panel
+from rich.rule import Rule
+from rich.table import Table
+
 from firecrown.likelihood import NamedParameters
-from ._types import Frameworks, Model, FrameworkCosmology, CCLCosmologySpec
-from ._config_generator import get_generator, ConfigGenerator
+
 from .. import logging
 from ..sacc import SaccFormat, Transform
+from ._config_generator import ConfigGenerator, get_generator
+from ._types import CCLCosmologySpec, FrameworkCosmology, Frameworks, Model
 
 
 @dataclasses.dataclass

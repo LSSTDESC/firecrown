@@ -1,10 +1,10 @@
 """Collection of fixtures for the numcosmo connector tests."""
 
-from typing import cast
 import math
-import pytest
+from typing import cast
 
-from numcosmo_py import Nc, Ncm, GObject
+import pytest
+from numcosmo_py import GObject, Nc, Ncm
 
 
 @pytest.fixture(name="numcosmo_cosmo_xcdm")

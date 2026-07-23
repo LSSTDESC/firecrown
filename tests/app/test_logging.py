@@ -2,7 +2,9 @@
 
 from pathlib import Path
 from typing import Generator
+
 import pytest
+
 from firecrown.app.logging import Logging
 
 

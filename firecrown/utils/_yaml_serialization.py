@@ -3,7 +3,6 @@
 import yaml
 from pydantic import BaseModel
 from typing_extensions import Self
-
 from yaml import Dumper, Loader
 
 

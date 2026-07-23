@@ -19,12 +19,10 @@ from firecrown.fctools.measurement_compatibility import (
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     Measurement,
-)
-from firecrown.metadata_types._compatibility import (
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
-    _measurement_supports_harmonic as measurement_supports_harmonic,
-    _measurement_supports_real as measurement_supports_real,
+    measurement_supports_harmonic,
+    measurement_supports_real,
 )
 
 from . import match_wrapped

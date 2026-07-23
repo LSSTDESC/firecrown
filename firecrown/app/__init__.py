@@ -13,10 +13,11 @@ Use `firecrown <command> --help` for details.
 """
 
 import typer
-import firecrown.app.sacc as sacc_app
-import firecrown.app.experiment as experiment_app
-import firecrown.app.examples as examples_app
+
 import firecrown.app.cosmology as cosmology_app
+import firecrown.app.examples as examples_app
+import firecrown.app.experiment as experiment_app
+import firecrown.app.sacc as sacc_app
 
 # Root application ------------------------------------------------------------
 

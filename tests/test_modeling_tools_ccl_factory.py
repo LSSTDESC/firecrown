@@ -1,29 +1,29 @@
 """Test the CCLFactory object."""
 
-import re
 import itertools as it
+import re
+
 import numpy as np
-from numpy.testing import assert_allclose
-import pytest
 import pyccl
 import pyccl.modified_gravity
-from pyccl.neutrinos import NeutrinoMassSplits
 import pydantic
+import pytest
+from numpy.testing import assert_allclose
+from pyccl.neutrinos import NeutrinoMassSplits
 
 from firecrown.modeling_tools import (
     CAMBExtraParams,
     CCLCalculatorArgs,
     CCLCreationMode,
-    CCLPureModeTransferFunction,
     CCLFactory,
+    CCLPureModeTransferFunction,
+    CCLSplineParams,
+    ModelingTools,
     MuSigmaModel,
     PoweSpecAmplitudeParameter,
-    CCLSplineParams,
 )
-from firecrown.updatable import get_default_params_map
-from firecrown.updatable import ParamsMap
+from firecrown.updatable import ParamsMap, get_default_params_map
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
-from firecrown.modeling_tools import ModelingTools
 
 # pylint: disable=too-many-lines
 

@@ -10,20 +10,21 @@ Omega_c → omch2 × h²) to match Cobaya/CAMB conventions.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
-from typing import Any, assert_never
-from pathlib import Path
 import dataclasses
+from pathlib import Path
+from typing import Any, assert_never
 
 import yaml
 
 import firecrown.connector.cobaya.likelihood
 from firecrown.likelihood import NamedParameters
+
 from ._types import (
-    Model,
-    Frameworks,
+    CCLCosmologySpec,
     ConfigGenerator,
     FrameworkCosmology,
-    CCLCosmologySpec,
+    Frameworks,
+    Model,
     Parameter,
     PriorGaussian,
     PriorUniform,

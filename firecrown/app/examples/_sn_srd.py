@@ -3,24 +3,25 @@
 Generates a complete supernova analysis example using LSST DESC SRD Year 1 data.
 """
 
-from typing import ClassVar, Annotated
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Annotated, ClassVar
 
 import typer
 
 from firecrown.likelihood import NamedParameters
+
 from ..analysis import (
+    CCL_COSMOLOGY_MINIMAL_SET,
+    COSMO_DESC,
     AnalysisBuilder,
+    CCLCosmologySpec,
+    FrameworkCosmology,
     Model,
     Parameter,
-    FrameworkCosmology,
     PriorGaussian,
-    CCLCosmologySpec,
-    COSMO_DESC,
-    CCL_COSMOLOGY_MINIMAL_SET,
-    download_from_url,
     copy_template,
+    download_from_url,
 )
 from . import _sn_srd_template
 
