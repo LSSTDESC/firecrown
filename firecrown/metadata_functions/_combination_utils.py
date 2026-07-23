@@ -13,7 +13,7 @@ import firecrown.metadata_types as mdt
 
 
 def _validate_list_of_inferred_galaxy_zdists(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    inferred_galaxy_zdists: list[mdt.TomographicBin],
 ) -> None:
     """Validate that tomographic bin names are unique.
 
@@ -177,7 +177,7 @@ def make_cmb_galaxy_combinations_only(
 
 
 def make_binned_two_point_filtered(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    inferred_galaxy_zdists: list[mdt.TomographicBin],
     bin_pair_selector: mdt.BinPairSelector,
 ) -> list[mdt.TwoPointXY]:
     """Create two-point correlations filtered by a bin pair selector.

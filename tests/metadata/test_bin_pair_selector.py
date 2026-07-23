@@ -157,7 +157,7 @@ def test_pair_selector_type_source(all_harmonic_bins):
     # TypeSourceBinPairSelector should create all type-source combinations
     assert len(two_point_xy_combinations) == 10
 
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="extra_src1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
@@ -196,13 +196,13 @@ def test_pair_selector_first_neighbor(many_harmonic_bins):
         neighbors_diff=[0, 1, -1]
     )
 
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="extra_src_a",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="extra_src_b",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -244,13 +244,13 @@ def test_pair_selector_first_neighbor_no_auto(many_harmonic_bins):
 
 
 def test_pair_selector_auto_name_keep():
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -262,13 +262,13 @@ def test_pair_selector_auto_name_keep():
 
 
 def test_pair_selector_auto_measurement_keep():
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -280,13 +280,13 @@ def test_pair_selector_auto_measurement_keep():
 
 
 def test_pair_selector_named_keep():
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -297,13 +297,13 @@ def test_pair_selector_named_keep():
 
 
 def test_pair_selector_lens_keep():
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -315,13 +315,13 @@ def test_pair_selector_lens_keep():
 
 
 def test_pair_selector_source_keep():
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="src1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="src1",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -332,19 +332,19 @@ def test_pair_selector_source_keep():
 
 
 def test_pair_selector_first_neighbor_mixed():
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="extra_src_a",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="extra_src_b",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    z3 = mt.InferredGalaxyZDist(
+    z3 = mt.TomographicBin(
         bin_name="extra_src_1",
         z=np.array([0.3]),
         dndz=np.array([1.0]),
@@ -640,13 +640,13 @@ def test_pair_selector_deserialization_invalid_kind():
 
 def test_composite_selector_bad_selector_not_initialized():
     """Test that CompositeSelector raises NotImplementedError when _impl is not set."""
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -688,13 +688,13 @@ def test_auto_bin_pair_selector(all_harmonic_bins):
 
 def test_auto_bin_pair_selector_keep():
     """Test AutoBinPairSelector keep method."""
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -714,13 +714,13 @@ def test_source_lens_pair_selector():
     source_lens_pair_selector = mt.SourceLensBinPairSelector()
 
     # Create a mixed measurement bin for testing
-    z_source = mt.InferredGalaxyZDist(
+    z_source = mt.TomographicBin(
         bin_name="src0",
         z=np.linspace(0, 1.0, 50) + 0.05,
         dndz=np.exp(-0.5 * (np.linspace(0, 1.0, 50) + 0.05 - 0.5) ** 2 / 0.05 / 0.05),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    z_lens = mt.InferredGalaxyZDist(
+    z_lens = mt.TomographicBin(
         bin_name="lens0",
         z=np.linspace(0, 1.0, 50) + 0.05,
         dndz=np.exp(-0.5 * (np.linspace(0, 1.0, 50) + 0.05 - 0.5) ** 2 / 0.05 / 0.05),
@@ -744,13 +744,13 @@ def test_source_lens_pair_selector():
 
 def test_source_lens_pair_selector_keep():
     """Test SourceLensBinPairSelector keep method with fixed order."""
-    z_source = mt.InferredGalaxyZDist(
+    z_source = mt.TomographicBin(
         bin_name="src1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    z_lens = mt.InferredGalaxyZDist(
+    z_lens = mt.TomographicBin(
         bin_name="lens1",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -813,13 +813,13 @@ def test_source_lens_pair_selector_deserialization():
 
 def test_cross_name_bin_pair_selector_keep():
     """Test CrossNameBinPairSelector keep method."""
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -849,13 +849,13 @@ def test_cross_name_bin_pair_selector(all_harmonic_bins):
 
 def test_cross_measurement_bin_pair_selector_keep():
     """Test CrossMeasurementBinPairSelector keep method."""
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -885,13 +885,13 @@ def test_cross_measurement_bin_pair_selector(all_harmonic_bins):
 
 def test_cross_bin_pair_selector_keep():
     """Test CrossBinPairSelector keep method."""
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -981,13 +981,13 @@ def test_cross_bin_pair_selector_deserialization():
 
 def test_cross_selectors_are_inverses():
     """Test that Cross selectors are exact inverses of Auto selectors."""
-    z1 = mt.InferredGalaxyZDist(
+    z1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    z2 = mt.InferredGalaxyZDist(
+    z2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -1037,25 +1037,25 @@ def test_three_two_bin_pair_selector_keep():
     selector = mt.ThreeTwoBinPairSelector()
 
     # Create test bins
-    src1 = mt.InferredGalaxyZDist(
+    src1 = mt.TomographicBin(
         bin_name="src_0",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    src2 = mt.InferredGalaxyZDist(
+    src2 = mt.TomographicBin(
         bin_name="src_1",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    lens1 = mt.InferredGalaxyZDist(
+    lens1 = mt.TomographicBin(
         bin_name="lens_0",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    lens2 = mt.InferredGalaxyZDist(
+    lens2 = mt.TomographicBin(
         bin_name="lens_2",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
@@ -1075,7 +1075,7 @@ def test_three_two_bin_pair_selector_keep():
 
     # Test 4: Source-lens with SAME name - should NOT be kept (excluded by
     # CrossNameDiff)
-    src_lens_same = mt.InferredGalaxyZDist(
+    src_lens_same = mt.TomographicBin(
         bin_name="bin_0",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
@@ -1092,13 +1092,13 @@ def test_three_two_bin_pair_selector_integration(all_harmonic_bins):
 
     # Ensure we have distinct prefixes for cross source-lens pairs
     extra_bins = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name="srcX1",
             z=np.array([0.3]),
             dndz=np.array([1.0]),
             measurements={mt.Galaxies.SHEAR_E},
         ),
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name="lensX0",
             z=np.array([0.1]),
             dndz=np.array([1.0]),
@@ -1147,7 +1147,7 @@ def test_three_two_bin_pair_selector_components():
 
     # Explicitly build source-only and lens-only bins with distinct prefixes
     sources = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"src{i}",
             z=np.array([0.1 * (i + 1)]),
             dndz=np.array([1.0]),
@@ -1156,7 +1156,7 @@ def test_three_two_bin_pair_selector_components():
         for i in range(2)
     ]
     lenses = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"lens{i}",
             z=np.array([0.2 * (i + 1)]),
             dndz=np.array([1.0]),
@@ -1222,25 +1222,25 @@ def test_three_two_bin_pair_selector_distance_parameters():
     )
 
     # Source bins with numeric suffixes
-    src0 = mt.InferredGalaxyZDist(
+    src0 = mt.TomographicBin(
         bin_name="src0",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    src1 = mt.InferredGalaxyZDist(
+    src1 = mt.TomographicBin(
         bin_name="src1",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    src2 = mt.InferredGalaxyZDist(
+    src2 = mt.TomographicBin(
         bin_name="src2",
         z=np.array([0.3]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    src3 = mt.InferredGalaxyZDist(
+    src3 = mt.TomographicBin(
         bin_name="src3",
         z=np.array([0.4]),
         dndz=np.array([1.0]),
@@ -1248,19 +1248,19 @@ def test_three_two_bin_pair_selector_distance_parameters():
     )
 
     # Lens bins
-    lens0 = mt.InferredGalaxyZDist(
+    lens0 = mt.TomographicBin(
         bin_name="lens0",
         z=np.array([0.1]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    lens1 = mt.InferredGalaxyZDist(
+    lens1 = mt.TomographicBin(
         bin_name="lens1",
         z=np.array([0.2]),
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    lens3 = mt.InferredGalaxyZDist(
+    lens3 = mt.TomographicBin(
         bin_name="lens3",
         z=np.array([0.4]),
         dndz=np.array([1.0]),
