@@ -589,7 +589,10 @@ class SourceSystematic(Updatable):
 
 
 class Source(Updatable):
-    """The abstract base class for all sources."""
+    """Abstract base class for all observables that can be correlated.
+
+    Sources are used in the creation of two-point functions.
+    """
 
     cosmo_hash: None | int
     tracers: Sequence[Tracer]
