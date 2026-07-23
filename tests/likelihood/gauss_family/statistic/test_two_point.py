@@ -28,11 +28,11 @@ from firecrown.likelihood._two_point import (
     use_source_factory,
     use_source_factory_metadata_index,
 )
-from firecrown.likelihood._weak_lensing import (
-    WeakLensing,
-)
 from firecrown.likelihood.number_counts import (
     NumberCounts,
+)
+from firecrown.likelihood.weak_lensing import (
+    WeakLensing,
 )
 from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,

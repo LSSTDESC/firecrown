@@ -10,7 +10,7 @@ import pyccl as ccl
 import pytest
 import sacc
 
-import firecrown.likelihood._weak_lensing as wl
+import firecrown.likelihood.weak_lensing as wl
 import firecrown.metadata_types as mdt
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._two_point import (

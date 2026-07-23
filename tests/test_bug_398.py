@@ -17,7 +17,7 @@ import os
 import sacc
 from numpy.testing import assert_allclose
 
-import firecrown.likelihood._weak_lensing as wl
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._likelihood import Likelihood, NamedParameters
 from firecrown.likelihood._two_point import TwoPoint
