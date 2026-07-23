@@ -3,14 +3,15 @@ Tests for the module firecrown.modeling_tools
 """
 
 import numpy as np
-import pytest
 import pyccl
-from firecrown.updatable import get_default_params_map
+import pytest
+
+from firecrown.ccl_factory import Background, CCLCalculatorArgs
 from firecrown.modeling_tools import (
     ModelingTools,
     PowerspectrumModifier,
 )
-from firecrown.ccl_factory import Background, CCLCalculatorArgs
+from firecrown.updatable import get_default_params_map
 
 
 @pytest.fixture(name="dummy_powerspectrum", scope="session")

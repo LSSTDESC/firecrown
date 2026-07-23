@@ -6,6 +6,10 @@ This module contains metadata types definitions.
 # Import all public types and classes from private submodules
 from firecrown.metadata_types._compatibility import (
     measurement_is_compatible,
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
+    measurement_supports_harmonic,
+    measurement_supports_real,
     measurements_types,
 )
 from firecrown.metadata_types._two_point_tracers import (
@@ -17,8 +21,8 @@ from firecrown.metadata_types._two_point_tracers import (
 
 # Backwards compatibility: expose the legacy name
 from firecrown.metadata_types._measurements import (
-    ALL_MEASUREMENTS,
     ALL_MEASUREMENT_TYPES,
+    ALL_MEASUREMENTS,
     CMB,
     CMB_TYPES,
     GALAXY_LENS_TYPES,
@@ -102,6 +106,10 @@ __all__ = [
     "TwoPointFilterMethod",
     # Compatibility function (public)
     "measurement_is_compatible",
+    "measurement_is_compatible_harmonic",
+    "measurement_is_compatible_real",
+    "measurement_supports_harmonic",
+    "measurement_supports_real",
     "measurements_types",
     # SACC conversion constant
     "MEASURED_TYPE_STRING_MAP",

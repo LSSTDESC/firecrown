@@ -1,7 +1,7 @@
 """Load command for SACC files."""
 
-import dataclasses
 import contextlib
+import dataclasses
 import io
 import warnings
 from pathlib import Path
@@ -9,8 +9,8 @@ from typing import Annotated
 
 import typer
 
-from firecrown.likelihood import factories
 from firecrown.app.logging import Logging
+from firecrown.likelihood import factories
 
 
 @dataclasses.dataclass(kw_only=True)

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 # Import base classes from _base.py
-from firecrown.likelihood._base import (
+from firecrown.likelihood_base import (
     SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z,
     SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z,
     PhotoZShift,
-    PhotoZShiftFactory,
     PhotoZShiftandStretch,
     PhotoZShiftandStretchFactory,
+    PhotoZShiftFactory,
     Source,
     SourceGalaxy,
     SourceGalaxyArgs,

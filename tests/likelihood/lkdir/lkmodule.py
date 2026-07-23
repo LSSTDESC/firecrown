@@ -3,10 +3,12 @@ Provides a trivial likelihood class and factory function for testing purposes.
 """
 
 import sacc
-from firecrown.updatable import DerivedParameterCollection, DerivedParameter
+
+from firecrown import parameters
 from firecrown.likelihood._likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown import updatable
+from firecrown.updatable import DerivedParameter, DerivedParameterCollection
 
 
 class EmptyLikelihood(Likelihood):

@@ -4,10 +4,11 @@ This module contains comprehensive tests for all bin pair selector implementatio
 including atomic selectors, composite selectors, logical combinators, and serialization.
 """
 
-from typing import Any
 import re
-import pytest
+from typing import Any
+
 import numpy as np
+import pytest
 import yaml
 
 import firecrown.metadata_types as mt

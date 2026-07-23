@@ -8,10 +8,10 @@ import pyccl
 import sacc
 from sacc.tracers import MiscTracer
 
-from firecrown.updatable import register_new_updatable_parameter
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood._base import Statistic
+from firecrown.likelihood_base import Statistic
 from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import register_new_updatable_parameter
 
 SNIA_DEFAULT_M = -19.2
 

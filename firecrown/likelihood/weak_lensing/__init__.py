@@ -8,8 +8,8 @@ for use in likelihood calculations.
 from firecrown.likelihood._weak_lensing import (
     HMAlignmentSystematic,
     LinearAlignmentSystematic,
-    MassDependentLinearAlignmentSystematic,
     LinearAlignmentSystematicFactory,
+    MassDependentLinearAlignmentSystematic,
     MultiplicativeShearBias,
     MultiplicativeShearBiasFactory,
     PhotoZShift,
@@ -24,9 +24,9 @@ from firecrown.likelihood._weak_lensing import (
 )
 
 # Re-export shared factories from base module
-from firecrown.likelihood._base import (
-    PhotoZShiftFactory,
+from firecrown.likelihood_base import (
     PhotoZShiftandStretchFactory,
+    PhotoZShiftFactory,
 )
 
 __all__ = [

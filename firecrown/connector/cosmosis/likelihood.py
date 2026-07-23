@@ -9,22 +9,27 @@ likelihood.
 """
 
 import warnings
+
 import cosmosis.datablock
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
 
-from firecrown.modeling_tools import CCLCreationMode
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.likelihood import (
     GaussFamily,
-    State,
     Likelihood,
     NamedParameters,
-    load_likelihood,
+    State,
     TwoPoint,
+    load_likelihood,
 )
-from firecrown.updatable import ParamsMap, handle_unused_params
-from firecrown.updatable import MissingSamplerParameterError, UpdatableUsageRecord
+from firecrown.modeling_tools import CCLCreationMode
+from firecrown.updatable import (
+    MissingSamplerParameterError,
+    ParamsMap,
+    UpdatableUsageRecord,
+    handle_unused_params,
+)
 
 
 def extract_section(sample: cosmosis.datablock, section: str) -> NamedParameters:

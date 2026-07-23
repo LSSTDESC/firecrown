@@ -32,8 +32,8 @@ from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
 from firecrown.updatable import (
     ParamsMap,
     SamplerParameter,
-    register_new_updatable_parameter,
     Updatable,
+    register_new_updatable_parameter,
 )
 
 

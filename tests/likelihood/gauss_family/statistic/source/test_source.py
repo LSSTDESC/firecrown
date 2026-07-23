@@ -4,23 +4,21 @@ Tests for the module firecrown.likelihood.statistic.source.
 
 # pylint: disable=too-many-locals
 
-from typing import List, Callable
 import itertools as it
+from typing import Callable, List
 
 import numpy as np
+import numpy.typing as npt
 import pyccl
 import pytest
 import sacc
-import numpy.typing as npt
 from numpy.testing import assert_allclose
 from scipy.interpolate import Akima1DInterpolator
 
+import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.number_counts._factories as nc_factories
 import firecrown.likelihood.number_counts._systematics as nc_sys
-import firecrown.likelihood._weak_lensing as wl
-from firecrown.likelihood.number_counts._args import NumberCountsArgs
-from firecrown.likelihood._weak_lensing import WeakLensingArgs
 from firecrown.likelihood._source import (
     SourceGalaxy,
     SourceGalaxyArgs,
@@ -29,10 +27,11 @@ from firecrown.likelihood._source import (
     dndz_shift_and_stretch_active,
     dndz_shift_and_stretch_passive,
 )
+from firecrown.likelihood._weak_lensing import WeakLensingArgs
+from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import ParamsMap
-from firecrown.updatable import get_default_params
+from firecrown.updatable import ParamsMap, get_default_params
 
 
 @pytest.fixture(

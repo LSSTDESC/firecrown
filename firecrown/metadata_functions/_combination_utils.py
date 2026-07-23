@@ -7,7 +7,7 @@ tomographic redshift bins. It supports:
 - Filtered combinations based on bin pair selectors
 """
 
-from itertools import product, chain
+from itertools import chain, product
 
 import firecrown.metadata_types as mdt
 

@@ -5,16 +5,17 @@ surface mass of clusters within a single redshift and mass bin.
 """
 
 from __future__ import annotations
+
 from typing import Any
 
-import sacc
 import numpy as np
+import sacc
 from crow.properties import ClusterProperty
 
 from firecrown.data_types import TheoryVector
+from firecrown.likelihood._binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import ShearData
-from firecrown.likelihood._binned_cluster import BinnedCluster
 
 
 class BinnedClusterShearProfile(BinnedCluster):

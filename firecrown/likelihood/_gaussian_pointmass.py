@@ -1,6 +1,7 @@
 """Provides GaussFamily concrete types."""
 
 from __future__ import annotations
+
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -8,11 +9,11 @@ from typing import cast
 
 import numpy as np
 import numpy.typing as npt
-from scipy.integrate import simpson
 import pyccl
+from scipy.integrate import simpson
 
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._base import Statistic
+from firecrown.likelihood_base import Statistic
 
 # Default values for point mass marginalization
 DEFAULT_SIGMA_B = 10000.0

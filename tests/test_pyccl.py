@@ -3,8 +3,8 @@ Test a few of the features of pyccl upon which we rely, but which might change i
 future release of pyccl.
 """
 
-import pytest
 import pyccl
+import pytest
 
 # Both sets of cosmological parameters are silly, but they are sufficient to initialize
 # a pyccl.Cosmology object.

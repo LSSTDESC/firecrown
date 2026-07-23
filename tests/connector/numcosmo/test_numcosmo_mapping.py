@@ -1,23 +1,23 @@
 """Unit tests for the numcosmo Mapping connector."""
 
-from typing import cast
 import unittest.mock as mock
-import pytest
-import pyccl as ccl
-from numcosmo_py import Ncm, Nc, GObject
+from typing import cast
 
-from firecrown.likelihood._likelihood import Likelihood, NamedParameters
-from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.modeling_tools import ModelingTools
+import pyccl as ccl
+import pytest
+from numcosmo_py import GObject, Nc, Ncm
+
 from firecrown.connector.numcosmo.numcosmo import (
-    NumCosmoData,
-    NumCosmoGaussCov,
     MappingNumCosmo,
+    NumCosmoData,
     NumCosmoFactory,
-    helpers,
+    NumCosmoGaussCov,
     create_params_map,
+    helpers,
 )
-from firecrown.modeling_tools import PoweSpecAmplitudeParameter
+from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood._likelihood import Likelihood, NamedParameters
+from firecrown.modeling_tools import ModelingTools, PoweSpecAmplitudeParameter
 
 Ncm.cfg_init()
 

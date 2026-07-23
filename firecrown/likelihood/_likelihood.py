@@ -60,7 +60,7 @@ import types
 import warnings
 
 # Import base classes from _base.py
-from firecrown.likelihood._base import Likelihood, NamedParameters
+from firecrown.likelihood_base import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 
 

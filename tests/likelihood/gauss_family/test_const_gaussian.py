@@ -2,28 +2,27 @@
 
 import re
 
-import pytest
 import numpy as np
 import numpy.typing as npt
+import pytest
+import sacc
 from numpy.testing import assert_allclose
 from scipy.stats import chi2
 
-import sacc
-
 import firecrown.updatable
-from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.data_functions import extract_all_harmonic_data
 from firecrown.likelihood._gaussfamily import Statistic
+from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._statistic import TrivialStatistic
+from firecrown.likelihood._two_point import TwoPoint
+from firecrown.metadata_functions import TwoPointHarmonicIndex
+from firecrown.metadata_types import Galaxies, TracerNames
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import (
-    RequiredParameters,
     DerivedParameterCollection,
+    RequiredParameters,
     SamplerParameter,
 )
-from firecrown.likelihood._two_point import TwoPoint
-from firecrown.metadata_types import TracerNames, Galaxies
-from firecrown.metadata_functions import TwoPointHarmonicIndex
-from firecrown.data_functions import extract_all_harmonic_data
 
 
 class StatisticWithoutIndices(TrivialStatistic):

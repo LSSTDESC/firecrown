@@ -10,21 +10,21 @@ converted to uniform bounds (mean ± 3σ), with true Gaussian priors in separate
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
-from typing import assert_never
 import configparser
+import dataclasses
 import textwrap
 from pathlib import Path
-import dataclasses
+from typing import assert_never
 
 import firecrown
 from firecrown.likelihood import NamedParameters
 
 from ._types import (
-    Model,
-    Frameworks,
+    CCLCosmologySpec,
     ConfigGenerator,
     FrameworkCosmology,
-    CCLCosmologySpec,
+    Frameworks,
+    Model,
     PriorGaussian,
     PriorUniform,
     get_path_str,

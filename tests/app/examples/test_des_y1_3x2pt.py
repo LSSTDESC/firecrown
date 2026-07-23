@@ -3,31 +3,31 @@
 Tests ExampleDESY13x2pt example generator and build_likelihood execution.
 """
 
+import importlib.util
 import sys
 from pathlib import Path
 from unittest.mock import patch
-import importlib.util
 
 import numpy as np
 import pyccl
 
-from firecrown.likelihood import NamedParameters, ConstGaussian
-from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
+from firecrown.app.analysis import (
+    FrameworkCosmology,
+    Frameworks,
+    Model,
+)
 from firecrown.app.examples._des_y1_3x2pt import (
-    ExampleDESY13x2pt,
     DESY1FactoryType,
-    _des_y1_3x2pt_template,
+    ExampleDESY13x2pt,
     _des_y1_3x2pt_pt_template,
+    _des_y1_3x2pt_template,
     _des_y1_cosmic_shear_hmia_template,
     _des_y1_cosmic_shear_pk_modifier_template,
     _des_y1_cosmic_shear_tatt_template,
 )
-from firecrown.app.analysis import (
-    Model,
-    FrameworkCosmology,
-    Frameworks,
-)
+from firecrown.likelihood import ConstGaussian, NamedParameters
 from firecrown.likelihood.factories import build_two_point_likelihood
+from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
 from firecrown.updatable import ParamsMap
 
 

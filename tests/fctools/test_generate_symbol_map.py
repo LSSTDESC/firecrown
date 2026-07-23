@@ -11,14 +11,14 @@ import pytest
 from typer.testing import CliRunner
 
 from firecrown.fctools.generate_symbol_map import (
-    _is_api_constant,
-    _is_private_name,
-    _is_excluded_type,
-    _has_constant_name,
-    _is_firecrown_instance,
     _add_symbol_to_map,
-    get_all_symbols,
+    _has_constant_name,
+    _is_api_constant,
+    _is_excluded_type,
+    _is_firecrown_instance,
+    _is_private_name,
     app,
+    get_all_symbols,
 )
 
 # Test fixtures - create some mock objects

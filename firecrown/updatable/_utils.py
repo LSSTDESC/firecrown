@@ -1,12 +1,12 @@
 """Utility functions for updatable objects."""
 
 from __future__ import annotations
-import warnings
 
-from firecrown.updatable._parameters_map import ParamsMap
+import warnings
 
 from firecrown.updatable._base import Updatable
 from firecrown.updatable._collection import UpdatableCollection
+from firecrown.updatable._parameters_map import ParamsMap
 from firecrown.updatable._types import UpdatableProtocol
 
 

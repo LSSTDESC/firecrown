@@ -3,22 +3,43 @@
 In this module, we test the functions and classes involved SACC extraction tools.
 """
 
-import warnings
 import re
-import pytest
+import warnings
+
 import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
-
-
+import pytest
 import sacc
+from numpy.testing import assert_allclose, assert_array_equal
 
-from firecrown.updatable import ParamsMap
+from firecrown.data_functions import (
+    check_two_point_consistence_harmonic,
+    check_two_point_consistence_real,
+    extract_all_harmonic_data,
+    extract_all_real_data,
+)
+from firecrown.likelihood._two_point import (
+    TwoPoint,
+    TwoPointFactory,
+    use_source_factory,
+)
+from firecrown.metadata_functions import (
+    extract_all_harmonic_metadata,
+    extract_all_harmonic_metadata_indices,
+    extract_all_photoz_bin_combinations,
+    extract_all_real_metadata,
+    extract_all_real_metadata_indices,
+    extract_all_tracers_inferred_galaxy_zdists,
+    extract_window_function,
+    make_all_photoz_bin_combinations,
+    make_all_photoz_bin_combinations_with_cmb,
+    make_cmb_galaxy_combinations_only,
+)
 from firecrown.metadata_types import (
+    CMB,
+    GALAXY_SOURCE_TYPES,
     AutoMeasurementBinPairSelector,
     AutoNameBinPairSelector,
-    CMB,
     Galaxies,
-    GALAXY_SOURCE_TYPES,
     LensBinPairSelector,
     NamedBinPairSelector,
     SourceBinPairSelector,
@@ -33,29 +54,7 @@ from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic,
     _type_to_sacc_string_real,
 )
-from firecrown.metadata_functions import (
-    extract_all_harmonic_metadata_indices,
-    extract_all_harmonic_metadata,
-    extract_all_photoz_bin_combinations,
-    extract_all_real_metadata_indices,
-    extract_all_real_metadata,
-    extract_all_tracers_inferred_galaxy_zdists,
-    extract_window_function,
-    make_all_photoz_bin_combinations_with_cmb,
-    make_all_photoz_bin_combinations,
-    make_cmb_galaxy_combinations_only,
-)
-from firecrown.data_functions import (
-    check_two_point_consistence_harmonic,
-    check_two_point_consistence_real,
-    extract_all_harmonic_data,
-    extract_all_real_data,
-)
-from firecrown.likelihood._two_point import (
-    TwoPoint,
-    TwoPointFactory,
-    use_source_factory,
-)
+from firecrown.updatable import ParamsMap
 
 # pylint: disable=too-many-lines
 

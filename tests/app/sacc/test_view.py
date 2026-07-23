@@ -3,15 +3,17 @@
 Tests for viewing and displaying SACC file contents and quality checks.
 """
 
-import warnings
 import re
+import warnings
 from pathlib import Path
 from unittest.mock import Mock, patch
+
 import matplotlib.pyplot as plt
-import pytest
-from _pytest.capture import CaptureFixture
 import numpy as np
+import pytest
 import sacc
+from _pytest.capture import CaptureFixture
+
 from firecrown.app.sacc import View
 from firecrown.app.sacc._handlers import (
     UnknownStderrHandler,

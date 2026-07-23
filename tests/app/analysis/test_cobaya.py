@@ -4,28 +4,29 @@ Tests Cobaya configuration generation, parameter mapping, and YAML output.
 """
 
 from pathlib import Path
-import yaml
-import pytest
 
-from firecrown.likelihood import NamedParameters
+import pytest
+import yaml
+
 from firecrown.app.analysis._cobaya import (
-    create_config,
+    NAME_MAP,
+    CobayaConfigGenerator,
     _configure_parameter,
     _get_standard_params,
     add_models,
+    create_config,
     write_config,
-    CobayaConfigGenerator,
-    NAME_MAP,
 )
 from firecrown.app.analysis._types import (
-    Frameworks,
-    FrameworkCosmology,
     CCLCosmologySpec,
+    FrameworkCosmology,
+    Frameworks,
+    Model,
     Parameter,
     PriorGaussian,
     PriorUniform,
-    Model,
 )
+from firecrown.likelihood import NamedParameters
 
 
 @pytest.fixture(name="vanilla_cosmo")

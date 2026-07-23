@@ -12,25 +12,28 @@ A_s).
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
-import multiprocessing as mp
-import re
-from typing import assert_never, Any
-from pathlib import Path
-import os
 import dataclasses
-import numpy as np
-from numcosmo_py import Ncm, Nc
+import multiprocessing as mp
+import os
+import re
+from pathlib import Path
+from typing import Any, assert_never
+
 import numcosmo_py.external.cosmosis as nc_cosmosis
+import numpy as np
+from numcosmo_py import Nc, Ncm
 from numcosmo_py.helper import register_model_class
+
 from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
 from firecrown.likelihood import NamedParameters
+
 from ._types import (
-    Model,
-    Parameter,
-    Frameworks,
+    CCLCosmologySpec,
     ConfigGenerator,
     FrameworkCosmology,
-    CCLCosmologySpec,
+    Frameworks,
+    Model,
+    Parameter,
     Prior,
     PriorGaussian,
     PriorUniform,

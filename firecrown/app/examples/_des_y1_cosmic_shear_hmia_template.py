@@ -5,13 +5,13 @@ for intrinsic alignments with configurable halo mass function and bias.
 """
 
 import os
+
 import pyccl
 
-from firecrown.likelihood.factories import load_sacc_data
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
-from firecrown.modeling_tools import ModelingTools
-from firecrown.modeling_tools import CCLFactory
+from firecrown.likelihood.factories import load_sacc_data
+from firecrown.modeling_tools import CCLFactory, ModelingTools
 
 
 def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:

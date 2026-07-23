@@ -1,11 +1,13 @@
+import types
+
 import numpy as np
 import pyccl
 import pytest
 import sacc
-import types
+
 import firecrown.likelihood._likelihood as like
-from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood._likelihood import NamedParameters
+from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
 

@@ -2,50 +2,51 @@
 
 import re
 from pathlib import Path
-import pytest
-import numpy as np
 
+import numpy as np
 import pyccl
+import pytest
 import sacc
-from firecrown.metadata_types import TwoPointCorrelationSpace
-from firecrown.likelihood.factories import (
-    build_two_point_likelihood,
-    DataSourceSacc,
-    load_sacc_data,
-    TwoPointExperiment,
+
+from firecrown.data_functions import (
+    TwoPointBinFilter,
+    TwoPointBinFilterCollection,
+    extract_all_harmonic_data,
 )
-from firecrown.likelihood.factories._sacc_utils import ensure_path
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.likelihood import TwoPoint, TwoPointFactory
-from firecrown.likelihood.weak_lensing import WeakLensingFactory
-from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood._cmb import CMBConvergenceFactory
 from firecrown.likelihood._likelihood import Likelihood, NamedParameters
-from firecrown.modeling_tools import ModelingTools
+from firecrown.likelihood.factories import (
+    DataSourceSacc,
+    TwoPointExperiment,
+    build_two_point_likelihood,
+    load_sacc_data,
+)
+from firecrown.likelihood.factories._models import _build_two_point_likelihood_real
+from firecrown.likelihood.factories._sacc_utils import ensure_path
+from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.metadata_types import (
+    CMB,
+    CMB_TYPES,
+    GALAXY_LENS_TYPES,
+    GALAXY_SOURCE_TYPES,
+    Clusters,
     Galaxies,
+    TwoPointCorrelationSpace,
     TwoPointHarmonic,
     TwoPointReal,
     TypeSource,
-    CMB,
-    Clusters,
-    GALAXY_SOURCE_TYPES,
-    GALAXY_LENS_TYPES,
-    CMB_TYPES,
 )
-from firecrown.data_types import TwoPointMeasurement
-from firecrown.data_functions import (
-    TwoPointBinFilterCollection,
-    TwoPointBinFilter,
-    extract_all_harmonic_data,
-)
+from firecrown.modeling_tools import ModelingTools
 from firecrown.utils import (
+    ClIntegrationMethod,
+    ClIntegrationOptions,
+    ClLimberMethod,
     base_model_from_yaml,
     base_model_to_yaml,
-    ClIntegrationOptions,
-    ClIntegrationMethod,
-    ClLimberMethod,
 )
-from firecrown.likelihood.factories._models import _build_two_point_likelihood_real
 
 
 @pytest.fixture(name="empty_factory_harmonic")

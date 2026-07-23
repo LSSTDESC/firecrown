@@ -2,26 +2,27 @@
 Tests for the module firecrown.data_functions.
 """
 
-import re
 import itertools as it
-import pytest
-import numpy as np
+import re
 
-from firecrown.metadata_types import (
-    TwoPointReal,
-    TwoPointHarmonic,
-    TwoPointFilterMethod,
-    TomographicBin,
-    Galaxies,
-)
-from firecrown.metadata_functions import make_all_photoz_bin_combinations
-from firecrown.data_types import TwoPointMeasurement
+import numpy as np
+import pytest
+
 from firecrown.data_functions import (
     TwoPointBinFilter,
     TwoPointBinFilterCollection,
     TwoPointTracerSpec,
     bin_spec_from_metadata,
     make_interval_from_list,
+)
+from firecrown.data_types import TwoPointMeasurement
+from firecrown.metadata_functions import make_all_photoz_bin_combinations
+from firecrown.metadata_types import (
+    Galaxies,
+    TomographicBin,
+    TwoPointFilterMethod,
+    TwoPointHarmonic,
+    TwoPointReal,
 )
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 

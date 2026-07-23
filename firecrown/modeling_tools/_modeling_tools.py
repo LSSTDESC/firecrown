@@ -13,8 +13,8 @@ from collections.abc import Collection
 import pyccl
 import pyccl.nl_pt
 
-from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
 from firecrown.modeling_tools._ccl_factory import CCLFactory
+from firecrown.modeling_tools._ccl_types import CCLCalculatorArgs
 from firecrown.updatable import Updatable, UpdatableCollection
 
 _UNSET = object()

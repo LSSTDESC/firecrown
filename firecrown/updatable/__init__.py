@@ -15,17 +15,11 @@ a type that implements :class:`Updatable` can be appended to the list.
 
 from __future__ import annotations
 
+from ._base import Updatable
+from ._collection import UpdatableCollection
+
 # Import from private submodules
 from ._exceptions import MissingSamplerParameterError
-from ._base import Updatable
-from ._records import UpdatableUsageRecord
-from ._types import UpdatableProtocol
-from ._collection import UpdatableCollection
-from ._utils import (
-    get_default_params,
-    get_default_params_map,
-    assert_updatable_interface,
-)
 
 # Import parameter-related classes (formerly from firecrown.parameters)
 from ._parameters_derived import DerivedParameter, DerivedParameterCollection
@@ -36,6 +30,13 @@ from ._parameters_types import (
     InternalParameter,
     SamplerParameter,
     register_new_updatable_parameter,
+)
+from ._records import UpdatableUsageRecord
+from ._types import UpdatableProtocol
+from ._utils import (
+    assert_updatable_interface,
+    get_default_params,
+    get_default_params_map,
 )
 
 __all__ = [

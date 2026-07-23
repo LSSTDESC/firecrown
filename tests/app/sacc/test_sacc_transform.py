@@ -5,15 +5,15 @@ Tests the SACC file transform command.
 
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
-from pathlib import Path
 import time
+from pathlib import Path
 
 import numpy as np
 import pytest
 import sacc
 from _pytest.capture import CaptureFixture, CaptureResult
 
-from firecrown.app.sacc import Transform, SaccFormat
+from firecrown.app.sacc import SaccFormat, Transform
 
 
 class TestTransformBasic:

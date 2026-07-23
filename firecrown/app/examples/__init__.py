@@ -7,8 +7,8 @@ and framework-specific configurations.
 
 from ..analysis import AnalysisBuilder
 from ._cosmic_shear import ExampleCosmicShear
+from ._des_y1_3x2pt import DESY1FactoryType, ExampleDESY13x2pt
 from ._sn_srd import ExampleSupernovaSRD
-from ._des_y1_3x2pt import ExampleDESY13x2pt, DESY1FactoryType
 
 __all__ = [
     "EXAMPLES_LIST",

@@ -1,12 +1,11 @@
 """Tests for the Supernova statistic."""
 
 import pytest
-
 import sacc
 
-from firecrown.updatable import get_default_params_map
 from firecrown.likelihood.supernova._supernova import Supernova
 from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import get_default_params_map
 
 
 @pytest.fixture(name="minimal_stat")

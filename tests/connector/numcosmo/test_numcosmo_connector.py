@@ -1,18 +1,17 @@
 """Unit tests for the numcosmo connector."""
 
 import pytest
-from numcosmo_py import Ncm, Nc, GObject
+from numcosmo_py import GObject, Nc, Ncm
 
 from firecrown.connector.numcosmo.numcosmo import (
-    NumCosmoFactory,
     MappingNumCosmo,
     NumCosmoData,
+    NumCosmoFactory,
     NumCosmoGaussCov,
 )
-
 from firecrown.likelihood._likelihood import (
-    NamedParameters,
     Likelihood,
+    NamedParameters,
 )
 
 Ncm.cfg_init()
@@ -285,8 +284,8 @@ def test_empty_gauss_cov_data():
 
 def test_create_params_map_with_mapping():
     """Test create_params_map function when mapping is provided."""
-    from firecrown.connector.numcosmo.numcosmo import create_params_map
     from firecrown.connector.mapping import Mapping
+    from firecrown.connector.numcosmo.numcosmo import create_params_map
     from firecrown.updatable import ParamsMap
 
     # Create a simple mock model and mset

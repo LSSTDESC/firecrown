@@ -3,30 +3,28 @@
 import os
 import re
 
-import pytest
 import numpy as np
 import numpy.typing as npt
+import pyccl
+import pytest
+import sacc
 from numpy.testing import assert_allclose
 from scipy.stats import chi2
 
-import sacc
-import pyccl
-
+import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.weak_lensing as wl
 import firecrown.updatable
+from firecrown.data_functions import extract_all_harmonic_data
 from firecrown.likelihood import ConstGaussianPM, Statistic, TrivialStatistic, TwoPoint
+from firecrown.likelihood._gaussian_pointmass import PointMassData
+from firecrown.metadata_functions import TwoPointHarmonicIndex
+from firecrown.metadata_types import Galaxies, TracerNames
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import (
-    RequiredParameters,
     DerivedParameterCollection,
+    RequiredParameters,
     SamplerParameter,
 )
-import firecrown.likelihood.weak_lensing as wl
-import firecrown.likelihood.number_counts as nc
-from firecrown.likelihood._gaussian_pointmass import PointMassData
-
-from firecrown.metadata_types import TracerNames, Galaxies
-from firecrown.metadata_functions import TwoPointHarmonicIndex
-from firecrown.data_functions import extract_all_harmonic_data
 
 # Tests that are inherited from ConstGaussian:
 

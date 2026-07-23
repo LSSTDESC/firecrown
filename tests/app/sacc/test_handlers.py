@@ -5,12 +5,12 @@ stdout, and stderr streams.
 """
 
 from firecrown.app.sacc._handlers import (
-    TracerNamingViolationHandler,
     LegacyCovarianceHandler,
     MissingSaccOrderingHandler,
-    UnknownWarningHandler,
-    UnknownStdoutHandler,
+    TracerNamingViolationHandler,
     UnknownStderrHandler,
+    UnknownStdoutHandler,
+    UnknownWarningHandler,
 )
 
 

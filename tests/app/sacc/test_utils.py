@@ -3,8 +3,9 @@
 Tests for utility functions used in SACC operations.
 """
 
-import pytest
 import numpy as np
+import pytest
+
 from firecrown import metadata_types as mdt
 from firecrown.app.sacc._utils import mean_std_tracer
 

@@ -13,14 +13,14 @@ Key differences from the standard template:
 """
 
 import os
+
 import pyccl
 
-from firecrown.likelihood.factories import load_sacc_data
-import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
-from firecrown.modeling_tools import ModelingTools
-from firecrown.modeling_tools import CCLFactory
+from firecrown.likelihood.factories import load_sacc_data
+from firecrown.modeling_tools import CCLFactory, ModelingTools
 
 
 def _build_sources() -> tuple[wl.WeakLensing, nc.NumberCounts]:

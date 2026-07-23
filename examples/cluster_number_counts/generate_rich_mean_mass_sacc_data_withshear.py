@@ -12,18 +12,18 @@ The file contains:
 All computed from the same simulated data.
 """
 
+import itertools
+import math
 import os
 from typing import Tuple
-import math
-import itertools
-import numpy as np
 
-from numcosmo_py import Nc, Ncm
+import numpy as np
+import pyccl as ccl
+import sacc
 from astropy.io import fits
 from astropy.table import Table
+from numcosmo_py import Nc, Ncm
 from scipy import stats
-import sacc
-import pyccl as ccl
 
 os.environ["CLMM_MODELING_BACKEND"] = "ccl"
 # pylint: disable=C0413

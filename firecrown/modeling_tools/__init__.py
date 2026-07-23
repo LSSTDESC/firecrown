@@ -9,10 +9,6 @@ This module also contains the CCL factory functionality for creating
 :class:`pyccl.Cosmology` instances.
 """
 
-from firecrown.modeling_tools._modeling_tools import (
-    ModelingTools,
-    PowerspectrumModifier,
-)
 from firecrown.modeling_tools._ccl_enums import (
     CCLCreationMode,
     CCLPureModeTransferFunction,
@@ -28,6 +24,10 @@ from firecrown.modeling_tools._ccl_types import (
     Background,
     CCLCalculatorArgs,
     PowerSpec,
+)
+from firecrown.modeling_tools._modeling_tools import (
+    ModelingTools,
+    PowerspectrumModifier,
 )
 
 __all__ = [

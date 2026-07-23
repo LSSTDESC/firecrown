@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from firecrown.app.analysis import (
-    Frameworks,
     FrameworkCosmology,
+    Frameworks,
     get_generator,
 )
 

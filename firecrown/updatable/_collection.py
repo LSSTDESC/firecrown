@@ -1,14 +1,15 @@
 """Collection class for updatable objects."""
 
 from __future__ import annotations
+
 from collections import UserList
 from collections.abc import Iterable
 from typing import Generic, TypeVar, cast, final
 
+from firecrown.updatable._base import Updatable
+from firecrown.updatable._parameters_derived import DerivedParameterCollection
 from firecrown.updatable._parameters_map import ParamsMap
 from firecrown.updatable._parameters_required import RequiredParameters
-from firecrown.updatable._parameters_derived import DerivedParameterCollection
-from firecrown.updatable._base import Updatable
 from firecrown.updatable._records import UpdatableUsageRecord
 from firecrown.updatable._types import UpdatableProtocol
 

@@ -6,23 +6,23 @@ in firecrown.app.analysis._numcosmo module.
 """
 
 from pathlib import Path
+
 import pytest
+from numcosmo_py import Nc, Ncm
 
-from numcosmo_py import Ncm, Nc
-
-from firecrown.likelihood import NamedParameters
 from firecrown.app.analysis._numcosmo import (
-    NumCosmoConfigGenerator,
     NAME_MAP,
+    NumCosmoConfigGenerator,
 )
 from firecrown.app.analysis._types import (
-    FrameworkCosmology,
     CCLCosmologySpec,
+    FrameworkCosmology,
+    Model,
     Parameter,
     PriorGaussian,
     PriorUniform,
-    Model,
 )
+from firecrown.likelihood import NamedParameters
 
 
 @pytest.fixture(name="numcosmo_init", scope="session")
