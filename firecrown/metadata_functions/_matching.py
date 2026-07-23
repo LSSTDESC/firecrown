@@ -23,8 +23,8 @@ def _make_two_point_xy_error_message(
     :param a: The first expected measurement type.
     :param b: The second expected measurement type.
     :param tracer_names: The tracer names that were provided.
-    :param igz1: The inferred galaxy z distribution for the first tracer.
-    :param igz2: The inferred galaxy z distribution for the second tracer.
+    :param pf1: The projected field for the first tracer.
+    :param pf2: The projected field for the second tracer.
     :return: A formatted error message explaining the violation.
     """
     return f"""
@@ -66,25 +66,25 @@ def make_two_point_xy(
     a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
 
     try:
-        igz1 = projected_fields_dict[tracer_names[0]]
-        igz2 = projected_fields_dict[tracer_names[1]]
+        pf1 = projected_fields_dict[tracer_names[0]]
+        pf2 = projected_fields_dict[tracer_names[1]]
     except KeyError as e:
         raise ValueError(
             f"Tracer '{e.args[0]}' not found in inferred galaxy z distributions."
         ) from e
 
-    if (a not in igz1.measurements) or (b not in igz2.measurements):
-        if (a in igz2.measurements) and (b in igz1.measurements):
+    if (a not in pf1.measurements) or (b not in pf2.measurements):
+        if (a in pf2.measurements) and (b in pf1.measurements):
             # swap the order of the tracers, this is a temporary fix following
             # _should_swap_tracers_for_convention in _extraction.py
-            igz1, igz2 = igz2, igz1
+            pf1, pf2 = pf2, pf1
         else:
             raise ValueError(
                 _make_two_point_xy_error_message(
-                    data_type, a, b, tracer_names, igz1, igz2
+                    data_type, a, b, tracer_names, pf1, pf2
                 )
             )
-    return mdt.TwoPointXY(x=igz1, y=igz2, x_measurement=a, y_measurement=b)
+    return mdt.TwoPointXY(x=pf1, y=pf2, x_measurement=a, y_measurement=b)
 
 
 def measurements_from_index(

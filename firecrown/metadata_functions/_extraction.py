@@ -18,7 +18,7 @@ from firecrown.metadata_functions._type_defs import (
 )
 
 
-def extract_all_tracers_inferred_galaxy_zdists(
+def extract_all_tracers_tomographic_bins(
     sacc_data: sacc.Sacc,
     allow_mixed_types: bool = False,
 ) -> list[mdt.TomographicBin]:
@@ -54,6 +54,10 @@ def extract_all_tracers_inferred_galaxy_zdists(
         for tracer in tracers
         if isinstance(tracer, sacc.tracers.NZTracer)
     ]
+
+
+# Backwards compatibility: expose the legacy name
+extract_all_tracers_inferred_galaxy_zdists = extract_all_tracers_tomographic_bins
 
 
 def _sacc_convention_warning(
@@ -476,9 +480,9 @@ def extract_all_harmonic_metadata(
     :param normalize: If True, normalize the window function weights to sum to 1.
     :return: List of TwoPointHarmonic objects with metadata and ell values.
     """
-    inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(
+    tomographic_bins_dict = {
+        tomographic_bin.bin_name: tomographic_bin
+        for tomographic_bin in extract_all_tracers_tomographic_bins(
             sacc_data, allow_mixed_types
         )
     }
@@ -490,7 +494,7 @@ def extract_all_harmonic_metadata(
         tracer_names = cell_index["tracer_names"]
         dt = cell_index["data_type"]
 
-        XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
+        XY = make_two_point_xy(tomographic_bins_dict, tracer_names, dt)
 
         # Apply bin pair selector if provided
         if bin_pair_selector is not None:
@@ -537,9 +541,9 @@ def extract_all_real_metadata(
         If None, all valid bin pairs are returned.
     :return: List of TwoPointReal objects with metadata and theta values.
     """
-    inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(
+    tomographic_bins_dict = {
+        tomographic_bin.bin_name: tomographic_bin
+        for tomographic_bin in extract_all_tracers_tomographic_bins(
             sacc_data, allow_mixed_types
         )
     }
@@ -551,7 +555,7 @@ def extract_all_real_metadata(
         tracer_names = real_index["tracer_names"]
         dt = real_index["data_type"]
 
-        XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
+        XY = make_two_point_xy(tomographic_bins_dict, tracer_names, dt)
 
         # Apply bin pair selector if provided
         if bin_pair_selector is not None:
@@ -582,10 +586,10 @@ def extract_all_photoz_bin_combinations(
         If None, all valid bin pairs are returned.
     :return: List of TwoPointXY objects representing valid bin pair combinations.
     """
-    inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(
+    tomographic_bins = extract_all_tracers_tomographic_bins(
         sacc_data, allow_mixed_types
     )
-    bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
+    bin_combinations = make_all_photoz_bin_combinations(tomographic_bins)
 
     if bin_pair_selector is not None:
         bin_combinations = [

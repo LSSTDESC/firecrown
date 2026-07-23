@@ -659,19 +659,19 @@ def test_bin_filter_methods(
 def test_raise_with_two_bins_same_name():
     # Here we test if make_all_photoz_bin_combinations raises an error when
     # there are two bins with the same name and measurement.
-    igz1 = TomographicBin(
+    bin1 = TomographicBin(
         bin_name="bin_1",
         dndz=np.linspace(0.0, 2.0, 100),
         z=np.linspace(0.0, 2.0, 100),
         measurements={Galaxies.COUNTS},
     )
-    igz2 = TomographicBin(
+    bin2 = TomographicBin(
         bin_name="bin_2",
         dndz=np.linspace(0.0, 2.0, 100),
         z=np.linspace(0.0, 2.0, 100),
         measurements={Galaxies.COUNTS},
     )
-    igz3 = TomographicBin(
+    bin3 = TomographicBin(
         bin_name="bin_3",
         dndz=np.linspace(0.0, 2.0, 100),
         z=np.linspace(0.0, 2.0, 100),
@@ -684,4 +684,4 @@ def test_raise_with_two_bins_same_name():
             "names found: ['bin_1', 'bin_2']"
         ),
     ):
-        _ = make_all_photoz_bin_combinations([igz1, igz1, igz2, igz2, igz3])
+        _ = make_all_photoz_bin_combinations([bin1, bin1, bin2, bin2, bin3])

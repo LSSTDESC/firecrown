@@ -28,7 +28,7 @@ from firecrown.metadata_functions import (
     extract_all_photoz_bin_combinations,
     extract_all_real_metadata,
     extract_all_real_metadata_indices,
-    extract_all_tracers_inferred_galaxy_zdists,
+    extract_all_tracers_tomographic_bins,
     extract_window_function,
     make_all_photoz_bin_combinations,
     make_all_photoz_bin_combinations_with_cmb,
@@ -156,7 +156,7 @@ def fixture_sacc_galaxy_cells_three_tracers() -> (
 def test_extract_all_tracers_cells(sacc_galaxy_cells) -> None:
     sacc_data, tracers, _ = sacc_galaxy_cells
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
@@ -167,7 +167,7 @@ def test_extract_all_tracers_cells(sacc_galaxy_cells) -> None:
 def test_extract_all_tracers_xis(sacc_galaxy_xis):
     sacc_data, tracers, _ = sacc_galaxy_xis
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
@@ -178,7 +178,7 @@ def test_extract_all_tracers_xis(sacc_galaxy_xis):
 def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
     sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -192,7 +192,7 @@ def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
 def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_src1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -208,7 +208,7 @@ def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
 def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
     sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -222,7 +222,7 @@ def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
 def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_lens0_lens1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -238,7 +238,7 @@ def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
 def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
     sacc_data, z, dndz = sacc_galaxy_xis_lens0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -252,7 +252,7 @@ def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
 def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_lens0_lens1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -268,7 +268,7 @@ def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
 def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -286,7 +286,7 @@ def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
 def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_src0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -309,16 +309,16 @@ def test_extract_all_tracers_invalid_data_type(
     with pytest.raises(
         ValueError, match="Tracer src0 does not have data points associated with it."
     ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+        _ = extract_all_tracers_tomographic_bins(sacc_data)
 
 
 def test_extract_all_tracers_skips_non_nztracer() -> None:
-    """Test that extract_all_tracers_inferred_galaxy_zdists skips non-NZTracer types.
+    """Test that extract_all_tracers_tomographic_bins skips non-NZTracer types.
 
     Verifies that when a SACC object contains both NZTracer and non-NZTracer types
     (e.g., WeakLensingTracer, DeltaFunctionTracer), only the NZTracer instances are
     extracted and returned. This tests the filtering logic on line 37-45 in
-    extract_all_tracers_inferred_galaxy_zdists.
+    extract_all_tracers_tomographic_bins.
     """
     sacc_data = sacc.Sacc()
 
@@ -340,7 +340,7 @@ def test_extract_all_tracers_skips_non_nztracer() -> None:
     sacc_data.add_covariance(cov)
 
     # Extract tracers - should only get the NZTracer, skipping DeltaFunctionTracer
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     # Verify only the NZTracer was extracted
     assert len(all_tracers) == 1
@@ -2071,7 +2071,7 @@ def test_extract_all_real_metadata_with_or_selector(sacc_galaxy_xis):
     sacc_data, _, _ = sacc_galaxy_xis
 
     # Get all tracers to find specific bin names
-    tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    tracers = extract_all_tracers_tomographic_bins(sacc_data)
     if len(tracers) < 2:
         pytest.skip("Need at least 2 tracers for this test")
 

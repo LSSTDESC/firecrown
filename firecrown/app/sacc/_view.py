@@ -127,7 +127,7 @@ class View(Load):
             n_cov_elements = 0
         else:
             n_cov_elements = self.sacc_data.covariance.dense.shape[0]
-        self.all_tracers = mdf.extract_all_tracers_inferred_galaxy_zdists(
+        self.all_tracers = mdf.extract_all_tracers_tomographic_bins(
             self.sacc_data, self.allow_mixed_types
         )
         self.all_tracers.sort(key=lambda t: t.bin_name)
@@ -549,7 +549,7 @@ class View(Load):
             sacc_data_raw = factories.load_sacc_data(str(self.sacc_file))
 
             # Extract tracers (this may trigger warnings about naming conventions)
-            _ = mdf.extract_all_tracers_inferred_galaxy_zdists(
+            _ = mdf.extract_all_tracers_tomographic_bins(
                 sacc_data_raw, allow_mixed_types=False
             )
             captured_warnings = list(w)
