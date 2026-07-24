@@ -7,13 +7,14 @@ tomographic redshift bins. It supports:
 - Filtered combinations based on bin pair selectors
 """
 
+from collections.abc import Sequence
 from itertools import chain, product
 
 import firecrown.metadata_types as mdt
 
 
 def _validate_list_of_tomographic_bins(
-    tomographic_bins: list[mdt.TomographicBin],
+    tomographic_bins: Sequence[mdt.ProjectedField],
 ) -> None:
     """Validate that tomographic bin names are unique.
 
@@ -37,7 +38,7 @@ def _validate_list_of_tomographic_bins(
 
 
 def make_all_photoz_bin_combinations(
-    tomographic_bins: list[mdt.TomographicBin],
+    tomographic_bins: Sequence[mdt.ProjectedField],
 ) -> list[mdt.TwoPointXY]:
     """Create all possible two-point correlation combinations for galaxy bins.
 
@@ -179,7 +180,7 @@ def make_cmb_galaxy_combinations_only(
 
 
 def make_binned_two_point_filtered(
-    tomographic_bins: list[mdt.TomographicBin],
+    tomographic_bins: Sequence[mdt.ProjectedField],
     bin_pair_selector: mdt.BinPairSelector,
 ) -> list[mdt.TwoPointXY]:
     """Create two-point correlations filtered by a bin pair selector.

@@ -7,7 +7,7 @@ from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_functions import (
     extract_all_harmonic_metadata_indices,
     extract_all_real_metadata_indices,
-    extract_all_tracers_tomographic_bins,
+    extract_all_tracers_projected_fields,
     make_two_point_xy,
     maybe_enforce_window,
 )
@@ -31,9 +31,9 @@ def extract_all_harmonic_data(
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
         raise ValueError("The SACC object does not have a dense covariance matrix.")
 
-    tomographic_bins_dict = {
-        tomographic_bin.bin_name: tomographic_bin
-        for tomographic_bin in extract_all_tracers_tomographic_bins(
+    projected_fields_dict = {
+        projected_field.bin_name: projected_field
+        for projected_field in extract_all_tracers_projected_fields(
             sacc_data, allow_mixed_types
         )
     }
@@ -60,7 +60,7 @@ def extract_all_harmonic_data(
                 covariance_name=cov_hash(sacc_data),
                 metadata=TwoPointHarmonic(
                     XY=make_two_point_xy(
-                        tomographic_bins_dict, cell_index["tracer_names"], dt
+                        projected_fields_dict, cell_index["tracer_names"], dt
                     ),
                     window=weights,
                     window_ells=window_ells,
@@ -81,9 +81,9 @@ def extract_all_real_data(
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
         raise ValueError("The SACC object does not have a dense covariance matrix.")
 
-    tomographic_bins_dict = {
-        tomographic_bin.bin_name: tomographic_bin
-        for tomographic_bin in extract_all_tracers_tomographic_bins(sacc_data)
+    projected_fields_dict = {
+        projected_field.bin_name: projected_field
+        for projected_field in extract_all_tracers_projected_fields(sacc_data)
     }
 
     result: list[TwoPointMeasurement] = []
@@ -104,7 +104,7 @@ def extract_all_real_data(
                 covariance_name=cov_hash(sacc_data),
                 metadata=TwoPointReal(
                     XY=make_two_point_xy(
-                        tomographic_bins_dict, real_index["tracer_names"], dt
+                        projected_fields_dict, real_index["tracer_names"], dt
                     ),
                     thetas=thetas,
                 ),

@@ -376,6 +376,35 @@ class TestViewSpecialCases:
         assert view.all_tracers[1].bin_name == "m_middle"
         assert view.all_tracers[2].bin_name == "z_last"
 
+    def test_view_shows_cmb_lensing_tracer(self, tmp_path: Path) -> None:
+        """Test that View displays a CMB MapTracer without crashing.
+
+        CMBLensing tracers have no z/dndz arrays, so the tracer table must
+        display them differently from TomographicBin (NZTracer) rows.
+        """
+        s = sacc.Sacc()
+        s.add_tracer(
+            "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
+        )
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point(
+                "cmb_convergence_cl",
+                ("cmb_convergence", "cmb_convergence"),
+                1.0,
+                ell=int(ell),
+            )
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "test_cmb.sacc"
+        s.save_fits(str(sacc_path))
+
+        view = View(sacc_file=sacc_path, plot_covariance=False)
+
+        assert len(view.all_tracers) == 1
+        assert view.all_tracers[0].bin_name == "cmb_convergence"
+
     def test_view_with_plot_covariance_true(self, sacc_file: Path) -> None:
         """Test View with plot_covariance=True (line 118)."""
         with patch("matplotlib.pyplot.show"):

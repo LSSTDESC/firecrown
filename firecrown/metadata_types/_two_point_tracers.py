@@ -41,6 +41,10 @@ class ProjectedField(Protocol):
         """The set of Measurement types supported by the tracer."""
 
     @property
+    def measurement_list(self) -> list[Measurement]:  # pragma: no cover - Protocol stub
+        """The measurements supported by the tracer, as a sorted list."""
+
+    @property
     def type_source(self) -> TypeSource:  # pragma: no cover - Protocol stub
         """The source of the tracer type information."""
 
@@ -172,3 +176,8 @@ class CMBLensing(YAMLSerializable):
             return False
 
         return NotImplemented
+
+    @property
+    def measurement_list(self) -> list[Measurement]:
+        """Get the measurements as a sorted list."""
+        return sorted(self.measurements)

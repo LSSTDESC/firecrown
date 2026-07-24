@@ -18,6 +18,7 @@ def test_cmblensing_basic():
     assert cmb.bin_name == "cmb0"
     assert cmb.z_lss == 1090.0
     assert cmb.measurements == {CMB.CONVERGENCE}
+    assert cmb.measurement_list == [CMB.CONVERGENCE]
 
 
 def test_cmblensing_validation():

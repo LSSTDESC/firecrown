@@ -28,6 +28,7 @@ from firecrown.metadata_functions import (
     extract_all_photoz_bin_combinations,
     extract_all_real_metadata,
     extract_all_real_metadata_indices,
+    extract_all_tracers_projected_fields,
     extract_all_tracers_tomographic_bins,
     extract_window_function,
     make_all_photoz_bin_combinations,
@@ -348,6 +349,155 @@ def test_extract_all_tracers_skips_non_nztracer() -> None:
     assert_array_equal(all_tracers[0].z, z)
     assert_array_equal(all_tracers[0].dndz, dndz)
     assert all_tracers[0].measurements == {Galaxies.SHEAR_E}
+
+
+def test_extract_all_tracers_tomographic_bins_still_skips_map_tracer() -> None:
+    """extract_all_tracers_tomographic_bins must keep ignoring MapTracer.
+
+    It is the legacy, galaxy-only extraction function; CMB support is only
+    added to extract_all_tracers_projected_fields.
+    """
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer(
+        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
+    )
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
+    assert all_tracers == []
+
+
+def test_extract_all_tracers_projected_fields_cmb_map_tracer() -> None:
+    """extract_all_tracers_projected_fields turns a CMB MapTracer into CMBLensing."""
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer(
+        "Map",
+        "cmb_convergence",
+        0,
+        [10, 100, 1000],
+        [1.0, 1.0, 1.0],
+        metadata={"z_lss": 1090.0},
+    )
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 1
+    cmb_field = all_fields[0]
+    assert isinstance(cmb_field, CMBLensing)
+    assert cmb_field.bin_name == "cmb_convergence"
+    assert cmb_field.z_lss == 1090.0
+    assert cmb_field.measurements == {CMB.CONVERGENCE}
+
+
+def test_extract_all_tracers_projected_fields_cmb_default_z_lss() -> None:
+    """z_lss defaults to 1100.0 when absent from the tracer's metadata."""
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100], [1.0, 1.0])
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 1
+    assert all_fields[0].z_lss == 1100.0
+
+
+def test_extract_all_tracers_projected_fields_skips_other_tracer_types() -> None:
+    """A non-NZ, non-Map tracer (e.g. DeltaFunctionTracer) is ignored, even when
+    NZTracer and MapTracer instances are also present."""
+    sacc_data = sacc.Sacc()
+    z = np.linspace(0.0, 2.0, 50) + 0.01
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+    sacc_data.add_tracer(
+        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
+    )
+    sacc_data.add_tracer("misc", "sample")
+
+    sacc_data.add_data_point("galaxy_shear_cl_ee", ("src0", "src0"), 1.0, ell=10)
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 2
+    assert {f.bin_name for f in all_fields} == {"src0", "cmb_convergence"}
+
+
+def test_extract_all_tracers_projected_fields_mixed_nz_and_map() -> None:
+    """A file with both galaxy and CMB tracers yields both TomographicBin and
+    CMBLensing instances."""
+    sacc_data = sacc.Sacc()
+    z = np.linspace(0.0, 2.0, 50) + 0.01
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+    sacc_data.add_tracer(
+        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
+    )
+
+    sacc_data.add_data_point("galaxy_shear_cl_ee", ("src0", "src0"), 1.0, ell=10)
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+    sacc_data.add_data_point(
+        "cmbGalaxy_convergenceShear_cl_e", ("cmb_convergence", "src0"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 2
+    fields_by_name = {f.bin_name: f for f in all_fields}
+    assert isinstance(fields_by_name["src0"], TomographicBin)
+    assert isinstance(fields_by_name["cmb_convergence"], CMBLensing)
+
+    # And the combination/extraction pipeline should handle the mix without error.
+    combinations = extract_all_photoz_bin_combinations(sacc_data)
+    pairs = {
+        (xy.x.bin_name, xy.y.bin_name, xy.x_measurement, xy.y_measurement)
+        for xy in combinations
+    }
+    assert ("src0", "src0", Galaxies.SHEAR_E, Galaxies.SHEAR_E) in pairs
+    assert (
+        "cmb_convergence",
+        "cmb_convergence",
+        CMB.CONVERGENCE,
+        CMB.CONVERGENCE,
+    ) in pairs
+    assert (
+        "cmb_convergence",
+        "src0",
+        CMB.CONVERGENCE,
+        Galaxies.SHEAR_E,
+    ) in pairs
+
+    harmonic_metadata = extract_all_harmonic_metadata(sacc_data)
+    harmonic_pairs = {
+        (h.XY.x.bin_name, h.XY.y.bin_name) for h in harmonic_metadata
+    }
+    assert ("src0", "src0") in harmonic_pairs
+    assert ("cmb_convergence", "cmb_convergence") in harmonic_pairs
+    assert ("cmb_convergence", "src0") in harmonic_pairs
+
+
+def test_extract_all_tracers_projected_fields_map_tracer_without_data() -> None:
+    """A MapTracer with no associated data points is an inconsistent SACC object."""
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer(
+        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Tracer cmb_convergence does not have data points associated with it.",
+    ):
+        _ = extract_all_tracers_projected_fields(sacc_data)
 
 
 def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
