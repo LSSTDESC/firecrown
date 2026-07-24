@@ -17,8 +17,8 @@ from firecrown.likelihood._two_point import (
     TwoPointCorrelationSpace,
     TwoPointFactory,
 )
-from firecrown.likelihood._weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.metadata_functions import (
     extract_all_harmonic_metadata_indices,
     extract_all_real_metadata_indices,

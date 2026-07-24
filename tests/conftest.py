@@ -18,8 +18,8 @@ import sacc
 
 import firecrown.likelihood._cmb as cmb
 import firecrown.likelihood._two_point as tp
-import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.likelihood._statistic import TrivialStatistic

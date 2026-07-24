@@ -12,10 +12,10 @@ import pyccl.nl_pt as pt
 import pytest
 import sacc
 
-import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.number_counts._args as nc_args
 import firecrown.likelihood.number_counts._systematics as nc_sys
+import firecrown.likelihood.weak_lensing as wl
 import firecrown.metadata_types as mdt
 import firecrown.updatable as fcp
 from firecrown.likelihood._gaussian import ConstGaussian

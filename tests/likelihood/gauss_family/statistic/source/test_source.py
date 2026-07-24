@@ -15,10 +15,10 @@ import sacc
 from numpy.testing import assert_allclose
 from scipy.interpolate import Akima1DInterpolator
 
-import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.number_counts._factories as nc_factories
 import firecrown.likelihood.number_counts._systematics as nc_sys
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood._source import (
     SourceGalaxy,
     SourceGalaxyArgs,
@@ -27,8 +27,8 @@ from firecrown.likelihood._source import (
     dndz_shift_and_stretch_active,
     dndz_shift_and_stretch_passive,
 )
-from firecrown.likelihood._weak_lensing import WeakLensingArgs
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
+from firecrown.likelihood.weak_lensing import WeakLensingArgs
 from firecrown.metadata_functions import extract_all_tracers_tomographic_bins
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap, get_default_params
