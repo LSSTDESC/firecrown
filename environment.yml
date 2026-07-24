@@ -23,7 +23,8 @@ dependencies:
   - graphviz
   - hypothesis
   - idna
-  - jupyter
+  - ipykernel
+  - ipython
   - linkchecker
   - lsstdesc-crow
   - matplotlib-base
