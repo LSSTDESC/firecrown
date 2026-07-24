@@ -358,9 +358,7 @@ def test_extract_all_tracers_tomographic_bins_still_skips_map_tracer() -> None:
     added to extract_all_tracers_projected_fields.
     """
     sacc_data = sacc.Sacc()
-    sacc_data.add_tracer(
-        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
-    )
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
     sacc_data.add_data_point(
         "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
     )
@@ -405,7 +403,9 @@ def test_extract_all_tracers_projected_fields_cmb_default_z_lss() -> None:
     all_fields = extract_all_tracers_projected_fields(sacc_data)
 
     assert len(all_fields) == 1
-    assert all_fields[0].z_lss == 1100.0
+    cmb_field = all_fields[0]
+    assert isinstance(cmb_field, CMBLensing)
+    assert cmb_field.z_lss == 1100.0
 
 
 def test_extract_all_tracers_projected_fields_skips_other_tracer_types() -> None:
@@ -415,9 +415,7 @@ def test_extract_all_tracers_projected_fields_skips_other_tracer_types() -> None
     z = np.linspace(0.0, 2.0, 50) + 0.01
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
-    sacc_data.add_tracer(
-        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
-    )
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
     sacc_data.add_tracer("misc", "sample")
 
     sacc_data.add_data_point("galaxy_shear_cl_ee", ("src0", "src0"), 1.0, ell=10)
@@ -438,9 +436,7 @@ def test_extract_all_tracers_projected_fields_mixed_nz_and_map() -> None:
     z = np.linspace(0.0, 2.0, 50) + 0.01
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
-    sacc_data.add_tracer(
-        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
-    )
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
 
     sacc_data.add_data_point("galaxy_shear_cl_ee", ("src0", "src0"), 1.0, ell=10)
     sacc_data.add_data_point(
@@ -478,9 +474,7 @@ def test_extract_all_tracers_projected_fields_mixed_nz_and_map() -> None:
     ) in pairs
 
     harmonic_metadata = extract_all_harmonic_metadata(sacc_data)
-    harmonic_pairs = {
-        (h.XY.x.bin_name, h.XY.y.bin_name) for h in harmonic_metadata
-    }
+    harmonic_pairs = {(h.XY.x.bin_name, h.XY.y.bin_name) for h in harmonic_metadata}
     assert ("src0", "src0") in harmonic_pairs
     assert ("cmb_convergence", "cmb_convergence") in harmonic_pairs
     assert ("cmb_convergence", "src0") in harmonic_pairs
@@ -489,9 +483,7 @@ def test_extract_all_tracers_projected_fields_mixed_nz_and_map() -> None:
 def test_extract_all_tracers_projected_fields_map_tracer_without_data() -> None:
     """A MapTracer with no associated data points is an inconsistent SACC object."""
     sacc_data = sacc.Sacc()
-    sacc_data.add_tracer(
-        "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
-    )
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
 
     with pytest.raises(
         ValueError,

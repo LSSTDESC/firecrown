@@ -820,6 +820,11 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
         measurements: set[Measurement]
         type_source: TypeSource = TypeSource("cluster")
 
+        @property
+        def measurement_list(self) -> list[Measurement]:
+            """Get the measurements as a sorted list."""
+            return sorted(self.measurements)
+
     x = DummyClusterBin(
         bin_name="b_name1",
         measurements={Clusters.COUNTS},

@@ -7,7 +7,6 @@ from itertools import permutations
 import numpy as np
 import pytest
 
-from firecrown import parameters
 from firecrown.updatable import (
     DerivedParameter,
     DerivedParameterCollection,

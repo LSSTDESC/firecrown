@@ -383,9 +383,7 @@ class TestViewSpecialCases:
         display them differently from TomographicBin (NZTracer) rows.
         """
         s = sacc.Sacc()
-        s.add_tracer(
-            "Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0]
-        )
+        s.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
         ells = np.array([10, 20, 30])
         for ell in ells:
             s.add_data_point(

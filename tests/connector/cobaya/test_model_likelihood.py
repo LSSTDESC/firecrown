@@ -5,13 +5,18 @@ import types
 from unittest import mock
 
 import numpy as np
+import pyccl
 import pytest
 from cobaya.log import LoggedError
 from cobaya.model import Model, get_model
+from numpy.testing import assert_allclose
 
 import firecrown.likelihood._statistic as stat
 import firecrown.modeling_tools as ccl_factory
-from firecrown.connector.cobaya.likelihood import LikelihoodConnector
+from firecrown.connector.cobaya.likelihood import (
+    LikelihoodConnector,
+    compute_pyccl_args_options,
+)
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.modeling_tools import ModelingTools
@@ -27,6 +32,19 @@ def test_cobaya_ccl_initialize():
 
     assert isinstance(ccl_connector, LikelihoodConnector)
     assert ccl_connector.input_style == "CAMB"
+    assert ccl_connector.distance_max_z == 4.0
+
+
+def test_cobaya_ccl_initialize_with_distance_max_z():
+    ccl_connector = LikelihoodConnector(
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+            "input_style": "CAMB",
+            "distance_max_z": 1210.0,
+        }
+    )
+
+    assert ccl_connector.distance_max_z == 1210.0
 
 
 def test_cobaya_ccl_initialize_with_params():
@@ -41,6 +59,50 @@ def test_cobaya_ccl_initialize_with_params():
 
     assert isinstance(ccl_connector, LikelihoodConnector)
     assert ccl_connector.input_style == "CAMB"
+
+
+def test_compute_pyccl_args_options_default_no_extension():
+    """With the default distance_max_z (4.0), no background extension is
+    needed since it does not exceed the redshift already covered by
+    spl.A_SPLINE_MIN (z~9)."""
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cosmo.compute_linear_power()
+
+    a_bg, z_bg, _, _ = compute_pyccl_args_options(cosmo)
+
+    spl = cosmo.cosmo.spline_params
+    assert len(a_bg) == spl.A_SPLINE_NA
+    assert len(z_bg) == spl.A_SPLINE_NA
+    assert z_bg.max() == pytest.approx(1.0 / spl.A_SPLINE_MIN - 1.0)
+
+
+def test_compute_pyccl_args_options_extends_for_cmb_lensing():
+    """A distance_max_z beyond spl.A_SPLINE_MIN's implicit z_max extends the
+    background arrays out to that redshift, without the array's minimum
+    scale factor landing exactly on spl.A_SPLINE_MINLOG (see the note in
+    compute_pyccl_args_options about the resulting degenerate array)."""
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cosmo.compute_linear_power()
+
+    spl = cosmo.cosmo.spline_params
+    z_spline_min = 1.0 / spl.A_SPLINE_MIN - 1.0
+
+    a_bg_no_ext, z_bg_no_ext, _, _ = compute_pyccl_args_options(cosmo)
+    a_bg, z_bg, _, _ = compute_pyccl_args_options(cosmo, distance_max_z=1210.0)
+
+    assert len(a_bg) == len(z_bg)
+    assert len(z_bg) > len(z_bg_no_ext)
+    assert z_bg.max() == pytest.approx(1210.0)
+    assert z_bg.min() == pytest.approx(0.0, abs=1e-6)
+    assert a_bg.min() != pytest.approx(spl.A_SPLINE_MINLOG)
+    # z_bg descending / a_bg ascending, as required by downstream consumers.
+    assert np.all(np.diff(z_bg) <= 0)
+    assert np.all(np.diff(a_bg) >= 0)
+    # The fine-grained, existing part of the array is left untouched.
+    n_orig = len(z_bg_no_ext)
+    assert_allclose(z_bg[-n_orig:], z_bg_no_ext)
+    assert_allclose(a_bg[-n_orig:], a_bg_no_ext)
+    assert z_spline_min == pytest.approx(z_bg_no_ext.max())
 
 
 def test_cobaya_likelihood_initialize():
