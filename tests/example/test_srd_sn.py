@@ -52,7 +52,7 @@ def test_srd_sn_run(sn_srd_example):
             assert result.returncode == 0
         case Frameworks.COBAYA:
             result = subprocess.run(
-                ["cobaya-run", "-f", "cobaya_sn_srd.yaml"],
+                ["cobaya-run", "--no-mpi", "-f", "cobaya_sn_srd.yaml"],
                 cwd=output_path,
                 capture_output=True,
                 text=True,
