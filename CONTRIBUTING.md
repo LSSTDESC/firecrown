@@ -86,7 +86,7 @@ To regenerate lockfiles and manage the lockfile generation process, see
 Developers must have `conda-lock` installed to regenerate lockfiles. Install it with:
 
 ```bash
-pip install conda-lock==4.0.0
+pip install conda-lock==4.0.2
 ```
 
 The `CONTRIBUTING_ADVANCED.md` file contains detailed information about lockfile management and the CI system.
