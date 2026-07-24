@@ -80,10 +80,19 @@ def add_comment_block(
         config.set(section, comment_line)
 
 
+#: Default upper bound of the matter-power/background redshift grid. Analyses
+#: needing background quantities beyond this (e.g. CMB lensing) get the extra
+#: reach through CAMB's own log-spaced background extension (n_logz/zmax_logz)
+#: instead of widening this grid, since that would coarsen the P(k,z) sampling
+#: over the whole range for no benefit.
+_DEFAULT_ZMAX = 4.0
+
+
 def _add_cosmology_modules(
     cfg: configparser.ConfigParser,
     required_cosmology: FrameworkCosmology,
     cosmo_spec: CCLCosmologySpec,
+    distance_max_z: float = _DEFAULT_ZMAX,
 ) -> None:
     """Add CAMB and consistency modules to pipeline configuration."""
     cfg["consistency"] = {
@@ -101,10 +110,15 @@ def _add_cosmology_modules(
             "mode": "power",
             "feedback": "0",
             "zmin": "0.0",
-            "zmax": "4.0",
+            "zmax": str(_DEFAULT_ZMAX),
             "nz": "100",
             "kmax": "50.0",
             "nk": "1000",
+            **(
+                {"n_logz": "50", "zmax_logz": str(distance_max_z)}
+                if distance_max_z > _DEFAULT_ZMAX
+                else {}
+            ),
             **(
                 cosmo_spec.extra_parameters.get_dict()
                 if cosmo_spec.extra_parameters
@@ -147,6 +161,7 @@ def create_config(
     *,
     use_absolute_path: bool = True,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
+    distance_max_z: float = _DEFAULT_ZMAX,
 ) -> configparser.ConfigParser:
     """Create CosmoSIS pipeline configuration (main INI file).
 
@@ -162,6 +177,7 @@ def create_config(
     :param cosmo_spec: Cosmology specification
     :param use_absolute_path: Use absolute paths in configuration
     :param required_cosmology: Level of cosmology computation
+    :param distance_max_z: Maximum redshift for background/distance splines
     :return: Configured ConfigParser ready to write
     """
     cfg = configparser.ConfigParser(
@@ -196,7 +212,7 @@ def create_config(
         cfg["pipeline"]["priors"] = get_path_str(priors_path, use_absolute_path)
 
     if use_cosmology:
-        _add_cosmology_modules(cfg, required_cosmology, cosmo_spec)
+        _add_cosmology_modules(cfg, required_cosmology, cosmo_spec, distance_max_z)
 
     _add_firecrown_likelihood(
         cfg, get_path_str(factory_source, use_absolute_path), build_parameters
@@ -447,6 +463,7 @@ class CosmosisConfigGenerator(ConfigGenerator):
             cosmo_spec=self.cosmo_spec,
             use_absolute_path=self.use_absolute_path,
             required_cosmology=self.required_cosmology,
+            distance_max_z=self.distance_max_z,
         )
         add_models(cfg, self.models)
 

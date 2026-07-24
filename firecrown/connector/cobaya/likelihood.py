@@ -36,9 +36,14 @@ from firecrown.updatable import (
     handle_unused_params,
 )
 
+#: Number of extra log-spaced points used to extend the background/distance
+#: array beyond spl.A_SPLINE_MIN when distance_max_z requires it (see below).
+_N_LOGZ_EXTRA = 50
+
 
 def compute_pyccl_args_options(
     ccl_cosmo: pyccl.Cosmology,
+    distance_max_z: float = 4.0,
 ) -> tuple[
     npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], float
 ]:
@@ -46,6 +51,10 @@ def compute_pyccl_args_options(
 
     This method uses the CCLFactory to create a pyccl object and returns the
     dictionary of precision options for the pyccl object.
+
+    :param ccl_cosmo: The CCL cosmology object.
+    :param distance_max_z: Maximum redshift the background/distance arrays must
+        reach (e.g. for a CMB lensing tracer, this must be at least z_source).
     """
     # Here we follow the pyccl convention.
     spl = ccl_cosmo.cosmo.spline_params
@@ -75,6 +84,21 @@ def compute_pyccl_args_options(
 
     z_bg = (1.0 / a_bg - 1.0).astype(np.float64)
 
+    # spl.A_SPLINE_MIN limits the background array to z <= z_spline_min. If a
+    # tracer needs background quantities beyond that (e.g. CMB lensing, with
+    # its source at z~1100), extend z_bg/a_bg with a handful of coarse,
+    # log-spaced points reaching distance_max_z. These are background-only
+    # (comoving distance, H(z) are cheap); the matter power spectrum grid
+    # below is left untouched. We prepend points strictly beyond a_bg's
+    # current minimum, so the array's new minimum a is never equal to
+    # spl.A_SPLINE_MINLOG, avoiding the degenerate case described above.
+    z_spline_min = 1.0 / spl.A_SPLINE_MIN - 1.0
+    if distance_max_z > z_spline_min:
+        z_extra = np.geomspace(distance_max_z, z_spline_min, num=_N_LOGZ_EXTRA)[:-1]
+        a_extra = (1.0 / (1.0 + z_extra)).astype(np.float64)
+        z_bg = np.concatenate([z_extra, z_bg])
+        a_bg = np.concatenate([a_extra, a_bg])
+
     # We inspect the linear power spectrum from pyccl to get the maximum k and the
     # redshift grid.
     psp: Pk2D = ccl_cosmo.get_linear_power()
@@ -93,6 +117,7 @@ class LikelihoodConnector(Likelihood):
         "input_style",
         "build_parameters",
         "derived_parameters",
+        "distance_max_z",
     ]
 
     input_style: str | None = None
@@ -100,6 +125,7 @@ class LikelihoodConnector(Likelihood):
     firecrownIni: str = ""
     derived_parameters: list[str] = []
     build_parameters: NamedParameters = NamedParameters()
+    distance_max_z: float = 4.0
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown configuration."""
@@ -140,7 +166,7 @@ class LikelihoodConnector(Likelihood):
             self.tools.prepare()
             ccl_cosmo = self.tools.ccl_factory.get()
             self.a_bg, self.z_bg, z_array, Pk_kmax = compute_pyccl_args_options(
-                ccl_cosmo
+                ccl_cosmo, self.distance_max_z
             )
 
             # We need to request external Boltzmann code for power spectra, if we want
