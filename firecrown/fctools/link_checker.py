@@ -29,6 +29,38 @@ from rich.panel import Panel
 from rich.table import Table
 
 
+def _running_in_ci() -> bool:
+    """Return whether output is being produced in a CI environment."""
+    return os.environ.get("CI", "").lower() in {"1", "true", "yes"}
+
+
+def _print_broken_links_table(
+    console: Console, missing_links: list[tuple[str, str, str]]
+) -> None:
+    """Print broken links as a Rich table for interactive local use."""
+    table = Table(title="Broken links")
+    table.add_column("Source", style="cyan")
+    table.add_column("Target", style="magenta")
+    table.add_column("Reason", style="red")
+
+    for src_file, target_file, reason in missing_links:
+        table.add_row(str(src_file), str(target_file), reason)
+
+    console.print(table)
+
+
+def _print_broken_links_verbose(
+    console: Console, missing_links: list[tuple[str, str, str]]
+) -> None:
+    """Print broken links without table truncation for CI logs."""
+    console.print("[bold red]Broken links[/bold red]")
+    for index, (src_file, target_file, reason) in enumerate(missing_links, start=1):
+        console.print(f"Broken link {index}:")
+        console.print(f"Source: {src_file}", soft_wrap=True)
+        console.print(f"Target: {target_file}", soft_wrap=True)
+        console.print(f"Reason: {reason}")
+
+
 @dataclass
 class PageAnchors:
     """Holds information about a single HTML page.
@@ -333,6 +365,7 @@ def main(
     download_timeout: int = 20,
     verbose: bool = False,
     skip_external: bool = False,
+    full_output: bool | None = None,
 ) -> int:
     """Main function.
 
@@ -340,6 +373,8 @@ def main(
     :param download_timeout: Timeout (seconds) for downloading external links.
     :param verbose: Enable verbose output (show downloads and skipped links).
     :param skip_external: When True, do not download or validate external http(s) links.
+    :param full_output: Print full source and target values line-by-line. Defaults
+        to True in CI and False otherwise.
     """
     console = Console()
 
@@ -388,15 +423,10 @@ def main(
             )
         )
 
-    table = Table(title="Broken links")
-    table.add_column("Source", style="cyan")
-    table.add_column("Target", style="magenta")
-    table.add_column("Reason", style="red")
-
-    for src_file, target_file, reason in missing_links:
-        table.add_row(str(src_file), str(target_file), reason)
-
-    console.print(table)
+    if full_output if full_output is not None else _running_in_ci():
+        _print_broken_links_verbose(console, missing_links)
+    else:
+        _print_broken_links_table(console, missing_links)
 
     # Return non-zero exit code so CI (e.g. GitHub Actions) fails when broken links are
     # found.
@@ -439,6 +469,16 @@ def cli(
             ),
         ),
     ] = False,
+    full_output: Annotated[
+        bool | None,
+        typer.Option(
+            "--full-output/--table-output",
+            help=(
+                "Print broken links as full line-based records instead of a table. "
+                "Defaults to full output in CI and table output otherwise."
+            ),
+        ),
+    ] = None,
 ):
     """Command-line entry point using Typer and Rich for output."""
     code = main(
@@ -446,5 +486,6 @@ def cli(
         download_timeout=download_timeout,
         verbose=verbose,
         skip_external=skip_external,
+        full_output=full_output,
     )
     raise typer.Exit(code=code)

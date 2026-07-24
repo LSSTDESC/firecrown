@@ -152,6 +152,44 @@ def test_check_anchors_missing_anchor_returns_failure_and_main_exit(site_dir: Pa
     assert code != 0
 
 
+def test_main_uses_full_broken_link_output_in_ci(site_dir: Path, monkeypatch, capsys):
+    """CI output should include complete source and target values."""
+    monkeypatch.setenv("CI", "true")
+    source = site_dir / "a-very-long-source-file-name.html"
+    source.write_text('<a href="missing-file-with-a-long-name.html#frag">broken</a>')
+
+    code = link_checker.main(
+        site_dir, download_timeout=1, verbose=False, skip_external=True
+    )
+    captured = capsys.readouterr()
+
+    assert code != 0
+    assert "Broken link 1:" in captured.out
+    assert f"Source: {source}" in captured.out
+    expected_target = source.parent / "missing-file-with-a-long-name.html"
+    assert f"Target: {expected_target}" in captured.out
+    assert "Reason: file missing" in captured.out
+
+
+def test_main_can_use_table_output_in_ci(site_dir: Path, monkeypatch, capsys):
+    """The table output remains available when explicitly requested."""
+    monkeypatch.setenv("CI", "true")
+    (site_dir / "source.html").write_text('<a href="missing.html#frag">broken</a>')
+
+    code = link_checker.main(
+        site_dir,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+        full_output=False,
+    )
+    captured = capsys.readouterr()
+
+    assert code != 0
+    assert "Broken links" in captured.out
+    assert "Broken link 1:" not in captured.out
+
+
 def test_skip_external_prevents_download_and_allows_success(
     site_dir: Path, monkeypatch
 ):
