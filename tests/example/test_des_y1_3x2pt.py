@@ -66,7 +66,7 @@ def test_des_y1_3x2pt_run(des_y1_3x2pt_example):
             assert result.returncode == 0
         case Frameworks.COBAYA:
             result = subprocess.run(
-                ["cobaya-run", "-f", "cobaya_des_y1_3x2pt.yaml"],
+                ["cobaya-run", "--no-mpi", "-f", "cobaya_des_y1_3x2pt.yaml"],
                 cwd=output_path,
                 capture_output=True,
                 text=True,

@@ -5,7 +5,7 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 readonly LOCK_DIR="${REPO_ROOT}/.github/conda-lock"
 readonly TEMP_ENV_FILE="${REPO_ROOT}/env_tmp.yml"
-readonly PINNED_CONDA_LOCK_VERSION="4.0.0"
+readonly PINNED_CONDA_LOCK_VERSION="4.0.2"
 readonly PYTHON_VERSIONS=("3.12" "3.13" "3.14")
 
 require_command() {

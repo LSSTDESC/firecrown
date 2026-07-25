@@ -52,7 +52,7 @@ def test_cosmic_shear_run(cosmic_shear_example):
             assert result.returncode == 0
         case Frameworks.COBAYA:
             result = subprocess.run(
-                ["cobaya-run", "-f", "cobaya_cosmic_shear.yaml"],
+                ["cobaya-run", "--no-mpi", "-f", "cobaya_cosmic_shear.yaml"],
                 cwd=output_path,
                 capture_output=True,
                 text=True,
