@@ -8,7 +8,7 @@
 #
 # STAGE 1: QUICK VALIDATION (Parallel with Stage 2)
 # - Goal: 2-3 minute feedback on common PR issues.
-# - Actions: Linting, formatting, and Jupyter Notebook cleanliness checks.
+# - Actions: Linting and formatting.
 # - Optimization: Uses a dedicated conda cache (key suffix "-lint") that is
 #   intentionally separate from the full-matrix cache.  The two jobs run in
 #   parallel and would otherwise race to write the same cache key; because
@@ -60,7 +60,7 @@ on:
 env:
   CONDA_ENV: firecrown_developer
   CACHE_VERSION: 34
-  CONDA_LOCK_VERSION: "4.0.0"
+  CONDA_LOCK_VERSION: "4.0.2"
 
 jobs:
   quick-validation:
@@ -171,9 +171,6 @@ jobs:
           echo "starting make lint"
           make lint
           echo "done with make lint"
-      - name: Ensure clear Jupyter Notebooks
-        uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
-
   firecrown-miniforge:
     name: (${{ matrix.os }}, py${{ matrix.python-version }})${{ matrix.coverage && ' + coverage' || '' }}
     runs-on: ${{ matrix.os }}-latest

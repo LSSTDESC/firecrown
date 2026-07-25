@@ -3,7 +3,6 @@ dist/
 build/
 __pycache__/
 examples/output_*
-examples/*/.ipynb_checkpoints/*
 examples/srd_sn/sndata/
 .idea
 .project
@@ -23,8 +22,6 @@ examples/output_*
 examples/desc_srd_v1/srd_data/LSST_DESC_SRD_v1_release
 
 *.pytest_cache
-*.ipynb_checkpoints
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -101,9 +98,6 @@ docs/api
 
 # PyBuilder
 target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
 
 # IPython
 profile_default/
