@@ -17,7 +17,7 @@ For conceptual background, see [Two-Point Framework](two_point_framework.qmd).
 The **[[likelihood|TwoPointFactory]]** automates the construction of **[[likelihood|TwoPoint]]** likelihood objects. It:
 
 1. **Inspects metadata** to determine what types of measurements are involved
-2. **Delegates to source factories** (e.g., [[likelihood.weak_lensing|WeakLensingFactory]], [[likelihood.number_counts|NumberCountsFactory]]) based on measurement types
+2. **Delegates to source factories** (e.g., [[likelihood.weak_lensing|WeakLensingFactory]], [[likelihood.number_counts|NumberCountsFactory]], and [[likelihood|CMBConvergenceFactory]]) based on measurement types
 3. **Applies modeling choices** including systematics and nuisance parameters
 4. **Produces ready-to-use TwoPoint objects** that can compute theory predictions or evaluate likelihoods
 
@@ -49,6 +49,9 @@ The [[likelihood|TwoPointFactory]] automatically maps measurement types to appro
 
 - [[metadata_types|Galaxies.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
 - [[metadata_types|Galaxies.SHEAR_E]], [[metadata_types|Galaxies.SHEAR_T]], etc. → [[likelihood.weak_lensing|WeakLensingFactory]]
+- [[metadata_types|CMB.CONVERGENCE]] → [[likelihood|CMBConvergenceFactory]]
+
+For analyses containing CMB lensing convergence measurements, include a `cmb_factories` entry in the `TwoPointFactory` configuration. Analyses with only galaxy counts and galaxy shear do not need to configure a CMB factory.
 
 ### Multiple TypeSource Support
 
