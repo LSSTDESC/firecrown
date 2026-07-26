@@ -70,6 +70,10 @@ Each bin is labeled using a [[metadata_types|TomographicBin.bin_name]] and inclu
 Additionally, it contains a set of [[metadata_types|Measurement]] types (e.g., [[metadata_types|Galaxies.COUNTS]], [[metadata_types|Galaxies.SHEAR_T]], [[metadata_types|CMB.CONVERGENCE]])[^enumerations] indicating which observables were measured in this bin.
 It is valid to include multiple measurement types for the same bin, such as galaxy number counts and shear measured on the same galaxy subsample.
 
+For CMB lensing convergence, Firecrown also provides the [[metadata_types|CMBLensing]] projected-field descriptor.
+This plays the same metadata role as a bin descriptor in two-point construction, but it represents the CMB lensing convergence field rather than a galaxy redshift distribution.
+When such metadata are passed to [[likelihood|TwoPointFactory]], [[metadata_types|CMB.CONVERGENCE]] measurements are handled through [[likelihood|CMBConvergenceFactory]].
+
 [^enumerations]: `Galaxies` and `CMB` are both Python types, each representing a different kind of measurement.
      `Galaxies.COUNTS`, `Galaxies.SHEAR_T` and `CMB.CONVERGENCE` are the names of values of these types, each representing a specific subtype of measurement.
      New types of measurements can be added to Firecrown by defining a new enumeration type.
@@ -246,4 +250,3 @@ All dataclasses below are frozen for immutability and support YAML serialization
 ### Overall Architecture:
 
 The framework aims for the easy construction of two-point correlation measurements with flexible data layouts, enabling both theoretical predictions and analysis of real observational data. Its modular design ensures that it can scale for complex cosmological analyses, providing a strong foundation for data confrontation and model testing.
-

@@ -30,16 +30,19 @@ Each `Source`  will produce one or more [`pyccl.Tracer`s](https://ccl.readthedoc
 
 Sometimes a source may have several tracers because it reflects a combination of different effects for the same kind of measurement.
 
-Currently, we have two implementations of `Source`: `NumberCounts` and `WeakLensing`.
-The `NumberCounts` source represents a galaxy number count measurement in a given bin. 
-Since they act as lenses, they are usually labeled as `lens` sources. 
-The `WeakLensing` source represents a weak lensing measurement, they result from light emitted by the source galaxies that is lensed by the matter distribution in the Universe. 
+Currently, we have three implementations of `Source`: `NumberCounts`, `WeakLensing`, and `CMBConvergence`.
+The `NumberCounts` source represents a galaxy number count measurement in a given bin.
+Since they act as lenses, they are usually labeled as `lens` sources.
+The `WeakLensing` source represents a weak lensing measurement; these measurements result from light emitted by source galaxies being lensed by the matter distribution in the Universe.
 They are usually labeled as `src` sources.
+The `CMBConvergence` source represents CMB lensing convergence, using the CMB last-scattering surface as the source plane.
+It can be used in two-point statistics involving CMB convergence, including cross-correlations with galaxy observables.
 
 Systematics objects for Sources have a simple interface: for each source, there is a *data class*[^dataclass] that has all the necessary information to build the sources and tracers.
 A source can have a list of systematics.
 When the source is evaluated, the list of systematics is iterated over, and the `apply` method of each is called, in order, given the previous value of the source and yielding a new value.
 If, for example, you have a source for weak lensing, and you want to move the distribution of $dN/dz$, to apply a bias, this can be done with a systematic.
+CMB convergence support currently provides a source and factor., but it does not have the same `SourceGalaxySystematic` hierarchy used by `NumberCounts` and `WeakLensing`.
 
 Firecrown does not currently make a clear distinction between "systematics" that really are systematic effects, and others that are more like modeling choices.
 As we discussed above, the `ModelingTools` object handles systematic effects that are related to modeling choices.
