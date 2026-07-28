@@ -18,10 +18,10 @@ from firecrown.metadata_functions._type_defs import (
 )
 
 
-def extract_all_tracers_inferred_galaxy_zdists(
+def extract_all_tracers_tomographic_bins(
     sacc_data: sacc.Sacc,
     allow_mixed_types: bool = False,
-) -> list[mdt.InferredGalaxyZDist]:
+) -> list[mdt.TomographicBin]:
     """Extracts the two-point function metadata from a Sacc object.
 
     The Sacc object contains a set of tracers (one-dimensional bins) and data
@@ -45,7 +45,7 @@ def extract_all_tracers_inferred_galaxy_zdists(
                 )
 
     return [
-        mdt.InferredGalaxyZDist(
+        mdt.TomographicBin(
             bin_name=tracer.name,
             z=tracer.z,
             dndz=tracer.nz,
@@ -54,6 +54,75 @@ def extract_all_tracers_inferred_galaxy_zdists(
         for tracer in tracers
         if isinstance(tracer, sacc.tracers.NZTracer)
     ]
+
+
+# Backwards compatibility: expose the legacy name
+extract_all_tracers_inferred_galaxy_zdists = extract_all_tracers_tomographic_bins
+
+_DEFAULT_CMB_Z_LSS = 1100.0
+
+
+def extract_all_tracers_projected_fields(
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
+) -> list[mdt.ProjectedField]:
+    """Extracts the two-point function metadata from a Sacc object.
+
+    Each SACC ``NZTracer`` is returned as a ``TomographicBin`` and each SACC
+    ``MapTracer`` is returned as a ``CMBLensing``. The ``z_lss`` value for a
+    ``CMBLensing`` is read from the tracer's ``metadata`` dictionary (key
+    ``"z_lss"``), falling back to the standard last-scattering redshift
+    (1100.0) if not present. Any other tracer type is ignored.
+
+    SACC has a single generic ``MapTracer`` class for every projected
+    (map-based) field, so the tracer object itself cannot say whether it
+    represents CMB convergence, an ISW temperature map, or some other map
+    measurement. Today ``MapTracer`` is only ever associated with the
+    ``CMB.CONVERGENCE`` measurement, so every ``MapTracer`` is unconditionally
+    wrapped as ``CMBLensing``. Once a second measurement is associated with
+    ``MapTracer`` (e.g. an ISW map), this dispatch should be upgraded to key
+    off the SACC tracer type together with the data type / ``Measurement``
+    already discovered for that tracer by :func:`extract_all_measured_types`
+    (via ``tracer_types``), returning the matching
+    :class:`~firecrown.metadata_types.ProjectedField` implementation for it.
+
+    See also: :func:`extract_all_tracers_tomographic_bins`.
+    """
+    tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
+    tracer_types, _ = extract_all_measured_types(
+        sacc_data, allow_mixed_types=allow_mixed_types
+    )
+    for tracer in tracers:
+        if isinstance(tracer, (sacc.tracers.NZTracer, sacc.tracers.MapTracer)):
+            if (tracer.name not in tracer_types) or (
+                len(tracer_types[tracer.name]) == 0
+            ):
+                raise ValueError(
+                    f"Tracer {tracer.name} does not have data points "
+                    f"associated with it. Inconsistent SACC object."
+                )
+
+    projected_fields: list[mdt.ProjectedField] = []
+    for tracer in tracers:
+        if isinstance(tracer, sacc.tracers.NZTracer):
+            projected_fields.append(
+                mdt.TomographicBin(
+                    bin_name=tracer.name,
+                    z=tracer.z,
+                    dndz=tracer.nz,
+                    measurements=tracer_types[tracer.name],
+                )
+            )
+        elif isinstance(tracer, sacc.tracers.MapTracer):
+            projected_fields.append(
+                mdt.CMBLensing(
+                    bin_name=tracer.name,
+                    z_lss=tracer.metadata.get("z_lss", _DEFAULT_CMB_Z_LSS),
+                    measurements=tracer_types[tracer.name],
+                )
+            )
+
+    return projected_fields
 
 
 def _sacc_convention_warning(
@@ -476,9 +545,9 @@ def extract_all_harmonic_metadata(
     :param normalize: If True, normalize the window function weights to sum to 1.
     :return: List of TwoPointHarmonic objects with metadata and ell values.
     """
-    inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(
+    projected_fields_dict = {
+        projected_field.bin_name: projected_field
+        for projected_field in extract_all_tracers_projected_fields(
             sacc_data, allow_mixed_types
         )
     }
@@ -490,7 +559,7 @@ def extract_all_harmonic_metadata(
         tracer_names = cell_index["tracer_names"]
         dt = cell_index["data_type"]
 
-        XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
+        XY = make_two_point_xy(projected_fields_dict, tracer_names, dt)
 
         # Apply bin pair selector if provided
         if bin_pair_selector is not None:
@@ -537,9 +606,9 @@ def extract_all_real_metadata(
         If None, all valid bin pairs are returned.
     :return: List of TwoPointReal objects with metadata and theta values.
     """
-    inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(
+    projected_fields_dict = {
+        projected_field.bin_name: projected_field
+        for projected_field in extract_all_tracers_projected_fields(
             sacc_data, allow_mixed_types
         )
     }
@@ -551,7 +620,7 @@ def extract_all_real_metadata(
         tracer_names = real_index["tracer_names"]
         dt = real_index["data_type"]
 
-        XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
+        XY = make_two_point_xy(projected_fields_dict, tracer_names, dt)
 
         # Apply bin pair selector if provided
         if bin_pair_selector is not None:
@@ -582,10 +651,10 @@ def extract_all_photoz_bin_combinations(
         If None, all valid bin pairs are returned.
     :return: List of TwoPointXY objects representing valid bin pair combinations.
     """
-    inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(
+    projected_fields = extract_all_tracers_projected_fields(
         sacc_data, allow_mixed_types
     )
-    bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
+    bin_combinations = make_all_photoz_bin_combinations(projected_fields)
 
     if bin_pair_selector is not None:
         bin_combinations = [

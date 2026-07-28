@@ -12,7 +12,7 @@ from scipy.integrate import quad
 from scipy.special import erf, erfc, gamma  # pylint: disable=no-name-in-module
 
 from firecrown.metadata_functions import make_measurements, make_measurements_dict
-from firecrown.metadata_types import Galaxies, InferredGalaxyZDist, Measurement
+from firecrown.metadata_types import Galaxies, TomographicBin, Measurement
 
 
 class BinsType(TypedDict):
@@ -360,7 +360,7 @@ class ZDistLSSTSRD:
         z: npt.NDArray,
         name: str,
         measurements: set[Measurement],
-    ) -> InferredGalaxyZDist:
+    ) -> TomographicBin:
         """Generate the inferred galaxy redshift distribution in bins.
 
         :param zpl: The lower bound of the integration
@@ -411,7 +411,7 @@ class ZDistLSSTSRD:
                 / norma
             )
 
-        return InferredGalaxyZDist(
+        return TomographicBin(
             bin_name=name, z=z_knots, dndz=dndz, measurements=measurements
         )
 
@@ -463,7 +463,7 @@ class ZDistLSSTSRDBin(BaseModel):
         """Serialize the Measurement."""
         return make_measurements_dict(value)
 
-    def generate(self, zdist: ZDistLSSTSRD) -> InferredGalaxyZDist:
+    def generate(self, zdist: ZDistLSSTSRD) -> TomographicBin:
         """Generate the inferred galaxy redshift distribution in bins."""
         return zdist.binned_distribution(
             zpl=self.zpl,
@@ -489,7 +489,7 @@ class ZDistLSSTSRDBinCollection(BaseModel):
     autoknots_reltol: float = 1.0e-4
     autoknots_abstol: float = 1.0e-15
 
-    def generate(self) -> list[InferredGalaxyZDist]:
+    def generate(self) -> list[TomographicBin]:
         """Generate the inferred galaxy redshift distributions in bins."""
         zdist = ZDistLSSTSRD(
             alpha=self.alpha,

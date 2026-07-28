@@ -16,7 +16,7 @@ from firecrown.metadata_functions import (
 
 @pytest.fixture(name="sample_combinations")
 def fixture_sample_combinations(
-    all_harmonic_bins: list[mt.InferredGalaxyZDist],
+    all_harmonic_bins: list[mt.TomographicBin],
 ) -> list[mt.TwoPointXY]:
     """Create a sample list of TwoPointXY combinations for testing."""
     return make_all_photoz_bin_combinations(all_harmonic_bins)
@@ -185,19 +185,19 @@ def test_filter_two_point_combinations_not_selector(
 def test_filter_two_point_combinations_named_selector():
     """Test filtering with NamedBinPairSelector."""
     # Create specific bins for this test
-    bin1 = mt.InferredGalaxyZDist(
+    bin1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    bin2 = mt.InferredGalaxyZDist(
+    bin2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    bin3 = mt.InferredGalaxyZDist(
+    bin3 = mt.TomographicBin(
         bin_name="bin_3",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
@@ -221,7 +221,7 @@ def test_filter_two_point_combinations_preserves_order():
     """Test that filtering preserves the original order of combinations."""
     # Create bins with specific names to control ordering
     bins = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"bin_{i}",
             z=np.array([0.1, 0.2, 0.3]),
             dndz=np.array([1.0, 2.0, 1.0]),
@@ -250,13 +250,13 @@ def test_filter_two_point_combinations_preserves_order():
 
 def test_filter_two_point_combinations_auto_measurement():
     """Test filtering with AutoMeasurementBinPairSelector."""
-    bin1 = mt.InferredGalaxyZDist(
+    bin1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
         measurements={mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS},
     )
-    bin2 = mt.InferredGalaxyZDist(
+    bin2 = mt.TomographicBin(
         bin_name="bin_2",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
@@ -275,7 +275,7 @@ def test_filter_two_point_combinations_auto_measurement():
 
 def test_filter_two_point_combinations_cross_measurement():
     """Test filtering with CrossMeasurementBinPairSelector."""
-    bin1 = mt.InferredGalaxyZDist(
+    bin1 = mt.TomographicBin(
         bin_name="bin_1",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
@@ -295,7 +295,7 @@ def test_filter_two_point_combinations_cross_measurement():
 def test_filter_two_point_combinations_complex_selector():
     """Test filtering with a complex nested selector."""
     bins = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"bin_{i}",
             z=np.array([0.1, 0.2, 0.3]),
             dndz=np.array([1.0, 2.0, 1.0]),
@@ -332,7 +332,7 @@ def test_filter_two_point_combinations_complex_selector():
 def test_filter_two_point_combinations_triple_negation():
     """Test filtering with triple negation selector."""
     bins = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"bin_{i}",
             z=np.array([0.1, 0.2, 0.3]),
             dndz=np.array([1.0, 2.0, 1.0]),
@@ -359,7 +359,7 @@ def test_filter_two_point_combinations_with_real_vs_harmonic():
     types.
     """
     # Create bins with measurements that support different spaces
-    harmonic_bin = mt.InferredGalaxyZDist(
+    harmonic_bin = mt.TomographicBin(
         bin_name="harmonic",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
@@ -380,13 +380,13 @@ def test_filter_two_point_combinations_with_real_vs_harmonic():
 
 def test_filter_two_point_combinations_left_right_measurement_selectors():
     """Test filtering with SourceLensBinPairSelector."""
-    bin1 = mt.InferredGalaxyZDist(
+    bin1 = mt.TomographicBin(
         bin_name="src",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    bin2 = mt.InferredGalaxyZDist(
+    bin2 = mt.TomographicBin(
         bin_name="lens",
         z=np.array([0.1, 0.2, 0.3]),
         dndz=np.array([1.0, 2.0, 1.0]),
@@ -411,7 +411,7 @@ def test_filter_two_point_combinations_left_right_measurement_selectors():
 def test_filter_two_point_combinations_idempotent():
     """Test that applying the same filter twice gives the same result."""
     bins = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"bin_{i}",
             z=np.array([0.1, 0.2, 0.3]),
             dndz=np.array([1.0, 2.0, 1.0]),
@@ -433,7 +433,7 @@ def test_filter_two_point_combinations_idempotent():
 def test_filter_two_point_combinations_commutative_and():
     """Test that AND selector is commutative."""
     bins = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"bin_{i}",
             z=np.array([0.1, 0.2, 0.3]),
             dndz=np.array([1.0, 2.0, 1.0]),
@@ -456,7 +456,7 @@ def test_filter_two_point_combinations_commutative_and():
 def test_filter_two_point_combinations_commutative_or():
     """Test that OR selector is commutative."""
     bins = [
-        mt.InferredGalaxyZDist(
+        mt.TomographicBin(
             bin_name=f"bin_{i}",
             z=np.array([0.1, 0.2, 0.3]),
             dndz=np.array([1.0, 2.0, 1.0]),

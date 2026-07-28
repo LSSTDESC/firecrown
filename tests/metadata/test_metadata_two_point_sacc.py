@@ -28,7 +28,8 @@ from firecrown.metadata_functions import (
     extract_all_photoz_bin_combinations,
     extract_all_real_metadata,
     extract_all_real_metadata_indices,
-    extract_all_tracers_inferred_galaxy_zdists,
+    extract_all_tracers_projected_fields,
+    extract_all_tracers_tomographic_bins,
     extract_window_function,
     make_all_photoz_bin_combinations,
     make_all_photoz_bin_combinations_with_cmb,
@@ -40,13 +41,14 @@ from firecrown.metadata_types import (
     AutoMeasurementBinPairSelector,
     AutoNameBinPairSelector,
     Galaxies,
-    InferredGalaxyZDist,
     LensBinPairSelector,
     NamedBinPairSelector,
     SourceBinPairSelector,
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
+    TomographicBin,
+    CMBLensing,
     TypeSource,
 )
 from firecrown.metadata_types._sacc_type_string import (
@@ -155,7 +157,7 @@ def fixture_sacc_galaxy_cells_three_tracers() -> (
 def test_extract_all_tracers_cells(sacc_galaxy_cells) -> None:
     sacc_data, tracers, _ = sacc_galaxy_cells
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
@@ -166,7 +168,7 @@ def test_extract_all_tracers_cells(sacc_galaxy_cells) -> None:
 def test_extract_all_tracers_xis(sacc_galaxy_xis):
     sacc_data, tracers, _ = sacc_galaxy_xis
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
@@ -177,7 +179,7 @@ def test_extract_all_tracers_xis(sacc_galaxy_xis):
 def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
     sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -191,7 +193,7 @@ def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
 def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_src1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -207,7 +209,7 @@ def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
 def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
     sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -221,7 +223,7 @@ def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
 def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_lens0_lens1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -237,7 +239,7 @@ def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
 def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
     sacc_data, z, dndz = sacc_galaxy_xis_lens0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -251,7 +253,7 @@ def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
 def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_lens0_lens1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -267,7 +269,7 @@ def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
 def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -285,7 +287,7 @@ def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
 def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_src0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -308,16 +310,16 @@ def test_extract_all_tracers_invalid_data_type(
     with pytest.raises(
         ValueError, match="Tracer src0 does not have data points associated with it."
     ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+        _ = extract_all_tracers_tomographic_bins(sacc_data)
 
 
 def test_extract_all_tracers_skips_non_nztracer() -> None:
-    """Test that extract_all_tracers_inferred_galaxy_zdists skips non-NZTracer types.
+    """Test that extract_all_tracers_tomographic_bins skips non-NZTracer types.
 
     Verifies that when a SACC object contains both NZTracer and non-NZTracer types
     (e.g., WeakLensingTracer, DeltaFunctionTracer), only the NZTracer instances are
     extracted and returned. This tests the filtering logic on line 37-45 in
-    extract_all_tracers_inferred_galaxy_zdists.
+    extract_all_tracers_tomographic_bins.
     """
     sacc_data = sacc.Sacc()
 
@@ -339,7 +341,7 @@ def test_extract_all_tracers_skips_non_nztracer() -> None:
     sacc_data.add_covariance(cov)
 
     # Extract tracers - should only get the NZTracer, skipping DeltaFunctionTracer
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     # Verify only the NZTracer was extracted
     assert len(all_tracers) == 1
@@ -347,6 +349,147 @@ def test_extract_all_tracers_skips_non_nztracer() -> None:
     assert_array_equal(all_tracers[0].z, z)
     assert_array_equal(all_tracers[0].dndz, dndz)
     assert all_tracers[0].measurements == {Galaxies.SHEAR_E}
+
+
+def test_extract_all_tracers_tomographic_bins_still_skips_map_tracer() -> None:
+    """extract_all_tracers_tomographic_bins must keep ignoring MapTracer.
+
+    It is the legacy, galaxy-only extraction function; CMB support is only
+    added to extract_all_tracers_projected_fields.
+    """
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
+    assert all_tracers == []
+
+
+def test_extract_all_tracers_projected_fields_cmb_map_tracer() -> None:
+    """extract_all_tracers_projected_fields turns a CMB MapTracer into CMBLensing."""
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer(
+        "Map",
+        "cmb_convergence",
+        0,
+        [10, 100, 1000],
+        [1.0, 1.0, 1.0],
+        metadata={"z_lss": 1090.0},
+    )
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 1
+    cmb_field = all_fields[0]
+    assert isinstance(cmb_field, CMBLensing)
+    assert cmb_field.bin_name == "cmb_convergence"
+    assert cmb_field.z_lss == 1090.0
+    assert cmb_field.measurements == {CMB.CONVERGENCE}
+
+
+def test_extract_all_tracers_projected_fields_cmb_default_z_lss() -> None:
+    """z_lss defaults to 1100.0 when absent from the tracer's metadata."""
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100], [1.0, 1.0])
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 1
+    cmb_field = all_fields[0]
+    assert isinstance(cmb_field, CMBLensing)
+    assert cmb_field.z_lss == 1100.0
+
+
+def test_extract_all_tracers_projected_fields_skips_other_tracer_types() -> None:
+    """A non-NZ, non-Map tracer (e.g. DeltaFunctionTracer) is ignored, even when
+    NZTracer and MapTracer instances are also present."""
+    sacc_data = sacc.Sacc()
+    z = np.linspace(0.0, 2.0, 50) + 0.01
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
+    sacc_data.add_tracer("misc", "sample")
+
+    sacc_data.add_data_point("galaxy_shear_cl_ee", ("src0", "src0"), 1.0, ell=10)
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 2
+    assert {f.bin_name for f in all_fields} == {"src0", "cmb_convergence"}
+
+
+def test_extract_all_tracers_projected_fields_mixed_nz_and_map() -> None:
+    """A file with both galaxy and CMB tracers yields both TomographicBin and
+    CMBLensing instances."""
+    sacc_data = sacc.Sacc()
+    z = np.linspace(0.0, 2.0, 50) + 0.01
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
+
+    sacc_data.add_data_point("galaxy_shear_cl_ee", ("src0", "src0"), 1.0, ell=10)
+    sacc_data.add_data_point(
+        "cmb_convergence_cl", ("cmb_convergence", "cmb_convergence"), 1.0, ell=10
+    )
+    sacc_data.add_data_point(
+        "cmbGalaxy_convergenceShear_cl_e", ("cmb_convergence", "src0"), 1.0, ell=10
+    )
+
+    all_fields = extract_all_tracers_projected_fields(sacc_data)
+
+    assert len(all_fields) == 2
+    fields_by_name = {f.bin_name: f for f in all_fields}
+    assert isinstance(fields_by_name["src0"], TomographicBin)
+    assert isinstance(fields_by_name["cmb_convergence"], CMBLensing)
+
+    # And the combination/extraction pipeline should handle the mix without error.
+    combinations = extract_all_photoz_bin_combinations(sacc_data)
+    pairs = {
+        (xy.x.bin_name, xy.y.bin_name, xy.x_measurement, xy.y_measurement)
+        for xy in combinations
+    }
+    assert ("src0", "src0", Galaxies.SHEAR_E, Galaxies.SHEAR_E) in pairs
+    assert (
+        "cmb_convergence",
+        "cmb_convergence",
+        CMB.CONVERGENCE,
+        CMB.CONVERGENCE,
+    ) in pairs
+    assert (
+        "cmb_convergence",
+        "src0",
+        CMB.CONVERGENCE,
+        Galaxies.SHEAR_E,
+    ) in pairs
+
+    harmonic_metadata = extract_all_harmonic_metadata(sacc_data)
+    harmonic_pairs = {(h.XY.x.bin_name, h.XY.y.bin_name) for h in harmonic_metadata}
+    assert ("src0", "src0") in harmonic_pairs
+    assert ("cmb_convergence", "cmb_convergence") in harmonic_pairs
+    assert ("cmb_convergence", "src0") in harmonic_pairs
+
+
+def test_extract_all_tracers_projected_fields_map_tracer_without_data() -> None:
+    """A MapTracer with no associated data points is an inconsistent SACC object."""
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer("Map", "cmb_convergence", 0, [10, 100, 1000], [1.0, 1.0, 1.0])
+
+    with pytest.raises(
+        ValueError,
+        match="Tracer cmb_convergence does not have data points associated with it.",
+    ):
+        _ = extract_all_tracers_projected_fields(sacc_data)
 
 
 def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
@@ -1071,13 +1214,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_basic():
     """Test basic functionality of make_all_photoz_bin_combinations_with_cmb."""
     # Create test galaxy bins
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1113,7 +1256,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_basic():
 def test_make_all_photoz_bin_combinations_with_cmb_with_auto():
     """Test make_all_photoz_bin_combinations_with_cmb with CMB auto-correlation."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1147,7 +1290,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_with_auto():
 def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name():
     """Test make_all_photoz_bin_combinations_with_cmb with custom CMB tracer name."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1181,13 +1324,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name():
 def test_make_all_photoz_bin_combinations_with_cmb_measurement_compatibility():
     """Test that only compatible measurements create CMB-galaxy cross-correlations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="counts_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="shear_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1240,7 +1383,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty_input():
 def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
     """Test that the created CMB bin has correct properties."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1257,8 +1400,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
 
     cmb_bin = cmb_combo.x
     assert cmb_bin.bin_name == "cmb_convergence"
-    assert np.array_equal(cmb_bin.z, np.array([1100.0]))
-    assert np.array_equal(cmb_bin.dndz, np.array([1.0]))
+    assert isinstance(cmb_bin, CMBLensing)
     assert cmb_bin.measurements == {CMB.CONVERGENCE}
     assert cmb_bin.type_source == TypeSource.DEFAULT
 
@@ -1267,7 +1409,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
 def test_make_all_photoz_bin_combinations_with_cmb_parametrized(include_auto: bool):
     """Parametrized test for CMB auto-correlation inclusion."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1298,7 +1440,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_parametrized(include_auto: bo
 def test_make_all_photoz_bin_combinations_with_cmb_multiple_measurements():
     """Test with galaxy bins that have multiple measurement types."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="multi_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1343,13 +1485,13 @@ def test_make_cmb_galaxy_combinations_only_basic():
     """Test basic functionality of make_cmb_galaxy_combinations_only."""
     # Create test galaxy bins
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1397,7 +1539,7 @@ def test_make_cmb_galaxy_combinations_only_basic():
 def test_make_cmb_galaxy_combinations_only_custom_tracer_name():
     """Test make_cmb_galaxy_combinations_only with custom CMB tracer name."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1431,13 +1573,13 @@ def test_make_cmb_galaxy_combinations_only_custom_tracer_name():
 def test_make_cmb_galaxy_combinations_only_measurement_compatibility():
     """Test that only compatible measurements create CMB-galaxy cross-correlations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="counts_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="shear_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1478,7 +1620,7 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
     # Create a galaxy bin with a measurement that might not be compatible
     # (This test depends on what measurements are actually incompatible)
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="test_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1502,7 +1644,7 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
 def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
     """Test that the created CMB bin has correct properties."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1519,8 +1661,7 @@ def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
 
     cmb_bin = cmb_combo.x
     assert cmb_bin.bin_name == "cmb_convergence"
-    assert np.array_equal(cmb_bin.z, np.array([1100.0]))
-    assert np.array_equal(cmb_bin.dndz, np.array([1.0]))
+    assert isinstance(cmb_bin, CMBLensing)
     assert cmb_bin.measurements == {CMB.CONVERGENCE}
     assert cmb_bin.type_source == TypeSource.DEFAULT
 
@@ -1528,7 +1669,7 @@ def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
 def test_make_cmb_galaxy_combinations_only_multiple_measurements():
     """Test with galaxy bins that have multiple measurement types."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="multi_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1559,7 +1700,7 @@ def test_make_cmb_galaxy_combinations_only_multiple_measurements():
 def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
     """Test that symmetric pairs are created for each compatible measurement."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="test_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1591,7 +1732,7 @@ def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
 def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
     """Test with a single galaxy bin."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="single_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1615,7 +1756,7 @@ def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
 def test_make_cmb_galaxy_combinations_only_parametrized_names(cmb_name: str):
     """Parametrized test for different CMB tracer names."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1640,13 +1781,13 @@ def test_make_cmb_galaxy_combinations_only_vs_with_cmb():
     make_all_photoz_bin_combinations_with_cmb
     without galaxy combinations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="bin_2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1691,13 +1832,13 @@ def test_make_cmb_galaxy_combinations_only_vs_with_cmb():
 def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
     """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="another_compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1744,13 +1885,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
 def test_make_cmb_galaxy_combinations_only_incompatible_measurements():
     """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.SHEAR_E},  # Compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="another_compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1785,13 +1926,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
     # Since we can't find truly incompatible measurements, let's test with
     # measurements that we know ARE compatible and adjust expectations
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.SHEAR_T},  # Actually compatible with CMB.CONVERGENCE
         ),
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1825,7 +1966,7 @@ def test_make_cmb_galaxy_combinations_only_all_incompatible():
     # Since we can't find truly incompatible measurements, let's test with
     # measurements that we know ARE compatible and adjust expectations
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -1842,7 +1983,7 @@ def test_make_cmb_galaxy_combinations_only_all_incompatible():
 def test_make_all_photoz_bin_combinations_with_cmb_empty():
     """Test behavior when given an empty list of galaxy bins."""
     galaxy_bins = [
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="compatible_bin",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -2072,7 +2213,7 @@ def test_extract_all_real_metadata_with_or_selector(sacc_galaxy_xis):
     sacc_data, _, _ = sacc_galaxy_xis
 
     # Get all tracers to find specific bin names
-    tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    tracers = extract_all_tracers_tomographic_bins(sacc_data)
     if len(tracers) < 2:
         pytest.skip("Need at least 2 tracers for this test")
 

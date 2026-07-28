@@ -7,30 +7,29 @@ tomographic redshift bins. It supports:
 - Filtered combinations based on bin pair selectors
 """
 
+from collections.abc import Sequence
 from itertools import chain, product
-
-import numpy as np
 
 import firecrown.metadata_types as mdt
 
 
-def _validate_list_of_inferred_galaxy_zdists(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+def _validate_list_of_tomographic_bins(
+    tomographic_bins: Sequence[mdt.ProjectedField],
 ) -> None:
     """Validate that tomographic bin names are unique.
 
-    :param inferred_galaxy_zdists: List of tomographic bins to validate.
+    :param tomographic_bins: List of tomographic bins to validate.
 
     :raises ValueError: If any bin names appear more than once in the list.
     """
     bin_names_set = set()
     # Produce a list of duplicates
     bin_names = []
-    for igz in inferred_galaxy_zdists:
-        if igz.bin_name in bin_names_set:
-            bin_names.append(igz.bin_name)
+    for tomographic_bin in tomographic_bins:
+        if tomographic_bin.bin_name in bin_names_set:
+            bin_names.append(tomographic_bin.bin_name)
         else:
-            bin_names_set.add(igz.bin_name)
+            bin_names_set.add(tomographic_bin.bin_name)
 
     if bin_names:
         raise ValueError(
@@ -39,7 +38,7 @@ def _validate_list_of_inferred_galaxy_zdists(
 
 
 def make_all_photoz_bin_combinations(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    tomographic_bins: Sequence[mdt.ProjectedField],
 ) -> list[mdt.TwoPointXY]:
     """Create all possible two-point correlation combinations for galaxy bins.
 
@@ -48,25 +47,27 @@ def make_all_photoz_bin_combinations(
     (same measurement type), only unique pairs are kept to avoid duplicates
     (e.g., only bin0-bin1, not both bin0-bin1 and bin1-bin0).
 
-    :param inferred_galaxy_zdists: List of tomographic redshift bins with their
+    :param tomographic_bins: List of tomographic redshift bins with their
         associated measurement types.
 
     :return: List of all valid TwoPointXY combinations.
 
-    :raises ValueError: If duplicate bin names are found in inferred_galaxy_zdists.
+    :raises ValueError: If duplicate bin names are found in tomographic_bins.
     """
-    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
+    _validate_list_of_tomographic_bins(tomographic_bins)
     expanded = [
-        (igz, m) for igz in inferred_galaxy_zdists for m in igz.measurement_list
+        (tomographic_bin, m)
+        for tomographic_bin in tomographic_bins
+        for m in tomographic_bin.measurement_list
     ]
 
     # Create all combinations of the expanded list, keeping only compatible ones
     # and avoiding duplicates in the case of correlations of the same type
     all_xy = [
-        mdt.TwoPointXY(x=igz1, y=igz2, x_measurement=m1, y_measurement=m2)
-        for (igz1, m1), (igz2, m2) in product(expanded, repeat=2)
+        mdt.TwoPointXY(x=bin1, y=bin2, x_measurement=m1, y_measurement=m2)
+        for (bin1, m1), (bin2, m2) in product(expanded, repeat=2)
         if mdt.measurement_is_compatible(m1, m2)
-        and ((m1 != m2) or (igz2.bin_name >= igz1.bin_name))
+        and ((m1 != m2) or (bin2.bin_name >= bin1.bin_name))
     ]
 
     # Reorder expanded to have alphabetical order considering first measurements, then
@@ -83,7 +84,7 @@ def make_all_photoz_bin_combinations(
 
 
 def make_all_photoz_bin_combinations_with_cmb(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    tomographic_bins: list[mdt.TomographicBin],
     cmb_tracer_name: str = "cmb_convergence",
     include_cmb_auto: bool = False,
 ) -> list[mdt.TwoPointXY]:
@@ -92,7 +93,7 @@ def make_all_photoz_bin_combinations_with_cmb(
     This function generates all possible two-point correlations including both
     galaxy-galaxy auto/cross-correlations and CMB-galaxy cross-correlations.
 
-    :param inferred_galaxy_zdists: List of galaxy redshift bins with their associated
+    :param tomographic_bins: List of galaxy redshift bins with their associated
         measurement types.
     :param cmb_tracer_name: Name to assign to the CMB tracer (default:
         "cmb_convergence").
@@ -100,20 +101,20 @@ def make_all_photoz_bin_combinations_with_cmb(
 
     :return: Combined list of galaxy-galaxy and CMB-galaxy correlation combinations.
 
-    :raises ValueError: If duplicate bin names are found in inferred_galaxy_zdists.
+    :raises ValueError: If duplicate bin names are found in tomographic_bins.
     """
-    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
+    _validate_list_of_tomographic_bins(tomographic_bins)
     # Get all galaxy-galaxy combinations first
-    galaxy_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
+    galaxy_combinations = make_all_photoz_bin_combinations(tomographic_bins)
     all_combinations = galaxy_combinations + make_cmb_galaxy_combinations_only(
-        inferred_galaxy_zdists, cmb_tracer_name, include_cmb_auto
+        tomographic_bins, cmb_tracer_name, include_cmb_auto
     )
 
     return all_combinations
 
 
 def make_cmb_galaxy_combinations_only(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    tomographic_bins: list[mdt.TomographicBin],
     cmb_tracer_name: str = "cmb_convergence",
     include_cmb_auto: bool = False,
 ) -> list[mdt.TwoPointXY]:
@@ -123,7 +124,7 @@ def make_cmb_galaxy_combinations_only(
     measurements, optionally including the CMB auto-correlation. It does NOT include
     any galaxy-galaxy correlations.
 
-    :param inferred_galaxy_zdists: List of galaxy redshift bins with their
+    :param tomographic_bins: List of galaxy redshift bins with their
         associated measurement types.
     :param cmb_tracer_name: Name to assign to the CMB tracer (default:
         "cmb_convergence").
@@ -132,23 +133,28 @@ def make_cmb_galaxy_combinations_only(
     :return: List of CMB-galaxy cross-correlation combinations (and optionally CMB
         auto).
 
-    :raises ValueError: If duplicate bin names are found in inferred_galaxy_zdists.
+    :raises ValueError: If duplicate bin names are found in tomographic_bins.
     """
-    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
+    _validate_list_of_tomographic_bins(tomographic_bins)
     # Create a mock mdt.CMB "bin"
-    cmb_bin = mdt.InferredGalaxyZDist(
+    cmb_bin = mdt.CMBLensing(
         bin_name=cmb_tracer_name,
-        z=np.array([1100.0]),
-        dndz=np.array([1.0]),
+        z_lss=1100.0,
         measurements={mdt.CMB.CONVERGENCE},
         type_source=mdt.TypeSource.DEFAULT,
     )
 
     cmb_galaxy_combinations = []
 
-    for galaxy_bin in inferred_galaxy_zdists:
-        galaxy_bin_type = list(product([galaxy_bin], list(galaxy_bin.measurements)))
-        cmb_bin_type = list(product([cmb_bin], list(cmb_bin.measurements)))
+    x: mdt.ProjectedField
+    y: mdt.ProjectedField
+    for galaxy_bin in tomographic_bins:
+        galaxy_bin_type: list[tuple[mdt.ProjectedField, mdt.Measurement]] = list(
+            product([galaxy_bin], list(galaxy_bin.measurements))
+        )
+        cmb_bin_type: list[tuple[mdt.ProjectedField, mdt.Measurement]] = list(
+            product([cmb_bin], list(cmb_bin.measurements))
+        )
         for (x, m1), (y, m2) in chain(
             product(galaxy_bin_type, cmb_bin_type),
             product(cmb_bin_type, galaxy_bin_type),
@@ -174,7 +180,7 @@ def make_cmb_galaxy_combinations_only(
 
 
 def make_binned_two_point_filtered(
-    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    tomographic_bins: Sequence[mdt.ProjectedField],
     bin_pair_selector: mdt.BinPairSelector,
 ) -> list[mdt.TwoPointXY]:
     """Create two-point correlations filtered by a bin pair selector.
@@ -183,21 +189,21 @@ def make_binned_two_point_filtered(
     the provided selector, keeping only pairs that satisfy the selection criteria
     (e.g., auto-correlations only, specific measurements, neighboring bins).
 
-    :param inferred_galaxy_zdists: List of tomographic redshift bins with their
+    :param tomographic_bins: List of tomographic redshift bins with their
         associated measurement types.
     :param bin_pair_selector: Selector defining which bin pairs to include.
 
     :return: List of TwoPointXY combinations that pass the selector's criteria.
 
-    :raises ValueError: If duplicate bin names are found in inferred_galaxy_zdists.
+    :raises ValueError: If duplicate bin names are found in tomographic_bins.
 
     Example:
         # Get only auto-correlations of source measurements
         selector = AutoNameBinPairSelector() & SourceBinPairSelector()
         combinations = make_binned_two_point_filtered(bins, selector)
     """
-    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
-    all_bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
+    _validate_list_of_tomographic_bins(tomographic_bins)
+    all_bin_combinations = make_all_photoz_bin_combinations(tomographic_bins)
     return filter_two_point_combinations(all_bin_combinations, bin_pair_selector)
 
 

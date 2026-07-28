@@ -11,7 +11,7 @@ from firecrown.app.sacc._utils import mean_std_tracer
 
 
 @pytest.fixture(name="mock_tracer")
-def fixture_mock_tracer() -> mdt.InferredGalaxyZDist:
+def fixture_mock_tracer() -> mdt.TomographicBin:
     """Create mock tracer with Gaussian distribution."""
     z = np.linspace(0.0, 2.0, 100)
     mean = 1.0
@@ -19,7 +19,7 @@ def fixture_mock_tracer() -> mdt.InferredGalaxyZDist:
     dndz = np.exp(-0.5 * ((z - mean) / sigma) ** 2)
     dndz /= np.trapezoid(dndz, z)
 
-    return mdt.InferredGalaxyZDist(
+    return mdt.TomographicBin(
         bin_name="bin0",
         z=z,
         dndz=dndz,
@@ -31,9 +31,7 @@ def fixture_mock_tracer() -> mdt.InferredGalaxyZDist:
 class TestMeanStdTracer:
     """Tests for mean_std_tracer function."""
 
-    def test_mean_std_tracer_gaussian(
-        self, mock_tracer: mdt.InferredGalaxyZDist
-    ) -> None:
+    def test_mean_std_tracer_gaussian(self, mock_tracer: mdt.TomographicBin) -> None:
         """Test mean_std_tracer with Gaussian distribution."""
         mean, std = mean_std_tracer(mock_tracer)
 
@@ -48,7 +46,7 @@ class TestMeanStdTracer:
         dndz = np.ones_like(z)
         dndz /= np.trapezoid(dndz, z)
 
-        tracer = mdt.InferredGalaxyZDist(
+        tracer = mdt.TomographicBin(
             bin_name="uniform",
             z=z,
             dndz=dndz,
@@ -69,7 +67,7 @@ class TestMeanStdTracer:
         dndz[center_idx] = 1.0
         dndz /= np.trapezoid(dndz, z)
 
-        tracer = mdt.InferredGalaxyZDist(
+        tracer = mdt.TomographicBin(
             bin_name="delta",
             z=z,
             dndz=dndz,
@@ -91,7 +89,7 @@ class TestMeanStdTracer:
         dndz = np.exp(-0.5 * ((z - 1.3) / 0.3) ** 2)
         dndz /= np.trapezoid(dndz, z)
 
-        tracer = mdt.InferredGalaxyZDist(
+        tracer = mdt.TomographicBin(
             bin_name="skewed",
             z=z,
             dndz=dndz,

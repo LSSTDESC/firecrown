@@ -19,6 +19,8 @@ from firecrown.metadata_functions._extraction import (
     extract_all_real_metadata,
     extract_all_real_metadata_indices,
     extract_all_tracers_inferred_galaxy_zdists,
+    extract_all_tracers_projected_fields,
+    extract_all_tracers_tomographic_bins,
     extract_window_function,
     maybe_enforce_window,
 )
@@ -46,6 +48,9 @@ __all__ = [
     "make_measurement_dict",
     "make_measurements_dict",
     "make_correlation_space",
+    "extract_all_tracers_tomographic_bins",
+    "extract_all_tracers_projected_fields",
+    # Backwards compatibility: expose the legacy name
     "extract_all_tracers_inferred_galaxy_zdists",
     "extract_all_measured_types",
     "extract_all_real_metadata_indices",

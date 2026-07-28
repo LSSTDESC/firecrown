@@ -19,7 +19,7 @@ from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_functions import make_all_photoz_bin_combinations
 from firecrown.metadata_types import (
     Galaxies,
-    InferredGalaxyZDist,
+    TomographicBin,
     TwoPointFilterMethod,
     TwoPointHarmonic,
     TwoPointReal,
@@ -29,7 +29,7 @@ from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 @pytest.fixture(name="harmonic_bins")
 def fixture_harmonic_bins(
-    all_harmonic_bins: list[InferredGalaxyZDist],
+    all_harmonic_bins: list[TomographicBin],
 ) -> list[TwoPointMeasurement]:
     """Create a list of TwoPointMeasurement with harmonic metadata."""
     all_xy = make_all_photoz_bin_combinations(all_harmonic_bins)
@@ -49,7 +49,7 @@ def fixture_harmonic_bins(
 
 @pytest.fixture(name="harmonic_window_bins")
 def fixture_harmonic_window_bins(
-    all_harmonic_bins: list[InferredGalaxyZDist],
+    all_harmonic_bins: list[TomographicBin],
 ) -> list[TwoPointMeasurement]:
     """Create a list of TwoPointMeasurement with harmonic metadata."""
     all_xy = make_all_photoz_bin_combinations(all_harmonic_bins)
@@ -77,7 +77,7 @@ def fixture_harmonic_window_bins(
 
 @pytest.fixture(name="real_bins")
 def fixture_real_bins(
-    all_real_bins: list[InferredGalaxyZDist],
+    all_real_bins: list[TomographicBin],
 ) -> list[TwoPointMeasurement]:
     """Create a list of TwoPointMeasurement with real metadata."""
     all_xy = make_all_photoz_bin_combinations(all_real_bins)
@@ -406,7 +406,7 @@ def test_two_point_harmonic_window_bin_filter_collection_call(
 
 
 def test_two_point_harmonic_bin_filter_collection_call_require(
-    harmonic_bin_1: InferredGalaxyZDist,
+    harmonic_bin_1: TomographicBin,
 ) -> None:
     harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
         filters=[
@@ -432,7 +432,7 @@ def test_two_point_harmonic_bin_filter_collection_call_require(
 
 
 def test_two_point_harmonic_bin_filter_collection_call_no_empty(
-    harmonic_bin_1: InferredGalaxyZDist,
+    harmonic_bin_1: TomographicBin,
 ) -> None:
     cm = list(harmonic_bin_1.measurements)[0]
     harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
@@ -461,7 +461,7 @@ def test_two_point_harmonic_bin_filter_collection_call_no_empty(
 
 
 def test_two_point_harmonic_bin_filter_collection_call_empty(
-    harmonic_bin_1: InferredGalaxyZDist,
+    harmonic_bin_1: TomographicBin,
 ) -> None:
     cm = list(harmonic_bin_1.measurements)[0]
     harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
@@ -520,7 +520,7 @@ def test_two_point_real_bin_filter_collection_call(
 
 
 def test_two_point_real_bin_filter_collection_call_require(
-    real_bin_1: InferredGalaxyZDist,
+    real_bin_1: TomographicBin,
 ) -> None:
     cm = list(real_bin_1.measurements)[0]
     real_filter_collection_no_empty = TwoPointBinFilterCollection(
@@ -545,7 +545,7 @@ def test_two_point_real_bin_filter_collection_call_require(
 
 
 def test_two_point_real_bin_filter_collection_call_no_empty(
-    real_bin_1: InferredGalaxyZDist,
+    real_bin_1: TomographicBin,
 ) -> None:
     cm = list(real_bin_1.measurements)[0]
     real_filter_collection_no_empty = TwoPointBinFilterCollection(
@@ -576,7 +576,7 @@ def test_two_point_real_bin_filter_collection_call_no_empty(
 
 
 def test_two_point_real_bin_filter_collection_call_empty(
-    real_bin_1: InferredGalaxyZDist,
+    real_bin_1: TomographicBin,
 ) -> None:
     cm = list(real_bin_1.measurements)[0]
     real_filter_collection_no_empty = TwoPointBinFilterCollection(
@@ -648,7 +648,7 @@ def test_bin_filter_methods(
     bin_col = TwoPointBinFilterCollection(
         filters=[
             TwoPointBinFilter.from_args_auto(
-                "bin_1", Galaxies.COUNTS, 5, 10, method=method
+                "bin_5_1", Galaxies.COUNTS, 5, 10, method=method
             )
         ]
     )
@@ -659,19 +659,19 @@ def test_bin_filter_methods(
 def test_raise_with_two_bins_same_name():
     # Here we test if make_all_photoz_bin_combinations raises an error when
     # there are two bins with the same name and measurement.
-    igz1 = InferredGalaxyZDist(
+    bin1 = TomographicBin(
         bin_name="bin_1",
         dndz=np.linspace(0.0, 2.0, 100),
         z=np.linspace(0.0, 2.0, 100),
         measurements={Galaxies.COUNTS},
     )
-    igz2 = InferredGalaxyZDist(
+    bin2 = TomographicBin(
         bin_name="bin_2",
         dndz=np.linspace(0.0, 2.0, 100),
         z=np.linspace(0.0, 2.0, 100),
         measurements={Galaxies.COUNTS},
     )
-    igz3 = InferredGalaxyZDist(
+    bin3 = TomographicBin(
         bin_name="bin_3",
         dndz=np.linspace(0.0, 2.0, 100),
         z=np.linspace(0.0, 2.0, 100),
@@ -684,4 +684,4 @@ def test_raise_with_two_bins_same_name():
             "names found: ['bin_1', 'bin_2']"
         ),
     ):
-        _ = make_all_photoz_bin_combinations([igz1, igz1, igz2, igz2, igz3])
+        _ = make_all_photoz_bin_combinations([bin1, bin1, bin2, bin2, bin3])

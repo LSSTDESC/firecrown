@@ -6,6 +6,7 @@ and framework-specific configurations.
 """
 
 from ..analysis import AnalysisBuilder
+from ._cmb_cross import ExampleCMBCross
 from ._cosmic_shear import ExampleCosmicShear
 from ._des_y1_3x2pt import DESY1FactoryType, ExampleDESY13x2pt
 from ._sn_srd import ExampleSupernovaSRD
@@ -13,6 +14,7 @@ from ._sn_srd import ExampleSupernovaSRD
 __all__ = [
     "EXAMPLES_LIST",
     "ExampleCosmicShear",
+    "ExampleCMBCross",
     "ExampleSupernovaSRD",
     "ExampleDESY13x2pt",
     "DESY1FactoryType",
@@ -20,6 +22,7 @@ __all__ = [
 
 EXAMPLES_LIST: dict[str, type[AnalysisBuilder]] = {
     "cosmic_shear": ExampleCosmicShear,
+    "cmb_cross": ExampleCMBCross,
     "sn_srd": ExampleSupernovaSRD,
     "des_y1_3x2pt": ExampleDESY13x2pt,
 }

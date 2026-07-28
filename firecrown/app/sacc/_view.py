@@ -127,7 +127,7 @@ class View(Load):
             n_cov_elements = 0
         else:
             n_cov_elements = self.sacc_data.covariance.dense.shape[0]
-        self.all_tracers = mdf.extract_all_tracers_inferred_galaxy_zdists(
+        self.all_tracers = mdf.extract_all_tracers_projected_fields(
             self.sacc_data, self.allow_mixed_types
         )
         self.all_tracers.sort(key=lambda t: t.bin_name)
@@ -156,9 +156,16 @@ class View(Load):
                 measurements_str = ", ".join(
                     [m.name for m in sorted(tracer.measurements)]
                 )
-                z_str = f"{tracer.z.min():5.3f}-{tracer.z.max():5.3f}"
-                mean, std = mean_std_tracer(tracer)
-                dndz_str = f"{mean:5.3f} +/- {std:5.3f}"
+                if isinstance(tracer, mdt.CMBLensing):
+                    z_str = f"z_lss={tracer.z_lss:5.3f}"
+                    dndz_str = "N/A"
+                elif isinstance(tracer, mdt.TomographicBin):
+                    z_str = f"{tracer.z.min():5.3f}-{tracer.z.max():5.3f}"
+                    mean, std = mean_std_tracer(tracer)
+                    dndz_str = f"{mean:5.3f} +/- {std:5.3f}"
+                else:  # pragma: no cover - defensive, no other ProjectedField today
+                    z_str = "N/A"
+                    dndz_str = "N/A"
                 table.add_row(
                     tracer.bin_name,
                     tracer.type_source,
@@ -549,7 +556,7 @@ class View(Load):
             sacc_data_raw = factories.load_sacc_data(str(self.sacc_file))
 
             # Extract tracers (this may trigger warnings about naming conventions)
-            _ = mdf.extract_all_tracers_inferred_galaxy_zdists(
+            _ = mdf.extract_all_tracers_projected_fields(
                 sacc_data_raw, allow_mixed_types=False
             )
             captured_warnings = list(w)

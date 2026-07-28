@@ -2,6 +2,8 @@
 Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
+import dataclasses
+
 import numpy as np
 import pytest
 import sacc
@@ -25,13 +27,17 @@ from firecrown.metadata_functions import (
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     CMB,
+    CMBLensing,
     Clusters,
     Galaxies,
-    InferredGalaxyZDist,
+    Measurement,
+    ProjectedField,
+    TomographicBin,
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
     TwoPointXY,
+    TypeSource,
 )
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic as harmonic,
@@ -42,7 +48,7 @@ from firecrown.metadata_types._sacc_type_string import (
 
 
 def test_inferred_galaxy_z_dist():
-    z_dist = InferredGalaxyZDist(
+    z_dist = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -60,7 +66,7 @@ def test_inferred_galaxy_z_dist_bad_shape():
     with pytest.raises(
         ValueError, match="The z and dndz arrays should have the same shape."
     ):
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="b_name1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(101),
@@ -69,8 +75,10 @@ def test_inferred_galaxy_z_dist_bad_shape():
 
 
 def test_inferred_galaxy_z_dist_bad_type():
-    with pytest.raises(ValueError, match="The measurement should be a Measurement."):
-        InferredGalaxyZDist(
+    with pytest.raises(
+        ValueError, match="The measurement should be a Galaxies Measurement."
+    ):
+        TomographicBin(
             bin_name="b_name1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -80,7 +88,7 @@ def test_inferred_galaxy_z_dist_bad_type():
 
 def test_inferred_galaxy_z_dist_bad_name():
     with pytest.raises(ValueError, match="The bin_name should not be empty."):
-        InferredGalaxyZDist(
+        TomographicBin(
             bin_name="",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
@@ -89,13 +97,13 @@ def test_inferred_galaxy_z_dist_bad_name():
 
 
 def test_two_point_xy_gal_gal():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -111,13 +119,13 @@ def test_two_point_xy_gal_gal():
 
 
 def test_two_point_xy_gal_gal_invalid_x_measurement():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -133,13 +141,13 @@ def test_two_point_xy_gal_gal_invalid_x_measurement():
 
 
 def test_two_point_xy_gal_gal_invalid_y_measurement():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -155,13 +163,12 @@ def test_two_point_xy_gal_gal_invalid_y_measurement():
 
 
 def test_two_point_xy_cmb_gal():
-    x = InferredGalaxyZDist(
+    x = CMBLensing(
         bin_name="b_name1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
+        z_lss=1100.0,
         measurements={CMB.CONVERGENCE},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -177,13 +184,13 @@ def test_two_point_xy_cmb_gal():
 
 
 def test_two_point_xy_invalid():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -199,13 +206,13 @@ def test_two_point_xy_invalid():
 
 
 def test_two_point_harmonic():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -224,13 +231,13 @@ def test_two_point_harmonic():
 
 
 def test_two_point_harmonic_invalid_ells():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -248,13 +255,13 @@ def test_two_point_harmonic_invalid_ells():
 
 
 def test_two_point_harmonic_invalid_type():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -353,13 +360,13 @@ def test_two_point_cwindow_invalid():
     weights = np.ones(400).reshape(-1, 4)
     window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -377,13 +384,13 @@ def test_two_point_cwindow_invalid():
 
 
 def test_two_point_cwindow_invalid_window():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -405,13 +412,13 @@ def test_two_point_cwindow_invalid_window_shape():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400, dtype=np.float64)
 
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -431,13 +438,13 @@ def test_two_point_cwindow_window_ell_not_match():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -457,13 +464,13 @@ def test_two_point_cwindow_missing_window_ells():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -483,13 +490,13 @@ def test_two_point_cwindow_window_ells_wrong_shape():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -515,13 +522,13 @@ def test_two_point_cwindow_window_ells_wrong_len():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -546,13 +553,13 @@ def test_two_point_cwindow_window_ells_wrong_len():
 def test_two_point_cwindow_no_window_with_window_ells():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
 
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -570,13 +577,13 @@ def test_two_point_cwindow_no_window_with_window_ells():
 
 
 def test_two_point_real():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -595,13 +602,13 @@ def test_two_point_real():
 
 
 def test_two_point_real_invalid():
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -646,11 +653,11 @@ def test_measurement_serialization():
         assert t == recovered
 
 
-def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: InferredGalaxyZDist):
+def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: TomographicBin):
     s = harmonic_bin_1.to_yaml()
     # Take a look at how hideous the generated string
     # is.
-    recovered = InferredGalaxyZDist.from_yaml(s)
+    recovered = TomographicBin.from_yaml(s)
     assert harmonic_bin_1 == recovered
 
 
@@ -804,13 +811,25 @@ def test_two_point_from_metadata_xi_theta(optimized_real_two_point_xy, tp_factor
 
 def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    x = InferredGalaxyZDist(
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DummyClusterBin:
+        """A dummy cluster bin for testing unsupported types."""
+
+        bin_name: str
+        measurements: set[Measurement]
+        type_source: TypeSource = TypeSource("cluster")
+
+        @property
+        def measurement_list(self) -> list[Measurement]:
+            """Get the measurements as a sorted list."""
+            return sorted(self.measurements)
+
+    x = DummyClusterBin(
         bin_name="b_name1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
         measurements={Clusters.COUNTS},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -840,13 +859,12 @@ def fixture_tp_factory_with_cmb():
 def test_two_point_from_metadata_cmb_supported(tp_factory_with_cmb):
     """Test that CMB measurements work when CMB factory is provided."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    x = InferredGalaxyZDist(
+    x = CMBLensing(
         bin_name="b_name1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
         measurements={CMB.CONVERGENCE},
+        z_lss=1100.0,
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
@@ -869,23 +887,23 @@ def test_two_point_from_metadata_cmb_supported(tp_factory_with_cmb):
 
 def test_make_two_point_xy_valid_galaxies():
     """Test make_two_point_xy with valid galaxy measurements."""
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="shear_bin_0",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="shear_bin_1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = "galaxy_shear_cl_ee"
 
-    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+    xy = make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     assert xy.x == x
     assert xy.y == y
@@ -895,23 +913,25 @@ def test_make_two_point_xy_valid_galaxies():
 
 def test_make_two_point_xy_valid_cmb_galaxy():
     """Test make_two_point_xy with CMB-galaxy measurements."""
-    cmb = InferredGalaxyZDist(
+    cmb = CMBLensing(
         bin_name="cmb_convergence",
-        z=np.array([1100.0]),
-        dndz=np.array([1.0]),
+        z_lss=1100.0,
         measurements={CMB.CONVERGENCE},
     )
-    galaxy = InferredGalaxyZDist(
+    galaxy = TomographicBin(
         bin_name="galaxy_bin_0",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    inferred_dict = {"cmb_convergence": cmb, "galaxy_bin_0": galaxy}
+    tomographic_dict: dict[str, ProjectedField] = {
+        "cmb_convergence": cmb,
+        "galaxy_bin_0": galaxy,
+    }
     tracer_names = TracerNames("cmb_convergence", "galaxy_bin_0")
     data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
 
-    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+    xy = make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     assert xy.x == cmb
     assert xy.y == galaxy
@@ -921,25 +941,27 @@ def test_make_two_point_xy_valid_cmb_galaxy():
 
 def test_make_two_point_xy_valid_cmb_galaxy_needs_swap():
     """Test make_two_point_xy with CMB-galaxy measurements."""
-    cmb = InferredGalaxyZDist(
+    cmb = CMBLensing(
         bin_name="cmb_convergence",
-        z=np.array([1100.0]),
-        dndz=np.array([1.0]),
+        z_lss=1100.0,
         measurements={CMB.CONVERGENCE},
     )
-    galaxy = InferredGalaxyZDist(
+    galaxy = TomographicBin(
         bin_name="galaxy_bin_0",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    inferred_dict = {"cmb_convergence": cmb, "galaxy_bin_0": galaxy}
+    tomographic_dict: dict[str, ProjectedField] = {
+        "cmb_convergence": cmb,
+        "galaxy_bin_0": galaxy,
+    }
     tracer_names = TracerNames("galaxy_bin_0", "cmb_convergence")
     data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
     # Even though the order is swapped, this should still work this behavior will be
     # removed in the future. It is kept for backwards compatibility and to avoid
     # breaking existing data files.
-    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+    xy = make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     assert xy.x == cmb
     assert xy.y == galaxy
@@ -954,20 +976,20 @@ def test_make_two_point_xy_missing_tracer_zdist():
     when a requested tracer name is not in the inferred galaxy z distributions
     dictionary.
     """
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="shear_bin_0",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
     # Only provide one tracer in the dictionary
-    inferred_dict = {"shear_bin_0": x}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x}
     # But request two tracers (second one doesn't exist)
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "shear_bin_1" in error_msg
@@ -976,24 +998,24 @@ def test_make_two_point_xy_missing_tracer_zdist():
 
 def test_make_two_point_xy_missing_x_measurement():
     """Test make_two_point_xy when first tracer lacks required measurement."""
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="shear_bin_0",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},  # Has SHEAR_T but needs SHEAR_E
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="shear_bin_1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "Tracer measurements do not match the SACC naming convention" in error_msg
@@ -1007,24 +1029,24 @@ def test_make_two_point_xy_missing_x_measurement():
 
 def test_make_two_point_xy_missing_y_measurement():
     """Test make_two_point_xy when second tracer lacks required measurement."""
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="shear_bin_0",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="shear_bin_1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},  # Has SHEAR_T but needs SHEAR_E
     )
-    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"shear_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "Tracer measurements do not match the SACC naming convention" in error_msg
@@ -1037,24 +1059,24 @@ def test_make_two_point_xy_missing_y_measurement():
 
 def test_make_two_point_xy_both_measurements_missing():
     """Test make_two_point_xy when both tracers lack required measurements."""
-    x = InferredGalaxyZDist(
+    x = TomographicBin(
         bin_name="counts_bin_0",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},  # Has COUNTS, needs SHEAR_E
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="shear_bin_1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},  # Has SHEAR_T, needs SHEAR_E
     )
-    inferred_dict = {"counts_bin_0": x, "shear_bin_1": y}
+    tomographic_dict: dict[str, ProjectedField] = {"counts_bin_0": x, "shear_bin_1": y}
     tracer_names = TracerNames("counts_bin_0", "shear_bin_1")
     data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     assert "Tracer measurements do not match the SACC naming convention" in error_msg
@@ -1065,24 +1087,23 @@ def test_make_two_point_xy_both_measurements_missing():
 
 def test_make_two_point_xy_sacc_convention_explanation():
     """Test that error message includes SACC convention explanation."""
-    x = InferredGalaxyZDist(
+    x = CMBLensing(
         bin_name="cmb_bin",
-        z=np.array([1100.0]),
-        dndz=np.array([1.0]),
+        z_lss=1100.0,
         measurements={CMB.CONVERGENCE},
     )
-    y = InferredGalaxyZDist(
+    y = TomographicBin(
         bin_name="galaxy_bin",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},  # Has SHEAR_E but needs COUNTS
     )
-    inferred_dict = {"cmb_bin": x, "galaxy_bin": y}
+    tomographic_dict: dict[str, ProjectedField] = {"cmb_bin": x, "galaxy_bin": y}
     tracer_names = TracerNames("cmb_bin", "galaxy_bin")
     data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
 
     with pytest.raises(ValueError) as exc_info:
-        make_two_point_xy(inferred_dict, tracer_names, data_type)
+        make_two_point_xy(tomographic_dict, tracer_names, data_type)
 
     error_msg = str(exc_info.value)
     # Check for convention explanation

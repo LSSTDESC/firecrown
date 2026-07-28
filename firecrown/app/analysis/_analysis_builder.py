@@ -135,6 +135,7 @@ class AnalysisBuilder(logging.Logging):
             self.use_absolute_path,
             self.cosmology_analysis_spec(),
             self.required_cosmology(),
+            self.required_distance_max_z(),
         )
         self._proceed_generation(generator)
 
@@ -243,6 +244,18 @@ class AnalysisBuilder(logging.Logging):
 
         :return: True if the analysis requires a cosmology, False otherwise
         """
+
+    def required_distance_max_z(self) -> float:
+        """Return the maximum redshift the background/distance splines must reach.
+
+        Frameworks compute background quantities (comoving distance, H(z)) only
+        out to this redshift. Analyses using a tracer that needs values beyond
+        the default (e.g. CMB lensing, with its source at z~1100) must override
+        this method to return a large enough value.
+
+        :return: Maximum redshift for background/distance computations
+        """
+        return 4.0
 
     def cosmology_analysis_spec(self) -> CCLCosmologySpec:
         """Return the cosmology analysis specification.

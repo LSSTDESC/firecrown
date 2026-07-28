@@ -14,7 +14,6 @@ This tutorial is currently far from complete.
 It lacks required information, and contains some incorrect and out-of-date information.
 :::
 
-
 ## Introduction
 
 In this tutorial we describe the handling of systematic uncertainties in Firecrown.
@@ -27,7 +26,7 @@ Instead, they act on *tracer arguments* objects, which are *data classes*[^datac
 
 A tracer argument object encapsulates all the information needed to create a `pyccl.Tracer` object.
 A `SourceSystematic` object modifies a tracer argument in some way.
-Source tracer objects, such as `NumberCounts` and `WeakLensing`, require configuration details, calibration inputs, and model parameters.
+Source tracer objects, such as `NumberCounts`, `WeakLensing`, and `CMBConvergence`, require configuration details, calibration inputs, and model parameters.
 
 In Firecrown, a source represents an observable that contributes to the construction of two-point statistics (like auto-correlations or cross-correlations).
 Examples of observables represented by sources include galaxy number density, weak lensing shear, or CMB lensing convergence.
@@ -35,8 +34,9 @@ Sources connect these observables to their theoretical predictions using tools l
 By representing specific observational data, sources enable the computation of likelihoods in cosmological analyses.
 For more, visit the [introductory article](intro_article.qmd).
 
-All source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution).
+Galaxy source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution).
 To address this, we use a shared `SourceGalaxyArgs` class, which includes the redshift distribution, a generic `scale` parameter, and a `field` parameter specifying the power spectrum field to use.
+The CMB lensing convergence source is not a `SourceGalaxy` subclass; it uses `CMBConvergenceArgs`, including a source redshift for the CMB last-scattering surface, and does not use the galaxy redshift-distribution argument hierarchy.
 
 This shared structure allows us to define a common set of systematics that can be applied across all source tracers.
 For instance, the `PhotoZShift` object modifies the redshift distribution in a `SourceGalaxyArgs` object.
@@ -53,19 +53,19 @@ A class diagram for this systematic is shown below.
 classDiagram
 direction TB
 class NumberCountsSystematic {
-   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs) 
+   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs)
 }
 class PTNonLinearBiasSystematic {
    b_2: float
    b_s: float
-   __init__(self, sacc_tracer: None | str = None) 
-   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs) 
+   __init__(self, sacc_tracer: None | str = None)
+   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs)
 }
 class SourceGalaxySystematic {
-   apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT) 
+   apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT)
 }
 class SourceSystematic {
-   read(self, sacc_data: sacc.Sacc) 
+   read(self, sacc_data: sacc.Sacc)
 }
 class Updatable {
     _internal_parameters
@@ -74,27 +74,27 @@ class Updatable {
     _updatables
     _updated
     parameter_prefix
-   __init__(self, parameter_prefix: None | str = None) 
-   __setattr__(self, key: str, value: Any) 
-   _get_derived_parameters(self) 
-   _required_parameters(self) 
-   _reset(self) 
-   _update(self, params: ParamsMap) 
-   get_derived_parameters(self) 
-   get_params_names(self) 
-   is_updated(self) 
-   required_parameters(self) 
-   reset(self) 
-   set_internal_parameter(self, key: str, value: InternalParameter) 
-   set_parameter(self, key: str, value: InternalParameter | SamplerParameter) 
-   set_sampler_parameter(self, value: SamplerParameter) 
-   update(self, params: ParamsMap) 
+   __init__(self, parameter_prefix: None | str = None)
+   __setattr__(self, key: str, value: Any)
+   _get_derived_parameters(self)
+   _required_parameters(self)
+   _reset(self)
+   _update(self, params: ParamsMap)
+   get_derived_parameters(self)
+   get_params_names(self)
+   is_updated(self)
+   required_parameters(self)
+   reset(self)
+   set_internal_parameter(self, key: str, value: InternalParameter)
+   set_parameter(self, key: str, value: InternalParameter | SamplerParameter)
+   set_sampler_parameter(self, value: SamplerParameter)
+   update(self, params: ParamsMap)
 }
 
-SourceGalaxySystematic  -->  NumberCountsSystematic 
-NumberCountsSystematic  -->  PTNonLinearBiasSystematic 
-SourceSystematic  -->  SourceGalaxySystematic 
-Updatable  -->  SourceSystematic 
+SourceGalaxySystematic  -->  NumberCountsSystematic
+NumberCountsSystematic  -->  PTNonLinearBiasSystematic
+SourceSystematic  -->  SourceGalaxySystematic
+Updatable  -->  SourceSystematic
 ```
 
 :::{.callout-important}
@@ -130,7 +130,7 @@ This is done using the Python type systems support of *generics*.[^generics]
 The goal of this restriction is to avoid having systematics intended for one variety of observation (e.g. a weak lensing source) being applied to an inappropriate other variety of observation.
 
 [^generics]: You can read about generics in the [online Python documentation](https://docs.python.org/3/library/typing.html#generics).
-[^other]: We expect a future version of Firecrown to introduce non-galaxy based measurements (e.g. CMB), and thus non-galaxy based systematics.
+[^other]: Firecrown currently includes the non-galaxy `CMBConvergence` source for CMB lensing convergence. Dedicated non-galaxy source systematics are still more limited than the galaxy `SourceGalaxySystematic` hierarchy described here.
 
 The final abstract parts of the class hierarchy are two subclasses of `SourceGalaxySystematic`: `WeakLensingSystematic` and `NumberCountsSystematic`.
 These classes are used to apply systematics to weak lensing and number counts predictions, respectively.

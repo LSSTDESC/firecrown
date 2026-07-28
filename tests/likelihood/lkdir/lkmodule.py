@@ -4,9 +4,9 @@ Provides a trivial likelihood class and factory function for testing purposes.
 
 import sacc
 
-from firecrown import parameters
 from firecrown.likelihood._likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
+from firecrown import updatable
 from firecrown.updatable import DerivedParameter, DerivedParameterCollection
 
 
@@ -59,7 +59,7 @@ class SamplerParameterLikelihood(Likelihood):
         parameter_prefix value and creates a sampler parameter called "sampler_param0".
         """
         super().__init__(parameter_prefix=params.get_string("parameter_prefix"))
-        self.sampler_param0 = parameters.register_new_updatable_parameter(
+        self.sampler_param0 = updatable.register_new_updatable_parameter(
             default_value=1.0
         )
 

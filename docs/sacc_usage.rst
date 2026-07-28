@@ -704,7 +704,7 @@ For more information about SACC:
 For Firecrown-specific questions:
 
 - :py:func:`firecrown.metadata_functions.extract_all_measured_types`
-- :py:func:`firecrown.metadata_functions.extract_all_tracers_inferred_galaxy_zdists`
+- :py:func:`firecrown.metadata_functions.extract_all_tracers_tomographic_bins`
 - :py:class:`firecrown.app.sacc.View` - CLI view command
 - :py:class:`firecrown.app.sacc.Transform` - CLI transform command
 - Firecrown GitHub Issues and Discussions

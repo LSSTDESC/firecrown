@@ -643,6 +643,7 @@ class NumCosmoConfigGenerator(ConfigGenerator):
             self.use_absolute_path,
             self.required_cosmology,
             self.prefix,
+            distance_max_z=self.distance_max_z,
         )
         ctx = mp.get_context("spawn")
         proc = ctx.Process(target=_write_config_worker, args=(config_options,))

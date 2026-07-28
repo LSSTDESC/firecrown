@@ -16,7 +16,7 @@ from firecrown.likelihood_base import (
     SourceGalaxySystematic,
     Tracer,
 )
-from firecrown.metadata_types import InferredGalaxyZDist
+from firecrown.metadata_types import TomographicBin
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
@@ -51,14 +51,17 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     @classmethod
     def create_ready(
         cls,
-        inferred_zdist: InferredGalaxyZDist,
+        tomographic_bin: TomographicBin,
         systematics: None | list[SourceGalaxySystematic[WeakLensingArgs]] = None,
     ) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-        obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)
+        obj = cls(sacc_tracer=tomographic_bin.bin_name, systematics=systematics)
         # pylint: disable=unexpected-keyword-arg
         obj.tracer_args = WeakLensingArgs(
-            scale=obj.scale, z=inferred_zdist.z, dndz=inferred_zdist.dndz, ia_bias=None
+            scale=obj.scale,
+            z=tomographic_bin.z,
+            dndz=tomographic_bin.dndz,
+            ia_bias=None,
         )
         # pylint: enable=unexpected-keyword-arg
 

@@ -29,7 +29,7 @@ from firecrown.likelihood._source import (
 )
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood.weak_lensing import WeakLensingArgs
-from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
+from firecrown.metadata_functions import extract_all_tracers_tomographic_bins
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap, get_default_params
 
@@ -201,11 +201,11 @@ def test_weak_lensing_source_init(
 def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
-    source_ready = wl.WeakLensing.create_ready(inferred_zdist=src0)
+    source_ready = wl.WeakLensing.create_ready(tomographic_bin=src0)
 
     source_read = wl.WeakLensing(sacc_tracer="src0")
     source_read.read(sacc_data)
@@ -217,12 +217,12 @@ def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
 def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
     wl_factory = wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
-    source_ready = wl_factory.create(inferred_zdist=src0)
+    source_ready = wl_factory.create(tomographic_bin=src0)
 
     source_read = wl.WeakLensing(sacc_tracer="src0")
     source_read.read(sacc_data)
@@ -234,14 +234,14 @@ def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
 def test_weak_lensing_source_factory_cache(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
     wl_factory = wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
-    source_ready = wl_factory.create(inferred_zdist=src0)
+    source_ready = wl_factory.create(tomographic_bin=src0)
 
-    assert source_ready is wl_factory.create(inferred_zdist=src0)
+    assert source_ready is wl_factory.create(tomographic_bin=src0)
 
 
 @pytest.mark.parametrize("include_z_dependence", [True, False])
@@ -250,7 +250,7 @@ def test_weak_lensing_source_factory_global_systematics(
 ):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
@@ -263,7 +263,7 @@ def test_weak_lensing_source_factory_global_systematics(
     wl_factory = wl.WeakLensingFactory(
         per_bin_systematics=[], global_systematics=global_systematics
     )
-    source_ready = wl_factory.create(inferred_zdist=src0)
+    source_ready = wl_factory.create(tomographic_bin=src0)
 
     # pylint: disable=protected-access
     source_read = wl.WeakLensing(
@@ -307,11 +307,11 @@ def test_number_counts_source_init(
 def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
-    source_ready = nc.NumberCounts.create_ready(inferred_zdist=lens0)
+    source_ready = nc.NumberCounts.create_ready(tomographic_bin=lens0)
 
     source_read = nc.NumberCounts(sacc_tracer="lens0")
     source_read.read(sacc_data)
@@ -323,12 +323,12 @@ def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):
 def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
     nc_factory = nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
-    source_ready = nc_factory.create(inferred_zdist=lens0)
+    source_ready = nc_factory.create(tomographic_bin=lens0)
 
     source_read = nc.NumberCounts(sacc_tracer="lens0")
     source_read.read(sacc_data)
@@ -340,20 +340,20 @@ def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
 def test_number_counts_source_factory_cache(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
     nc_factory = nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
-    source_ready = nc_factory.create(inferred_zdist=lens0)
+    source_ready = nc_factory.create(tomographic_bin=lens0)
 
-    assert source_ready is nc_factory.create(inferred_zdist=lens0)
+    assert source_ready is nc_factory.create(tomographic_bin=lens0)
 
 
 def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
@@ -362,7 +362,7 @@ def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0
         per_bin_systematics=[],
         global_systematics=global_systematics,
     )
-    source_ready = nc_factory.create(inferred_zdist=lens0)
+    source_ready = nc_factory.create(tomographic_bin=lens0)
 
     # pylint: disable=protected-access
     source_read = nc.NumberCounts(

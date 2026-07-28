@@ -35,7 +35,11 @@ from firecrown.likelihood._binned_cluster_number_counts import (
 from firecrown.likelihood._binned_cluster_number_counts_shear import (
     BinnedClusterShearProfile,
 )
-from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceArgs
+from firecrown.likelihood._cmb import (
+    CMBConvergence,
+    CMBConvergenceArgs,
+    CMBConvergenceFactory,
+)
 from firecrown.likelihood._gaussfamily import GaussFamily, State
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM, PointMassData
@@ -85,6 +89,7 @@ __all__ = [
     "SourceGalaxyArgs",
     "CMBConvergence",
     "CMBConvergenceArgs",
+    "CMBConvergenceFactory",
     "SourceGalaxySystematic",
     "Tracer",
     "SourceSystematic",

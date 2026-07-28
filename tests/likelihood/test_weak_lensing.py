@@ -9,7 +9,7 @@ import pytest
 import sacc
 
 import firecrown.likelihood.weak_lensing as wl
-from firecrown.metadata_types import Galaxies, InferredGalaxyZDist
+from firecrown.metadata_types import Galaxies, TomographicBin
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
@@ -258,7 +258,7 @@ class TestWeakLensing:
 
     def test_create_ready(self):
         """Test WeakLensing.create_ready class method."""
-        zdist = InferredGalaxyZDist(
+        zdist = TomographicBin(
             bin_name="test_bin",
             z=np.linspace(0.1, 2.0, 50),
             dndz=np.exp(-(((np.linspace(0.1, 2.0, 50) - 0.5) / 0.2) ** 2)),
@@ -457,7 +457,7 @@ def test_weak_lensing_factory():
         global_systematics=[wl.LinearAlignmentSystematicFactory()],
     )
 
-    zdist = InferredGalaxyZDist(
+    zdist = TomographicBin(
         bin_name="test_bin",
         z=np.linspace(0.1, 2.0, 50),
         dndz=np.exp(-(((np.linspace(0.1, 2.0, 50) - 0.5) / 0.2) ** 2)),

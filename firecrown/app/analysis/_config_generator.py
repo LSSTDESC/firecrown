@@ -26,6 +26,7 @@ def get_generator(
     use_absolute_path: bool,
     cosmo_spec: CCLCosmologySpec,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
+    distance_max_z: float = 4.0,
 ) -> ConfigGenerator:
     """Factory function to create framework-specific configuration generator.
 
@@ -38,6 +39,7 @@ def get_generator(
     :param cosmo_spec: Cosmology specification with parameters and priors
     :param required_cosmology: Level of cosmology computation
         (none/background/linear/nonlinear)
+    :param distance_max_z: Maximum redshift for background/distance splines
     :return: Initialized configuration generator ready for component addition
     :raises ValueError: If framework is not supported
     """
@@ -50,6 +52,7 @@ def get_generator(
                 use_absolute_path=use_absolute_path,
                 cosmo_spec=cosmo_spec,
                 required_cosmology=required_cosmology,
+                distance_max_z=distance_max_z,
             )
         case Frameworks.COBAYA:
             return CobayaConfigGenerator(
@@ -58,6 +61,7 @@ def get_generator(
                 use_absolute_path=use_absolute_path,
                 cosmo_spec=cosmo_spec,
                 required_cosmology=required_cosmology,
+                distance_max_z=distance_max_z,
             )
         case Frameworks.NUMCOSMO:
             return NumCosmoConfigGenerator(
@@ -66,6 +70,7 @@ def get_generator(
                 use_absolute_path=use_absolute_path,
                 cosmo_spec=cosmo_spec,
                 required_cosmology=required_cosmology,
+                distance_max_z=distance_max_z,
             )
         case _:
             raise ValueError(f"Unsupported framework: {framework}")

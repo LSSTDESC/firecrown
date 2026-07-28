@@ -55,6 +55,7 @@ def create_config(
     cosmo_spec: CCLCosmologySpec,
     use_absolute_path: bool = False,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
+    distance_max_z: float = 4.0,
 ) -> dict[str, Any]:
     """Create Cobaya configuration dictionary.
 
@@ -68,6 +69,7 @@ def create_config(
     :param cosmo_spec: Cosmology specification
     :param use_absolute_path: Use absolute paths in configuration
     :param required_cosmology: Level of cosmology computation
+    :param distance_max_z: Maximum redshift for background/distance splines
     :return: Configuration dictionary ready for YAML serialization
     """
     factory_source_str = get_path_str(factory_source, use_absolute_path)
@@ -101,6 +103,7 @@ def create_config(
 
     if use_cosmology:
         config["likelihood"][likelihood_name]["input_style"] = "CAMB"
+        config["likelihood"][likelihood_name]["distance_max_z"] = distance_max_z
 
     config.update(
         {
@@ -255,6 +258,7 @@ class CobayaConfigGenerator(ConfigGenerator):
             likelihood_name=likelihood_name,
             cosmo_spec=self.cosmo_spec,
             required_cosmology=self.required_cosmology,
+            distance_max_z=self.distance_max_z,
         )
         add_models(cfg, self.models)
         write_config(cfg, cobaya_yaml)

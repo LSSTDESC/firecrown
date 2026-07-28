@@ -354,6 +354,7 @@ class ConfigGenerator(ABC):
     use_absolute_path: bool
     cosmo_spec: CCLCosmologySpec
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR
+    distance_max_z: float = 4.0
 
     sacc_path: Path | None = None
     factory_source: str | Path | None = None
