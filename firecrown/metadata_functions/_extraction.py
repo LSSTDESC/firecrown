@@ -74,6 +74,18 @@ def extract_all_tracers_projected_fields(
     ``"z_lss"``), falling back to the standard last-scattering redshift
     (1100.0) if not present. Any other tracer type is ignored.
 
+    SACC has a single generic ``MapTracer`` class for every projected
+    (map-based) field, so the tracer object itself cannot say whether it
+    represents CMB convergence, an ISW temperature map, or some other map
+    measurement. Today ``MapTracer`` is only ever associated with the
+    ``CMB.CONVERGENCE`` measurement, so every ``MapTracer`` is unconditionally
+    wrapped as ``CMBLensing``. Once a second measurement is associated with
+    ``MapTracer`` (e.g. an ISW map), this dispatch should be upgraded to key
+    off the SACC tracer type together with the data type / ``Measurement``
+    already discovered for that tracer by :func:`extract_all_measured_types`
+    (via ``tracer_types``), returning the matching
+    :class:`~firecrown.metadata_types.ProjectedField` implementation for it.
+
     See also: :func:`extract_all_tracers_tomographic_bins`.
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
