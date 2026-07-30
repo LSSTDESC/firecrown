@@ -235,7 +235,7 @@ jobs:
           echo "lockfile_path=${lockfile_path}" >> "$GITHUB_OUTPUT"
           echo "lockfile_hash=${lockfile_hash}" >> "$GITHUB_OUTPUT"
         shell: bash
-      - name: Cache Conda env (lockfile)
+      - name: Restore cache
         uses: actions/cache/restore@v5.0.5
         id: cache-lock
         with:
@@ -244,9 +244,7 @@ jobs:
             conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version
             }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{
             env.CACHE_VERSION }}
-          restore-keys: |
-            conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-
-      - name: Install environment from lockfile
+      - name: Install environment from lockfile if cache not hit
         shell: bash -l {0}
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         run: |
@@ -278,7 +276,7 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-      - name: Setting up CosmoSIS and Cobaya
+      - name: Set up CosmoSIS and Cobaya and build CSL if cache not hit
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         shell: bash -l {0}
         run: |
@@ -293,13 +291,13 @@ jobs:
           export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
           popd
-      - name: Remove redundant rpath and import isitgr
+      - name: Remove redundant rpath and import isitgr for macOS if cache not hit
         if: ${{ (matrix.os == 'macos') && (steps.cache-lock.outputs.cache-hit != 'true') }}
         shell: bash -l {0}
         run: |
           install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
             python -c "import isitgr"
-      - name: Save conda-forge, CosmoSIS and Cobaya environment
+      - name: Save environment into cache if cache not hit
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         id: cache-primes-save
         uses: actions/cache/save@v5.0.5
