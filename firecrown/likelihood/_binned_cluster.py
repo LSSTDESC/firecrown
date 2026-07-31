@@ -12,7 +12,10 @@ from crow.recipes.binned_parent import (
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
+from firecrown.likelihood._updatable_wrapper import (
+    UpdatableClusterObjects,
+    _ClusterObjectConfig,
+)
 from firecrown.likelihood_base import SourceSystematic, Statistic
 from firecrown.models.cluster import ClusterData, SaccBin
 
@@ -47,7 +50,7 @@ class BinnedCluster(Statistic):
         self.updatable_parameters.init_all_parameters(self.cluster_recipe)
 
     def _create_updatable_parameters(self):
-        cluster_objects_configs = []
+        cluster_objects_configs: list[_ClusterObjectConfig] = []
         for name in ("cluster_theory", "mass_distribution", "completeness", "purity"):
             _rec_attr = getattr(self.cluster_recipe, name)
             if _rec_attr is not None:
