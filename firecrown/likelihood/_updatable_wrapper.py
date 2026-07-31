@@ -152,7 +152,8 @@ class UpdatableClusterObjects(Updatable):
     :ivar cluster_objects_configs: Sequence of configuration dictionaries
         describing which parameters of each cluster object will be updated.
 
-    Examples:
+    Example configuration::
+
         cluster_objects_configs = (
             {
                 "recipe_attribute_name": "mass_distribution",

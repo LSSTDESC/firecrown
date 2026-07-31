@@ -463,10 +463,11 @@ def _to_pascal(s: str) -> str:
     Splits on non-alphanumeric characters and capitalizes first letter of each part
     while preserving case of remaining characters.
 
-    Examples:
-        - 'intrinsic_alignment' → 'IntrinsicAlignment'
-        - 'ia_model_v1' → 'IaModelV1'
-        - 'shear_bias_multiplicative' → 'ShearBiasMultiplicative'
+    Example transformations::
+
+        intrinsic_alignment -> IntrinsicAlignment
+        ia_model_v1 -> IaModelV1
+        shear_bias_multiplicative -> ShearBiasMultiplicative
 
     :param s: Input string (typically model or parameter name)
     :return: PascalCase formatted string

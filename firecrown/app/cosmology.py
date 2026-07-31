@@ -101,10 +101,11 @@ def _parse_prior(prior_arg: str) -> tuple[str, float | None, Prior | None]:
     - 'key,mean=...,sigma=...' → Prior-only constraint (no fixed value)
     - 'key,lower=...,upper=...' → Prior-only constraint (no fixed value)
 
-    Examples:
-        'm_nu=0.06,mean=0.06,sigma=0.01'
-        'Omega_c=0.26,lower=0.2,upper=0.3'
-        'sigma8,mean=0.8,sigma=0.1'
+    Example usage::
+
+        m_nu=0.06,mean=0.06,sigma=0.01
+        Omega_c=0.26,lower=0.2,upper=0.3
+        sigma8,mean=0.8,sigma=0.1
 
     :param prior_arg: Command-line prior specification string
     :return: Tuple of (parameter_name, default_value, prior_constraint)

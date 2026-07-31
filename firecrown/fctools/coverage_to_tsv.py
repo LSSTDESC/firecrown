@@ -93,12 +93,9 @@ def _load_text_durations(path: Path) -> dict[str, float]:
 def parse_timing_data(console: Console, timing_file: Path | None) -> dict[str, float]:
     """Parse timing data from pytest --durations output or JSON file.
 
-    Args:
-        console: The rich console object.
-        timing_file: Path to timing data file (JSON or text output)
-
-    Returns:
-        Dictionary mapping test names to duration in seconds
+    :param console: The rich console object.
+    :param timing_file: Path to timing data file (JSON or text output).
+    :return: Dictionary mapping test names to duration in seconds.
     """
     if timing_file is None or not timing_file.exists():
         return {}
@@ -124,13 +121,11 @@ def parse_timing_data(console: Console, timing_file: Path | None) -> dict[str, f
 def match_test_to_function(test_name: str, function_name: str, file_path: str) -> float:
     """Try to match a test name to a function for timing correlation.
 
-    Args:
-        test_name: Full test identifier (like "tests/test_mod.py::test_method")
-        function_name: Function name from coverage data
-        file_path: File path from coverage data
-
-    Returns:
-        Relevance score (0.0 to 1.0) for the match
+    :param test_name: Full test identifier, for example
+        ``tests/test_mod.py::test_method``.
+    :param function_name: Function name from coverage data.
+    :param file_path: File path from coverage data.
+    :return: Relevance score in the range [0.0, 1.0].
     """
     # Extract the base test file and method name
     if "::" in test_name:
@@ -166,12 +161,9 @@ def extract_coverage_data(
 ) -> list[CoverageRecord]:
     """Extract coverage information from the JSON data, optionally including timing.
 
-    Args:
-        coverage_data: The loaded JSON coverage data
-        timing_data: Optional dictionary of test timing data
-
-    Returns:
-        List of CoverageRecord objects containing detailed coverage information
+    :param coverage_data: Loaded JSON coverage data.
+    :param timing_data: Optional dictionary of test timing data.
+    :return: Coverage records with function-level coverage details.
     """
     # pylint: disable=too-many-locals
     results = []
@@ -232,9 +224,8 @@ def extract_coverage_data(
 def write_tsv_file(data: list[CoverageRecord], output_file: Path) -> None:
     """Write the extracted data to a TSV file.
 
-    Args:
-        data: List of CoverageRecord objects with coverage data
-        output_file: Path to output TSV file
+    :param data: Coverage records to write.
+    :param output_file: Path to the output TSV file.
     """
     with open(output_file, "w", encoding="utf-8") as f:
         # Write header
@@ -325,15 +316,13 @@ def main(
     details about file coverage, function coverage, and missing line
     information.
 
-    Examples:
-    coverage_to_tsv.py coverage.json
+    Example usage::
 
-    coverage_to_tsv.py coverage.json output.tsv
-
-    coverage_to_tsv.py coverage.json output.tsv --timing timing.txt
-
-    coverage_to_tsv.py /path/to/coverage.json /path/to/output.tsv \\
-    --timing timing.json
+        coverage_to_tsv.py coverage.json
+        coverage_to_tsv.py coverage.json output.tsv
+        coverage_to_tsv.py coverage.json output.tsv --timing timing.txt
+        coverage_to_tsv.py /path/to/coverage.json /path/to/output.tsv \\
+            --timing timing.json
     """
     console = Console()
     try:
