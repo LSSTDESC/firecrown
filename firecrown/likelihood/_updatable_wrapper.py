@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from firecrown import parameters
-from firecrown.updatable import Updatable, UpdatableCollection
+from firecrown.updatable import (
+    Updatable,
+    UpdatableCollection,
+    register_new_updatable_parameter,
+)
 
 
 class UpdatableParameters(Updatable):
@@ -32,18 +35,18 @@ class UpdatableParameters(Updatable):
         return f"{self.recipe_attribute_name}_{par_name}"
 
     def init_parameters(self, cluster_object):
-        """Instanciate all updatable parameters.
+        """Instantiate all updatable parameters.
 
         Parameters
         ----------
         cluster_object: object
-            cluster object to get the defalt parameters from.
+            cluster object to get the default parameters from.
         """
         for par_name in self.updatable_parameters:
             setattr(
                 self,
                 self._ini_file_par_name(par_name),
-                parameters.register_new_updatable_parameter(
+                register_new_updatable_parameter(
                     default_value=cluster_object.parameters[par_name]
                 ),
             )
@@ -110,7 +113,7 @@ class UpdatableClusterObjects(Updatable):
 
             - recipe_attribute_name: name of the attribute in the recipe.
             - parameters: list name of parameters that should be updatable.
-            - has_cosmo (optional, defalut=False): if this attribute
+            - has_cosmo (optional, default=False): if this attribute
             has an internal cosmology.
 
             BinnedCluster has a function that automatically creates the correct
@@ -128,13 +131,13 @@ class UpdatableClusterObjects(Updatable):
             self.my_updatables.append(getattr(self, conf["recipe_attribute_name"]))
 
     def init_all_parameters(self, cluster_recipe):
-        """Instanciate all updatables parameiters.
+        """Instantiate all updatables parameters.
 
         Parameters
         ----------
         cluster_recipe: recipe object
             Recipe containing all cluster objects (as attributes) to
-            get the defalt parameters from.
+            get the default parameters from.
         """
         for conf in self.cluster_objects_configs:
             getattr(self, conf["recipe_attribute_name"]).init_parameters(
