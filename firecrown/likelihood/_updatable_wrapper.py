@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NotRequired, Protocol, TypedDict, TypeGuard, cast
 
-from firecrown.updatable import Updatable, UpdatableCollection
-from firecrown.updatable import register_new_updatable_parameter
+from firecrown.updatable import (
+    Updatable,
+    UpdatableCollection,
+    register_new_updatable_parameter,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
