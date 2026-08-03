@@ -240,8 +240,8 @@ jobs:
             }}-lock-${{ steps.lock-meta.outputs.lockfile_hash }}-v${{
             env.CACHE_VERSION }}
       - name: Install environment from lockfile if cache not hit
-        shell: bash -l {0}
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        shell: bash -l {0}
         run: |
           echo "=== Conda diagnostics ==="
           conda --version
@@ -272,6 +272,7 @@ jobs:
           echo $CONDA_DEFAULT_ENV
           python --version
       - name: Setting up CosmoSIS and Cobaya if cache not hit
+        if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         shell: bash -l {0}
         run: |
           # Sequential setup of dependencies to avoid environment corruption
@@ -434,7 +435,7 @@ jobs:
           which python
           echo $CONDA_DEFAULT_ENV
           python --version
-      - name: Remove redundant rpath and import isitgr if cache not hit
+      - name: Remove redundant rpath and import isitgr on macOS if cache not hit
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         shell: bash -l {0}
         run: |
