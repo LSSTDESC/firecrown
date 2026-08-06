@@ -66,6 +66,8 @@ exclude_also = [
    # Don't complain about unreachable code
    '^ +assert_never\(.*?\)$',
    '^ +case _ as unreachable.*:$',
+      # Protocol classes (typing.Protocol / typing_extensions.Protocol)
+   'class .*\bProtocol\):',
 ]
 
 # Ruff configuration - replaces flake8 and pylint (black still used for formatting)
