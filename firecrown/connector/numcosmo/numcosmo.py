@@ -79,7 +79,7 @@ class MappingNumCosmo(GObject.Object):
     def _get_mapping_name(self) -> str:
         """Return the mapping name.
 
-        :return: the name of the mapping.
+        :returns: the name of the mapping.
         """
         return self._mapping_name
 
@@ -131,7 +131,7 @@ class MappingNumCosmo(GObject.Object):
     def _get_p_mnl(self) -> None | Nc.PowspecMNL:
         """Return the NumCosmo PowspecMNL object.
 
-        :return: the NumCosmo PowspecMNL object, or None
+        :returns: the NumCosmo PowspecMNL object, or None
         """
         if self._p is None:
             return None
@@ -160,7 +160,7 @@ class MappingNumCosmo(GObject.Object):
     def _get_dist(self) -> None | Nc.Distance:
         """Return the NumCosmo Distance object.
 
-        :return: the NumCosmo Distance object, or None
+        :returns: the NumCosmo Distance object, or None
         """
         return self._dist
 
@@ -236,7 +236,7 @@ class MappingNumCosmo(GObject.Object):
         """Calculate the arguments necessary for CCL for this sample.
 
         :param mset: the NumCosmo MSet object from which to get the parameters
-        :return: a dictionary of the arguments required by CCL
+        :returns: a dictionary of the arguments required by CCL
         """
         hi_cosmo = mset.peek(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
         assert isinstance(hi_cosmo, Nc.HICosmo)
@@ -278,7 +278,7 @@ class MappingNumCosmo(GObject.Object):
 
         :param mapping: The mapping object used to convert redshift to scale factor.
         :param hi_cosmo: The NumCosmo HICosmo object containing cosmological parameters.
-        :return: A dictionary containing the nonlinear power spectrum with scale
+        :returns: A dictionary containing the nonlinear power spectrum with scale
                  factors, wave numbers, and power spectrum values.
         """
         assert self._p is not None
@@ -298,7 +298,7 @@ class MappingNumCosmo(GObject.Object):
 
         :param mapping: The mapping object used to convert redshift to scale factor.
         :param hi_cosmo: The NumCosmo HICosmo object containing cosmological parameters.
-        :return: A dictionary containing the linear power spectrum with scale factors,
+        :returns: A dictionary containing the linear power spectrum with scale factors,
                  wave numbers, and power spectrum values.
         """
         assert self._p is not None
@@ -323,7 +323,7 @@ def create_params_map(
 
     :param model_list: list of model names
     :param mset: the NumCosmo MSet object from which to get the parameters
-    :return: a ParamsMap containing the parameters of the models in model_list
+    :returns: a ParamsMap containing the parameters of the models in model_list
     """
     params_map = ParamsMap()
     for model_ns in model_list:
@@ -375,7 +375,7 @@ class NumCosmoData(Ncm.Data):
     def _get_model_list(self) -> list[str]:
         """Return the list of model names.
 
-        :return: the names of the contained models
+        :returns: the names of the contained models
         """
         return self._model_list
 
@@ -396,7 +396,7 @@ class NumCosmoData(Ncm.Data):
     def _get_nc_mapping(self) -> MappingNumCosmo | None:
         """Return the MappingNumCosmo object.
 
-        :return: the MappingNumCosmo object
+        :returns: the MappingNumCosmo object
         """
         return self._nc_mapping
 
@@ -429,7 +429,7 @@ class NumCosmoData(Ncm.Data):
     def _get_likelihood_source(self) -> None | str:
         """Return the likelihood string defining the factory function.
 
-        :return: the filename of the likelihood factory function
+        :returns: the filename of the likelihood factory function
         """
         return self._likelihood_source
 
@@ -524,14 +524,14 @@ class NumCosmoData(Ncm.Data):
     def do_get_length(self) -> int:  # pylint: disable-msg=arguments-differ
         """Implements the virtual Ncm.Data method get_length.
 
-        :return: the number of data points in the likelihood
+        :returns: the number of data points in the likelihood
         """
         return self.len
 
     def do_get_dof(self) -> int:  # pylint: disable-msg=arguments-differ
         """Implements the virtual Ncm.Data method get_dof.
 
-        :return: the number of degrees of freedom in the likelihood
+        :returns: the number of degrees of freedom in the likelihood
         """
         return self.dof
 
@@ -633,7 +633,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def _get_model_list(self) -> list[str]:
         """Return the list of models.
 
-        :return: the current names of the models
+        :returns: the current names of the models
         """
         return self._model_list
 
@@ -654,7 +654,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def _get_nc_mapping(self) -> MappingNumCosmo | None:
         """Return the :class:`MappingNumCosmo` object.
 
-        :return: the current value of the mapping
+        :returns: the current value of the mapping
         """
         return self._nc_mapping
 
@@ -675,7 +675,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def _will_calculate_power_spectra(self) -> bool:
         """Return whether the likelihood will calculate power spectra.
 
-        :return: whether the likelihood will calculate power spectra
+        :returns: whether the likelihood will calculate power spectra
         """
         if self._nc_mapping is None:
             return False
@@ -732,7 +732,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def _get_likelihood_source(self) -> None | str:
         """Return the likelihood string defining the factory function.
 
-        :return: the filename of the likelihood factory function
+        :returns: the filename of the likelihood factory function
         """
         return self._likelihood_source
 
@@ -764,7 +764,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def _get_likelihood_build_parameters(self) -> None | Ncm.VarDict:
         """Return the likelihood build parameters.
 
-        :return: the likelihood build parameters
+        :returns: the likelihood build parameters
         """
         if self._likelihood_build_parameters is None:
             return None
@@ -841,14 +841,14 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def do_get_length(self) -> int:  # pylint: disable-msg=arguments-differ
         """Implements the virtual `Ncm.Data` method `get_length`.
 
-        :return: the number of data points in the likelihood
+        :returns: the number of data points in the likelihood
         """
         return self.len
 
     def do_get_dof(self) -> int:  # pylint: disable-msg=arguments-differ
         """Implements the virtual `Ncm.Data` method `get_dof`.
 
-        :return: the number of degrees of freedom in the likelihood
+        :returns: the number of degrees of freedom in the likelihood
         """
         return self.dof
 
@@ -964,20 +964,20 @@ class NumCosmoFactory:
     def get_data(self) -> NumCosmoGaussCov | NumCosmoData:
         """This method return the appropriate Ncm.Data class to be used by NumCosmo.
 
-        :return: the data used by NumCosmo
+        :returns: the data used by NumCosmo
         """
         return self.data
 
     def get_mapping(self) -> MappingNumCosmo | None:
         """This method return the current MappingNumCosmo.
 
-        :return: the current mapping.
+        :returns: the current mapping.
         """
         return self.mapping
 
     def get_firecrown_likelihood(self) -> Likelihood:
         """This method returns the Firecrown Likelihood.
 
-        :return: the likelihood
+        :returns: the likelihood
         """
         return self.data.likelihood

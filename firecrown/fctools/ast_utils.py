@@ -13,7 +13,7 @@ def get_module_docstring(file_path: Path) -> str | None:
     """Extract the module-level docstring from a Python file.
 
     :param file_path: Path to the Python source file
-    :return: The module docstring if present, None otherwise
+    :returns: The module docstring if present, None otherwise
     :raises OSError: If the file cannot be read
     :raises SyntaxError: If the file contains invalid Python syntax
     :raises UnicodeDecodeError: If the file encoding is invalid
@@ -30,7 +30,7 @@ def get_class_definition(source: str, class_name: str) -> ast.ClassDef | None:
 
     :param source: Python source code as a string
     :param class_name: Name of the class to find
-    :return: The ClassDef AST node if found, None otherwise
+    :returns: The ClassDef AST node if found, None otherwise
     :raises SyntaxError: If the source contains invalid Python syntax
     """
     tree = ast.parse(source)
@@ -48,7 +48,7 @@ def format_docstring_summary(docstring: str | None, max_length: int = 80) -> str
 
     :param docstring: The docstring to summarize (may be None)
     :param max_length: Maximum length for the summary (default: 80)
-    :return: A brief summary string, or a default message if no docstring
+    :returns: A brief summary string, or a default message if no docstring
 
     Example usage::
 
@@ -78,7 +78,7 @@ def extract_class_attributes(class_def: ast.ClassDef) -> list[str]:
     """Extract class-level attribute names from a ClassDef node.
 
     :param class_def: An AST ClassDef node
-    :return: List of attribute names defined at class level
+    :returns: List of attribute names defined at class level
 
     .. note::
         This extracts simple assignments like `name: type` or `name = value`
@@ -103,7 +103,7 @@ def format_class_docstring(class_def: ast.ClassDef) -> list[str]:
     """Extract and format the docstring from a ClassDef node.
 
     :param class_def: An AST ClassDef node
-    :return: List of formatted docstring lines (empty list if no docstring)
+    :returns: List of formatted docstring lines (empty list if no docstring)
     """
     docstring = ast.get_docstring(class_def)
     if not docstring:
@@ -125,7 +125,7 @@ def get_function_names(class_def: ast.ClassDef) -> list[str]:
     """Extract names of methods defined in a class.
 
     :param class_def: An AST ClassDef node
-    :return: List of method names defined in the class
+    :returns: List of method names defined in the class
 
     .. note::
         This only returns methods defined directly in the class,

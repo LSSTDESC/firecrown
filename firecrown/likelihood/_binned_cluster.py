@@ -80,7 +80,7 @@ class BinnedCluster(Statistic):
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector.
 
-        :return: The statistic data vector.
+        :returns: The statistic data vector.
         """
         assert self.data_vector is not None
         return self.data_vector

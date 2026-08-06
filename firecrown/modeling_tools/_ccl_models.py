@@ -94,7 +94,7 @@ class CAMBExtraParams(BaseModel):
         """Update the CAMB sampling parameters.
 
         :param params: The parameters to update.
-        :return: None
+        :returns: None
         """
         if "HMCode_A_baryon" in params:
             self.HMCode_A_baryon = params["HMCode_A_baryon"]
@@ -114,7 +114,7 @@ class CAMBExtraParams(BaseModel):
 
         CAMB treats None as mead.
 
-        :return: True if the halofit_version is mead, mead2015, or mead2016
+        :returns: True if the halofit_version is mead, mead2015, or mead2016
         """
         if self.halofit_version is None:
             return True
@@ -201,7 +201,7 @@ class CCLSplineParams(BaseModel):
         and returns the instance itself. This allows for temporary modification
         of CCL spline parameters using a `with` statement.
 
-        :return:  The current instance with updated spline parameters.
+        :returns:  The current instance with updated spline parameters.
         """
         self._spline_params = pyccl.CCLParameters.get_params_dict(pyccl.spline_params)
         for key, value in self.model_dump().items():

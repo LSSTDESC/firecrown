@@ -14,7 +14,7 @@ def check_qmd_file(file_path: Path) -> list[str]:
     """Parse a .qmd file, extract Python code blocks, and check their syntax.
 
     :param file_path: Path to the Quarto (.qmd) file to check
-    :return: List of error messages for code blocks with syntax errors
+    :returns: List of error messages for code blocks with syntax errors
     """
     content: str = file_path.read_text(encoding="utf-8")
     code_blocks: list[str] = []

@@ -14,7 +14,7 @@ def get_default_params(*args: Updatable) -> dict[str, float]:
     """Get a ParamsMap with the default values of all parameters in the updatables.
 
     :param args: updatables to get the default parameters from
-    :return: a ParamsMap with the default values of all parameters
+    :returns: a ParamsMap with the default values of all parameters
     """
     updatable_collection = UpdatableCollection(args)
     required_parameters = updatable_collection.required_parameters()
@@ -27,7 +27,7 @@ def get_default_params_map(*args: Updatable) -> ParamsMap:
     """Get a ParamsMap with the default values of all parameters in the updatables.
 
     :param args: updatables to get the default parameters from
-    :return: a ParamsMap with the default values of all parameters
+    :returns: a ParamsMap with the default values of all parameters
     """
     default_parameters: dict[str, float] = get_default_params(*args)
     return ParamsMap(**default_parameters)

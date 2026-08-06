@@ -185,7 +185,7 @@ class ExampleCosmicShear(AnalysisBuilder):
         Creates SACC file with tomographic bins, power spectra, and covariance.
 
         :param output_path: Output directory
-        :return: Path to generated SACC file
+        :returns: Path to generated SACC file
         """
         summary = Table(
             title="Cosmic Shear Example", border_style="blue", show_header=False
@@ -237,7 +237,7 @@ class ExampleCosmicShear(AnalysisBuilder):
         Sets up the redshift range for n(z) distributions and the multipole
         range for power spectrum calculations.
 
-        :return: Tuple of (z_range, ell_range) arrays for sampling
+        :returns: Tuple of (z_range, ell_range) arrays for sampling
         """
         z_range = np.linspace(0, self.z_max, self.n_z_points) + 0.05
         ell_range = np.logspace(
@@ -305,7 +305,7 @@ class ExampleCosmicShear(AnalysisBuilder):
         :param sacc_data: SACC data object to populate with tracer metadata
         :param cosmo: CCL cosmology object for tracer calculations
         :param z_range: Redshift sampling array
-        :return: List of CCL WeakLensingTracer objects for theory calculations
+        :returns: List of CCL WeakLensingTracer objects for theory calculations
         """
         tracers = []
         # Distribute bin centers evenly across redshift range
@@ -340,7 +340,7 @@ class ExampleCosmicShear(AnalysisBuilder):
         :param cosmo: CCL cosmology for theoretical predictions
         :param tracers: List of weak lensing tracers for each redshift bin
         :param ell_range: Multipole sampling array
-        :return: List of noise-free theoretical power spectra for covariance
+        :returns: List of noise-free theoretical power spectra for covariance
         """
         theory_cls = []
 
@@ -381,7 +381,7 @@ class ExampleCosmicShear(AnalysisBuilder):
 
         :param output_path: Output directory
         :param _sacc: SACC file path (unused)
-        :return: Path to factory file
+        :returns: Path to factory file
         """
         output_file = output_path / f"{self.prefix}_factory.py"
         copy_template(_cosmic_shear_template, output_file)
@@ -396,7 +396,7 @@ class ExampleCosmicShear(AnalysisBuilder):
     def get_models(self) -> list[Model]:
         """Define photo-z shift parameters for each tomographic bin.
 
-        :return: Model with delta_z parameters for all bins
+        :returns: Model with delta_z parameters for all bins
         """
         parameters: list[tuple[str, str, float, float, float, bool]] = [
             (

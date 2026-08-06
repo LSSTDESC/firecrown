@@ -133,7 +133,7 @@ def register_new_updatable_parameter(
         if `value` is `None`
     :param shared: if True, the parameter will not receive a prefix,
         making it shared across all instances (only applies when value is None)
-    :return: a `SamplerParameter` if `value` is `None`, otherwise an `InternalParameter`
+    :returns: a `SamplerParameter` if `value` is `None`, otherwise an `InternalParameter`
     :raises TypeError: if `value` is not `None` and not a `float`
     """
     result: SamplerParameter | InternalParameter

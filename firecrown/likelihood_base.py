@@ -80,7 +80,7 @@ class Likelihood(Updatable):
         This new realization uses the previously computed theory vector and covariance
         matrix.
 
-        :return: the new realization of the theory vector
+        :returns: the new realization of the theory vector
         """
         raise NotImplementedError(
             "This class does not implement make_realization_vector."
@@ -100,7 +100,7 @@ class Likelihood(Updatable):
         :param strict: If True, check that the indices of the realization cover
             all the indices of the SACC data object.
 
-        :return: the new SACC object containing the new realization
+        :returns: the new SACC object containing the new realization
         """
 
     def compute_loglike_for_sampling(self, tools: ModelingTools) -> float:
@@ -110,7 +110,7 @@ class Likelihood(Updatable):
          returns -np.inf.
 
         :param tools: the ModelingTools to be used in calculating the likelihood
-        :return: the log-likelihood
+        :returns: the log-likelihood
         """
         try:
             return self.compute_loglike(tools)
@@ -125,7 +125,7 @@ class Likelihood(Updatable):
         """Compute the log-likelihood of generic CCL data.
 
         :param tools: the ModelingTools to be used in calculating the likelihood
-        :return: the log-likelihood
+        :returns: the log-likelihood
         """
 
 
@@ -167,7 +167,7 @@ class NamedParameters:
 
         :param name: the name of the parameter to be returned
         :param default_value: the default value if the parameter is not found
-        :return: the value of the parameter (or the default value)
+        :returns: the value of the parameter (or the default value)
         """
         if default_value is None:
             val = self.data[name]
@@ -182,7 +182,7 @@ class NamedParameters:
 
         :param name: the name of the parameter to be returned
         :param default_value: the default value if the parameter is not found
-        :return: the value of the parameter (or the default value)
+        :returns: the value of the parameter (or the default value)
         """
         if default_value is None:
             val = self.data[name]
@@ -197,7 +197,7 @@ class NamedParameters:
 
         :param name: the name of the parameter to be returned
         :param default_value: the default value if the parameter is not found
-        :return: the value of the parameter (or the default value)
+        :returns: the value of the parameter (or the default value)
         """
         if default_value is None:
             val = self.data[name]
@@ -212,7 +212,7 @@ class NamedParameters:
 
         :param name: the name of the parameter to be returned
         :param default_value: the default value if the parameter is not found
-        :return: the value of the parameter (or the default value)
+        :returns: the value of the parameter (or the default value)
         """
         if default_value is None:
             val = self.data[name]
@@ -226,7 +226,7 @@ class NamedParameters:
         """Return the named parameter as a numpy array of int.
 
         :param name: the name of the parameter to be returned
-        :return: the value of the parameter
+        :returns: the value of the parameter
         """
         tmp = self.data[name]
         assert isinstance(tmp, np.ndarray)
@@ -238,7 +238,7 @@ class NamedParameters:
         """Return the named parameter as a numpy array of float.
 
         :param name: the name of the parameter to be returned
-        :return: the value of the parameter
+        :returns: the value of the parameter
         """
         tmp = self.data[name]
         assert isinstance(tmp, np.ndarray)
@@ -253,7 +253,7 @@ class NamedParameters:
     ]:
         """Return the contained data as a set.
 
-        :return: the value of the parameter as a set
+        :returns: the value of the parameter as a set
         """
         return set(self.data)
 
@@ -293,7 +293,7 @@ class NamedParameters:
     ]:
         """Convert a NamedParameters object to a dictionary of built-in types.
 
-        :return: a dictionary containing the parameters as built-in Python types
+        :returns: a dictionary containing the parameters as built-in Python types
         """
         basic_dict: dict[
             str,
@@ -316,7 +316,7 @@ class NamedParameters:
         """Check if a key is in the NamedParameters object.
 
         :param key: the key to check
-        :return: True if the key is in the NamedParameters object, False otherwise
+        :returns: True if the key is in the NamedParameters object, False otherwise
         """
         return key in self.data
 
@@ -412,7 +412,7 @@ class Statistic(Updatable):
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector.
 
-        :return: The data vector.
+        :returns: The data vector.
         """
 
     @final
@@ -420,7 +420,7 @@ class Statistic(Updatable):
         """Compute a statistic from sources, applying any systematics.
 
         :param tools: the modeling tools used to compute the theory vector.
-        :return: The computed theory vector.
+        :returns: The computed theory vector.
         """
         if not self.is_updated():
             raise RuntimeError(
@@ -440,7 +440,7 @@ class Statistic(Updatable):
 
         Raises a RuntimeError if the vector has not been computed.
 
-        :return: The already-computed theory vector.
+        :returns: The already-computed theory vector.
         """
         if not self.computed_theory_vector:
             raise RuntimeError(
@@ -488,7 +488,7 @@ class GuardedStatistic(Updatable):
         :class:`GuardedStatistic` ensures that :meth:`read` has been called.
         first.
 
-        :return: The most recently calculated  data vector.
+        :returns: The most recently calculated  data vector.
         """
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -501,7 +501,7 @@ class GuardedStatistic(Updatable):
         first.
 
         :param tools: the modeling tools used to compute the theory vector.
-        :return: The computed theory vector.
+        :returns: The computed theory vector.
         """
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -540,7 +540,7 @@ class TrivialStatistic(Statistic):
     def _required_parameters(self) -> RequiredParameters:
         """Return an empty RequiredParameters.
 
-        :return: an empty RequiredParameters.
+        :returns: an empty RequiredParameters.
         """
         return RequiredParameters([])
 
@@ -548,14 +548,14 @@ class TrivialStatistic(Statistic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         """Return an empty DerivedParameterCollection.
 
-        :return: an empty DerivedParameterCollection.
+        :returns: an empty DerivedParameterCollection.
         """
         return DerivedParameterCollection([])
 
     def get_data_vector(self) -> DataVector:
         """Return the data vector; raise exception if there is none.
 
-        :return: The data vector.
+        :returns: The data vector.
         """
         assert self.data_vector is not None
         return self.data_vector
@@ -564,7 +564,7 @@ class TrivialStatistic(Statistic):
         """Return a fixed theory vector.
 
         :param _: unused, but required by the interface
-        :return: A fixed theory vector
+        :returns: A fixed theory vector
         """
         return TheoryVector.from_list([self.mean] * self.count)
 
@@ -655,7 +655,7 @@ class Source(Updatable):
     def get_scale(self) -> float:
         """Abstract method to return the scale for this `Source`.
 
-        :return: the scale
+        :returns: the scale
         """
 
     @abstractmethod
@@ -673,7 +673,7 @@ class Source(Updatable):
         cosmology, no calculation needs to be done.
 
         :param tools: The modeling tools used for creating the tracers
-        :return: the list of tracers
+        :returns: the list of tracers
         """
         ccl_cosmo = tools.get_ccl_cosmology()
 
@@ -705,7 +705,7 @@ class Tracer:
 
         :param field: the (stub) name of the field
         :param tracer: the name of the tracer
-        :return: the full name of the field
+        :returns: the full name of the field
         """
         if field is not None:
             return field
@@ -750,7 +750,7 @@ class Tracer:
     def has_pt(self) -> bool:
         """Answer whether we have a perturbation theory tracer.
 
-        :return: True if we have a pt_tracer, and False if not.
+        :returns: True if we have a pt_tracer, and False if not.
         """
         return self.pt_tracer is not None
 
@@ -793,7 +793,7 @@ class SourceGalaxySystematic(SourceSystematic, Generic[_SourceGalaxyArgsT]):
         :param tools: the modeling tools use to update the tracer arg
         :param tracer_arg: the original source galaxy tracer arg to which we
            apply the systematic.
-        :return: a new source galaxy tracer arg with the systematic applied
+        :returns: a new source galaxy tracer arg with the systematic applied
         """
 
 
@@ -847,7 +847,7 @@ def dndz_shift_and_stretch_active(
     :param delta_z: the photo-z shift (positive values shift the distribution
         toward lower redshifts)
     :param sigma_z: the photo-z stretch
-    :return: the shifted and stretched dndz
+    :returns: the shifted and stretched dndz
     """
     if sigma_z <= 0.0:
         raise ValueError("Stretch Parameter must be positive")
@@ -892,7 +892,7 @@ def dndz_shift_and_stretch_passive(
     :param delta_z: the photo-z shift (positive values shift the distribution
         toward lower redshifts)
     :param sigma_z: the photo-z stretch
-    :return: the shifted and stretched dndz
+    :returns: the shifted and stretched dndz
     """
     if sigma_z <= 0.0:
         raise ValueError("Stretch Parameter must be positive")
@@ -950,7 +950,7 @@ class SourceGalaxyPhotoZShift(
         :param tools: the modeling tools use to update the tracer arg
         :param tracer_arg: the original source galaxy tracer arg to which we
             apply the systematic.
-        :return: a new source galaxy tracer arg with the systematic applied
+        :returns: a new source galaxy tracer arg with the systematic applied
         """
         new_z, new_dndz = self._transform(
             tracer_arg.z, tracer_arg.dndz, self.delta_z, 1.0
@@ -1077,7 +1077,7 @@ class SourceGalaxySelectField(
         :param tools: the modeling tools used to update the tracer_arg
         :param tracer_arg: the original source galaxy tracer arg to which we
             apply the systematics.
-        :return: a new source galaxy tracer arg with the systematic applied
+        :returns: a new source galaxy tracer arg with the systematic applied
         """
         return replace(tracer_arg, field=self.field)
 

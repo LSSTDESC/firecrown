@@ -26,7 +26,7 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
     - sacc_file: Path to SACC data file
 
     :param params: Named parameters containing configuration
-    :return: Configured ConstGaussian likelihood and ModelingTools with PT
+    :returns: Configured ConstGaussian likelihood and ModelingTools with PT
     """
     sacc_file = os.path.expandvars(params.get_string("sacc_file"))
     sacc_data = load_sacc_data(sacc_file)

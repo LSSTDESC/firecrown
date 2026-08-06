@@ -41,7 +41,7 @@ class Space(str, Enum):
 def discover_measurements_by_space() -> tuple[list[Measurement], list[Measurement]]:
     """Discover all measurements that support real/harmonic space.
 
-    :return: Tuple ``(real_measurements, harmonic_measurements)``.
+    :returns: Tuple ``(real_measurements, harmonic_measurements)``.
     """
     all_measurements = ALL_MEASUREMENTS
 
@@ -62,7 +62,7 @@ def generate_compatible_pairs(
 
     :param measurements: Measurements used to generate pair combinations.
     :param compatibility_func: Function used to test pair compatibility.
-    :return: Valid ``(measurement1, measurement2)`` tuples.
+    :returns: Valid ``(measurement1, measurement2)`` tuples.
     """
     return [
         (m1, m2)

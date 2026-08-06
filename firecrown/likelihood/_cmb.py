@@ -117,7 +117,7 @@ class CMBConvergenceFactory(BaseModel):
         """Create a CMBConvergence object with the given inferred galaxy z distribution.
 
         :param cmb_tracer: the inferred galaxy redshift distribution
-        :return: a fully initialized CMBConvergence object
+        :returns: a fully initialized CMBConvergence object
         """
         assert isinstance(cmb_tracer, CMBLensing)
         # Use the bin_name as the tracer identifier
@@ -138,7 +138,7 @@ class CMBConvergenceFactory(BaseModel):
         """Create a CMBConvergence object from metadata only.
 
         :param sacc_tracer: the name of the tracer
-        :return: a fully initialized CMBConvergence object
+        :returns: a fully initialized CMBConvergence object
         """
         tracer_id = hash(sacc_tracer)
         if tracer_id in self._cache:

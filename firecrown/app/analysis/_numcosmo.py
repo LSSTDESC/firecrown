@@ -96,7 +96,7 @@ def _create_mapping(options: ConfigOptions) -> nc_cosmosis.MappingNumCosmo | Non
 
     :param options: Configuration options containing required_cosmology,
         distance_max_z, and reltol
-    :return: Configured NumCosmo mapping or None if computation not needed
+    :returns: Configured NumCosmo mapping or None if computation not needed
     """
     match options.required_cosmology:
         case FrameworkCosmology.NONE:
@@ -144,7 +144,7 @@ def _create_factory(
     :param build_parameters: Parameters passed to likelihood factory builder
     :param mapping: NumCosmo CLASS cosmology mapping (or None for no cosmology)
     :param model_list: List of model names to register with factory
-    :return: Initialized NumCosmo factory instance
+    :returns: Initialized NumCosmo factory instance
     """
     cwd = os.getcwd()
     try:
@@ -205,7 +205,7 @@ def _param_to_nc_dict(
 
     :param param: Parameter specification with bounds, default, and flags
     :param param_scale: Optional scale factors indexed by parameter name
-    :return: Parameter configuration dictionary for NumCosmo
+    :returns: Parameter configuration dictionary for NumCosmo
     """
     param_scale = param_scale or {}
     scale = param_scale.get(param.name, 1.0)
@@ -470,7 +470,7 @@ def _to_pascal(s: str) -> str:
         shear_bias_multiplicative -> ShearBiasMultiplicative
 
     :param s: Input string (typically model or parameter name)
-    :return: PascalCase formatted string
+    :returns: PascalCase formatted string
     """
     parts = re.split(r"[^A-Za-z0-9]+", s)
     return "".join(p[0].upper() + p[1:] for p in parts if p)
@@ -490,7 +490,7 @@ def _setup_models(
     :param options: Configuration options containing models list
     :param mset: NumCosmo model set (modified in-place)
     :param priors: Prior list (modified in-place for model parameter priors)
-    :return: ObjDictStr mapping model names to builder objects
+    :returns: ObjDictStr mapping model names to builder objects
     """
     model_builders = Ncm.ObjDictStr.new()  # pylint: disable=no-value-for-parameter
 
@@ -530,7 +530,7 @@ def _create_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
     container for use in likelihood calculations.
 
     :param numcosmo_factory: Firecrown factory with likelihood data
-    :return: NumCosmo dataset wrapper
+    :returns: NumCosmo dataset wrapper
     """
     dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
     firecrown_data = numcosmo_factory.get_data()
@@ -548,7 +548,7 @@ def _create_likelihood(dataset: Ncm.Dataset, priors: list[Ncm.Prior]) -> Ncm.Lik
 
     :param dataset: NumCosmo dataset with observations
     :param priors: Prior constraints on parameters
-    :return: NumCosmo likelihood combining data and priors
+    :returns: NumCosmo likelihood combining data and priors
     """
     likelihood = Ncm.Likelihood.new(dataset)
     for prior in priors:
@@ -566,7 +566,7 @@ def _setup_experiment(options: ConfigOptions) -> tuple[Ncm.ObjDictStr, Ncm.ObjDi
     bundles them for cleaner function signatures.
 
     :param options: Configuration options with all necessary parameters
-    :return: Tuple of (experiment config dict, model builders dict)
+    :returns: Tuple of (experiment config dict, model builders dict)
     """
     mapping = _create_mapping(options)
     factory = _create_factory(
@@ -599,7 +599,7 @@ def _write_config_worker(options: ConfigOptions) -> int:
     multiprocessing context without serialization issues.
 
     :param options: Configuration options with all necessary parameters
-    :return: Exit code (0 for success)
+    :returns: Exit code (0 for success)
     """
     Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 

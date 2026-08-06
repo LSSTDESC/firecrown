@@ -26,7 +26,7 @@ def extract_all_harmonic_data(
     :param allow_mixed_types: Whether to allow mixed tracer types.
     :param allowed_data_type: List of allowed data types to extract.
     :param normalize: If True, normalize the window function weights to sum to 1.
-    :return: A list of TwoPointMeasurement objects.
+    :returns: A list of TwoPointMeasurement objects.
     """
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
         raise ValueError("The SACC object does not have a dense covariance matrix.")

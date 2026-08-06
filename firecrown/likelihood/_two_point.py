@@ -80,7 +80,7 @@ def calculate_angular_cl(
     :param tools: The modeling tools to use.
     :param tracer0: The first tracer to use.
     :param tracer1: The second tracer to use.
-    :return: The angular multipole moments.
+    :returns: The angular multipole moments.
     """
     pk = calculate_pk(pk_name, tools, tracer0, tracer1)
     cosmo_in = tools.get_ccl_cosmology()
@@ -226,7 +226,7 @@ class TwoPoint(Statistic):
             statistics.
         :param tp_factory: The TwoPointFactory to use.
 
-        :return: An UpdatableCollection of TwoPoint statistics.
+        :returns: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list = [
             cls(
@@ -277,7 +277,7 @@ class TwoPoint(Statistic):
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
 
-        :return: A TwoPoint statistic.
+        :returns: A TwoPoint statistic.
         """
         # metadata.XY.x/Y are typed as Tracer (protocol). In this code path we
         # expect concrete TomographicBin instances (with redshift arrays). Use
@@ -319,7 +319,7 @@ class TwoPoint(Statistic):
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
 
-        :return: An UpdatableCollection of TwoPoint statistics.
+        :returns: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list = [
             cls._from_metadata_single(metadata, tp_factory) for metadata in metadata_seq
@@ -361,7 +361,7 @@ class TwoPoint(Statistic):
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
 
-        :return: An UpdatableCollection of TwoPoint statistics.
+        :returns: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list: list[TwoPoint] = [
             cls.create_two_point(m, tp_factory) for m in measurements
@@ -450,7 +450,7 @@ class TwoPoint(Statistic):
         :param ells_cells_indices: The ells, the cells and the indices of the
             data in the SACC file.
         :param sacc_data: The data in the sacc format.
-        :return: The ells, the cells and the indices, and window function if
+        :returns: The ells, the cells and the indices, and window function if
             there is one.
         """
         if ells_cells_indices is not None:
@@ -658,7 +658,7 @@ class TwoPoint(Statistic):
         Compute the power spectrum for the given ells and tracers and interpolate
         the result to the ells provided.
 
-        :return: The interpolated power spectrum.
+        :returns: The interpolated power spectrum.
         """
         computed_cells = self.compute_cells(
             ells_for_interpolation, scale0, scale1, tools, tracers0, tracers1
@@ -725,7 +725,7 @@ def read_reals(
 
     :param theory: The theory, carrying data type and tracers.
     :param sacc_data: The SACC data object to be read.
-    :return: The theta and xi values.
+    :returns: The theta and xi values.
     """
     tracers = theory.sacc_tracers
     assert tracers is not None
@@ -755,7 +755,7 @@ def read_ell_cells(
 
     :param theory: The theory, carrying data type and tracers.
     :param sacc_data: The SACC data object to be read.
-    :return: The ell and Cell values.
+    :returns: The ell and Cell values.
     """
     tracers = theory.sacc_tracers
     assert tracers is not None

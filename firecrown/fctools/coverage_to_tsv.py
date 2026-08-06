@@ -95,7 +95,7 @@ def parse_timing_data(console: Console, timing_file: Path | None) -> dict[str, f
 
     :param console: The rich console object.
     :param timing_file: Path to timing data file (JSON or text output).
-    :return: Dictionary mapping test names to duration in seconds.
+    :returns: Dictionary mapping test names to duration in seconds.
     """
     if timing_file is None or not timing_file.exists():
         return {}
@@ -125,7 +125,7 @@ def match_test_to_function(test_name: str, function_name: str, file_path: str) -
         ``tests/test_mod.py::test_method``.
     :param function_name: Function name from coverage data.
     :param file_path: File path from coverage data.
-    :return: Relevance score in the range [0.0, 1.0].
+    :returns: Relevance score in the range [0.0, 1.0].
     """
     # Extract the base test file and method name
     if "::" in test_name:
@@ -163,7 +163,7 @@ def extract_coverage_data(
 
     :param coverage_data: Loaded JSON coverage data.
     :param timing_data: Optional dictionary of test timing data.
-    :return: Coverage records with function-level coverage details.
+    :returns: Coverage records with function-level coverage details.
     """
     # pylint: disable=too-many-locals
     results = []

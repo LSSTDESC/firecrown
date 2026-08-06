@@ -55,7 +55,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
         """Download supernova SRD data from LSST DESC repository.
 
         :param output_path: Output directory
-        :return: Path to downloaded SACC file
+        :returns: Path to downloaded SACC file
         """
         sacc_full_file = output_path / f"{self.prefix}.sacc"
         download_from_url(
@@ -68,7 +68,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
 
         :param output_path: Output directory
         :param _sacc: SACC file path (unused)
-        :return: Path to factory file
+        :returns: Path to factory file
         """
         output_file = output_path / f"{self.prefix}_factory.py"
         copy_template(_sn_srd_template, output_file)
@@ -77,14 +77,14 @@ class ExampleSupernovaSRD(AnalysisBuilder):
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
         """Return SACC file path for likelihood construction.
 
-        :return: Named parameters with sacc_file path
+        :returns: Named parameters with sacc_file path
         """
         return NamedParameters({"sacc_file": self.get_sacc_file(sacc_path)})
 
     def get_models(self) -> list[Model]:
         """Define supernova absolute magnitude parameter.
 
-        :return: Single model with M parameter
+        :returns: Single model with M parameter
         """
         return [
             Model(
@@ -111,7 +111,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
     def cosmology_analysis_spec(self) -> CCLCosmologySpec:
         """Return the cosmology analysis specification.
 
-        :return: The cosmology analysis specification
+        :returns: The cosmology analysis specification
         """
         parameter_names = CCL_COSMOLOGY_MINIMAL_SET + ["A_s"]
         parameters = [COSMO_DESC[param_name] for param_name in parameter_names]

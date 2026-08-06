@@ -13,7 +13,7 @@ def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
     If the HIPrim object is not of type HIPrimPowerLaw, a ValueError is raised.
 
     :param hi_cosmo: NumCosmo HICosmo object
-    :return: the HIPrim object contained in hi_cosmo
+    :returns: the HIPrim object contained in hi_cosmo
     """
     hiprim = hi_cosmo.peek_submodel_by_mid(
         Nc.HIPrim.id()  # pylint: disable=no-value-for-parameter
@@ -35,7 +35,7 @@ def get_amplitude_parameters(
     :param ccl_factory: the CCL factory object
     :param p_ml: the NumCosmo PowspecML object, or None
     :param hi_cosmo: the NumCosmo cosmology object
-    :return: a tuple of the amplitude parameters, (A_s, sigma8), with only one set.
+    :returns: a tuple of the amplitude parameters, (A_s, sigma8), with only one set.
     """
     A_s: float | None = None
     sigma8: float | None = None

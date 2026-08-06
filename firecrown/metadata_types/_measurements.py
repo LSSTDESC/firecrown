@@ -75,7 +75,7 @@ class Galaxies(YAMLSerializable, str, Enum):
     def is_shear(self) -> bool:
         """Return True if the measurement is a shear measurement, False otherwise.
 
-        :return: True if the measurement is a shear measurement, False otherwise
+        :returns: True if the measurement is a shear measurement, False otherwise
         """
         return self in (
             Galaxies.SHEAR_E,

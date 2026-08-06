@@ -209,7 +209,7 @@ class ExampleCMBCross(AnalysisBuilder):
         convergence tracer, their power spectra, and covariance.
 
         :param output_path: Output directory
-        :return: Path to generated SACC file
+        :returns: Path to generated SACC file
         """
         summary = Table(
             title="CMB Lensing Cross-Correlation Example",
@@ -266,7 +266,7 @@ class ExampleCMBCross(AnalysisBuilder):
     def _create_coordinate_arrays(self) -> tuple[np.ndarray, np.ndarray]:
         """Create coordinate arrays for redshift and multipole sampling.
 
-        :return: Tuple of (z_range, ell_range) arrays for sampling
+        :returns: Tuple of (z_range, ell_range) arrays for sampling
         """
         z_range = np.linspace(0, self.z_max, self.n_z_points) + 0.05
         ell_range = np.logspace(
@@ -337,7 +337,7 @@ class ExampleCMBCross(AnalysisBuilder):
         :param sacc_data: SACC data object to populate with tracer metadata
         :param cosmo: CCL cosmology object for tracer calculations
         :param z_range: Redshift sampling array
-        :return: Bin centers and CCL WeakLensingTracer objects
+        :returns: Bin centers and CCL WeakLensingTracer objects
         """
         tracers = []
         bin_centers = np.linspace(0.2, self.z_max * 0.8, self.n_bins)
@@ -363,7 +363,7 @@ class ExampleCMBCross(AnalysisBuilder):
 
         :param sacc_data: SACC data object to populate with tracer metadata
         :param cosmo: CCL cosmology object for tracer calculations
-        :return: CCL CMBLensingTracer object for theory calculations
+        :returns: CCL CMBLensingTracer object for theory calculations
         """
         beam_ells = np.array([0.0, self.ell_max])
         sacc_data.add_tracer(
@@ -395,7 +395,7 @@ class ExampleCMBCross(AnalysisBuilder):
         :param galaxy_tracers: List of weak lensing tracers for each bin
         :param cmb_tracer: CMB lensing convergence tracer
         :param ell_range: Multipole sampling array
-        :return: List of noise-free theoretical power spectra for covariance
+        :returns: List of noise-free theoretical power spectra for covariance
         """
         theory_cls = []
 
@@ -456,7 +456,7 @@ class ExampleCMBCross(AnalysisBuilder):
 
         :param output_path: Output directory
         :param _sacc: SACC file path
-        :return: Fully qualified name of the likelihood factory function
+        :returns: Fully qualified name of the likelihood factory function
         """
         output_file = output_path / f"{self.prefix}_experiment.yaml"
         output_file.write_text(self._get_yaml_config(_sacc))
@@ -466,7 +466,7 @@ class ExampleCMBCross(AnalysisBuilder):
         """Generate the YAML likelihood configuration content.
 
         :param sacc_path: SACC file path
-        :return: YAML configuration as a string
+        :returns: YAML configuration as a string
         """
         sacc_path_str = self.get_sacc_file(sacc_path)
         return f"""---
@@ -499,7 +499,7 @@ ccl_factory:
     def get_models(self) -> list[Model]:
         """Define photo-z shift parameters for each tomographic bin.
 
-        :return: Model with delta_z parameters for all galaxy bins
+        :returns: Model with delta_z parameters for all galaxy bins
         """
         parameters: list[tuple[str, str, float, float, float, bool]] = [
             (

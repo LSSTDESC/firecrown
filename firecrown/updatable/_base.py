@@ -216,7 +216,7 @@ class Updatable(ABC):
         but before `reset`, has been called the object is updated. After
         `reset` has been called, the object is not currently updated.
 
-        :return:  True if the object is currently updated, and False if not.
+        :returns:  True if the object is currently updated, and False if not.
         """
         return self._updated
 
@@ -276,7 +276,7 @@ class Updatable(ABC):
         This object returned contains the information for all parameters
         defined in the implementing class, and any additional parameters.
 
-        :return: a RequiredParameters object containing all relevant parameters
+        :returns: a RequiredParameters object containing all relevant parameters
         """
         sampler_parameters = RequiredParameters(self._sampler_parameters)
         additional_parameters = self._required_parameters()
@@ -292,7 +292,7 @@ class Updatable(ABC):
 
         The order of the returned names is arbitrary.
 
-        :return: a list of parameter names
+        :returns: a list of parameter names
         """
         return list(self.required_parameters().get_params_names())
 
@@ -306,7 +306,7 @@ class Updatable(ABC):
         The base class implementation returns a list with all SamplerParameter
         objects properties.
 
-        :return: a RequiredParameters containing all relevant parameters
+        :returns: a RequiredParameters containing all relevant parameters
         """
         return RequiredParameters([])
 
@@ -319,7 +319,7 @@ class Updatable(ABC):
         This occurs once per iteration of the statistical analysis. First call returns
         the DerivedParameterCollection, further calls return None.
 
-        :return: a collection of derived parameters, or None
+        :returns: a collection of derived parameters, or None
         """
         if not self._updated:
             raise RuntimeError(
@@ -344,6 +344,6 @@ class Updatable(ABC):
         containing the derived parameters for the class. The default implementation
         returns an empty DerivedParameterCollection.
 
-        :return: a collection of derived parameters
+        :returns: a collection of derived parameters
         """
         return DerivedParameterCollection([])

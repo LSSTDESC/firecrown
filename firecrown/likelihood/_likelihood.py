@@ -81,7 +81,7 @@ def load_likelihood_from_module_type(
     :param module: a loaded module
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
-    :return: a tuple of the likelihood and the modeling tools
+    :returns: a tuple of the likelihood and the modeling tools
     """
     if not hasattr(module, build_likelihood_name):
         if not hasattr(module, "likelihood"):
@@ -148,7 +148,7 @@ def load_likelihood_from_script(
     :param filename: script filename
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
-    :return: a tuple of the likelihood and the modeling tools
+    :returns: a tuple of the likelihood and the modeling tools
     """
     _, file_extension = os.path.splitext(filename)
 
@@ -186,7 +186,7 @@ def load_likelihood_from_module(
     :param module: module name
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
-    :return: a tuple of the likelihood and the modeling tools
+    :returns: a tuple of the likelihood and the modeling tools
     """
     try:
         # Try importing the entire string as a module first
@@ -222,7 +222,7 @@ def load_likelihood(
     :param likelihood_name: script filename or module name
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
-    :return: a tuple of the likelihood and the modeling tools
+    :returns: a tuple of the likelihood and the modeling tools
     """
     try:
         return load_likelihood_from_script(likelihood_name, build_parameters)

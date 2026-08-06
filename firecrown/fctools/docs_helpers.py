@@ -17,7 +17,7 @@ def load_json_file(file_path: Path, error_prefix: str = "JSON file") -> dict:
 
     :param file_path: Path to the JSON file
     :param error_prefix: Prefix for error messages
-    :return: Parsed JSON as dictionary
+    :returns: Parsed JSON as dictionary
     :raises typer.Exit: If file cannot be loaded or parsed
     """
     try:
