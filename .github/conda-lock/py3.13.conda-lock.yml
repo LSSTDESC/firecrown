@@ -13,8 +13,8 @@
 version: 1
 metadata:
   content_hash:
-    linux-64: 09417226fe6dbd4ea11939aef171628e2efc519000136163f1ffea01f9f4e4f2
-    osx-arm64: 88a482b27e0b30059e618bdacc7ce958ce8c54c8fa924b8cd1cfd7c4322895a1
+    linux-64: 867b2833d343291028642a817c372d64fe073e4413d1472958ca4ede5ecc7fdf
+    osx-arm64: 277b4773614b5774c28ccda4f38d4ea2356d26d7c8e231fea7d825fa63d62e11
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -886,30 +886,6 @@ package:
     sha256: a14a9ad02101aab25570543a59c5193043b73dc311a25650134ed9e6cb691770
   category: main
   optional: false
-- name: backports.strenum
-  version: 1.3.1
-  manager: conda
-  platform: linux-64
-  dependencies:
-    python: '>=3.11'
-  url: https://conda.anaconda.org/conda-forge/noarch/backports.strenum-1.3.1-haf276df_3.conda
-  hash:
-    md5: 88a83285035d8f01f5630d2a3acd2a80
-    sha256: e5de6cb85d09f37584705a2411d4524f3208a88ac21edaff4dceef7495cb3c43
-  category: main
-  optional: false
-- name: backports.strenum
-  version: 1.3.1
-  manager: conda
-  platform: osx-arm64
-  dependencies:
-    python: '>=3.11'
-  url: https://conda.anaconda.org/conda-forge/noarch/backports.strenum-1.3.1-haf276df_3.conda
-  hash:
-    md5: 88a83285035d8f01f5630d2a3acd2a80
-    sha256: e5de6cb85d09f37584705a2411d4524f3208a88ac21edaff4dceef7495cb3c43
-  category: main
-  optional: false
 - name: backports.zstd
   version: 1.6.0
   manager: conda
@@ -1459,7 +1435,7 @@ package:
   category: main
   optional: false
 - name: camb
-  version: 2.0.0
+  version: 1.6.5
   manager: conda
   platform: linux-64
   dependencies:
@@ -1475,14 +1451,14 @@ package:
     scipy: '>=1.0'
     setuptools: ''
     sympy: '>=1.0'
-  url: https://conda.anaconda.org/conda-forge/linux-64/camb-2.0.0-py313h494722d_0.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/camb-1.6.5-py313h494722d_1.conda
   hash:
-    md5: 6c448a4e84de2938c96f83b22b0bcad1
-    sha256: 0980a18bd8eb80bf1cbb293fb26b5ce2184ef9474294fd82d592d9c997625cff
+    md5: d35044a53a91535fb15afe6e79bc2878
+    sha256: 22aee26e593cc69fcf2b48a9a5ace54b6654231e469b48c46191b21f71417e76
   category: main
   optional: false
 - name: camb
-  version: 2.0.0
+  version: 1.6.5
   manager: conda
   platform: osx-arm64
   dependencies:
@@ -1497,10 +1473,10 @@ package:
     scipy: '>=1.0'
     setuptools: ''
     sympy: '>=1.0'
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/camb-2.0.0-py313h75e446f_0.conda
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/camb-1.6.5-py313h75e446f_1.conda
   hash:
-    md5: 9ed244ef427299b5ed40dc2b26a90645
-    sha256: e6c0e3593933e45951d22b67f872367b5832bca6e357020b786869f1529a7557
+    md5: 6d959b9eb01384d2d5905f7bab27e680
+    sha256: 24f804eba069c01740011984c9cae7ab9c5b9a692ac6d92aa35cbe713accabae
   category: main
   optional: false
 - name: cctools
@@ -11206,35 +11182,33 @@ package:
   category: main
   optional: false
 - name: sacc
-  version: '2.4'
+  version: 2.1.2
   manager: conda
   platform: linux-64
   dependencies:
     astropy-base: ''
-    backports.strenum: ''
-    numpy: '>=2'
+    numpy: ''
     python: '>=3.10'
     scipy: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/sacc-2.4-pyhd8ed1ab_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/sacc-2.1.2-pyhd8ed1ab_0.conda
   hash:
-    md5: e54b8ab2fc3ded4c72203bd13f324db1
-    sha256: a44882c00f017d0645f6279886f958e446a578c3fd7c3c482b04809efb4f4813
+    md5: ed39d23fe3928e474466dc0a87f0b8c3
+    sha256: 37869108cadceb04a17d34061b5a728383a049cf905be5a7ac28c86f04786ef5
   category: main
   optional: false
 - name: sacc
-  version: '2.4'
+  version: 2.1.2
   manager: conda
   platform: osx-arm64
   dependencies:
     astropy-base: ''
-    backports.strenum: ''
-    numpy: '>=2'
+    numpy: ''
     python: '>=3.10'
     scipy: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/sacc-2.4-pyhd8ed1ab_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/sacc-2.1.2-pyhd8ed1ab_0.conda
   hash:
-    md5: e54b8ab2fc3ded4c72203bd13f324db1
-    sha256: a44882c00f017d0645f6279886f958e446a578c3fd7c3c482b04809efb4f4813
+    md5: ed39d23fe3928e474466dc0a87f0b8c3
+    sha256: 37869108cadceb04a17d34061b5a728383a049cf905be5a7ac28c86f04786ef5
   category: main
   optional: false
 - name: scikit-learn
