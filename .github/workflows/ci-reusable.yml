@@ -67,7 +67,7 @@ jobs:
     name: Quick validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -183,7 +183,7 @@ jobs:
             python-version: "3.12"
             coverage: true
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -349,7 +349,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: ${{ inputs.ci_mode == 'nightly' && 60 || 360 }}
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -475,13 +475,13 @@ jobs:
           conda list
           echo "done with conda list"
       - name: Cloning Smokescreen
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
         with:
           repository: "marcpaterno/smokescreen"
           path: "smokescreen"
           ref: "adjust-to-firecrown-pr-586"
       - name: Cloning Augur
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
         with:
           repository: "lsstdesc/augur"
           path: "augur"

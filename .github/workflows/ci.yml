@@ -26,12 +26,12 @@ jobs:
     outputs:
       should_run: ${{ steps.filter.outputs.drift }}
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - name: Detect dependency-impacting changes
         id: filter
-        uses: dorny/paths-filter@v4.0.1
+        uses: dorny/paths-filter@v4.0.2
         with:
           filters: |
             drift:
@@ -50,7 +50,7 @@ jobs:
     timeout-minutes: 45
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - name: Setting up Miniforge
