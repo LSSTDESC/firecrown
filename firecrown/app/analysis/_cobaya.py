@@ -70,7 +70,7 @@ def create_config(
     :param use_absolute_path: Use absolute paths in configuration
     :param required_cosmology: Level of cosmology computation
     :param distance_max_z: Maximum redshift for background/distance splines
-    :return: Configuration dictionary ready for YAML serialization
+    :returns: Configuration dictionary ready for YAML serialization
     """
     factory_source_str = get_path_str(factory_source, use_absolute_path)
 
@@ -139,7 +139,7 @@ def _configure_parameter(
     :param default_value: Default/reference parameter value
     :param prior: Prior specification (None for fixed parameters)
     :param scale: Scale factor applied to all values and bounds
-    :return: Parameter configuration (dict with prior or fixed float)
+    :returns: Parameter configuration (dict with prior or fixed float)
     """
     param_scale = param_scale or {}
     scale = param_scale.get(param.name, 1.0)
@@ -188,7 +188,7 @@ def _get_standard_params(
 
     :param required_cosmology: Level of cosmology computation
     :param cosmo_spec: Cosmology specification with parameters and priors
-    :return: Dictionary of parameter configurations
+    :returns: Dictionary of parameter configurations
     """
     if required_cosmology == FrameworkCosmology.NONE:
         return {}

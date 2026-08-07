@@ -38,7 +38,7 @@ def build_ccl_background_dict(
     :param a: The scale factor array
     :param chi: The comoving distance array
     :param h_over_h0: The Hubble parameter divided by H0
-    :return: the dictionary of background quantities
+    :returns: the dictionary of background quantities
     """
     return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
@@ -95,7 +95,7 @@ class Mapping:
         """Transform the given k_h (k over h) to k.
 
         :param k_h: the array of wavenumber/h to be transformed
-        :return: the transformed array
+        :returns: the transformed array
         """
         assert k_h is not None  # use assertion to silence pylint warning
         warnings.warn(
@@ -122,7 +122,7 @@ class Mapping:
         """Transform distances h to :math:`h/h_0`.
 
         :param h: the array of distances to be transformed
-        :return: the transformed array
+        :returns: the transformed array
         """
         assert h is not None  # use assertion to silence pylint warning
         warnings.warn(
@@ -204,7 +204,7 @@ class Mapping:
         inverse order.
 
         :param z: array of redshifts
-        :return: array of scale factors
+        :returns: array of scale factors
         """
         scale = np.flip(1.0 / (1.0 + z))
         return scale
@@ -219,7 +219,7 @@ class Mapping:
         with the rows flipped to match the reordering from redshift to scale factor.
 
         :param p_k: a power spectrum, ordered by (redshift, mode)
-        :return: array of power spectrum, ordered by (scale factor, mode)
+        :returns: array of power spectrum, ordered by (scale factor, mode)
         """
         p_k_out = np.flipud(p_k)
         return p_k_out
@@ -227,7 +227,7 @@ class Mapping:
     def asdict(self) -> dict[str, float]:
         """Return a dictionary containing the cosmological constants.
 
-        :return: the dictionary, containing keys:
+        :returns: the dictionary, containing keys:
 
             - ``Omega_c``: fraction of cold dark matter
             - ``Omega_b``: fraction of baryons
@@ -280,7 +280,7 @@ class Mapping:
     def get_H0(self) -> float:
         """Return the value of H0.
 
-        :return: H0 in km/s/Mpc
+        :returns: H0 in km/s/Mpc
         """
         return self.h * 100.0
 
@@ -293,7 +293,7 @@ class MappingCosmoSIS(Mapping):
     ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
-        :return: a list of the cosmological parameter names
+        :returns: a list of the cosmological parameter names
         """
         match amplitude:
             case PoweSpecAmplitudeParameter.AS:
@@ -321,7 +321,7 @@ class MappingCosmoSIS(Mapping):
         """Transform the given k_h (k over h) to k.
 
         :param k_h: the array of wavenumber/h to be transformed
-        :return: the transformed array
+        :returns: the transformed array
         """
         return np.array(k_h * self.h, dtype=np.float64)
 
@@ -331,7 +331,7 @@ class MappingCosmoSIS(Mapping):
         r"""Transform the given :math:`p_k h^3 \to p_k`.
 
         :param p_k_h3: the array of :math:`p_k h^3` to be transformed
-        :return: the transformed array
+        :returns: the transformed array
         """
         return np.array(p_k_h3 / (self.h**3), dtype=np.float64)
 
@@ -341,7 +341,7 @@ class MappingCosmoSIS(Mapping):
         """Transform distances h to :math:`h/h_0`.
 
         :param h: the array of distances to be transformed
-        :return: the transformed distances
+        :returns: the transformed distances
         """
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
         return np.flip(h) * hubble_radius_today
@@ -400,7 +400,7 @@ class MappingCosmoSIS(Mapping):
         """Calculate the arguments necessary for CCL for this sample.
 
         :param sample: the datablock for the current sample
-        :return: the arguments required by CCL
+        :returns: the arguments required by CCL
         """
         pk_linear: None | PowerSpec = None
         pk_nonlin: None | PowerSpec = None
@@ -465,7 +465,7 @@ class MappingCAMB(Mapping):
     ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
-        :return: a list of the cosmological parameter names
+        :returns: a list of the cosmological parameter names
 
         """
         match amplitude:
@@ -558,7 +558,7 @@ def mapping_builder(*, input_style: str, **kwargs) -> Mapping:
 
     :param input_style: the name of the mapping
     :param kwargs: the parameters of the mapping
-    :return: the mapping object
+    :returns: the mapping object
     """
     if input_style not in mapping_classes:
         raise ValueError(f"input_style must be {*mapping_classes, }, not {input_style}")

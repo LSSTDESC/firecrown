@@ -25,7 +25,7 @@ def _make_two_point_xy_error_message(
     :param tracer_names: The tracer names that were provided.
     :param pf1: The projected field for the first tracer.
     :param pf2: The projected field for the second tracer.
-    :return: A formatted error message explaining the violation.
+    :returns: A formatted error message explaining the violation.
     """
     return f"""
 Tracer measurements do not match the SACC naming convention:
@@ -59,7 +59,7 @@ def make_two_point_xy(
     :param tracer_names: a tuple of tracer names.
     :param data_type: the data type.
 
-    :return: a mdt.TwoPointXY object.
+    :returns: a mdt.TwoPointXY object.
     :raises ValueError: If the tracer measurements do not match the data type
         specification according to the SACC naming convention.
     """

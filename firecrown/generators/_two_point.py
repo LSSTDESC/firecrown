@@ -52,7 +52,7 @@ class LogLinearElls(BaseModel):
 
         :param min_ell: The low edge of the first bin.
         :param max_ell: The high edge of the last bin.
-        :return: The ell values.
+        :returns: The ell values.
         """
         minimum, midpoint, maximum, n_log = (
             self.minimum if min_ell is None else max(min_ell, self.minimum),
@@ -87,7 +87,7 @@ def generate_bin_centers(
     :param maximum: The high edge of the last bin.
     :param n: The number of bins.
     :param binning: Either 'log' or 'lin'.
-    :return: The centers of the bins.
+    :returns: The centers of the bins.
     """
     match binning:
         case "log":
@@ -124,7 +124,7 @@ def generate_ells_cells(ell_config: EllOrThetaConfig):
     """Generate ells or theta values from the configuration dictionary.
 
     :param ell_config: the configuration parameters.
-    :return: ells and Cells
+    :returns: ells and Cells
     """
     ells = generate_bin_centers(**ell_config)
     Cells = np.zeros_like(ells)
@@ -136,7 +136,7 @@ def generate_reals(theta_config: EllOrThetaConfig):
     """Generate theta and xi values from the configuration dictionary.
 
     :param ell_config: the configuration parameters.
-    :return: ells and Cells
+    :returns: ells and Cells
     """
     thetas = generate_bin_centers(**theta_config)
     xis = np.zeros_like(thetas)

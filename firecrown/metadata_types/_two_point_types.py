@@ -167,7 +167,7 @@ class TwoPointHarmonic(YAMLSerializable):
     def n_observations(self) -> int:
         """Return the number of observations described by these metadata.
 
-        :return: The number of observations.
+        :returns: The number of observations.
         """
         if self.window is None:
             return self.ells.shape[0]
@@ -223,7 +223,7 @@ class TwoPointReal(YAMLSerializable):
     def n_observations(self) -> int:
         """Return the number of observations described by these metadata.
 
-        :return: The number of observations.
+        :returns: The number of observations.
         """
         return self.thetas.shape[0]
 

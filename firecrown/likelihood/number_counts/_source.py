@@ -86,7 +86,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
             of the tracer
         :param scale: the initial scale of the tracer
         :param systematics: a list of systematics to apply to the tracer
-        :return: a fully initialized NumberCounts object
+        :returns: a fully initialized NumberCounts object
         """
         obj = cls(
             sacc_tracer=tomographic_bin.bin_name,
@@ -121,7 +121,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         """Return the derived parameters for this source.
 
-        :return: the derived parameters
+        :returns: the derived parameters
         """
         if self.derived_scale:
             assert self.current_tracer_args is not None
@@ -158,7 +158,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         """Create the tracers for this source.
 
         :param tools: the ModelingTools used to create the tracers
-        :return: a tuple of tracers and the updated tracer_args
+        :returns: a tuple of tracers and the updated tracer_args
         """
         tracer_args = self.tracer_args
         tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
@@ -224,7 +224,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     def get_scale(self) -> float:
         """Return the scale for this source.
 
-        :return: the scale for this source.
+        :returns: the scale for this source.
         """
         assert self.current_tracer_args
         return self.current_tracer_args.scale

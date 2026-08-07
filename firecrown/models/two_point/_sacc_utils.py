@@ -5,7 +5,7 @@ def determine_ccl_kind(sacc_data_type: str) -> str:
     """Determine the CCL kind for this SACC data type.
 
     :param sacc_data_type: the name of the SACC data type
-    :return: the CCL kind
+    :returns: the CCL kind
     """
     match sacc_data_type:
         case "galaxy_density_cl" | "galaxy_shearDensity_cl_e" | "galaxy_shear_cl_ee":

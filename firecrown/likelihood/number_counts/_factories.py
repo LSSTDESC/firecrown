@@ -56,7 +56,7 @@ class PTNonLinearBiasSystematicFactory(BaseModel):
         """Create a PTNonLinearBiasSystematic object with the given tracer name.
 
         :param bin_name: the name of the bin
-        :return: the created PTNonLinearBiasSystematic object
+        :returns: the created PTNonLinearBiasSystematic object
         """
         return PTNonLinearBiasSystematic(bin_name)
 
@@ -79,7 +79,7 @@ class MagnificationBiasSystematicFactory(BaseModel):
         """Create a MagnificationBiasSystematic object with the given tracer name.
 
         :param bin_name: the name of the bin
-        :return: the created MagnificationBiasSystematic object
+        :returns: the created MagnificationBiasSystematic object
         """
         return MagnificationBiasSystematic(bin_name)
 
@@ -105,7 +105,7 @@ class ConstantMagnificationBiasSystematicFactory(BaseModel):
         """Create a ConstantMagnificationBiasSystematic object.
 
         :param bin_name: the name of the bin
-        :return: the created ConstantMagnificationBiasSystematic object
+        :returns: the created ConstantMagnificationBiasSystematic object
         """
         return ConstantMagnificationBiasSystematic(bin_name)
 
@@ -159,7 +159,7 @@ class NumberCountsFactory(BaseModel):
         """Create a NumberCounts object with the given tracer name and scale.
 
         :param tomographic_bin: the inferred redshift distribution
-        :return: a fully initialized NumberCounts object
+        :returns: a fully initialized NumberCounts object
         """
         assert isinstance(tomographic_bin, TomographicBin)
         inferred_zdist_id = id(tomographic_bin)
@@ -186,7 +186,7 @@ class NumberCountsFactory(BaseModel):
         """Create an WeakLensing object with the given tracer name and scale.
 
         :param sacc_tracer: the name of the tracer
-        :return: a fully initialized NumberCounts object
+        :returns: a fully initialized NumberCounts object
         """
         sacc_tracer_id = hash(sacc_tracer)  # Improve this
         if sacc_tracer_id in self._cache:

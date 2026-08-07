@@ -69,7 +69,7 @@ class Supernova(Statistic):
     def get_data_vector(self) -> DataVector:
         """Return the data vector; raise exception if there is none.
 
-        :return: The data vector.
+        :returns: The data vector.
         """
         assert self.data_vector is not None
         return self.data_vector
@@ -78,7 +78,7 @@ class Supernova(Statistic):
         """Compute SNIa distance statistic using CCL.
 
         :param tools: the modeling tools used to compute the theory vector.
-        :return: The computed theory vector.
+        :returns: The computed theory vector.
         """
         ccl_cosmo = tools.get_ccl_cosmology()
         prediction = self.M + pyccl.distance_modulus(ccl_cosmo, self.a)

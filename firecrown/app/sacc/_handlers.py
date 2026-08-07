@@ -18,7 +18,7 @@ class OutputHandler(ABC):
     def count(self) -> int:
         """Return the number of issues handled by this handler.
 
-        :return: Count of matched issues.
+        :returns: Count of matched issues.
         """
         return len(self._matched_issues)
 
@@ -26,14 +26,14 @@ class OutputHandler(ABC):
     def get_title(self) -> str:
         """Get the title for reporting this issue type.
 
-        :return: Title string for console output.
+        :returns: Title string for console output.
         """
 
     @abstractmethod
     def get_details(self) -> str | None:
         """Get detailed information about the handled issues.
 
-        :return: Details string for console output, or None if no details.
+        :returns: Details string for console output, or None if no details.
         """
 
 
@@ -45,7 +45,7 @@ class MessageHandler(OutputHandler):
         """Attempt to handle a warning message.
 
         :param message: The complete warning message to potentially handle.
-        :return: True if this handler handled the message, False otherwise.
+        :returns: True if this handler handled the message, False otherwise.
         """
 
 
@@ -57,7 +57,7 @@ class StreamHandler(OutputHandler):
         """Attempt to handle lines from a stream.
 
         :param lines: List of lines from the stream to potentially handle.
-        :return: Tuple of (handled, remaining_lines). If handled is True,
+        :returns: Tuple of (handled, remaining_lines). If handled is True,
             the handler consumed some lines. remaining_lines are the lines
             that were not consumed and should be passed to the next handler.
         """
@@ -81,7 +81,7 @@ class TracerNamingViolationHandler(MessageHandler):
         """Try to handle a tracer naming convention violation warning.
 
         :param message: The warning message to check.
-        :return: True if handled, False otherwise.
+        :returns: True if handled, False otherwise.
         """
         match = self._pattern.search(message)
         if match:
@@ -96,14 +96,14 @@ class TracerNamingViolationHandler(MessageHandler):
     def get_title(self) -> str:
         """Get the title for tracer naming violations.
 
-        :return: Title string with count.
+        :returns: Title string with count.
         """
         return f"⚠️  Found {self.count()} tracer naming convention violation(s)"
 
     def get_details(self) -> str | None:
         """Get details of all tracer naming violations.
 
-        :return: Formatted list of violations.
+        :returns: Formatted list of violations.
         """
         if not self._matched_issues:
             return None
@@ -125,7 +125,7 @@ class LegacyCovarianceHandler(MessageHandler):
         """Try to handle a legacy covariance format warning.
 
         :param message: The warning message to check.
-        :return: True if handled, False otherwise.
+        :returns: True if handled, False otherwise.
         """
         if self._pattern.search(message):
             self._matched_issues.append("Legacy covariance format detected")
@@ -135,14 +135,14 @@ class LegacyCovarianceHandler(MessageHandler):
     def get_title(self) -> str:
         """Get the title for legacy covariance warnings.
 
-        :return: Title string.
+        :returns: Title string.
         """
         return "⚠️  Warning: Legacy covariance format detected"
 
     def get_details(self) -> str | None:
         """Get details for legacy covariance warnings.
 
-        :return: Explanation text.
+        :returns: Explanation text.
         """
         if not self._matched_issues:
             return None
@@ -169,7 +169,7 @@ class MissingSaccOrderingHandler(StreamHandler):
         Looks for multi-line pattern containing 'sacc_ordering' and 'deprecated'.
 
         :param lines: List of lines from stdout.
-        :return: Tuple of (handled, remaining_lines).
+        :returns: Tuple of (handled, remaining_lines).
         """
         first_line = "The FITS format without the 'sacc_ordering'"
         second_line = "Assuming data rows are in the correct order"
@@ -189,14 +189,14 @@ class MissingSaccOrderingHandler(StreamHandler):
     def get_title(self) -> str:
         """Get the title for missing sacc_ordering.
 
-        :return: Title string.
+        :returns: Title string.
         """
         return "⚠️  Warning: Missing 'sacc_ordering' metadata"
 
     def get_details(self) -> str | None:
         """Get details for missing sacc_ordering.
 
-        :return: Explanation text.
+        :returns: Explanation text.
         """
         if not self._matched_issues:
             return None
@@ -219,7 +219,7 @@ class UnknownWarningHandler(MessageHandler):
         """Always handle any warning (catch-all).
 
         :param message: The warning message.
-        :return: Always True.
+        :returns: Always True.
         """
         self._warnings.append(("Unknown", message))
         return True
@@ -227,21 +227,21 @@ class UnknownWarningHandler(MessageHandler):
     def count(self) -> int:
         """Return the number of warnings handled.
 
-        :return: Count of warnings.
+        :returns: Count of warnings.
         """
         return len(self._warnings)
 
     def get_title(self) -> str:
         """Get the title for unknown warnings.
 
-        :return: Title string with count.
+        :returns: Title string with count.
         """
         return f"⚠️  Found {self.count()} unknown warning(s)"
 
     def get_details(self) -> str | None:
         """Get details of all unknown warnings.
 
-        :return: Formatted list of warnings.
+        :returns: Formatted list of warnings.
         """
         if not self._warnings:
             return None
@@ -259,7 +259,7 @@ class UnknownStdoutHandler(StreamHandler):
         """Always handle all remaining stdout lines (catch-all).
 
         :param lines: List of lines from stdout.
-        :return: Tuple of (True, []) - consumes all lines.
+        :returns: Tuple of (True, []) - consumes all lines.
         """
         for line in lines:
             if line.strip():  # Only capture non-empty lines
@@ -269,14 +269,14 @@ class UnknownStdoutHandler(StreamHandler):
     def get_title(self) -> str:
         """Get the title for unknown stdout.
 
-        :return: Title string.
+        :returns: Title string.
         """
         return "⚠️  Unknown output from SACC library (stdout):"
 
     def get_details(self) -> str | None:
         """Get details of all unknown stdout lines.
 
-        :return: Formatted list of lines.
+        :returns: Formatted list of lines.
         """
         if not self._matched_issues:
             return None
@@ -290,7 +290,7 @@ class UnknownStderrHandler(StreamHandler):
         """Always handle all stderr lines (catch-all).
 
         :param lines: List of lines from stderr.
-        :return: Tuple of (True, []) - consumes all lines.
+        :returns: Tuple of (True, []) - consumes all lines.
         """
         for line in lines:
             if line.strip():  # Only capture non-empty lines
@@ -300,14 +300,14 @@ class UnknownStderrHandler(StreamHandler):
     def get_title(self) -> str:
         """Get the title for unknown stderr.
 
-        :return: Title string.
+        :returns: Title string.
         """
         return "⚠️  Unknown output from SACC library (stderr):"
 
     def get_details(self) -> str | None:
         """Get details of all unknown stderr lines.
 
-        :return: Formatted list of lines.
+        :returns: Formatted list of lines.
         """
         if not self._matched_issues:
             return None

@@ -41,7 +41,7 @@ def _parse_key_value(key_value_str: str) -> tuple[str, float | None]:
     """Parse key=value string into key and optional value.
 
     :param key_value_str: String in format 'key' or 'key=value'
-    :return: Tuple of (key, value) where value is None if not specified
+    :returns: Tuple of (key, value) where value is None if not specified
     :raises ValueError: If value cannot be converted to float
     """
     if "=" not in key_value_str:
@@ -67,7 +67,7 @@ def _parse_prior_dict(prior_str: str) -> Prior:
         'lower=0.01,upper=0.1' → Uniform prior with lower=0.01, upper=0.1
 
     :param prior_str: Prior specification as comma-separated key=value pairs
-    :return: Validated Prior object
+    :returns: Validated Prior object
     :raises ValueError: If prior_str is empty or invalid format
     """
     if not prior_str:
@@ -101,13 +101,14 @@ def _parse_prior(prior_arg: str) -> tuple[str, float | None, Prior | None]:
     - 'key,mean=...,sigma=...' → Prior-only constraint (no fixed value)
     - 'key,lower=...,upper=...' → Prior-only constraint (no fixed value)
 
-    Examples:
-        'm_nu=0.06,mean=0.06,sigma=0.01'
-        'Omega_c=0.26,lower=0.2,upper=0.3'
-        'sigma8,mean=0.8,sigma=0.1'
+    Example usage::
+
+        m_nu=0.06,mean=0.06,sigma=0.01
+        Omega_c=0.26,lower=0.2,upper=0.3
+        sigma8,mean=0.8,sigma=0.1
 
     :param prior_arg: Command-line prior specification string
-    :return: Tuple of (parameter_name, default_value, prior_constraint)
+    :returns: Tuple of (parameter_name, default_value, prior_constraint)
         where default_value and prior_constraint may be None
     :raises ValueError: If format is invalid or required fields missing
     """

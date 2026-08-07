@@ -36,7 +36,7 @@ class StudentT(GaussFamily):
         """Compute the log-likelihood.
 
         :param tools: The modeling tools used to compute the likelihood.
-        :return: The log-likelihood.
+        :returns: The log-likelihood.
         """
         chi2 = self.compute_chisq(tools)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))

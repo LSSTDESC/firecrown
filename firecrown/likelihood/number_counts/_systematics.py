@@ -37,7 +37,7 @@ class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
         :param tools: the Modeling tools used to update the tracer_arg
         :param tracer_arg: the original NumberCountsArgs to which to apply the
              systematic
-        :return: the updated NumberCountsArgs
+        :returns: the updated NumberCountsArgs
         """
 
 
@@ -100,7 +100,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
         :param tools: the ModelingTools used to update the tracer_arg
         :param tracer_arg: a NumberCountsArgs object with values to be updated
 
-        :return: the updated NumberCountsArgs object
+        :returns: the updated NumberCountsArgs object
         """
         ccl_cosmo = tools.get_ccl_cosmology()
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
@@ -161,7 +161,7 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         :param tools: currently unused, but required by interface
         :param tracer_arg: a NumberCountsArgs object with values to be updated
 
-        :return: the updated NumberCountsArgs object
+        :returns: the updated NumberCountsArgs object
         """
         z = tracer_arg.z
         b_2_z = self.b_2 * np.ones_like(z)
@@ -214,7 +214,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         :param tools: currently unused, but required by the interface
         :param tracer_arg: a NumberCountsArgs object with values to be updated
 
-        :return: an updated NumberCountsArgs object
+        :returns: an updated NumberCountsArgs object
         """
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
@@ -273,7 +273,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         :param tools: currently unused, but required by interface
         :param tracer_arg: a NumberCountsArgs object with values to be updated
 
-        :return: an updated NumberCountsArgs object
+        :returns: an updated NumberCountsArgs object
         """
         return replace(
             tracer_arg,

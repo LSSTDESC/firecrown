@@ -22,7 +22,7 @@ def mean_std_tracer(tracer: mdt.TomographicBin):
     """Compute the mean and standard deviation of a tracer.
 
     :param tracer: The galaxy redshift distribution tracer to analyze.
-    :return: Tuple of (mean_z, std_z) for the tracer distribution.
+    :returns: Tuple of (mean_z, std_z) for the tracer distribution.
     """
     # Create monotonic spline
     spline = PchipInterpolator(tracer.z, tracer.dndz, extrapolate=False)

@@ -104,7 +104,7 @@ def settrace(filename: str = "trace.tsv") -> TracerState:
     """Start the tracer, with log being written to a new file with the given name.
 
     :param filename: the name of the new file to be created
-    :return: TracerState instance managing the trace
+    :returns: TracerState instance managing the trace
     """
     tracer = TracerState(filename)
     sys.settrace(tracer.trace_call)

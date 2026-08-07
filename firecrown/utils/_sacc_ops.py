@@ -20,7 +20,7 @@ def load_sacc_data(filepath: str | Path) -> sacc.Sacc:
     regardless of the file's extension.
 
     :param filepath: Path to the SACC data file (str or Path object)
-    :return: Loaded SACC data object
+    :returns: Loaded SACC data object
     :raises FileNotFoundError: If the file does not exist
     :raises ValueError: If the file cannot be read as either HDF5 or FITS SACC data
     """
@@ -67,7 +67,7 @@ def upper_triangle_indices(n: int) -> Generator[tuple[int, int], None, None]:
         ...
 
     :param n: the size of the matrix
-    :return: the generator
+    :returns: the generator
     """
     for i in range(n):
         for j in range(i, n):
@@ -95,7 +95,7 @@ def save_to_sacc(
     :param indices: SACC indices where the data vector should be written.
     :param strict: Whether to check if the data vector covers all the data
         already present in the sacc_data.
-    :return: A copy of `sacc_data`, with data at `indices` replaced with `data_vector`.
+    :returns: A copy of `sacc_data`, with data at `indices` replaced with `data_vector`.
     """
     assert len(indices) == len(data_vector)
 

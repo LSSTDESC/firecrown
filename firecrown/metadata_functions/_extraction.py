@@ -155,7 +155,7 @@ def _sacc_convention_warning(
     :param data_type: The SACC data type string (e.g., 'galaxy_shear_xi_plus').
     :param a: The first measurement type associated with tracer1.
     :param b: The second measurement type associated with tracer2.
-    :return: A formatted warning message explaining the issue and next steps.
+    :returns: A formatted warning message explaining the issue and next steps.
     """
     return f"""
 SACC Convention Violation Detected (DEPRECATED AUTO-FIX)
@@ -195,7 +195,7 @@ def _extract_data_types_from_sacc(
     """Extract all unique (data_type, tracer1, tracer2) tuples from SACC data points.
 
     :param sacc_data: The SACC object to extract from.
-    :return: Set of (data_type, tracer1, tracer2) tuples.
+    :returns: Set of (data_type, tracer1, tracer2) tuples.
     """
     data_points = sacc_data.get_data_points()
     return {
@@ -211,7 +211,7 @@ def _initialize_tracer_types(
     """Initialize tracer_types dictionary with empty sets for all tracers.
 
     :param all_data_types: Set of (data_type, tracer1, tracer2) tuples.
-    :return: Dictionary mapping tracer names to empty measurement sets.
+    :returns: Dictionary mapping tracer names to empty measurement sets.
     """
     tracer_types: dict[str, set[mdt.Measurement]] = {}
     for _, tracer1, tracer2 in all_data_types:
@@ -253,7 +253,7 @@ def _should_swap_tracers_for_convention(
     :param tracer_types: Current detected types for all tracers.
     :param tracer1: Name of first tracer.
     :param tracer2: Name of second tracer.
-    :return: True if swapping would reduce mixing, False otherwise.
+    :returns: True if swapping would reduce mixing, False otherwise.
     """
     # Count new types in original configuration
     n_original = len({a} | tracer_types[tracer1]) + len({b} | tracer_types[tracer2])
@@ -341,7 +341,7 @@ def _check_tracer_swap_needed(
     :param tracer_types: Dictionary mapping tracer names to their measurement types.
     :param combo: Tuple of (tracer1_name, tracer2_name).
     :param allow_mixed_types: Whether to allow mixed-type measurements.
-    :return: True if tracers should be swapped, False otherwise.
+    :returns: True if tracers should be swapped, False otherwise.
     """
     return (
         (not allow_mixed_types)
@@ -404,7 +404,7 @@ def extract_all_measured_types(
         If False (default), raises an error when a tracer has multiple measurement
         types (unless auto-corrected). If True, allows mixed-type measurements without
         error.
-    :return: Dictionary mapping tracer names to sets of Measurement types associated
+    :returns: Dictionary mapping tracer names to sets of Measurement types associated
         with that tracer.
     :raises ValueError: If a tracer has multiple measurement types and
         allow_mixed_types=False (after attempting auto-correction).
@@ -543,7 +543,7 @@ def extract_all_harmonic_metadata(
     :param bin_pair_selector: Optional selector to filter which bin pairs to include.
         If None, all valid bin pairs are returned.
     :param normalize: If True, normalize the window function weights to sum to 1.
-    :return: List of TwoPointHarmonic objects with metadata and ell values.
+    :returns: List of TwoPointHarmonic objects with metadata and ell values.
     """
     projected_fields_dict = {
         projected_field.bin_name: projected_field
@@ -604,7 +604,7 @@ def extract_all_real_metadata(
         If None, all real-space data types are extracted.
     :param bin_pair_selector: Optional selector to filter which bin pairs to include.
         If None, all valid bin pairs are returned.
-    :return: List of TwoPointReal objects with metadata and theta values.
+    :returns: List of TwoPointReal objects with metadata and theta values.
     """
     projected_fields_dict = {
         projected_field.bin_name: projected_field
@@ -649,7 +649,7 @@ def extract_all_photoz_bin_combinations(
     :param sacc_data: The SACC object containing tracers and data points.
     :param bin_pair_selector: Optional selector to filter which bin pairs to include.
         If None, all valid bin pairs are returned.
-    :return: List of TwoPointXY objects representing valid bin pair combinations.
+    :returns: List of TwoPointXY objects representing valid bin pair combinations.
     """
     projected_fields = extract_all_tracers_projected_fields(
         sacc_data, allow_mixed_types
@@ -677,7 +677,7 @@ def extract_window_function(
     :param indices: the indices of the data points in the Sacc object which
         are computed by the window function.
     :param normalize: if True, normalize the window function weights to sum to 1.
-    :return: the ells and weights of the window function that match the
+    :returns: the ells and weights of the window function that match the
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
     :raises ValueError: if any window function column has zero total weight.
@@ -721,7 +721,7 @@ def maybe_enforce_window(
     :param indices: The indices of the data points in the SACC object.
     :param sacc_data: The SACC object containing the data.
     :param normalize: if True, normalize the window function weights to sum to 1.
-    :return: A tuple containing the possibly replaced ells, the window weights, and
+    :returns: A tuple containing the possibly replaced ells, the window weights, and
         `window_ells`, the original ell grid used by the window (or None if no window
         function is applied).
     """

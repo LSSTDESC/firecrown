@@ -211,7 +211,7 @@ class AnalysisBuilder(logging.Logging):
         """Generate or download the SACC data file.
 
         :param output_path: Directory where files should be created
-        :return: Path to the generated SACC file
+        :returns: Path to the generated SACC file
         """
 
     @abstractmethod
@@ -220,7 +220,7 @@ class AnalysisBuilder(logging.Logging):
 
         :param output_path: Directory where files should be created
         :param sacc: Path to the SACC data file
-        :return: Path to the generated factory file
+        :returns: Path to the generated factory file
         """
 
     @abstractmethod
@@ -228,21 +228,21 @@ class AnalysisBuilder(logging.Logging):
         """Create build parameters for likelihood initialization.
 
         :param sacc_path: Path to the SACC data file
-        :return: Build parameters (typically includes sacc_file path)
+        :returns: Build parameters (typically includes sacc_file path)
         """
 
     @abstractmethod
     def get_models(self) -> list[Model]:
         """Define model parameters for sampling.
 
-        :return: List of models with their parameters (priors, bounds, etc.)
+        :returns: List of models with their parameters (priors, bounds, etc.)
         """
 
     @abstractmethod
     def required_cosmology(self) -> FrameworkCosmology:
         """Return whether the analysis requires a cosmology.
 
-        :return: True if the analysis requires a cosmology, False otherwise
+        :returns: True if the analysis requires a cosmology, False otherwise
         """
 
     def required_distance_max_z(self) -> float:
@@ -253,14 +253,14 @@ class AnalysisBuilder(logging.Logging):
         the default (e.g. CMB lensing, with its source at z~1100) must override
         this method to return a large enough value.
 
-        :return: Maximum redshift for background/distance computations
+        :returns: Maximum redshift for background/distance computations
         """
         return 4.0
 
     def cosmology_analysis_spec(self) -> CCLCosmologySpec:
         """Return the cosmology analysis specification.
 
-        :return: The cosmology analysis specification
+        :returns: The cosmology analysis specification
         """
         if self._spec is not None:
             return self._spec
@@ -274,7 +274,7 @@ class AnalysisBuilder(logging.Logging):
         Otherwise returns just the filename.
 
         :param sacc_path: Path to the SACC data file
-        :return: Path to the SACC file as a string, either absolute or relative
+        :returns: Path to the SACC file as a string, either absolute or relative
         """
         if self.use_absolute_path:
             sacc_filename = sacc_path.absolute().as_posix()
@@ -288,6 +288,6 @@ class AnalysisBuilder(logging.Logging):
         Subclasses can override this method to provide additional
         information about the options used in the analysis.
 
-        :return: Description of analysis options
+        :returns: Description of analysis options
         """
         return []

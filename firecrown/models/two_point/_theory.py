@@ -96,7 +96,7 @@ class TwoPointTheory(Updatable):
         """Initialize this TwoPointTheory's sources  and tracer names.
 
         :param sacc_data: The data in the from which we read the data.
-        :return: The tracer names.
+        :returns: The tracer names.
         """
         self.sources[0].read(sacc_data)
         if self.sources[0] is not self.sources[1]:

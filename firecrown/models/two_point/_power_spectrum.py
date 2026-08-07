@@ -25,7 +25,7 @@ def calculate_pk(
     :param tools: The modeling tools to use.
     :param tracer0: The first tracer to use.
     :param tracer1: The second tracer to use.
-    :return: The power spectrum.
+    :returns: The power spectrum.
     """
     if tools.has_pk(pk_name):
         # Use existing power spectrum
@@ -47,7 +47,7 @@ def at_least_one_tracer_has_hm(
     :param tools: The modeling tools to use.
     :param tracer0: The first tracer to use.
     :param tracer1: The second tracer to use.
-    :return: The power spectrum.
+    :returns: The power spectrum.
     """
     # Compute halo model power spectrum
     # Fix a_arr because normalization is zero for a<~0.07
@@ -135,7 +135,7 @@ def at_least_one_tracer_has_pt(
     :param tools: The modeling tools to use.
     :param tracer0: The first tracer to use.
     :param tracer1: The second tracer to use.
-    :return: The power spectrum.
+    :returns: The power spectrum.
     """
     if not (tracer0.has_pt and tracer1.has_pt):
         # Mixture of PT and non-PT tracers

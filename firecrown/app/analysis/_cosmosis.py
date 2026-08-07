@@ -56,7 +56,7 @@ def format_comment(text: str, width: int = 88) -> list[str]:
 
     :param text: Comment text to format
     :param width: Maximum line width including prefix
-    :return: List of formatted comment lines
+    :returns: List of formatted comment lines
     """
     # Account for ";; " prefix (3 characters)
     wrap_width = width - 3
@@ -178,7 +178,7 @@ def create_config(
     :param use_absolute_path: Use absolute paths in configuration
     :param required_cosmology: Level of cosmology computation
     :param distance_max_z: Maximum redshift for background/distance splines
-    :return: Configured ConfigParser ready to write
+    :returns: Configured ConfigParser ready to write
     """
     cfg = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation(), allow_no_value=True
@@ -247,7 +247,7 @@ def format_float(value: float) -> str:
     (adds '.0' if needed). CosmoSIS requires floats to have decimal points.
 
     :param value: Numeric value to format
-    :return: Formatted string (e.g., '0.67', '1.0', '2.5e-9')
+    :returns: Formatted string (e.g., '0.67', '1.0', '2.5e-9')
     """
     s = f"{value:.3g}"
     return s if ("." in s or "e" in s) else s + ".0"
@@ -306,7 +306,7 @@ def create_values_config(
     :param cosmo_spec: Cosmology specification
     :param models: List of systematic/nuisance models
     :param required_cosmology: Level of cosmology computation
-    :return: Configured ConfigParser ready to write
+    :returns: Configured ConfigParser ready to write
     """
     config = configparser.ConfigParser(allow_no_value=True)
 
@@ -403,7 +403,7 @@ def create_priors_config(
     :param cosmo_spec: Cosmology specification with priors
     :param _models: Reserved for future model priors support
     :param required_cosmology: Level of cosmology computation
-    :return: Configured ConfigParser or None if no priors
+    :returns: Configured ConfigParser or None if no priors
     """
     if models is None:
         models = []

@@ -79,7 +79,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         :param tools: A ModelingTools object.
         :param tracer_arg: The WeakLensingArgs to which apply the shear bias.
 
-        :return: A new WeakLensingArgs object with the shear bias applied.
+        :returns: A new WeakLensingArgs object with the shear bias applied.
         """
         return replace(
             tracer_arg,
@@ -392,7 +392,7 @@ class HMAlignmentSystematic(WeakLensingSystematic):
 
         :param tools: A ModelingTools object.
         :param tracer_arg: The WeakLensingArgs to which apply the systematic.
-        :return: A new WeakLensingArgs object with the systematic applied.
+        :returns: A new WeakLensingArgs object with the systematic applied.
         """
         return replace(
             tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h

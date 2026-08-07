@@ -176,7 +176,7 @@ class Model(BaseModel):
     def has_priors(self) -> bool:
         """Check if any parameters have priors defined.
 
-        :return: True if at least one parameter has a prior; False otherwise
+        :returns: True if at least one parameter has a prior; False otherwise
         """
         for param in self.parameters:
             if param.prior is not None:
@@ -189,7 +189,7 @@ class Model(BaseModel):
         If the key has not been used, add it to the set of used keys.
 
         :param key: key
-        :return: value
+        :returns: value
         """
         if key not in self._param_dict:
             raise KeyError(f"Parameter {key} not found in model {self.name}")
@@ -199,7 +199,7 @@ class Model(BaseModel):
         """Return True if the key is in the map, False otherwise.
 
         :param key: key
-        :return: True if the key is in the map, False otherwise
+        :returns: True if the key is in the map, False otherwise
         """
         return key in self._param_dict
 
@@ -279,7 +279,7 @@ class CCLCosmologySpec(Model):
     def to_ccl_cosmology(self) -> pyccl.Cosmology:
         """Convert to CCL cosmology dictionary.
 
-        :return: Dictionary of cosmological parameters for CCL
+        :returns: Dictionary of cosmological parameters for CCL
         """
         args: dict[str, Any] = {}
         assert self._param_dict is not None
@@ -399,7 +399,7 @@ def get_path_str(path: Path | str, use_absolute: bool) -> str:
 
     :param path: Path object or string
     :param use_absolute: If True, return absolute path; otherwise return filename only
-    :return: Path string suitable for configuration files
+    :returns: Path string suitable for configuration files
     """
     if isinstance(path, str):
         return path

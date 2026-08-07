@@ -21,7 +21,7 @@ def load_json_file(
     :param console: The rich console object.
     :param file_path: Path to the JSON file to load
     :param error_context: Context description for error messages
-    :return: The loaded JSON data as a dictionary
+    :returns: The loaded JSON data as a dictionary
     :raises SystemExit: If the file cannot be read or parsed (exits with code 1)
 
     .. note::
@@ -46,7 +46,7 @@ def import_class_from_path(console: Console, full_path: str) -> type[Any]:
 
     :param console: The rich console object.
     :param full_path: Fully qualified path to the class (e.g., 'mymodule.MyClass')
-    :return: The imported class/type object
+    :returns: The imported class/type object
     :raises SystemExit: If the module or class cannot be imported (exits with code 1)
 
     Example usage::
@@ -89,7 +89,7 @@ def import_module_from_file(
     :param console: The rich console object.
     :param file_path: Path to the Python file to import
     :param module_name: Name to give the imported module (default: 'temp_module')
-    :return: The imported module object
+    :returns: The imported module object
     :raises SystemExit: If the module cannot be imported (exits with code 1)
 
     .. note::
@@ -193,7 +193,7 @@ def format_line_ranges(lines: list[int]) -> list[str]:
     """Group consecutive line numbers into readable ranges.
 
     :param lines: List of line numbers
-    :return: List of formatted strings representing line ranges
+    :returns: List of formatted strings representing line ranges
 
     Example usage::
 

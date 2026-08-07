@@ -37,14 +37,14 @@ class MultiplicativeShearBiasFactory(BaseModel):
 
         :param tomographic_bin: The inferred galaxy redshift distribution for
             the created MultiplicativeShearBias object.
-        :return: The created MultiplicativeShearBias object.
+        :returns: The created MultiplicativeShearBias object.
         """
         return MultiplicativeShearBias(bin_name)
 
     def create_global(self) -> MultiplicativeShearBias:
         """Create a MultiplicativeShearBias object.
 
-        :return: The created MultiplicativeShearBias object.
+        :returns: The created MultiplicativeShearBias object.
         """
         raise ValueError("MultiplicativeShearBias cannot be global")
 
@@ -66,14 +66,14 @@ class LinearAlignmentSystematicFactory(BaseModel):
 
         :param tomographic_bin: The inferred galaxy redshift distribution for
             the created LinearAlignmentSystematic object.
-        :return: The created LinearAlignmentSystematic object.
+        :returns: The created LinearAlignmentSystematic object.
         """
         return LinearAlignmentSystematic(bin_name)
 
     def create_global(self) -> LinearAlignmentSystematic:
         """Create a LinearAlignmentSystematic object.
 
-        :return: The created LinearAlignmentSystematic object.
+        :returns: The created LinearAlignmentSystematic object.
         """
         return LinearAlignmentSystematic(sacc_tracer=None, alphag=self.alphag)
 
@@ -94,14 +94,14 @@ class TattAlignmentSystematicFactory(BaseModel):
 
         :param tomographic_bin: The inferred galaxy redshift distribution for
             the created TattAlignmentSystematic object.
-        :return: The created TattAlignmentSystematic object.
+        :returns: The created TattAlignmentSystematic object.
         """
         return TattAlignmentSystematic(bin_name, self.include_z_dependence)
 
     def create_global(self) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
 
-        :return: The created TattAlignmentSystematic object.
+        :returns: The created TattAlignmentSystematic object.
         """
         return TattAlignmentSystematic(None, self.include_z_dependence)
 

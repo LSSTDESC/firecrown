@@ -41,8 +41,7 @@ class Space(str, Enum):
 def discover_measurements_by_space() -> tuple[list[Measurement], list[Measurement]]:
     """Discover all measurements that support real/harmonic space.
 
-    Returns:
-        Tuple of (real_measurements, harmonic_measurements)
+    :returns: Tuple ``(real_measurements, harmonic_measurements)``.
     """
     all_measurements = ALL_MEASUREMENTS
 
@@ -61,12 +60,9 @@ def generate_compatible_pairs(
 ) -> list[tuple[Measurement, Measurement]]:
     """Generate all valid measurement pairs for a given compatibility function.
 
-    Args:
-        measurements: List of measurements to test combinations of
-        compatibility_func: Function to test compatibility
-
-    Returns:
-        List of valid (measurement1, measurement2) tuples
+    :param measurements: Measurements used to generate pair combinations.
+    :param compatibility_func: Function used to test pair compatibility.
+    :returns: Valid ``(measurement1, measurement2)`` tuples.
     """
     return [
         (m1, m2)
@@ -201,10 +197,11 @@ def main(
       ❌ SHEAR_T × SHEAR_T (T-mode auto-correlation not measured)
       ❌ E-mode shear in real space (harmonic-space only)
 
-    Examples:
-      python -m firecrown.fctools.measurement_compatibility --verbose
-      python -m firecrown.fctools.measurement_compatibility --space real
-      python -m firecrown.fctools.measurement_compatibility --stats-only
+        Example usage::
+
+                python -m firecrown.fctools.measurement_compatibility --verbose
+                python -m firecrown.fctools.measurement_compatibility --space real
+                python -m firecrown.fctools.measurement_compatibility --stats-only
     """
     console = Console()
     console.print("🔍 Firecrown Measurement Compatibility Analysis")
