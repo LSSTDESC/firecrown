@@ -67,7 +67,7 @@ def enforce_states(
     :param terminal: The terminal state ensured for the wrapped method. None
         indicates no state change happens.
     :param failure_message: The failure message for the AssertionError raised
-    :return: The wrapped method
+    :returns: The wrapped method
     """
     initials: list[State]
     if isinstance(initial, list):
@@ -82,7 +82,7 @@ def enforce_states(
         failure_message.
 
         :param func: The method to be wrapped
-        :return: The wrapped method
+        :returns: The wrapped method
         """
 
         @wraps(func)
@@ -181,7 +181,7 @@ class GaussFamily(Likelihood):
 
         :param statistics: A list of statistics to be include in chisquared calculations
         :param covariance: The covariance matrix of the statistics
-        :return: A ready GaussFamily object
+        :returns: A ready GaussFamily object
         """
         obj = cls(statistics)
         obj._set_covariance(covariance)
@@ -305,7 +305,7 @@ class GaussFamily(Likelihood):
         :param statistic: The statistic for which the sub-covariance matrix
             should be returned. If not specified, return the covariance of all
             statistics.
-        :return: The covariance matrix (or portion thereof)
+        :returns: The covariance matrix (or portion thereof)
         """
         assert self.cov is not None
         if statistic is None:
@@ -333,7 +333,7 @@ class GaussFamily(Likelihood):
     def get_data_vector(self) -> npt.NDArray[np.float64]:
         """Get the data vector from all statistics in the right order.
 
-        :return: The data vector
+        :returns: The data vector
         """
         assert self.data_vector is not None
         return self.data_vector.astype(np.float64)
@@ -348,7 +348,7 @@ class GaussFamily(Likelihood):
         """Computes the theory vector using the current instance of pyccl.Cosmology.
 
         :param tools: Current ModelingTools object
-        :return: The computed theory vector
+        :returns: The computed theory vector
         """
         theory_vector_list: list[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
@@ -365,7 +365,7 @@ class GaussFamily(Likelihood):
     def get_theory_vector(self) -> npt.NDArray[np.float64]:
         """Get the already-computed theory vector from all statistics.
 
-        :return: The theory vector, with all statistics in the right order
+        :returns: The theory vector, with all statistics in the right order
         """
         assert (
             self.theory_vector is not None
@@ -386,7 +386,7 @@ class GaussFamily(Likelihood):
 
         :param tools: the ModelingTools to be used in the calculation of the
             theory vector
-        :return: a tuple containing the data vector and the theory vector
+        :returns: a tuple containing the data vector and the theory vector
         """
         warnings.warn(
             "The use of the `compute` method on Statistic is deprecated."
@@ -402,7 +402,7 @@ class GaussFamily(Likelihood):
         This is the numerically stable method for chi-squared calculation.
 
         :param residuals: The residuals (data - theory)
-        :return: The chi-squared value
+        :returns: The chi-squared value
         """
         assert self.cholesky is not None
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
@@ -416,7 +416,7 @@ class GaussFamily(Likelihood):
         modifications make Cholesky decomposition incompatible.
 
         :param residuals: The residuals (data - theory)
-        :return: The chi-squared value
+        :returns: The chi-squared value
         """
         assert self.inv_cov is not None
         chisq = residuals @ self.inv_cov @ residuals
@@ -428,7 +428,7 @@ class GaussFamily(Likelihood):
         """Get theory and data vectors.
 
         :param tools: The ModelingTools to use for theory calculation
-        :return: Tuple of (theory_vector, data_vector)
+        :returns: Tuple of (theory_vector, data_vector)
         """
         theory_vector: npt.NDArray[np.float64]
         data_vector: npt.NDArray[np.float64]
@@ -450,7 +450,7 @@ class GaussFamily(Likelihood):
         multiplication, depending on the _use_cholesky_for_chisq flag.
 
         :param residuals: The residuals (data - theory)
-        :return: The chi-squared value
+        :returns: The chi-squared value
         """
         if self._use_cholesky_for_chisq:
             return self._compute_chisq_cholesky(residuals)
@@ -467,7 +467,7 @@ class GaussFamily(Likelihood):
 
         :param tools: the ModelingTools to be used in the calculation of the
             theory vector
-        :return: the chi-squared
+        :returns: the chi-squared
         """
         theory_vector, data_vector = self._get_theory_and_data(tools)
         residuals = np.array(data_vector - theory_vector, dtype=np.float64)
@@ -486,7 +486,7 @@ class GaussFamily(Likelihood):
 
         :param statistics: The statistic or list of statistics for which the
             SACC indices are desired
-        :return: The SACC indices
+        :returns: The SACC indices
         """
         if statistic is None:
             statistic = [stat.statistic for stat in self.statistics]
@@ -517,7 +517,7 @@ class GaussFamily(Likelihood):
         :param add_noise: If True, add noise to the realization.
         :param strict: If True, check that the indices of the realization cover
             all the indices of the SACC data object.
-        :return: The SACC data object containing the new realization
+        :returns: The SACC data object containing the new realization
         """
         sacc_indices = self.get_sacc_indices()
 

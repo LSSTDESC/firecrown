@@ -75,7 +75,7 @@ class ConstGaussianPM(ConstGaussian):
         correction makes the Cholesky decomposition incompatible.
 
         :param residuals: The residuals (data - theory)
-        :return: The chi-squared value
+        :returns: The chi-squared value
         """
         if self.inv_cov_correction is None:
             warnings.warn(
@@ -90,7 +90,7 @@ class ConstGaussianPM(ConstGaussian):
 
         All statistics must have TwoPoint-compatible attributes.
 
-        :return: Tuple of (data_types, lens_keys, src_keys, theta)
+        :returns: Tuple of (data_types, lens_keys, src_keys, theta)
         """
         # Validate that all statistics have the required attributes
         required_attrs = ["sacc_data_type", "source0", "source1", "thetas"]
@@ -147,7 +147,7 @@ class ConstGaussianPM(ConstGaussian):
         :param data_types: Array of data types
         :param lens_keys: Array of lens tracer keys
         :param src_keys: Array of source tracer keys
-        :return: Tuple of (xi_rows, xi_pairs)
+        :returns: Tuple of (xi_rows, xi_pairs)
         """
         assert (
             "galaxy_shearDensity_xi_t" in data_types
@@ -171,7 +171,7 @@ class ConstGaussianPM(ConstGaussian):
         :param xi_rows: Row indices for xi_t data
         :param lens_keys: Array of lens tracer keys
         :param src_keys: Array of source tracer keys
-        :return: Tuple of (lens_tracers, src_tracers, row_lens_idx, row_src_idx)
+        :returns: Tuple of (lens_tracers, src_tracers, row_lens_idx, row_src_idx)
         """
         lens_tracers = list(np.unique(xi_pairs[:, 0]))
         src_tracers = list(np.unique(xi_pairs[:, 1]))
@@ -189,7 +189,7 @@ class ConstGaussianPM(ConstGaussian):
     def _get_redshift_grids(self) -> tuple[np.ndarray, np.ndarray]:
         """Get and validate redshift grids from xi_t statistics.
 
-        :return: Tuple of (z_l, z_s) redshift arrays
+        :returns: Tuple of (z_l, z_s) redshift arrays
         """
         # Use the first xi_t statistic as the template for N(z) grid,
         # assuming all the lens/source tracers share the same N(z) sampling
@@ -223,7 +223,7 @@ class ConstGaussianPM(ConstGaussian):
         :param src_tracers: List of source tracer names
         :param z_l: Lens redshift grid
         :param z_s: Source redshift grid
-        :return: Tuple of (nzL_norm, nzS_norm) normalized dN/dz arrays
+        :returns: Tuple of (nzL_norm, nzS_norm) normalized dN/dz arrays
         """
         # Build dN/dz libraries once per unique tracer
         nzL_list = [
@@ -297,7 +297,7 @@ class ConstGaussianPM(ConstGaussian):
 
         :param tracer: The tracer name
         :param is_lens: True for lens tracer, False for source tracer
-        :return: The GuardedStatistic for this tracer
+        :returns: The GuardedStatistic for this tracer
         """
         source_attr = "source0" if is_lens else "source1"
 
@@ -320,7 +320,7 @@ class ConstGaussianPM(ConstGaussian):
         """Get a statistic for a given lens tracer.
 
         :param lens_tracer: The lens tracer name
-        :return: The GuardedStatistic for this lens tracer
+        :returns: The GuardedStatistic for this lens tracer
         """
         return self._get_statistic(lens_tracer, is_lens=True)
 
@@ -328,7 +328,7 @@ class ConstGaussianPM(ConstGaussian):
         """Get a statistic for a given source tracer.
 
         :param src_tracer: The source tracer name
-        :return: The GuardedStatistic for this source tracer
+        :returns: The GuardedStatistic for this source tracer
         """
         return self._get_statistic(src_tracer, is_lens=False)
 
@@ -430,7 +430,7 @@ class ConstGaussianPM(ConstGaussian):
         :param cosmo: A pre-initialized CCL Cosmology object to compute distances.
         :param sigma_B: The PM prior width defined in  MacCrann et al. (2019).
         :param point_mass: The fiducial value of the point mass in units of Mpc/h.
-        :return: The new inverse covariance matrix.
+        :returns: The new inverse covariance matrix.
         """
         self._generate_maps()
         self.inv_cov_correction = self._compute_correction(cosmo, sigma_B, point_mass)

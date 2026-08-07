@@ -32,7 +32,7 @@ class ParamsMap:
         If the key has not been used, add it to the set of used keys.
 
         :param key: key
-        :return: value
+        :returns: value
         """
         if key in self.params:
             self.used_keys.add(key)
@@ -50,7 +50,7 @@ class ParamsMap:
         """Return True if the key is in the map, False otherwise.
 
         :param key: key
-        :return: True if the key is in the map, False otherwise
+        :returns: True if the key is in the map, False otherwise
         """
         return key in self.params
 
@@ -65,7 +65,7 @@ class ParamsMap:
     def items(self):
         """Return an iterator over the items in the dictionary.
 
-        :return: an iterator over the items in the dictionary
+        :returns: an iterator over the items in the dictionary
         """
         return self.params.items()
 
@@ -76,7 +76,7 @@ class ParamsMap:
         both self and other must be equal.
 
         :param other: other ParamsMap
-        :return: a new ParamsMap that is the union of self and other
+        :returns: a new ParamsMap that is the union of self and other
         """
         assert isinstance(other, self.__class__)
         my_keys = set(self.params.keys())
@@ -119,7 +119,7 @@ class ParamsMap:
 
         :param key: key
         :param default: default value, used if the key is not found
-        :return: value
+        :returns: value
         """
         if key in self.params:
             self.used_keys.add(key)
@@ -163,7 +163,7 @@ class ParamsMap:
     def keys(self) -> set[str]:
         """Return the set of keys in the map.
 
-        :return: set of keys
+        :returns: set of keys
         """
         return set(self.params.keys())
 

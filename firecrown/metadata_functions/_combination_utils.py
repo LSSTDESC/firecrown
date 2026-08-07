@@ -50,7 +50,7 @@ def make_all_photoz_bin_combinations(
     :param tomographic_bins: List of tomographic redshift bins with their
         associated measurement types.
 
-    :return: List of all valid TwoPointXY combinations.
+    :returns: List of all valid TwoPointXY combinations.
 
     :raises ValueError: If duplicate bin names are found in tomographic_bins.
     """
@@ -99,7 +99,7 @@ def make_all_photoz_bin_combinations_with_cmb(
         "cmb_convergence").
     :param include_cmb_auto: Whether to include CMB auto-correlation (default: False).
 
-    :return: Combined list of galaxy-galaxy and CMB-galaxy correlation combinations.
+    :returns: Combined list of galaxy-galaxy and CMB-galaxy correlation combinations.
 
     :raises ValueError: If duplicate bin names are found in tomographic_bins.
     """
@@ -130,7 +130,7 @@ def make_cmb_galaxy_combinations_only(
         "cmb_convergence").
     :param include_cmb_auto: Whether to include CMB auto-correlation (default: False).
 
-    :return: List of CMB-galaxy cross-correlation combinations (and optionally CMB
+    :returns: List of CMB-galaxy cross-correlation combinations (and optionally CMB
         auto).
 
     :raises ValueError: If duplicate bin names are found in tomographic_bins.
@@ -193,7 +193,7 @@ def make_binned_two_point_filtered(
         associated measurement types.
     :param bin_pair_selector: Selector defining which bin pairs to include.
 
-    :return: List of TwoPointXY combinations that pass the selector's criteria.
+    :returns: List of TwoPointXY combinations that pass the selector's criteria.
 
     :raises ValueError: If duplicate bin names are found in tomographic_bins.
 
@@ -220,7 +220,7 @@ def filter_two_point_combinations(
     :param combinations: List of TwoPointXY combinations to filter.
     :param bin_pair_selector: Selector defining which bin pairs to include.
 
-    :return: List of TwoPointXY combinations that pass the selector's criteria.
+    :returns: List of TwoPointXY combinations that pass the selector's criteria.
 
     Example:
         # Filter existing combinations to get only auto-correlations of source

@@ -31,7 +31,7 @@ class BinnedClusterNumberCounts(BinnedCluster):
         """Compute a statistic from sources, concrete implementation.
 
         :param tools: The modeling tools used to compute the statistic.
-        :return: The computed statistic.
+        :returns: The computed statistic.
         """
         self.updatable_parameters.export_all_parameters(
             self.cluster_recipe, tools.get_ccl_cosmology()
@@ -94,7 +94,7 @@ class BinnedClusterNumberCounts(BinnedCluster):
         clusters in each bin.
 
         :param tools: The modeling tools used to compute the statistic.
-        :return: The number of clusters in each bin.
+        :returns: The number of clusters in each bin.
         """
         cluster_counts = []
         for this_bin in self.bins:

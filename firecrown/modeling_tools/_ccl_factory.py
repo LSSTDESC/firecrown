@@ -180,7 +180,7 @@ class CCLFactory(Updatable, BaseModel):
         """Update the CAMB parameters in this CCLFactory object.
 
         :param params: The parameters to update.
-        :return: None
+        :returns: None
         """
         if self.camb_extra_params is not None:
             self.camb_extra_params.update(params)
@@ -188,7 +188,7 @@ class CCLFactory(Updatable, BaseModel):
     def using_camb(self) -> bool:
         """Return True if the CCLFactory is using CAMB for the matter power spectrum.
 
-        :return: True if the CCLFactory is using CAMB for the matter power spectrum.
+        :returns: True if the CCLFactory is using CAMB for the matter power spectrum.
         """
         if self.creation_mode == CCLCreationMode.PURE_CCL_MODE:
             return (

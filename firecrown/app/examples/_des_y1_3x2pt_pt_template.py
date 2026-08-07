@@ -26,7 +26,7 @@ from firecrown.modeling_tools import CCLFactory, ModelingTools
 def _build_sources() -> tuple[wl.WeakLensing, nc.NumberCounts]:
     """Create weak lensing and number counts sources with systematics.
 
-    :return: Tuple of (weak lensing source, number counts source)
+    :returns: Tuple of (weak lensing source, number counts source)
     """
     ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     src_pzshift = wl.PhotoZShift(sacc_tracer="src0")
@@ -51,7 +51,7 @@ def _build_two_point_statistics(
 
     :param src0: Weak lensing source
     :param lens0: Number counts source
-    :return: List of two-point statistics
+    :returns: List of two-point statistics
     """
     return [
         TwoPoint(source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_plus"),
@@ -75,7 +75,7 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
     - sacc_file: Path to SACC data file
 
     :param params: Named parameters containing configuration
-    :return: Configured ConstGaussian likelihood and ModelingTools with PT
+    :returns: Configured ConstGaussian likelihood and ModelingTools with PT
     :raises ValueError: If required parameters are missing
     :raises FileNotFoundError: If SACC file does not exist
     """

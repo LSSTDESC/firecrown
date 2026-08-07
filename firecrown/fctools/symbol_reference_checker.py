@@ -28,7 +28,7 @@ def extract_code_spans(content: str) -> list[tuple[int, str]]:
     """Extract all inline code spans from markdown content.
 
     :param content: The markdown content to parse
-    :return: List of (line_number, code_text) tuples
+    :returns: List of (line_number, code_text) tuples
     """
     results: list[tuple[int, str]] = []
     lines = content.splitlines()
@@ -51,7 +51,7 @@ def _load_external_symbols(external_symbols_file: Path | None) -> set[str]:
     """Load external symbols from a text file.
 
     :param external_symbols_file: Path to file with external symbols (one per line)
-    :return: Set of external symbol names
+    :returns: Set of external symbol names
     """
     if not external_symbols_file or not external_symbols_file.is_file():
         return set()
@@ -81,7 +81,7 @@ def _build_symbol_sets(
 
     :param symbol_map: Dictionary mapping valid symbols to their URLs
     :param external_symbols: Set of allowed external symbols
-    :return: Tuple of (fully_qualified_symbols, unqualified_symbols)
+    :returns: Tuple of (fully_qualified_symbols, unqualified_symbols)
     """
     fully_qualified_symbols = set(symbol_map.keys())
     unqualified_symbols = set()
@@ -101,7 +101,7 @@ def _compile_exclude_pattern(exclude_pattern: str | None) -> re.Pattern | None:
     """Compile the exclude pattern regex if provided.
 
     :param exclude_pattern: Optional regex pattern string
-    :return: Compiled regex pattern or None
+    :returns: Compiled regex pattern or None
     """
     if not exclude_pattern:
         return None
@@ -128,7 +128,7 @@ def _check_symbol(
     :param fully_qualified_symbols: Set of valid fully-qualified symbols
     :param unqualified_symbols: Set of valid unqualified symbols
     :param line_num: Line number where the code span appears
-    :return: Error message if invalid, None if valid
+    :returns: Error message if invalid, None if valid
     """
     if code_text.startswith("firecrown."):
         if code_text not in fully_qualified_symbols:
@@ -158,7 +158,7 @@ def check_qmd_file(
     :param symbol_map: Dictionary mapping valid symbols to their URLs
     :param external_symbols: Set of allowed external symbols
     :param exclude_pattern: Optional regex pattern for symbols to exclude from checking
-    :return: List of error messages for invalid symbol references
+    :returns: List of error messages for invalid symbol references
     """
     content: str = file_path.read_text(encoding="utf-8")
     code_spans: list[tuple[int, str]] = extract_code_spans(content)

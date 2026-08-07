@@ -28,7 +28,7 @@ def _is_private_name(name: str) -> bool:
     """Check if a name is private (starts with underscore).
 
     :param name: The name to check
-    :return: True if name starts with underscore
+    :returns: True if name starts with underscore
     """
     return name.startswith("_")
 
@@ -37,7 +37,7 @@ def _is_excluded_type(obj: object) -> bool:
     """Check if an object is a type that should be handled separately.
 
     :param obj: The object to check
-    :return: True if object is a class, function, or module
+    :returns: True if object is a class, function, or module
     """
     return inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismodule(obj)
 
@@ -46,7 +46,7 @@ def _has_constant_name(name: str) -> bool:
     """Check if a name follows constant naming conventions.
 
     :param name: The name to check
-    :return: True if name matches UPPER_CASE pattern
+    :returns: True if name matches UPPER_CASE pattern
     """
     return _CONSTANT_NAME_PATTERN.match(name) is not None
 
@@ -55,7 +55,7 @@ def _is_firecrown_instance(obj: object) -> bool:
     """Check if an object is an instance of a Firecrown class.
 
     :param obj: The object to check
-    :return: True if object's class module starts with 'firecrown'
+    :returns: True if object's class module starts with 'firecrown'
     """
     class_module = obj.__class__.__module__
     return class_module is not None and class_module.startswith("firecrown")
@@ -66,7 +66,7 @@ def _is_api_constant(name: str, obj: object) -> bool:
 
     :param name: The name of the object
     :param obj: The object to check
-    :return: True if this is a documentable constant
+    :returns: True if this is a documentable constant
     """
     return (
         not _is_private_name(name)
@@ -129,7 +129,7 @@ def get_all_symbols(package: ModuleType) -> dict[str, str]:
     paths rather than needing to know about private implementation modules.
 
     :param package: The Python package to inspect
-    :return: Dictionary mapping symbol names to their documentation URLs
+    :returns: Dictionary mapping symbol names to their documentation URLs
     """
     prefix: str = package.__name__ + "."
     symbols: dict[str, str] = {}

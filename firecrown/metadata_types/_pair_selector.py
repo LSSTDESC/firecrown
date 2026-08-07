@@ -49,7 +49,7 @@ def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSel
 
     :param cls: The BinPairSelector class to register.
 
-    :return: The registered BinPairSelector class (for use as a decorator).
+    :returns: The registered BinPairSelector class (for use as a decorator).
 
     :raises ValueError: If the class has no default for 'kind' or if the kind is
         already registered.
@@ -97,7 +97,7 @@ class BinPairSelector(BaseModel):
         :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
-        :return: True if the pair should be kept, False otherwise.
+        :returns: True if the pair should be kept, False otherwise.
         """
 
     def __and__(self, other: "BinPairSelector") -> "BinPairSelector":
@@ -109,7 +109,7 @@ class BinPairSelector(BaseModel):
 
         :param other: Another BinPairSelector to combine with.
 
-        :return: An AndBinPairSelector combining both pair selectors.
+        :returns: An AndBinPairSelector combining both pair selectors.
         """
         return AndBinPairSelector(pair_selectors=[self, other])
 
@@ -122,7 +122,7 @@ class BinPairSelector(BaseModel):
 
         :param other: Another BinPairSelector to combine with.
 
-        :return: An OrBinPairSelector combining both pair selectors.
+        :returns: An OrBinPairSelector combining both pair selectors.
         """
         return OrBinPairSelector(pair_selectors=[self, other])
 
@@ -133,7 +133,7 @@ class BinPairSelector(BaseModel):
             # Select everything except auto-correlations
             selector = ~AutoNameBinPairSelector()
 
-        :return: A NotBinPairSelector inverting this pair selector.
+        :returns: A NotBinPairSelector inverting this pair selector.
         """
         return NotBinPairSelector(pair_selector=self)
 
@@ -183,7 +183,7 @@ class AndBinPairSelector(BinPairSelector):
         :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
-        :return: True if all bin pair selectors pass, False otherwise.
+        :returns: True if all bin pair selectors pass, False otherwise.
         """
         return all(
             pair_selector.keep(field_pair, m) for pair_selector in self.pair_selectors
@@ -221,7 +221,7 @@ class OrBinPairSelector(BinPairSelector):
         :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
-        :return: True if any bin pair selector passes, False otherwise.
+        :returns: True if any bin pair selector passes, False otherwise.
         """
         return any(
             pair_selector.keep(field_pair, m) for pair_selector in self.pair_selectors
@@ -259,7 +259,7 @@ class NotBinPairSelector(BinPairSelector):
         :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects.
 
-        :return: True if the contained pair selector returns False, False otherwise.
+        :returns: True if the contained pair selector returns False, False otherwise.
         """
         return not self.pair_selector.keep(field_pair, m)
 
@@ -310,7 +310,7 @@ class NamedBinPairSelector(BinPairSelector):
         """Serialize name tuples to lists for JSON/YAML compatibility.
 
         :param value: List of name tuples.
-        :return: List of name lists (tuples converted to lists).
+        :returns: List of name lists (tuples converted to lists).
         """
         return [list(name) for name in value]
 
@@ -320,7 +320,7 @@ class NamedBinPairSelector(BinPairSelector):
         """Validate and convert name lists to tuples.
 
         :param value: List of name lists (from deserialization).
-        :return: List of name tuples.
+        :returns: List of name tuples.
         :raises AssertionError: If any name list doesn't have exactly 2 elements.
         """
         for names in value:
@@ -336,7 +336,7 @@ class NamedBinPairSelector(BinPairSelector):
         :param field_pair: Pair of TomographicBin objects.
         :param m: Pair of Measurement objects (unused).
 
-        :return: True if the bin name pair matches any configured name pair.
+        :returns: True if the bin name pair matches any configured name pair.
         """
         return (field_pair[0].bin_name, field_pair[1].bin_name) in self.names
 
@@ -357,7 +357,7 @@ class AutoNameBinPairSelector(BinPairSelector):
         :param field_pair: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
-        :return: True if both bins have the same name, False otherwise.
+        :returns: True if both bins have the same name, False otherwise.
         """
         return field_pair[0].bin_name == field_pair[1].bin_name
 
@@ -392,7 +392,7 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
         :param _field_pair: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
-        :return: True if both measurements are identical, False otherwise.
+        :returns: True if both measurements are identical, False otherwise.
         """
         return m[0] == m[1]
 
@@ -463,7 +463,7 @@ class LeftMeasurementBinPairSelector(BinPairSelector):
         :param _field_pair: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
-        :return: True if the left measurement is in the set, False otherwise.
+        :returns: True if the left measurement is in the set, False otherwise.
         """
         return m[0] in self.measurement_set
 
@@ -489,7 +489,7 @@ class RightMeasurementBinPairSelector(BinPairSelector):
         :param _field_pair: Pair of TomographicBin objects (unused).
         :param m: Pair of Measurement objects.
 
-        :return: True if the right measurement is in the set, False otherwise.
+        :returns: True if the right measurement is in the set, False otherwise.
         """
         return m[1] in self.measurement_set
 
@@ -607,7 +607,7 @@ class NameDiffBinPairSelector(BinPairSelector):
         :param field_pair: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
-        :return: True if bins are neighbors, False otherwise.
+        :returns: True if bins are neighbors, False otherwise.
         """
         pattern = re.compile(r"^(?P<text>.*?)(?P<number>\d+)$")
         allowed_neighbors = (
@@ -774,7 +774,7 @@ class TypeSourceBinPairSelector(BinPairSelector):
         :param field_pair: Pair of TomographicBin objects.
         :param _m: Pair of Measurement objects (unused).
 
-        :return: True if both bins have matching type-sources, False otherwise.
+        :returns: True if both bins have matching type-sources, False otherwise.
         """
         return (field_pair[0].type_source == field_pair[1].type_source) and (
             self.type_source == field_pair[0].type_source

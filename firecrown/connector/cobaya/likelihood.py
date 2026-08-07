@@ -214,7 +214,7 @@ class LikelihoodConnector(Likelihood):
         """Return a list containing the names of the mapping's parameter names.
 
         Required by Cobaya.
-        :return: The list of parameter names.
+        :returns: The list of parameter names.
         """
         if self.map is None:
             return []
@@ -238,7 +238,7 @@ class LikelihoodConnector(Likelihood):
         required parameter the values give the required options.
 
         Required by Cobaya.
-        :return: a dictionary
+        :returns: a dictionary
         """
         required_params = (
             self.likelihood.required_parameters() + self.tools.required_parameters()

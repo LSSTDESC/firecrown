@@ -110,7 +110,7 @@ class ZDistLSSTSRD:
         :param alpha: The alpha parameter of the distribution
         :param beta: The beta parameter of the distribution
         :param z0: The z0 parameter of the distribution
-        :return: A ZDistLSSTSRD object.
+        :returns: A ZDistLSSTSRD object.
         """
         return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
@@ -130,7 +130,7 @@ class ZDistLSSTSRD:
         :param alpha: The alpha parameter of the distribution
         :param beta: The beta parameter of the distribution
         :param z0: The z0 parameter of the distribution
-        :return: A ZDistLSSTSRD object.
+        :returns: A ZDistLSSTSRD object.
         """
         return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
@@ -150,7 +150,7 @@ class ZDistLSSTSRD:
         :param alpha: The alpha parameter of the distribution
         :param beta: The beta parameter of the distribution
         :param z0: The z0 parameter of the distribution
-        :return: A ZDistLSSTSRD object.
+        :returns: A ZDistLSSTSRD object.
         """
         return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
@@ -170,7 +170,7 @@ class ZDistLSSTSRD:
         :param alpha: The alpha parameter of the distribution
         :param beta: The beta parameter of the distribution
         :param z0: The z0 parameter of the distribution
-        :return: A ZDistLSSTSRD object.
+        :returns: A ZDistLSSTSRD object.
         """
         return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
@@ -178,7 +178,7 @@ class ZDistLSSTSRD:
         """Generate the inferred galaxy redshift distribution.
 
         :param z: The redshifts at which to evaluate the distribution
-        :return: The inferred galaxy redshift distribution
+        :returns: The inferred galaxy redshift distribution
         """
         norma = self.alpha / (self.z0 * gamma((1.0 + self.beta) / self.alpha))
 
@@ -191,7 +191,7 @@ class ZDistLSSTSRD:
 
         :param sigma_z: The resolution parameter
         :param zp: The photometric redshift
-        :return: The Gaussian distribution
+        :returns: The Gaussian distribution
         """
         sqrt_2 = np.sqrt(2.0)
         sqrt_2pi = np.sqrt(2.0 * np.pi)
@@ -215,7 +215,7 @@ class ZDistLSSTSRD:
         :param zpu: The upper bound of the integration
         :param sigma_z: The resolution parameter
         :param z: The redshifts at which to evaluate the distribution
-        :return: The integrated distribution
+        :returns: The integrated distribution
         """
         denom = np.sqrt(2.0) * sigma_z * (1.0 + z)
         if (z - zpu) > 0.0:
@@ -261,7 +261,7 @@ class ZDistLSSTSRD:
         NumCosmo.
 
         :param sigma_z: The resolution parameter
-        :return: The inferred galaxy redshift distribution
+        :returns: The inferred galaxy redshift distribution
         """
 
         def m2lndist(z, _):
@@ -293,7 +293,7 @@ class ZDistLSSTSRD:
         Computes the distribution without the convolution with the Gaussian.
         That is, the true redshift distribution.
 
-        :return: The inferred galaxy redshift distribution
+        :returns: The inferred galaxy redshift distribution
         """
 
         def m2lndist(z, _):
@@ -338,7 +338,7 @@ class ZDistLSSTSRD:
         :param last_z: The last redshift to consider
         :param use_true_distribution: Whether to use the true distribution
 
-        :return: The bin edges
+        :returns: The bin edges
         """
         if use_true_distribution:
             stats = self.compute_true_distribution()
@@ -370,7 +370,7 @@ class ZDistLSSTSRD:
         :param name: The name of the distribution
         :param measurements: The set of measurements of the distribution
 
-        :return: The inferred galaxy redshift distribution
+        :returns: The inferred galaxy redshift distribution
         """
 
         def _P(z, _):

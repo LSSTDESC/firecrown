@@ -60,8 +60,7 @@ def display_class_attributes(cls: type[Any]) -> None:
 
     Formatted for syntax highlighting in Quarto/Jupyter.
 
-    Args:
-        cls: The class to display
+    :param cls: The class to display.
     """
     try:
         code_str = _build_class_code(cls)
@@ -85,8 +84,7 @@ def display_class_without_markdown(cls: type[Any]) -> None:
     Same as display_class_attributes but outputs plain code without
     markdown wrapper for syntax highlighting.
 
-    Args:
-        cls: The class to display
+    :param cls: The class to display.
     """
     try:
         code_str = _build_class_code(cls)

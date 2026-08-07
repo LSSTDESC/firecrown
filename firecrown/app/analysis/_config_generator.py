@@ -40,7 +40,7 @@ def get_generator(
     :param required_cosmology: Level of cosmology computation
         (none/background/linear/nonlinear)
     :param distance_max_z: Maximum redshift for background/distance splines
-    :return: Initialized configuration generator ready for component addition
+    :returns: Initialized configuration generator ready for component addition
     :raises ValueError: If framework is not supported
     """
     match framework:

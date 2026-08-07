@@ -43,7 +43,7 @@ def _build_two_point_likelihood_harmonic(
     :param filters: Optional filters to apply to the two-point measurements.
     :param normalize: If True, normalize the window function weights to sum to 1.
 
-    :return: A likelihood object for two-point statistics in harmonic space.
+    :returns: A likelihood object for two-point statistics in harmonic space.
     """
     tpms = extract_all_harmonic_data(sacc_data, normalize=normalize)
     if len(tpms) == 0:
@@ -77,7 +77,7 @@ def _build_two_point_likelihood_real(
     :param wl_factory: The weak lensing statistic factory.
     :param nc_factory: The number counts statistic factory.
 
-    :return: A likelihood object for two-point statistics in real space.
+    :returns: A likelihood object for two-point statistics in real space.
     """
     tpms = extract_all_real_data(sacc_data)
     if len(tpms) == 0:
@@ -111,7 +111,7 @@ class DataSourceSacc(BaseModel):
         """Return the filename of the data source.
 
         Raises a FileNotFoundError if the file does not exist.
-        :return: The filename
+        :returns: The filename
         """
         sacc_data_path = Path(self.sacc_data_file)
         # If sacc_data_file is absolute, use it directly

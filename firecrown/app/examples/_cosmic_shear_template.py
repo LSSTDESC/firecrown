@@ -33,7 +33,7 @@ def build_likelihood(params: NamedParameters):
     - n_bins: Number of tomographic redshift bins
 
     :param params: Named parameters containing configuration
-    :return: Configured ConstGaussian likelihood object
+    :returns: Configured ConstGaussian likelihood object
     :raises ValueError: If required parameters are missing
     :raises FileNotFoundError: If SACC file does not exist
     """

@@ -104,7 +104,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         """Download DES Y1 3x2pt data from LSST DESC repository.
 
         :param output_path: Output directory
-        :return: Path to downloaded SACC file
+        :returns: Path to downloaded SACC file
         """
         sacc_full_file = output_path / f"{self.prefix}.sacc"
         download_from_url(
@@ -120,7 +120,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
 
         :param output_path: Output directory
         :param sacc: SACC file path (unused)
-        :return: Path to factory file or YAML config
+        :returns: Path to factory file or YAML config
         """
         template_map: dict[DESY1FactoryType, ModuleType] = {
             DESY1FactoryType.PT: _des_y1_3x2pt_pt_template,
@@ -156,7 +156,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
     def _get_yaml_config(self, sacc: Path) -> str:
         """Generate YAML configuration content based on factory type.
 
-        :return: YAML configuration as string
+        :returns: YAML configuration as string
         """
         sacc_path_str = (
             sacc.absolute().as_posix() if self.use_absolute_path else sacc.name
@@ -205,7 +205,7 @@ ccl_factory:
         """Return build parameters for likelihood construction.
 
         :param sacc_path: Path to the SACC data file
-        :return: Named parameters with sacc_file and optional config path
+        :returns: Named parameters with sacc_file and optional config path
         """
         params = {"sacc_file": self.get_sacc_file(sacc_path)}
 
@@ -246,7 +246,7 @@ ccl_factory:
     def get_models(self) -> list[Model]:
         """Define DES Y1 systematic and bias parameters.
 
-        :return: Model with IA, photo-z, bias, and multiplicative bias parameters
+        :returns: Model with IA, photo-z, bias, and multiplicative bias parameters
         """
         params_tatt: list[tuple[str, str, float, float, float, bool]] = [
             ("ia_a_1", r"A_{\mathrm{IA},1}", 0.9, 1.2, 1.0, True),

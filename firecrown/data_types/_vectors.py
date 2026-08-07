@@ -18,7 +18,7 @@ class DataVector(np.ndarray):
         """Create a DataVector that wraps a copy of the given array vals.
 
         :param vals: the array to be copied and wrapped
-        :return: a new DataVector
+        :returns: a new DataVector
         """
         return vals.view(cls)
 
@@ -27,7 +27,7 @@ class DataVector(np.ndarray):
         """Create a DataVector from the given list of floats.
 
         :param vals: the list of floats
-        :return: a new DataVector
+        :returns: a new DataVector
         """
         array = np.array(vals)
         return cls.create(array)
@@ -41,7 +41,7 @@ class TheoryVector(np.ndarray):
         """Create a TheoryVector that wraps a copy of the given array vals.
 
         :param vals: the array to be copied and wrapped
-        :return: a new TheoryVector
+        :returns: a new TheoryVector
         """
         return vals.view(cls)
 
@@ -50,7 +50,7 @@ class TheoryVector(np.ndarray):
         """Create a TheoryVector from the given list of floats.
 
         :param vals: the list of floats
-        :return: a new TheoryVector
+        :returns: a new TheoryVector
         """
         array = np.array(vals)
         return cls.create(array)

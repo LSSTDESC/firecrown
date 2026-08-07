@@ -16,7 +16,7 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
 
     :param prefix: optional prefix
     :param param: name
-    :return: full name
+    :returns: full name
     :raises ValueError: if the parameter name is empty
     """
     if len(param) == 0:

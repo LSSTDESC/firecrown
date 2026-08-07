@@ -41,7 +41,7 @@ def get_cache_dir() -> Path:
 
     Creates $HOME/.firecrown/sacc_files if it doesn't exist.
 
-    :return: Path to the cache directory
+    :returns: Path to the cache directory
     """
     cache_dir = Path.home() / ".firecrown" / "sacc_files"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -56,7 +56,7 @@ def get_cached_filename(url: str) -> str:
     endpoint.
 
     :param url: URL to generate filename from (e.g., 'https://example.com/data.fits')
-    :return: Cache filename
+    :returns: Cache filename
     :raises AssertionError: If URL does not contain a valid filename
     """
     filename = url.rstrip("/").split("/")[-1]
