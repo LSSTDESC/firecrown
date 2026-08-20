@@ -159,21 +159,24 @@ def test_transform_k_h_to_k():
     fc_map = Mapping()
 
     with pytest.deprecated_call():
-        fc_map.transform_k_h_to_k([])
+        with pytest.raises(NotImplementedError):
+            fc_map.transform_k_h_to_k(np.array([], dtype=np.float64))
 
 
 def test_transform_p_k_h3_to_p_k():
     fc_map = Mapping()
 
     with pytest.deprecated_call():
-        fc_map.transform_p_k_h3_to_p_k([])
+        with pytest.raises(NotImplementedError):
+            fc_map.transform_p_k_h3_to_p_k(np.array([], dtype=np.float64))
 
 
 def test_transform_h_to_h_over_h0():
     fc_map = Mapping()
 
     with pytest.deprecated_call():
-        fc_map.transform_h_to_h_over_h0([])
+        with pytest.raises(NotImplementedError):
+            fc_map.transform_h_to_h_over_h0(np.array([], dtype=np.float64))
 
 
 def test_sigma8_and_A_s():

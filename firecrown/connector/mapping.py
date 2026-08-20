@@ -91,7 +91,9 @@ class Mapping:
         )
         return []
 
-    def transform_k_h_to_k(self, k_h):
+    def transform_k_h_to_k(
+        self, k_h: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         """Transform the given k_h (k over h) to k.
 
         :param k_h: the array of wavenumber/h to be transformed
@@ -104,8 +106,13 @@ class Mapping:
             "be removed in the next major release.",
             category=DeprecationWarning,
         )
+        # We raise the error so that we do not mistakenly return None
+        # rather than a valid numpy array.
+        raise NotImplementedError
 
-    def transform_p_k_h3_to_p_k(self, p_k_h3):
+    def transform_p_k_h3_to_p_k(
+        self, p_k_h3: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         r"""Transform the given :math:`p_k h^3 \to p_k`.
 
         :param p_k_h3: the array of :math:`p_k h^3` to be transformed
@@ -117,8 +124,13 @@ class Mapping:
             "is going to be removed in the next major release.",
             category=DeprecationWarning,
         )
+        # We raise the error so that we do not mistakenly return None
+        # rather than a valid numpy array.
+        raise NotImplementedError
 
-    def transform_h_to_h_over_h0(self, h):
+    def transform_h_to_h_over_h0(
+        self, h: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         """Transform distances h to :math:`h/h_0`.
 
         :param h: the array of distances to be transformed
@@ -131,6 +143,9 @@ class Mapping:
             "is going to be removed in the next major release.",
             category=DeprecationWarning,
         )
+        # We raise the error so that we do not mistakenly return None
+        # rather than a valid numpy array.
+        raise NotImplementedError
 
     @final
     def set_params(
@@ -148,7 +163,7 @@ class Mapping:
         w0: float,
         wa: float,
         T_CMB: float,
-    ):
+    ) -> None:
         """Sets the cosmological constants suitable a pyccl.core.CosmologyCalculator.
 
         See the documentation of that class for an explanation of the choices and
@@ -551,7 +566,7 @@ mapping_classes: typing.Mapping[str, type[Mapping]] = {
 }
 
 
-def mapping_builder(*, input_style: str, **kwargs) -> Mapping:
+def mapping_builder(*, input_style: str) -> Mapping:
     """Return the Mapping class for the given input_style.
 
     If input_style is not recognized raise an exception.
@@ -563,4 +578,4 @@ def mapping_builder(*, input_style: str, **kwargs) -> Mapping:
     if input_style not in mapping_classes:
         raise ValueError(f"input_style must be {*mapping_classes, }, not {input_style}")
 
-    return mapping_classes[input_style](**kwargs)
+    return mapping_classes[input_style]()
