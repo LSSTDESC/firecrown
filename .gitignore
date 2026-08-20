@@ -173,3 +173,6 @@ plans/*.md
 AGENTS.md
 .github/copilot-instructions.md
 .github/instructions
+.kilocode/
+covdata/
+openspec/
