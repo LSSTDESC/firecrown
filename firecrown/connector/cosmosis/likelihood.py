@@ -377,7 +377,7 @@ def execute(sample: cosmosis.datablock, instance: FirecrownLikelihood) -> int:
     return instance.execute(sample)
 
 
-def cleanup(_) -> int:
+def cleanup(instance: FirecrownLikelihood) -> int:
     """Cleanup hook for a CosmoSIS module. This one has nothing to do.
 
     :returns: 0
