@@ -57,7 +57,11 @@ def get_amplitude_parameters(
 class PowerSpec:
     """Represents a power spectrum with linear and optional nonlinear components."""
 
-    def __init__(self, linear=Nc.PowspecML, nonlinear=None | Nc.PowspecMNL) -> None:
+    def __init__(
+        self,
+        linear: Nc.PowspecML,
+        nonlinear: None | Nc.PowspecMNL = None,
+    ) -> None:
         """Initialize the PowerSpec object.
 
         Note that linear can not be None: all PowerSpec objects have at least the linear
@@ -66,7 +70,7 @@ class PowerSpec:
         self.linear = linear
         self.nonlinear = nonlinear
 
-    def prepare_if_needed(self, hi_cosmo: Nc.HICosmo):
+    def prepare_if_needed(self, hi_cosmo: Nc.HICosmo) -> None:
         """Prepare the power spectrum objects if needed.
 
         :param hi_cosmo: the NumCosmo HICosmo object
