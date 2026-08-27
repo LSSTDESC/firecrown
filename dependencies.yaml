@@ -40,6 +40,11 @@ python: ">=3.12"
 # Required for `import firecrown` and for the `firecrown` command line tools.
 # Generates: firecrown-deps run requirements, pyproject [project.dependencies].
 runtime:
+  - name: astropy
+    note: examples/cluster_number_counts
+  - name: camb
+    version: "<2.0"
+  - name: compilers
   - name: cobaya
     conda: false
     note: cobaya connector; not packaged on conda-forge
@@ -48,6 +53,8 @@ runtime:
   - name: cosmosis-build-standard-library
     pip: false
     import: false
+  - name: isitgr
+    conda: false
   - name: lsstdesc-crow
     import: crow
   - name: matplotlib-base
@@ -60,6 +67,9 @@ runtime:
     import: numcosmo_py
   - name: numpy
     version: ">=2.0,<2.4"
+  - name: pip
+    version: ">=20.1"
+    note: make install; also required by conda for the pip section
   - name: pyccl
     version: ">=2.8.0"
   - name: pydantic
@@ -79,8 +89,6 @@ runtime:
 # Generates: firecrown-devenv run requirements, environment.yml.
 devenv:
   - name: alabaster
-  - name: astropy
-    note: examples/cluster_number_counts
   - name: babel
   - name: beautifulsoup4
     import: bs4
@@ -88,9 +96,6 @@ devenv:
   - name: black
   - name: build
     conda: false
-  - name: camb
-    version: "<2.0"
-  - name: compilers
   - name: coverage
   - name: deno
     note: quarto rendering
@@ -99,16 +104,11 @@ devenv:
   - name: glib
   - name: graphviz
   - name: hypothesis
-  - name: isitgr
-    conda: false
   - name: jupyter
   - name: linkchecker
   - name: mypy
   - name: pandas
     note: tutorials
-  - name: pip
-    version: ">=20.1"
-    note: make install; also required by conda for the pip section
   - name: plotnine
   - name: pylint
   - name: pytest

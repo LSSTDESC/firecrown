@@ -4,8 +4,11 @@
 # conda constraints.  These become the run_constrained section of the
 # firecrown-deps-validated metapackage.
 constraints:
+  astropy: ">=8.0.1,<8.1"
+  camb: ">=1.6.5,<1.7"
   charset-normalizer: ">=3.5.1,<3.6"
   clmm: ">=1.16.10,<1.17"
+  compilers: ">=1.11.0,<1.12"
   cosmosis: ">=3.25.2,<3.26"
   cosmosis-build-standard-library: ">=1.3,<1.4"
   cython: ">=3.3.0,<3.4"
@@ -19,6 +22,7 @@ constraints:
   more-itertools: ">=11.1.0,<11.2"
   numcosmo: ">=0.27.0,<0.28"
   numpy: ">=2.3.5,<2.4"
+  pip: ">=26.2.1,<26.3"
   portalocker: ">=3.2.0,<3.3"
   pybobyqa: ">=1.5.0,<1.6"
   pyccl: ">=3.3.6,<3.4"

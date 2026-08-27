@@ -2996,7 +2996,7 @@ package:
   category: main
   optional: false
 - name: dask-core
-  version: 2026.7.1
+  version: 2026.8.0
   manager: conda
   platform: linux-64
   dependencies:
@@ -3009,14 +3009,14 @@ package:
     python: '>=3.10'
     pyyaml: '>=5.4.1'
     toolz: '>=0.12.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.7.1-pyhc364b38_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.8.0-pyhc364b38_0.conda
   hash:
-    md5: 7e9fcc61c119f585f2b7b491147df821
-    sha256: feef96841d636fc35c3fef7c7276fa9c175baf4444896073bee65f08abe6ac91
+    md5: 2ccdf45d2372e15c7edcb7a72d573e76
+    sha256: 1126e38c6763e5c9ab3885f859c0111bd5e7abcf346a9037655177ef7ae06909
   category: main
   optional: false
 - name: dask-core
-  version: 2026.7.1
+  version: 2026.8.0
   manager: conda
   platform: osx-arm64
   dependencies:
@@ -3029,10 +3029,10 @@ package:
     python: '>=3.10'
     pyyaml: '>=5.4.1'
     toolz: '>=0.12.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.7.1-pyhc364b38_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/dask-core-2026.8.0-pyhc364b38_0.conda
   hash:
-    md5: 7e9fcc61c119f585f2b7b491147df821
-    sha256: feef96841d636fc35c3fef7c7276fa9c175baf4444896073bee65f08abe6ac91
+    md5: 2ccdf45d2372e15c7edcb7a72d573e76
+    sha256: 1126e38c6763e5c9ab3885f859c0111bd5e7abcf346a9037655177ef7ae06909
   category: main
   optional: false
 - name: dbus
@@ -3871,6 +3871,44 @@ package:
   hash:
     md5: 0509ee74d95e5b98eb6fe2a47760e399
     sha256: c9752235f1ff7061d834e5e4a3d0adf71ebeeff2b3fad82dab607edce7f70c91
+  category: main
+  optional: false
+- name: formulaic
+  version: 1.2.2
+  manager: conda
+  platform: linux-64
+  dependencies:
+    interface_meta: '>=1.2'
+    narwhals: '>=1.17'
+    numpy: '>=1.20'
+    pandas: '>=1.3'
+    python: '>=3.10'
+    scipy: '>=1.6'
+    typing-extensions: '>=4.2'
+    wrapt: '>=1.17'
+  url: https://conda.anaconda.org/conda-forge/noarch/formulaic-1.2.2-pyhd8ed1ab_0.conda
+  hash:
+    md5: f18f43fb3e20ab309d46faebfb3348b0
+    sha256: a6e065128ef1f2b6b2636268409155c1013460babb619e6e8415686305e776ea
+  category: main
+  optional: false
+- name: formulaic
+  version: 1.2.2
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    interface_meta: '>=1.2'
+    narwhals: '>=1.17'
+    numpy: '>=1.20'
+    pandas: '>=1.3'
+    python: '>=3.10'
+    scipy: '>=1.6'
+    typing-extensions: '>=4.2'
+    wrapt: '>=1.17'
+  url: https://conda.anaconda.org/conda-forge/noarch/formulaic-1.2.2-pyhd8ed1ab_0.conda
+  hash:
+    md5: f18f43fb3e20ab309d46faebfb3348b0
+    sha256: a6e065128ef1f2b6b2636268409155c1013460babb619e6e8415686305e776ea
   category: main
   optional: false
 - name: fortran-compiler
@@ -5469,6 +5507,30 @@ package:
   hash:
     md5: 9614359868482abba1bd15ce465e3c42
     sha256: e1a9e3b1c8fe62dc3932a616c284b5d8cbe3124bbfbedcf4ce5c828cb166ee19
+  category: main
+  optional: false
+- name: interface_meta
+  version: 1.3.0
+  manager: conda
+  platform: linux-64
+  dependencies:
+    python: '>=3.9'
+  url: https://conda.anaconda.org/conda-forge/noarch/interface_meta-1.3.0-pyhd8ed1ab_1.conda
+  hash:
+    md5: 97f07ae607e01877f0454fce4c833e40
+    sha256: cdd4377e9565f383e3e69f26b43fc1abc892fda591fa724af508e498c2dc0859
+  category: main
+  optional: false
+- name: interface_meta
+  version: 1.3.0
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    python: '>=3.9'
+  url: https://conda.anaconda.org/conda-forge/noarch/interface_meta-1.3.0-pyhd8ed1ab_1.conda
+  hash:
+    md5: 97f07ae607e01877f0454fce4c833e40
+    sha256: cdd4377e9565f383e3e69f26b43fc1abc892fda591fa724af508e498c2dc0859
   category: main
   optional: false
 - name: ipydatagrid
@@ -14039,42 +14101,44 @@ package:
   category: main
   optional: false
 - name: statsmodels
-  version: 0.14.6
+  version: 0.15.0
   manager: conda
   platform: linux-64
   dependencies:
     __glibc: '>=2.17,<3.0.a0'
-    libgcc: '>=14'
-    numpy: <3,>=1.22.3,>=1.23,<3
+    formulaic: '>=1.1.0'
+    libgcc: '>=15'
+    numpy: '>=1.23.5,<3,>=1.25,<3'
     packaging: '>=21.3'
-    pandas: '!=2.1.0,>=1.4'
+    pandas: '>=1.4,!=2.1.0'
     patsy: '>=0.5.6'
-    python: '>=3.14,<3.15.0a0'
+    python: ''
     python_abi: 3.14.*
-    scipy: '!=1.9.2,>=1.8'
-  url: https://conda.anaconda.org/conda-forge/linux-64/statsmodels-0.14.6-py314hc02f841_0.conda
+    scipy: '>=1.8,!=1.9.2'
+  url: https://conda.anaconda.org/conda-forge/linux-64/statsmodels-0.15.0-np2py314h8874201_0.conda
   hash:
-    md5: 224e6e308b3df5c0c99d8ca5244bb34c
-    sha256: 993473f46dad2e274be57eca65b49a68c7fe89f34d0841ee12888ae77ebbdd64
+    md5: e1591dda20eaeca2986f64043ea95a79
+    sha256: fac31f95640f7ab99816b4cc0b22647b4193ed39c355cc6e7e6a223b7ad52ae5
   category: main
   optional: false
 - name: statsmodels
-  version: 0.14.6
+  version: 0.15.0
   manager: conda
   platform: osx-arm64
   dependencies:
     __osx: '>=11.0'
-    numpy: <3,>=1.22.3,>=1.23,<3
+    formulaic: '>=1.1.0'
+    numpy: '>=1.23.5,<3,>=1.25,<3'
     packaging: '>=21.3'
-    pandas: '!=2.1.0,>=1.4'
+    pandas: '>=1.4,!=2.1.0'
     patsy: '>=0.5.6'
-    python: '>=3.14,<3.15.0a0,>=3.14,<3.15.0a0'
+    python: ''
     python_abi: 3.14.*
-    scipy: '!=1.9.2,>=1.8'
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/statsmodels-0.14.6-py314hdcf55e8_0.conda
+    scipy: '>=1.8,!=1.9.2'
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/statsmodels-0.15.0-np2py314h40f2a13_0.conda
   hash:
-    md5: 2f8503de3570507c06be9fd9cdf53e32
-    sha256: dde50c6b6c2e85f3ef82efb47d1485be66e6b4ca2db8970513340d64a5c63e91
+    md5: 208f02a641614903eac538ff06a72427
+    sha256: 3b7f15ab6a8e9bf8700eacf39ba3f76cf96b86421270d142d421d5a88c64c6af
   category: main
   optional: false
 - name: stdlib-list
