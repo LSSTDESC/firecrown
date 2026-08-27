@@ -35,7 +35,10 @@ jobs:
         with:
           filters: |
             drift:
+              - 'dependencies.yaml'
+              - 'dependencies-validated.yaml'
               - 'environment.yml'
+              - '.github/scripts/sync_deps.py'
               - '.github/update_ci.py'
               - '.github/conda-lock/**'
               - '.github/scripts/generate_conda_locks.sh'
