@@ -9,6 +9,10 @@ Usage example::
 
     python -m firecrown.fctools.link_checker path/to/html_dir -v
 
+This is documentation tooling, run by ``make docs-linkcheck``, so ``bs4`` and
+``requests`` are part of the developer environment rather than of firecrown's
+runtime dependencies; see ``dependencies.yaml``.
+
 """
 
 import os

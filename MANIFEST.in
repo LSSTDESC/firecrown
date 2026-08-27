@@ -1,2 +1,5 @@
 include environment.yml
+include dependencies.yaml
+include dependencies-validated.yaml
+include .github/scripts/sync_deps.py
 include LICENSE

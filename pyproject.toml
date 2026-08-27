@@ -12,20 +12,23 @@ requires-python = ">=3.12"
 license-files = ["LICENSE"]
 dependencies = [
     "astropy",
+    "camb<2.0",
     "cobaya",
-    "cosmosis",
-    "lsstdesc-crow",
+    "cosmosis>=3.0",
     "fitsio",
-    "numcosmo_py",
+    "isitgr",
+    "lsstdesc-crow",
+    "matplotlib",
+    "numcosmo_py>=0.27",
     "numpy>=2.0,<2.4",
-    "pandas",
-    "pyccl",
+    "pyccl>=2.8.0",
     "pydantic",
     "pyyaml",
     "rich",
-    "sacc>=2.3",
-    "scipy",
+    "sacc>=2.4",
+    "scipy>=1.13",
     "typer",
+    "typing-extensions",
 ]
 dynamic = ["version", "readme"]
 

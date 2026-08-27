@@ -1,18 +1,21 @@
+# Generated from dependencies.yaml by `make deps-sync` -- do not edit.
 channels:
   - conda-forge
 dependencies:
   - alabaster
+  - astropy # examples/cluster_number_counts
   - babel
+  - beautifulsoup4 # firecrown-link-checker, run by make docs-linkcheck
   - black
-  - camb < 2.0
+  - camb <2.0
   - charset-normalizer
-  - clmm
-  - compilers
-  - cosmosis >= 3.0
+  - clmm # part of the DESC stack; needed indirectly through lsstdesc-crow
+  - compilers # two-phase cosmosis-standard-library installation
+  - cosmosis >=3.0
   - cosmosis-build-standard-library
   - coverage
   - cython
-  - deno
+  - deno # quarto rendering
   - dill
   - fitsio
   - flake8
@@ -26,12 +29,13 @@ dependencies:
   - jupyter
   - linkchecker
   - lsstdesc-crow
-  - matplotlib-base
+  - matplotlib-base # firecrown sacc view
   - more-itertools
   - mypy
-  - numcosmo >= 0.27
-  - numpy >= 2.0, < 2.4
-  - pip >= 20.1 # pip is needed as dependency
+  - numcosmo >=0.27
+  - numpy >=2.0,<2.4
+  - pandas # tutorials
+  - pip >=20.1 # installs cobaya, which conda-forge does not package
   - pip:
       - build
       - cobaya
@@ -39,7 +43,7 @@ dependencies:
   - plotnine
   - portalocker
   - pybobyqa
-  - pyccl >= 2.8.0
+  - pyccl >=2.8.0
   - pydantic
   - pylint
   - pytest
@@ -49,10 +53,10 @@ dependencies:
   - python >=3.12
   - pyyaml
   - quarto
-  - requests
+  - requests # firecrown-link-checker, run by make docs-linkcheck
   - rich
-  - sacc >= 2.4
-  - scipy >= 1.13
+  - sacc >=2.4
+  - scipy >=1.13
   - sphinx
   - sphinx-autoapi
   - sphinx-autodoc-typehints
@@ -62,4 +66,5 @@ dependencies:
   - typer
   - types-pyyaml
   - types-requests
+  - typing_extensions
   - urllib3
