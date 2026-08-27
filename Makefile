@@ -15,6 +15,7 @@ SHELL := /bin/bash
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
 	release-env-check release-build-check release-gh-check conda-lock conda-lock-check \
+	deps-sync deps-check feedstock-sync \
 	release-validate release-check release-tag release-sdist release-verify-sdist release-verify-archive release-push \
 	release-github release-clean \
 	release-conda-forge \
@@ -84,6 +85,9 @@ AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
 # Tutorial configuration
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
 CONDA_LOCK_DIR := .github/conda-lock
+DEPS_MANIFEST := dependencies.yaml
+DEPS_SCRIPT := .github/scripts/sync_deps.py
+FEEDSTOCK ?= ../firecrown-feedstock
 CONDA_LOCK_SCRIPT := .github/scripts/generate_conda_locks.sh
 GITHUB_RELEASE_REPO := LSSTDESC/firecrown
 CONDA_FORGE_FEEDSTOCK_REPO := conda-forge/firecrown-feedstock
@@ -167,6 +171,23 @@ format:  ## Format code with black
 
 format-check:  ## Check code formatting without modifying files
 	black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/
+
+##@ Dependencies
+
+deps-sync:  ## Regenerate environment.yml and pyproject.toml from $(DEPS_MANIFEST)
+	@$(PYTHON) $(DEPS_SCRIPT)
+
+deps-check:  ## Verify the generated dependency lists match $(DEPS_MANIFEST)
+	@$(PYTHON) $(DEPS_SCRIPT) --check
+
+feedstock-sync: deps-sync  ## Also regenerate the recipe in FEEDSTOCK=<path>
+	@if [[ ! -d "$(FEEDSTOCK)/recipe" ]]; then
+		echo "No recipe directory in $(FEEDSTOCK)."
+		echo "Use: make $@ FEEDSTOCK=<path to a firecrown-feedstock checkout>"
+		exit 1
+	fi
+	$(PYTHON) $(DEPS_SCRIPT) --feedstock "$(FEEDSTOCK)" \
+		$(if $(ALLOW_VERSION_MISMATCH),--allow-version-mismatch,)
 
 ##@ Conda Lockfiles
 
@@ -385,7 +406,7 @@ clean:  ## Remove all generated files (using .gitignore as truth)
 
 ##@ Pre-commit
 
-pre-commit: format lint docs-verify test-ci ## Run all pre-commit checks
+pre-commit: deps-check format lint docs-verify test-ci ## Run all pre-commit checks
 	@echo ""
 	@echo "✅ All pre-commit checks passed!"
 
