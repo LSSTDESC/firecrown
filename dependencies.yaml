@@ -90,8 +90,6 @@ devenv:
     conda: false
   - name: camb
     version: "<2.0"
-  - name: clmm
-    note: examples/cluster_number_counts
   - name: compilers
   - name: coverage
   - name: deno
@@ -139,6 +137,8 @@ devenv:
 # an entry a `pip` name to change that.
 workarounds:
   - name: charset-normalizer
+  - name: clmm
+    note: part of the DESC stack; needed indirectly through lsstdesc-crow
   - name: cython
   - name: dill
   - name: fitsio

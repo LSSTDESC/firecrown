@@ -9,7 +9,7 @@ dependencies:
   - black
   - camb <2.0
   - charset-normalizer
-  - clmm # examples/cluster_number_counts
+  - clmm # part of the DESC stack; needed indirectly through lsstdesc-crow
   - compilers
   - cosmosis >=3.0
   - cosmosis-build-standard-library
