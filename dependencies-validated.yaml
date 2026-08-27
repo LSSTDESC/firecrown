@@ -1,8 +1,12 @@
-# Generated from the conda lockfiles by `make deps-sync` -- do not edit.
+# Generated from the conda lockfiles by `make conda-lock` -- do not edit.
 #
 # The versions every supported python and platform was resolved to, as
 # conda constraints.  These become the run_constrained section of the
 # firecrown-deps-validated metapackage.
+#
+# The digest records which environment.yml the lockfiles were solved
+# from, so that pins left behind by a manifest edit are detected.
+environment-sha256: "a06745ce142e72e51015bfbdc11e6612af1b267693b614856127eee3da45fce1"
 constraints:
   astropy: ">=8.0.1,<8.1"
   camb: ">=1.6.5,<1.7"

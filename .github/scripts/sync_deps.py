@@ -4,8 +4,15 @@ The manifest is the single source of truth.  This script writes:
 
 * ``environment.yml``                      -- the developer conda environment
 * ``pyproject.toml`` ``[project]`` deps    -- the pip metadata
-* ``dependencies-validated.yaml``          -- the versions the lockfiles pin
 * ``recipe/meta.yaml`` requirement blocks  -- the conda-forge feedstock
+
+``dependencies-validated.yaml`` belongs to a later stage: it is derived from
+the lockfiles, which are themselves solved from the generated
+``environment.yml``.  Regenerating it therefore happens in ``make conda-lock``,
+right after the lockfiles it reads.  It records the hash of the
+``environment.yml`` it was derived alongside, so that a manifest edit which has
+not been re-locked is reported rather than silently producing pins for an
+environment that no longer exists.
 
 The feedstock blocks are delimited by ``BEGIN GENERATED``/``END GENERATED``
 marker comments; everything outside them is left untouched.
@@ -25,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import hashlib
 import importlib.metadata as metadata
 import json
 import os
@@ -43,6 +51,7 @@ PYPROJECT_TOML = REPO_ROOT / "pyproject.toml"
 LOCK_DIR = REPO_ROOT / ".github" / "conda-lock"
 
 GENERATED_BY = "make deps-sync"
+GENERATED_PINS_BY = "make conda-lock"
 GROUPS = ("runtime", "workarounds", "devenv")
 # The groups that make up firecrown-deps and the pip metadata.
 REQUIRED_GROUPS = ("runtime", "workarounds")
@@ -243,15 +252,48 @@ def validated_specs(data: dict[str, Any]) -> list[str]:
     return [f"{name} {constraint}" for name, constraint in sorted(pins.items())]
 
 
+def environment_digest() -> str:
+    """Return the digest of the environment the lockfiles are solved from.
+
+    Taken over the parsed specs rather than the file, so that editing a note
+    does not claim the lockfiles are stale.
+    """
+    parsed = yaml.safe_load(ENVIRONMENT_YML.read_text(encoding="utf-8"))
+    canonical = yaml.safe_dump(parsed, sort_keys=True).encode()
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def pins_are_current() -> bool:
+    """Report whether the pins were derived from today's environment.yml."""
+    if not VALIDATED_YAML.exists():
+        print(f"{VALIDATED_YAML} is missing", file=sys.stderr)
+        return False
+    recorded = yaml.safe_load(VALIDATED_YAML.read_text(encoding="utf-8"))
+    if recorded.get("environment-sha256") == environment_digest():
+        return True
+    print(
+        f"{VALIDATED_YAML.name} was derived from a different environment.yml,"
+        "\nso the lockfiles it comes from predate the current manifest."
+        "\nRun `make conda-lock` to re-solve and regenerate the pins.",
+        file=sys.stderr,
+    )
+    return False
+
+
 def render_validated(data: dict[str, Any]) -> str:
     """Render the derived pins, so that they are reviewable and shippable."""
     locked = locked_versions()
     lines = [
-        "# Generated from the conda lockfiles by " f"`{GENERATED_BY}` -- do not edit.",
+        f"# Generated from the conda lockfiles by `{GENERATED_PINS_BY}`"
+        " -- do not edit.",
         "#",
         "# The versions every supported python and platform was resolved to, as",
         "# conda constraints.  These become the run_constrained section of the",
         "# firecrown-deps-validated metapackage.",
+        "#",
+        "# The digest records which environment.yml the lockfiles were solved",
+        "# from, so that pins left behind by a manifest edit are detected.",
+        f'environment-sha256: "{environment_digest()}"',
         "constraints:",
     ]
     missing = []
@@ -412,6 +454,12 @@ def main(argv: list[str] | None = None) -> int:
         " introducing the generated blocks to a recipe, not for routine use",
     )
     parser.add_argument(
+        "--pins",
+        action="store_true",
+        help="regenerate dependencies-validated.yaml from the lockfiles; run"
+        " by `make conda-lock`, after the lockfiles have been re-solved",
+    )
+    parser.add_argument(
         "--check-installed",
         metavar="PACKAGE",
         help="verify an installed metapackage against the manifest",
@@ -422,8 +470,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.check_installed:
         return 0 if check_installed(data, args.check_installed) else 1
 
-    ok = emit(VALIDATED_YAML, render_validated(data), args.check)
-    ok &= emit(ENVIRONMENT_YML, render_environment(data), args.check)
+    if args.pins:
+        return 0 if emit(VALIDATED_YAML, render_validated(data), args.check) else 1
+
+    ok = emit(ENVIRONMENT_YML, render_environment(data), args.check)
     ok &= emit(
         PYPROJECT_TOML,
         render_pyproject(data, PYPROJECT_TOML.read_text(encoding="utf-8")),
@@ -445,8 +495,7 @@ def main(argv: list[str] | None = None) -> int:
         ok &= emit(path, render_recipe(data, recipe, version), args.check)
     if not ok:
         print("\nRun `make deps-sync` and commit the result.", file=sys.stderr)
-        return 1
-    return 0
+    return 0 if ok and pins_are_current() else 1
 
 
 if __name__ == "__main__":

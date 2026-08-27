@@ -7,7 +7,7 @@ This guide covers feature-line releases, maintenance releases, GitHub releases, 
 
 1. Create a local branch named for the release, such as `prep-v1.15.0`, from `master`.
 2. Update any code, documentation, dependency constraints, and tutorial content that belong in the release.
-3. If `dependencies.yaml` changes, run `make deps-sync` and `make conda-lock`, and commit the regenerated files.
+3. If `dependencies.yaml` changes, run `make deps-sync` then `make conda-lock` (in that order: the lockfiles are solved from the environment the first step generates, and the validated pins are read back out of the lockfiles), and commit the regenerated files.
 4. Commit and push the branch.
 5. Open a PR targeting `master` and let CI run.
 6. Merge the PR after CI passes.
@@ -25,7 +25,7 @@ After the sdist is verified, `release-push` pushes both refs to `origin`.
 
 1. Create a local branch named for the maintenance release, such as `prep-v1.15.1`, from `vx_y_support`.
 2. Update the code, documentation, and dependency constraints needed for the maintenance release.
-3. If `dependencies.yaml` changes, run `make deps-sync` and `make conda-lock`, and commit the regenerated files.
+3. If `dependencies.yaml` changes, run `make deps-sync` then `make conda-lock` (in that order: the lockfiles are solved from the environment the first step generates, and the validated pins are read back out of the lockfiles), and commit the regenerated files.
 4. Commit and push the branch.
 5. Open a PR targeting `vx_y_support` and let CI run.
 6. Merge the PR after CI passes.

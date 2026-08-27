@@ -28,7 +28,7 @@
 #
 # Groups
 # ------
-# runtime      Imported by firecrown itself.
+# runtime      Needed to install firecrown and to run what it ships.
 # workarounds  Not imported by firecrown, but constrained by it anyway.  The
 #              group implies `import: false`, and the constraints are enforced
 #              on the conda side only, so an entry stays out of the pip
@@ -37,7 +37,13 @@
 
 python: ">=3.12"
 
-# Required for `import firecrown` and for the `firecrown` command line tools.
+# Required to finish a firecrown installation and to run everything firecrown
+# ships: the package, its command line tools, and the examples.  Not all of it
+# is imported -- `compilers` is there for the two-phase
+# cosmosis-standard-library installation, `pip` because cobaya is not packaged
+# on conda-forge and has to be installed from PyPI to finish the environment,
+# and `astropy`, `camb` and `isitgr` are needed to run the examples.  What separates this group from `workarounds` is that
+# firecrown needs these present, rather than merely needing them bounded.
 # Generates: firecrown-deps run requirements, pyproject [project.dependencies].
 runtime:
   - name: astropy
@@ -45,6 +51,9 @@ runtime:
   - name: camb
     version: "<2.0"
   - name: compilers
+    pip: false
+    import: false
+    note: two-phase cosmosis-standard-library installation
   - name: cobaya
     conda: false
     note: cobaya connector; not packaged on conda-forge
@@ -69,7 +78,9 @@ runtime:
     version: ">=2.0,<2.4"
   - name: pip
     version: ">=20.1"
-    note: make install; also required by conda for the pip section
+    pip: false
+    import: false
+    note: installs cobaya, which conda-forge does not package
   - name: pyccl
     version: ">=2.8.0"
   - name: pydantic

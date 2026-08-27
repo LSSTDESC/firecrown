@@ -87,6 +87,7 @@ TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
 CONDA_LOCK_DIR := .github/conda-lock
 DEPS_MANIFEST := dependencies.yaml
 DEPS_SCRIPT := .github/scripts/sync_deps.py
+DEPS_VALIDATED := dependencies-validated.yaml
 FEEDSTOCK ?= ../firecrown-feedstock
 CONDA_LOCK_SCRIPT := .github/scripts/generate_conda_locks.sh
 GITHUB_RELEASE_REPO := LSSTDESC/firecrown
@@ -191,12 +192,17 @@ feedstock-sync: deps-sync  ## Also regenerate the recipe in FEEDSTOCK=<path>
 
 ##@ Conda Lockfiles
 
-conda-lock:  ## Generate committed conda lockfiles for CI matrix
+# The validated pins are derived from the lockfiles, so they are regenerated
+# here rather than by deps-sync, which produces the environment those
+# lockfiles are solved from.
+conda-lock:  ## Re-solve the lockfiles and regenerate the validated pins
 	@$(BASH) $(CONDA_LOCK_SCRIPT)
+	@$(PYTHON) $(DEPS_SCRIPT) --pins
 
-conda-lock-check:  ## Verify generated lockfiles are up to date
+conda-lock-check:  ## Verify the lockfiles and validated pins are up to date
 	@$(BASH) $(CONDA_LOCK_SCRIPT)
-	@git diff --exit-code -- $(CONDA_LOCK_DIR)
+	@$(PYTHON) $(DEPS_SCRIPT) --pins
+	@git diff --exit-code -- $(CONDA_LOCK_DIR) $(DEPS_VALIDATED)
 
 ##@ Linting
 

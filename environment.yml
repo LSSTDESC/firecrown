@@ -10,7 +10,7 @@ dependencies:
   - camb <2.0
   - charset-normalizer
   - clmm # part of the DESC stack; needed indirectly through lsstdesc-crow
-  - compilers
+  - compilers # two-phase cosmosis-standard-library installation
   - cosmosis >=3.0
   - cosmosis-build-standard-library
   - coverage
@@ -35,7 +35,7 @@ dependencies:
   - numcosmo >=0.27
   - numpy >=2.0,<2.4
   - pandas # tutorials
-  - pip >=20.1 # make install; also required by conda for the pip section
+  - pip >=20.1 # installs cobaya, which conda-forge does not package
   - pip:
       - build
       - cobaya
