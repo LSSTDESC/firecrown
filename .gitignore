@@ -169,7 +169,3 @@ coverage.json
 .kilo
 plans/
 AGENTS.md
-.github/prompts/
-.github/skills/
-.kilocode
-openspec/
