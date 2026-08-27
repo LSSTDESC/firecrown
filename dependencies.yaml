@@ -1,0 +1,165 @@
+# Firecrown dependency manifest -- the single source of truth for every
+# dependency list in the project.
+#
+# Regenerate the derived files with:
+#
+#     make deps-sync                          # environment.yml, pyproject.toml
+#     make feedstock-sync FEEDSTOCK=<path>    # recipe/meta.yaml requirement blocks
+#
+# and verify them in CI with `make deps-check`.
+#
+# Entry fields
+# ------------
+# name       Package name.  Used for conda and pip unless overridden.
+# conda      conda-forge name, or false when the package is not on conda-forge
+#            (such packages land in the `pip:` section of environment.yml).
+# pip        PyPI name, false when there is no PyPI distribution, true to reuse
+#            `name`.  Consulted only where a pip name can be used: the pip
+#            metadata generated from `runtime`, and entries with `conda: false`.
+# version    Version constraint shared by all ecosystems.  Keep these as loose
+#            as the truth allows: they end up in the `firecrown-deps`
+#            metapackage and therefore constrain every downstream solve.
+#            Conservative upper bounds belong in `firecrown-deps-validated`,
+#            which is generated from the committed conda lockfiles.
+# import     Module name, when it differs from the package name, or false when
+#            the package ships no importable module.  The import test of the
+#            firecrown-deps metapackage is generated from these.
+# note       Free-form comment, emitted alongside the entry.
+#
+# Groups
+# ------
+# runtime      Needed to install firecrown and to run what it ships.
+# workarounds  Not imported by firecrown, but constrained by it anyway.  The
+#              group implies `import: false`, and the constraints are enforced
+#              on the conda side only, so an entry stays out of the pip
+#              metadata unless it names a `pip` package.
+# devenv       Needed to develop, test, document or run the examples.
+
+python: ">=3.12"
+
+# Required to finish a firecrown installation and to run everything firecrown
+# ships: the package, its command line tools, and the examples.  Not all of it
+# is imported -- `compilers` is there for the two-phase
+# cosmosis-standard-library installation, `pip` because cobaya is not packaged
+# on conda-forge and has to be installed from PyPI to finish the environment,
+# and `astropy`, `camb` and `isitgr` are needed to run the examples.  What separates this group from `workarounds` is that
+# firecrown needs these present, rather than merely needing them bounded.
+# Generates: firecrown-deps run requirements, pyproject [project.dependencies].
+runtime:
+  - name: astropy
+    note: examples/cluster_number_counts
+  - name: camb
+    version: "<2.0"
+  - name: compilers
+    pip: false
+    import: false
+    note: two-phase cosmosis-standard-library installation
+  - name: cobaya
+    conda: false
+    note: cobaya connector; not packaged on conda-forge
+  - name: cosmosis
+    version: ">=3.0"
+  - name: cosmosis-build-standard-library
+    pip: false
+    import: false
+  - name: isitgr
+    conda: false
+  - name: lsstdesc-crow
+    import: crow
+  - name: matplotlib-base
+    pip: matplotlib
+    import: matplotlib
+    note: firecrown sacc view
+  - name: numcosmo
+    version: ">=0.27"
+    pip: numcosmo_py
+    import: numcosmo_py
+  - name: numpy
+    version: ">=2.0,<2.4"
+  - name: pip
+    version: ">=20.1"
+    pip: false
+    import: false
+    note: installs cobaya, which conda-forge does not package
+  - name: pyccl
+    version: ">=2.8.0"
+  - name: pydantic
+  - name: pyyaml
+    import: yaml
+  - name: rich
+  - name: sacc
+    version: ">=2.4"
+  - name: scipy
+    version: ">=1.13"
+  - name: typer
+  - name: typing_extensions
+    pip: typing-extensions
+
+# Needed to develop, test, document or run the examples, but not to use
+# firecrown as a library.
+# Generates: firecrown-devenv run requirements, environment.yml.
+devenv:
+  - name: alabaster
+  - name: babel
+  - name: beautifulsoup4
+    import: bs4
+    note: firecrown-link-checker, run by make docs-linkcheck
+  - name: black
+  - name: build
+    conda: false
+  - name: coverage
+  - name: deno
+    note: quarto rendering
+  - name: flake8
+  - name: flake8-docstrings
+  - name: glib
+  - name: graphviz
+  - name: hypothesis
+  - name: jupyter
+  - name: linkchecker
+  - name: mypy
+  - name: pandas
+    note: tutorials
+  - name: plotnine
+  - name: pylint
+  - name: pytest
+  - name: pytest-cov
+  - name: pytest-json-report
+  - name: pytest-xdist
+  - name: requests
+    note: firecrown-link-checker, run by make docs-linkcheck
+  - name: quarto
+  - name: sphinx
+  - name: sphinx-autoapi
+  - name: sphinx-autodoc-typehints
+  - name: sphinx-rtd-theme
+  - name: sphinxcontrib-apidoc
+  - name: types-requests
+
+# Packages firecrown does not import but constrains anyway: upstream bugs that
+# have to be routed around, and dependencies that the packages pulling them in
+# fail to bound themselves.  They are part of firecrown-deps, so the constraints
+# reach every conda install of firecrown -- including installs that predate the
+# constraint, once the recipe build number is bumped.
+#
+# Record in `note` what each entry works around and, where there is one, the
+# upstream issue, so that a constraint can be retired once the fix lands rather
+# than outliving the bug.  These have never been part of the pip metadata; give
+# an entry a `pip` name to change that.
+workarounds:
+  - name: charset-normalizer
+  - name: clmm
+    note: part of the DESC stack; needed indirectly through lsstdesc-crow
+  - name: cython
+  - name: dill
+  - name: fitsio
+    pip: true
+  - name: fuzzywuzzy
+  - name: getdist
+  - name: idna
+  - name: more-itertools
+  - name: portalocker
+  - name: pybobyqa
+  - name: tabulate
+  - name: types-pyyaml
+  - name: urllib3

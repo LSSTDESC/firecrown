@@ -1,0 +1,42 @@
+# Generated from the conda lockfiles by `make conda-lock` -- do not edit.
+#
+# The versions every supported python and platform was resolved to, as
+# conda constraints.  These become the run_constrained section of the
+# firecrown-deps-validated metapackage.
+#
+# The digest records which environment.yml the lockfiles were solved
+# from, so that pins left behind by a manifest edit are detected.
+environment-sha256: "a06745ce142e72e51015bfbdc11e6612af1b267693b614856127eee3da45fce1"
+constraints:
+  astropy: ">=8.0.1,<8.1"
+  camb: ">=1.6.5,<1.7"
+  charset-normalizer: ">=3.5.1,<3.6"
+  clmm: ">=1.16.10,<1.17"
+  compilers: ">=1.11.0,<1.12"
+  cosmosis: ">=3.25.2,<3.26"
+  cosmosis-build-standard-library: ">=1.3,<1.4"
+  cython: ">=3.3.0,<3.4"
+  dill: ">=0.4.1,<0.5"
+  fitsio: ">=1.4.2,<1.5"
+  fuzzywuzzy: ">=0.18.0,<0.19"
+  getdist: ">=1.7.7,<1.8"
+  idna: ">=3.19,<3.20"
+  lsstdesc-crow: ">=1.0.12,<1.1"
+  matplotlib-base: ">=3.11.1,<3.12"
+  more-itertools: ">=11.1.0,<11.2"
+  numcosmo: ">=0.27.0,<0.28"
+  numpy: ">=2.3.5,<2.4"
+  pip: ">=26.2.1,<26.3"
+  portalocker: ">=3.2.0,<3.3"
+  pybobyqa: ">=1.5.0,<1.6"
+  pyccl: ">=3.3.6,<3.4"
+  pydantic: ">=2.13.4,<2.14"
+  pyyaml: ">=6.0.3,<6.1"
+  rich: ">=15.0.0,<15.1"
+  sacc: ">=2.4,<2.5"
+  scipy: ">=1.18.0,<1.19"
+  tabulate: ">=0.10.0,<0.11"
+  typer: ">=0.27.1,<0.28"
+  types-pyyaml: ">=6.0.12.20260815,<6.1"
+  typing_extensions: ">=4.16.0,<4.17"
+  urllib3: ">=2.7.0,<2.8"
