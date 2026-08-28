@@ -37,6 +37,7 @@ import importlib.metadata as metadata
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Iterable
@@ -98,12 +99,40 @@ class Entry:
         return f"{name} {self.version}" if self.version else name
 
 
-def source_version() -> str:
-    """Return the version of the firecrown source tree this script lives in."""
+def source_version(allow_untagged: bool = False) -> str:
+    """Return the exact release version tagged at the source tree's HEAD.
+
+    The explicit mismatch override retains the previous installed-metadata
+    fallback for the one-time recipe migration workflow.
+    """
     try:
-        return metadata.version("firecrown")
-    except metadata.PackageNotFoundError:
-        return "unknown"
+        tag = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(REPO_ROOT),
+                "describe",
+                "--tags",
+                "--exact-match",
+                "HEAD",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        if allow_untagged:
+            try:
+                return metadata.version("firecrown")
+            except metadata.PackageNotFoundError:
+                return "unknown"
+        raise ValueError(
+            "feedstock synchronization requires HEAD to have an exact release tag"
+        ) from error
+    match = re.fullmatch(r"v(?P<version>[0-9]+\.[0-9]+\.[0-9]+)", tag)
+    if not match:
+        raise ValueError(f"HEAD tag {tag!r} is not a final release tag")
+    return match.group("version")
 
 
 def recipe_version(recipe: str) -> str:
@@ -482,7 +511,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.feedstock:
         path = args.feedstock / "recipe" / "meta.yaml"
         recipe = path.read_text(encoding="utf-8")
-        version, builds = source_version(), recipe_version(recipe)
+        try:
+            version = source_version(args.allow_version_mismatch)
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 1
+        builds = recipe_version(recipe)
         if version != builds and not args.allow_version_mismatch:
             print(
                 f"This tree is firecrown {version}, but the recipe builds"

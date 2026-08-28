@@ -18,7 +18,7 @@ SHELL := /bin/bash
 	deps-sync deps-check feedstock-sync release-common-check \
 	release-validate release-check release-tag release-sdist release-verify-sdist release-verify-archive release-push \
 	release-github release-clean \
-	release-conda-forge \
+	release-feedstock-source release-feedstock-sync \
 	docs-verify docs-code-check docs-symbol-check docs-linkcheck docs-rtd-check
 
 # Default target
@@ -43,7 +43,8 @@ BASH := bash
 GH := gh
 GH_HOST := github.com
 BUILD := $(PYTHON) -m build
-RELEASE_CONDA_ENV := firecrown_developer
+RELEASE_CONDA_ENV ?= firecrown_developer
+RELEASE_LOCKFILE ?=
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
@@ -96,7 +97,8 @@ RELEASE_DIST_DIR := dist
 RELEASE_SDIST := $(RELEASE_DIST_DIR)/firecrown-$(VERSION).tar.gz
 RELEASE_STATE_DIR := .git/firecrown-release
 RELEASE_HEAD := $(shell git rev-parse --verify HEAD 2>/dev/null || echo no-head)
-RELEASE_CHECK_STAMP := $(RELEASE_STATE_DIR)/release-check-$(VERSION)-$(RELEASE_HEAD).ok
+RELEASE_LOCKFILE_ID := $(shell printf '%s' "$(RELEASE_LOCKFILE)" | shasum -a 256 | awk '{print $$1}')
+RELEASE_CHECK_STAMP := $(RELEASE_STATE_DIR)/release-check-$(VERSION)-$(RELEASE_HEAD)-$(RELEASE_CONDA_ENV)-$(RELEASE_LOCKFILE_ID).ok
 
 # Test configuration
 PYTEST_PARALLEL := $(PYTEST) -n auto
@@ -125,13 +127,16 @@ help:  ## Show common developer targets
 	@echo "  make test-ci         - Run exactly what CI will run"
 	@echo ""
 	@echo "Release process:"
+	@echo "  export RELEASE_CONDA_ENV=firecrown_release_x_y"
+	@echo "  export RELEASE_LOCKFILE=.github/conda-lock/py3.12.conda-lock.yml"
 	@echo "  make release-check VERSION=x.y.z      - Validate release state"
 	@echo "  make release-tag VERSION=x.y.z        - Create local release tag and .0 support branch"
 	@echo "  make release-sdist VERSION=x.y.z      - Build the release sdist"
 	@echo "  make release-verify-sdist VERSION=x.y.z - Verify the release sdist"
 	@echo "  make release-push VERSION=x.y.z       - Push the verified tag and support branch"
 	@echo "  make release-github VERSION=x.y.z     - Publish GitHub release and upload sdist"
-	@echo "  make release-conda-forge VERSION=x.y.z - Start feedstock handoff"
+	@echo "  make release-feedstock-source VERSION=x.y.z - Verify and print feedstock source data"
+	@echo "  make release-feedstock-sync VERSION=x.y.z FEEDSTOCK=../firecrown-feedstock - Regenerate recipe blocks"
 	@echo ""
 	@echo "Other useful targets:"
 	@echo "  make help-all        - Show all available targets"
@@ -157,7 +162,7 @@ help-all:  ## Show this help message
 	@echo "  make release-verify-sdist VERSION=x.y.z - Install the sdist into a temp target and verify version metadata"
 	@echo "  make release-push VERSION=x.y.z       - Push the verified tag and any required support branch"
 	@echo "  make release-github VERSION=x.y.z     - Create a GitHub release and upload the verified sdist"
-	@echo "  make release-conda-forge VERSION=x.y.z - Create the conda-forge handoff issue"
+	@echo "  make release-feedstock-source VERSION=x.y.z - Verify and print feedstock source data"
 	@echo ""
 	@echo "Parallel execution:"
 	@echo "  Parallel execution is ENABLED by default using $(JOBS) jobs."
@@ -436,12 +441,45 @@ release-env-check:  ## Verify that the expected developer environment is active
 		echo "Run: conda activate $(RELEASE_CONDA_ENV)"
 		exit 1
 	fi
+	if [[ -z "$(RELEASE_LOCKFILE)" ]]; then
+		echo "RELEASE_LOCKFILE is required for release targets."
+		echo "Export the lockfile used to create $(RELEASE_CONDA_ENV)."
+		exit 1
+	fi
+	if [[ ! -f "$(RELEASE_LOCKFILE)" ]]; then
+		echo "Release lockfile was not found: $(RELEASE_LOCKFILE)"
+		exit 1
+	fi
+	release_lockfile_relative="$$(git ls-files --full-name -- "$(RELEASE_LOCKFILE)")"
+	if [[ -z "$$release_lockfile_relative" ]] && [[ "$(RELEASE_LOCKFILE)" == /* ]]; then
+		release_lockfile_relative="$$(git ls-files --full-name -- "$$($(PYTHON) -c 'import os; print(os.path.relpath("$(RELEASE_LOCKFILE)", "$(CURDIR)"))')")"
+	fi
+	case "$$release_lockfile_relative" in
+		.github/conda-lock/py*.conda-lock.yml) ;;
+		*)
+			echo "RELEASE_LOCKFILE must name a committed lockfile in .github/conda-lock/."
+			exit 1
+			;;
+	esac
+	if ! git diff --quiet HEAD -- "$$release_lockfile_relative"; then
+		echo "Release lockfile differs from the version committed at HEAD."
+		exit 1
+	fi
+	expected_version_args=""
+	if [[ -n "$(VERSION)" ]] && git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
+		tag_commit="$$(git rev-list -n 1 "v$(VERSION)")"
+		if [[ "$$(git rev-parse HEAD)" == "$$tag_commit" ]]; then
+			expected_version_args="--expected-version $(VERSION)"
+		fi
+	fi
+	$(PYTHON) .github/scripts/compare_conda_environment.py \
+		--lockfile "$$release_lockfile_relative" --editable-project "$(CURDIR)" \
+		$$expected_version_args
 
 release-build-check: release-env-check ## Verify that the Python build frontend is installed
 	@if ! $(BUILD) --version >/dev/null 2>&1; then
 		echo "Python package 'build' is required for release artifact targets."
-		echo "Update the $(RELEASE_CONDA_ENV) environment from environment.yml and reactivate it."
-		echo "Example: conda env update --name $(RELEASE_CONDA_ENV) --file environment.yml"
+		echo "Recreate $(RELEASE_CONDA_ENV) from $(RELEASE_LOCKFILE) and reactivate it."
 		exit 1
 	fi
 
@@ -491,6 +529,15 @@ release-validate: release-common-check ## Run pre-tag release validation VERSION
 			echo "Feature releases for v$(VERSION) must be created from master."
 			exit 1
 		fi
+		if git remote get-url origin >/dev/null 2>&1; then
+			remote_head="$$(git ls-remote origin refs/heads/master | awk '{print $$1}')"
+			local_head="$$(git rev-parse HEAD)"
+			if [[ "$$local_head" != "$$remote_head" ]]; then
+				echo "HEAD must match origin/master before creating v$(VERSION)."
+				echo "Fetch origin and fast-forward master before continuing."
+				exit 1
+			fi
+		fi
 		if git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then
 			echo "Support branch $$support_branch already exists locally."
 			exit 1
@@ -536,6 +583,7 @@ release-check: $(RELEASE_CHECK_STAMP) ## Validate the checkout for release VERSI
 	@echo "✅ Release checks passed for v$(VERSION)"
 
 release-tag: $(RELEASE_CHECK_STAMP) ## Create local tag, plus .0 support branch VERSION=x.y.z
+	@$(MAKE) release-validate VERSION=$(VERSION)
 	@IFS=. read -r major minor patch <<< "$(VERSION)"
 	if [[ "$$patch" == "0" ]]; then
 		support_branch="v$${major}_$${minor}_support"
@@ -585,7 +633,7 @@ release-verify-sdist: release-sdist ## Verify the release sdist VERSION=x.y.z
 	PYTHONPATH="$$target_dir" $(PYTHON) -c "import importlib.metadata; import firecrown; expected='$(VERSION)'; assert importlib.metadata.version('firecrown') == expected, importlib.metadata.version('firecrown'); assert firecrown.__version__ == expected, firecrown.__version__"
 	echo "✅ Verified $(RELEASE_SDIST)"
 
-release-verify-archive: ## Confirm the GitHub auto-archive is NOT a valid conda-forge source VERSION=x.y.z
+release-verify-archive: release-common-check ## Confirm the GitHub auto-archive is NOT a valid conda-forge source VERSION=x.y.z
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
 		exit 1
@@ -689,7 +737,7 @@ release-clean:  ## Remove local release state. Use VERSION=x.y.z to also remove 
 	fi
 	echo "✅ Local release state cleaned"
 
-release-conda-forge: release-verify-sdist ## Create conda-forge handoff issue for VERSION=x.y.z (requires verified sdist in dist/)
+release-feedstock-source: release-verify-sdist ## Verify and print feedstock source data for VERSION=x.y.z
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
 		exit 1
@@ -699,28 +747,46 @@ release-conda-forge: release-verify-sdist ## Create conda-forge handoff issue fo
 		echo "Run: make release-github VERSION=$(VERSION)"
 		exit 1
 	fi
-	sdist_sha256="$$(shasum -a 256 "$(RELEASE_SDIST)" | awk '{print $$1}')"
+	tmpdir="$$(mktemp -d)"
+	trap 'rm -rf "$$tmpdir"' EXIT
+	$(GH) release download "v$(VERSION)" --repo "$(GITHUB_RELEASE_REPO)" \
+		--pattern "firecrown-$(VERSION).tar.gz" --dir "$$tmpdir"
+	published_sdist="$$tmpdir/firecrown-$(VERSION).tar.gz"
+	if [[ ! -f "$$published_sdist" ]]; then
+		echo "GitHub release v$(VERSION) does not contain firecrown-$(VERSION).tar.gz."
+		exit 1
+	fi
+	local_sha256="$$(shasum -a 256 "$(RELEASE_SDIST)" | awk '{print $$1}')"
+	published_sha256="$$(shasum -a 256 "$$published_sdist" | awk '{print $$1}')"
+	if [[ "$$local_sha256" != "$$published_sha256" ]]; then
+		echo "Published sdist checksum does not match the locally verified artifact."
+		echo "Local:     $$local_sha256"
+		echo "Published: $$published_sha256"
+		exit 1
+	fi
 	sdist_url="https://github.com/$(GITHUB_RELEASE_REPO)/releases/download/v$(VERSION)/firecrown-$(VERSION).tar.gz"
-	issue_body="$$(printf '%s\n' \
-		'Please update firecrown to v$(VERSION).' \
-		'' \
-		'**IMPORTANT**: The `source.url` in the recipe **must** point at the release sdist asset, NOT the GitHub auto-generated archive. The auto-archive (`/archive/v$(VERSION).tar.gz`) has no `PKG-INFO` and no `.git`, so `setuptools-scm` cannot determine the version — the package installs with `firecrown.__version__ == '"'"'0.0.0'"'"'`.' \
-		'' \
-		'Use the following `source` block verbatim:' \
-		'' \
-		'```yaml' \
-		'source:' \
-		"  url: $${sdist_url}" \
-		"  sha256: $${sdist_sha256}" \
-		'```' \
-		'' \
-		'Also ensure:' \
-		'- `setuptools-scm` is listed under `requirements.host`' \
-		'- `test.commands` asserts `firecrown.__version__ == '"'"'{{ version }}'"'"'` so any version mismatch fails the build immediately' \
-	)"
-	$(GH) issue create --repo "$(CONDA_FORGE_FEEDSTOCK_REPO)" \
-		--title "Update firecrown to v$(VERSION)" \
-		--body "$${issue_body}"
+	echo "Verified feedstock source for firecrown $(VERSION):"
+	echo ""
+	echo "source:"
+	echo "  url: $$sdist_url"
+	echo "  sha256: $$published_sha256"
+
+release-feedstock-sync: release-verify-sdist ## Update a feedstock from the tagged release VERSION=x.y.z FEEDSTOCK=<path>
+	if [[ ! -d "$(FEEDSTOCK)/recipe" ]]; then
+		echo "No recipe directory in $(FEEDSTOCK)."
+		echo "Use: make $@ VERSION=x.y.z FEEDSTOCK=<path to a firecrown-feedstock checkout>"
+		exit 1
+	fi
+	@if ! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
+		echo "Local tag v$(VERSION) was not found."
+		exit 1
+	fi
+	if [[ "$$(git rev-parse HEAD)" != "$$(git rev-list -n 1 "v$(VERSION)")" ]]; then
+		echo "HEAD must match local tag v$(VERSION) before syncing the feedstock."
+		exit 1
+	fi
+	$(PYTHON) $(DEPS_SCRIPT) --check
+	$(PYTHON) $(DEPS_SCRIPT) --feedstock "$(FEEDSTOCK)"
 
 ##@ Advanced
 

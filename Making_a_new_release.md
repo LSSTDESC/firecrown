@@ -20,31 +20,20 @@ run them from the feedstock checkout.
 
 ## Prerequisites
 
-Activate the required developer environment:
-
-```sh
-conda activate firecrown_developer
-```
-
-Confirm that the Python build frontend and GitHub CLI authentication are
+Install `conda-lock` in the base conda environment if it is not already
 available:
 
 ```sh
-python -m build --version
-gh auth status --hostname github.com
+conda install --name base --channel conda-forge conda-lock=4.0.2
 ```
 
-If GitHub CLI is not authenticated, log in and check again:
+Do not use an existing development environment for a release. Its installed
+packages may reflect another branch even if it is named `firecrown_developer`.
+Section 2 creates a fresh environment from a lockfile in the merged release
+commit, after all release dependency changes are final.
 
-```sh
-gh auth login --hostname github.com --web
-gh auth status --hostname github.com
-```
-
-Use the `firecrown_developer` environment throughout the release. The
-validation, build, and publication targets enforce this environment and
-require a clean tracked working tree. Before running one of those targets,
-run:
+The validation, build, and publication targets require a clean tracked working
+tree. Before running one of those targets, run:
 
 ```sh
 git status --short
@@ -95,8 +84,7 @@ git status --short
 
 Confirm that `HEAD` is the merged release commit and that
 `git status --short` produces no output. Feature-line release validation
-requires the current branch to be `master`. It does not independently confirm
-that `master` matches `origin/master`.
+requires the current branch to be `master` and `HEAD` to match `origin/master`.
 
 ### Maintenance release (`x.y.z`, where `z > 0`)
 
@@ -145,6 +133,52 @@ preparation branch or detached `HEAD` is not sufficient.
 
 ## 2. Tag and build the release
 
+Create the release environment now, from a lockfile in the synchronized merged
+release commit. Choose one of the branch's supported Python lockfiles. This
+example uses Python 3.12 and an environment named for the release line:
+
+```sh
+export RELEASE_CONDA_ENV=firecrown_release_x_y
+export RELEASE_LOCKFILE=.github/conda-lock/py3.12.conda-lock.yml
+conda run --name base conda-lock install --name "$RELEASE_CONDA_ENV" \
+  "$RELEASE_LOCKFILE"
+conda activate "$RELEASE_CONDA_ENV"
+make install
+```
+
+For example, use `firecrown_release_1_16` when preparing version `1.16.1`.
+If the chosen environment name already exists, remove it or choose a new name;
+do not update or reuse it. This is especially important for maintenance
+releases because a `firecrown_developer` environment used on `master` may have
+different dependencies.
+
+Keep `RELEASE_CONDA_ENV` and `RELEASE_LOCKFILE` exported and the environment
+active for all remaining Firecrown release commands. `make install` adds
+Firecrown as an editable pip installation without adding it to the lockfile or
+changing its locked dependencies.
+
+Release targets verify all of the following:
+
+- The named conda environment is active.
+- `RELEASE_LOCKFILE` is a tracked lockfile under `.github/conda-lock/` and is
+  unchanged from the current `HEAD`.
+- All locked packages have the expected versions and builds, with no extra
+  packages other than the editable Firecrown installation.
+- The editable Firecrown installation points to the current repository.
+- After tagging, the installed Firecrown version equals `VERSION`.
+
+Confirm the release checkout is still clean after creating the environment:
+
+```sh
+python -m build --version
+gh auth status --hostname github.com
+git status --short
+```
+
+If GitHub CLI is not authenticated, run
+`gh auth login --hostname github.com --web`, then check again.
+`git status --short` must produce no output.
+
 From the synchronized release branch and merged release commit, create the
 local release refs:
 
@@ -160,10 +194,13 @@ maintenance release, it creates only the annotated tag `vx.y.z`.
 `make pre-commit` suite unless a successful check is already cached for the
 same `HEAD` and `VERSION`. Before creating refs, it reruns the fast validation,
 including environment, clean-tree, version, branch, remote-tag, and support-
-branch checks.
+branch checks. Before the tag exists, the editable installation must point to
+this repository but may report a development version derived from the release
+commit. The final validation occurs after `make pre-commit`, so no tag is
+created if formatting or generated checks changed the working tree.
 
-Refresh the installed Firecrown metadata, build the sdist, and verify both
-reported package versions:
+Refresh the editable Firecrown metadata after creating the tag, then build the
+sdist and verify both reported package versions:
 
 ```sh
 make install
@@ -176,6 +213,8 @@ Use `VERSION=x.y.0` throughout for a feature-line release.
 tagged commit. `release-verify-sdist` installs the sdist into a temporary
 directory and verifies both `firecrown.__version__` and
 `importlib.metadata.version("firecrown")` against the requested version.
+Because the tag now exists, subsequent release environment checks also require
+the editable installation to report exactly `x.y.z`.
 
 If this release changes `setuptools-scm`, package metadata, the build backend
 or configuration, or release artifact generation, also run:
@@ -218,27 +257,19 @@ The recipe `source.url` must use the sdist uploaded to the GitHub release:
 https://github.com/LSSTDESC/firecrown/releases/download/vx.y.z/firecrown-x.y.z.tar.gz
 ```
 
-Never use the GitHub auto-generated archive at `/archive/vx.y.z.tar.gz`. It
-contains neither `PKG-INFO` nor `.git`, so `setuptools-scm` cannot determine
-the release version.
-
-### Create the handoff issue
+### Verify the release source
 
 From the Firecrown repository at the release commit, run:
 
 ```sh
-make release-conda-forge VERSION=x.y.z
+make release-feedstock-source VERSION=x.y.z
 ```
 
 The target rebuilds and verifies the sdist, requires the GitHub release to
-exist, computes the local sdist's SHA256, and creates an issue in
-[`conda-forge/firecrown-feedstock`](https://github.com/conda-forge/firecrown-feedstock)
-containing the exact source URL and checksum.
-
-Run this target once per release and retain the issue URL printed by `gh`.
-Every invocation creates a new issue. If an invocation is interrupted or its
-result is uncertain, search the feedstock issues for the version before
-running it again.
+exist, downloads the release asset, and confirms that its SHA256 matches the
+locally verified sdist. It prints a copyable `source` block containing the
+release-asset URL and verified checksum. It does not create an issue or trigger
+conda-forge automation.
 
 ### Prepare the feedstock branch
 
@@ -268,7 +299,8 @@ git switch -c update-firecrown-x.y.z
 In the feedstock's `recipe/meta.yaml`:
 
 - Set the recipe version to `x.y.z`.
-- Set `source.url` and `source.sha256` to the values from the handoff issue.
+- Set `source.url` and `source.sha256` to the values printed by
+  `release-feedstock-source`.
 - Ensure `setuptools-scm` is listed under `requirements.host`.
 - Update any required non-generated dependencies or recipe fields.
 - Set `build.number` to `0` for a new version. Increment it when correcting and
@@ -288,13 +320,16 @@ For every release, return to the Firecrown repository while it remains at the
 release commit and regenerate the feedstock's dependency blocks:
 
 ```sh
-make feedstock-sync FEEDSTOCK=<path-to-firecrown-feedstock>
+make release-feedstock-sync VERSION=x.y.z \
+  FEEDSTOCK=<path-to-firecrown-feedstock>
 ```
 
 Do not set `ALLOW_VERSION_MISMATCH=1` for a routine release handoff. The target
-checks that the installed Firecrown version matches the version now specified
-by the recipe. Review and commit all recipe changes on the feedstock update
-branch.
+reruns release environment and sdist checks, requires `HEAD` to match the local
+`vx.y.z` tag, derives the source version from that exact tag, and requires the
+feedstock recipe to specify the same version. It does not rely on installed
+Firecrown metadata to determine the source version. Review and commit all
+recipe changes on the feedstock update branch.
 
 Push the feedstock update branch to your fork and open a pull request targeting
 `conda-forge/firecrown-feedstock`. Add this comment to request rerendering:
