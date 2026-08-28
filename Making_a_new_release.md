@@ -1,183 +1,341 @@
 # Making a new release
 
-Firecrown release versions are derived from git tags through `setuptools-scm`.
-This guide covers feature-line releases, maintenance releases, GitHub releases, and the conda-forge handoff.
+Firecrown derives release versions from git tags through `setuptools-scm`.
+This runbook covers feature-line and maintenance releases, publication on
+GitHub, and the conda-forge handoff.
 
-## Feature-line Release `x.y.0`
+## Naming conventions
 
-1. Create a local branch named for the release, such as `prep-vx.y.0`, from `master`.
-2. Update any code, documentation, dependency constraints, and tutorial content that belong in the release.
-3. If `dependencies.yaml` contains a change from the previous release, then
-4. run `make deps-sync` # This updates `environment`.yml and `pyproject.toml`.
-5. run `make conda-lock`   # This updates the lockfiles from the updated `environment.yml`
-6. Commit any changes.
-7. `git push` the `prep-vx.y.0` branch
-8. Open a PR targeting `master` and let CI run.
-   You can use:
+- `x.y.0` is a feature-line release.
+- `x.y.z`, where `z > 0`, is a maintenance release.
+- `vx.y.z` is the corresponding git tag and GitHub release tag.
+- `firecrown-x.y.z.tar.gz` is the release source distribution (sdist).
+- `vx_y_support` is the support branch for release line `x.y`.
 
-   ```
-   gh pr create --base master --title "Prep vx.y.0" 
-   ```
+For example, version `1.16.0` uses tag `v1.16.0`, support branch
+`v1_16_support`, and sdist `firecrown-1.16.0.tar.gz`.
 
-9. Verify that the CI passes, then merge the PR.
-10. Check out a clean local copy of `master` at the merged release commit.
-11. Run `make release-tag VERSION=x.y.0`.  # creates the tag and the long-term support branch
- Note that this runs many checks but not the full `pre-commit` suite.
-12. Run `make install` to refresh the installed Firecrown metadata so later documentation builds display the new release version and for use in building the conda installation artifacts
-13. Run `make release-sdist VERSION=x.y.0`.
-14. Run `make release-verify-sdist VERSION=x.y.0`.
-15. Run `make release-push VERSION=x.y.0`.  # pushes refs and tags to `origin`
+Run commands from the Firecrown repository unless a step explicitly says to
+run them from the feedstock checkout.
 
-## Maintenance Release `x.y.z` where `z > 0`
+## Prerequisites
 
-1. Create a local branch named for the maintenance release, such as `prep-v1.15.1`, from `vx_y_support`.
-2. Update the code, documentation, and dependency constraints needed for the maintenance release.
-3. If `dependencies.yaml` changes, run `make deps-sync` then `make conda-lock` (in that order: the lockfiles are solved from the environment the first step generates, and the validated pins are read back out of the lockfiles), and commit the regenerated files.
-4. Commit and push the branch.
-5. Open a PR targeting `vx_y_support` and let CI run.
-6. Merge the PR after CI passes.
-7. Check out a clean local copy of `vx_y_support` at the merged release commit.
-8. Run `make release-tag VERSION=x.y.z`. # creates the new tag
-   This reruns the fast release-specific checks and reuses the successful full check for the same `HEAD` and `VERSION` instead of rerunning `make pre-commit`.
-9. Run `make install` to refresh the installed Firecrown metadata so later documentation builds display the new release version and for use in building the conda installation artifacts
-10. Run `make release-sdist VERSION=x.y.z`.
-11. Run `make release-verify-sdist VERSION=x.y.z`.
-12. Run `make release-push VERSION=x.y.z`.  # pushes refs and tags to `origin`
-
-For maintenance releases, `release-check` requires the checked-out branch to be `vx_y_support` and confirms that the support branch exists on `origin` before validation continues.
-
-## Shared Validation and Tagging Behavior
-
-Before running any release target, activate the `firecrown_developer` conda environment so the release tooling, documentation tools, and test dependencies come from the project developer environment.
-Run `conda activate firecrown_developer` before invoking the release targets.
-Ensure that GitHub CLI is installed and authenticated for `github.com`.
-Run `gh auth status --hostname github.com` to confirm the current login.
-If needed, run `gh auth login --hostname github.com --web` before continuing.
-
-The `release-check` target first confirms that the active conda environment is `firecrown_developer`.
-It then runs the release-specific validation for `VERSION=x.y.z`, including checkout cleanliness, version format, tag absence, support-branch checks, GitHub CLI authentication, and Python `build` availability.
-It also runs `make pre-commit` once for the current `HEAD` and `VERSION` and records the successful result in `.git/`.
-For `x.y.0` releases, it also confirms that the current branch is `master` and that the support branch name is available.
-For maintenance releases, it confirms that the current branch is `vx_y_support` and that `HEAD` matches `origin/vx_y_support`.
-
-The `release-tag` target reruns the fast release-specific checks, reuses the successful full check for the same `HEAD` and `VERSION`, and creates the annotated tag `vX.Y.Z` locally.
-If the wrong conda environment is active, it fails immediately with instructions to activate `firecrown_developer`.
-For `x.y.0` releases, it also creates `vx_y_support` locally.
-
-The `release-sdist` target builds `dist/firecrown-X.Y.Z.tar.gz` from the tagged checkout.
-It requires the local tag to exist and requires `HEAD` to match that tag.
-
-The `release-verify-sdist` target installs the sdist into a temporary target directory and verifies both `importlib.metadata.version("firecrown")` and `firecrown.__version__` against `x.y.z`.
-
-The `release-clean` target removes local release state.
-Without `VERSION`, it removes `dist/` and `.git/firecrown-release/`.
-With `VERSION=x.y.z`, it also deletes the local `vX.Y.Z` tag if present.
-For `x.y.0` releases, it also deletes the local `vx_y_support` branch if it exists and is not the current branch.
-It warns before force-deleting that local support branch.
-This target never changes remote refs.
-
-The `release-push` target reruns the sdist verification and then pushes the tag to `origin`.
-For `x.y.0` releases, it also pushes `vx_y_support`.
-
-The `release-verify-archive` target confirms that the GitHub auto-archive
-(`/archive/vX.Y.Z.tar.gz`) is **not** a valid source for the conda-forge recipe.
-It produces a `.git`-less tree from the tag using `git archive`, installs it
-with `--no-deps --no-build-isolation`, and verifies that the installed version is
-**not** `x.y.z` (because the auto-archive has no `PKG-INFO` and `setuptools-scm`
-cannot determine the version).
-Run `make release-verify-archive VERSION=x.y.z` after tagging to document this
-constraint explicitly; a correct outcome prints a confirmation that the
-auto-archive source is unsupported.
-
-## Publish the GitHub Release
-
-1. Run `make release-github VERSION=x.y.z`.
-2. The target requires an authenticated `gh` session and fails with login instructions when authentication is missing.
-3. The target rebuilds and verifies `dist/firecrown-X.Y.Z.tar.gz` before publication.
-4. The target requires `vX.Y.Z` to be present on `origin` and fails with instructions to run `make release-push VERSION=x.y.z` when it is missing.
-5. The target creates the GitHub release with generated notes, uploads the sdist as a release asset, and sets the latest flag from version ordering.
-
-## Start the Conda-forge Handoff
-
-### Required: Use the Release Sdist, not the GitHub Auto-archive
-
-The conda-forge recipe `source.url` **must** point at the **release sdist asset**
-uploaded to the GitHub release, not the GitHub auto-generated archive.
-
-| URL pattern | Acceptable? |
-| --- | --- |
-| `…/releases/download/vX.Y.Z/firecrown-X.Y.Z.tar.gz` | **Yes** — contains `PKG-INFO` with the correct version |
-| `…/archive/vX.Y.Z.tar.gz` | **No** — no `PKG-INFO`, no `.git`, `setuptools-scm` cannot resolve the version → `firecrown.__version__ == '0.0.0'` |
-
-The `make release-conda-forge` target (below) computes the sdist sha256 and
-emits the exact ready-to-paste `source` block so the correct URL is used
-every time.
-
-### Sync the Feedstock Fork before Each Handoff (Manual Git — no `make` target)
-
-Contributions to the conda-forge feedstock go through your own fork of the feedstock repository, such as
-`<github-username>/firecrown-feedstock` via a PR to
-`conda-forge/firecrown-feedstock`.
-Never push branches directly to the conda-forge feedstock (conda-forge policy).
-There is no `make` target for fork lifecycle management; the steps below are
-intentionally manual.
-
-**One-time setup** (first time only):
+Activate the required developer environment:
 
 ```sh
-# In your local firecrown-feedstock clone:
+conda activate firecrown_developer
+```
+
+Confirm that the Python build frontend and GitHub CLI authentication are
+available:
+
+```sh
+python -m build --version
+gh auth status --hostname github.com
+```
+
+If GitHub CLI is not authenticated, log in and check again:
+
+```sh
+gh auth login --hostname github.com --web
+gh auth status --hostname github.com
+```
+
+Use the `firecrown_developer` environment throughout the release. The
+validation, build, and publication targets enforce this environment and
+require a clean tracked working tree. Before running one of those targets,
+run:
+
+```sh
+git status --short
+```
+
+This command must produce no output.
+
+## 1. Prepare and merge the release
+
+### Feature-line release (`x.y.0`)
+
+Synchronize `master`, then create the preparation branch:
+
+```sh
+git fetch origin
+git switch master
+git merge --ff-only origin/master
+git switch -c prep-vx.y.0
+```
+
+Make the code, documentation, dependency, and tutorial changes for the
+release. If `dependencies.yaml` changed, regenerate the dependent files in
+this order:
+
+```sh
+make deps-sync
+make conda-lock
+```
+
+Review and commit all regenerated files. Commit and push the complete release
+preparation, then open a pull request targeting `master`. For example:
+
+```sh
+git push -u origin prep-vx.y.0
+gh pr create --base master --title "Prep vx.y.0"
+```
+
+Wait for CI to pass, review the results, and merge the pull request.
+
+After the merge, synchronize local `master` again:
+
+```sh
+git fetch origin
+git switch master
+git merge --ff-only origin/master
+git status --short
+```
+
+Confirm that `HEAD` is the merged release commit and that
+`git status --short` produces no output. Feature-line release validation
+requires the current branch to be `master`. It does not independently confirm
+that `master` matches `origin/master`.
+
+### Maintenance release (`x.y.z`, where `z > 0`)
+
+Synchronize the support branch, then create the preparation branch:
+
+```sh
+git fetch origin
+git switch vx_y_support
+git merge --ff-only origin/vx_y_support
+git switch -c prep-vx.y.z
+```
+
+Make the code, documentation, and dependency changes for the maintenance
+release. If `dependencies.yaml` changed, regenerate the dependent files in
+this order:
+
+```sh
+make deps-sync
+make conda-lock
+```
+
+Review and commit all regenerated files. Commit and push the complete release
+preparation, then open a pull request targeting `vx_y_support`. For example:
+
+```sh
+git push -u origin prep-vx.y.z
+gh pr create --base vx_y_support --title "Prep vx.y.z"
+```
+
+Wait for CI to pass, review the results, and merge the pull request.
+
+After the merge, synchronize the local support branch again:
+
+```sh
+git fetch origin
+git switch vx_y_support
+git merge --ff-only origin/vx_y_support
+git status --short
+```
+
+Confirm that `HEAD` is the merged release commit and that
+`git status --short` produces no output. Maintenance release validation
+requires the current branch to be `vx_y_support`, requires that branch to
+exist on `origin`, and requires `HEAD` to match `origin/vx_y_support`. A
+preparation branch or detached `HEAD` is not sufficient.
+
+## 2. Tag and build the release
+
+From the synchronized release branch and merged release commit, create the
+local release refs:
+
+```sh
+make release-tag VERSION=x.y.z
+```
+
+For a feature-line release, use `VERSION=x.y.0`. The target creates the
+annotated tag `vx.y.0` and local support branch `vx_y_support`. For a
+maintenance release, it creates only the annotated tag `vx.y.z`.
+
+`release-tag` performs release-specific validation and runs the full
+`make pre-commit` suite unless a successful check is already cached for the
+same `HEAD` and `VERSION`. Before creating refs, it reruns the fast validation,
+including environment, clean-tree, version, branch, remote-tag, and support-
+branch checks.
+
+Refresh the installed Firecrown metadata, build the sdist, and verify both
+reported package versions:
+
+```sh
+make install
+make release-sdist VERSION=x.y.z
+make release-verify-sdist VERSION=x.y.z
+```
+
+Use `VERSION=x.y.0` throughout for a feature-line release.
+`release-sdist` requires the local release tag to exist and `HEAD` to match the
+tagged commit. `release-verify-sdist` installs the sdist into a temporary
+directory and verifies both `firecrown.__version__` and
+`importlib.metadata.version("firecrown")` against the requested version.
+
+If this release changes `setuptools-scm`, package metadata, the build backend
+or configuration, or release artifact generation, also run:
+
+```sh
+make release-verify-archive VERSION=x.y.z
+```
+
+This diagnostic confirms that a GitHub auto-generated archive still cannot
+provide the release version and therefore remains unsuitable for conda-forge.
+It is not required for releases without versioning or build-behavior changes.
+
+## 3. Publish the release
+
+Push the verified release refs:
+
+```sh
+make release-push VERSION=x.y.z
+```
+
+This target rebuilds and verifies the sdist before pushing the tag to
+`origin`. For a feature-line release, it also pushes `vx_y_support`.
+
+Publish the GitHub release:
+
+```sh
+make release-github VERSION=x.y.z
+```
+
+This target rebuilds and verifies `dist/firecrown-x.y.z.tar.gz`, requires the
+tag to be present on `origin`, creates the GitHub release with generated notes,
+uploads the sdist as a release asset, and sets the latest-release flag from
+version ordering.
+
+## 4. Hand off to conda-forge
+
+The recipe `source.url` must use the sdist uploaded to the GitHub release:
+
+```text
+https://github.com/LSSTDESC/firecrown/releases/download/vx.y.z/firecrown-x.y.z.tar.gz
+```
+
+Never use the GitHub auto-generated archive at `/archive/vx.y.z.tar.gz`. It
+contains neither `PKG-INFO` nor `.git`, so `setuptools-scm` cannot determine
+the release version.
+
+### Create the handoff issue
+
+From the Firecrown repository at the release commit, run:
+
+```sh
+make release-conda-forge VERSION=x.y.z
+```
+
+The target rebuilds and verifies the sdist, requires the GitHub release to
+exist, computes the local sdist's SHA256, and creates an issue in
+[`conda-forge/firecrown-feedstock`](https://github.com/conda-forge/firecrown-feedstock)
+containing the exact source URL and checksum.
+
+Run this target once per release and retain the issue URL printed by `gh`.
+Every invocation creates a new issue. If an invocation is interrupted or its
+result is uncertain, search the feedstock issues for the version before
+running it again.
+
+### Prepare the feedstock branch
+
+Contribute through a fork of `conda-forge/firecrown-feedstock`; never push an
+update branch directly to the conda-forge repository.
+
+The first time you use a local feedstock clone, add the upstream remote. Run
+this command from the feedstock checkout:
+
+```sh
 git remote add upstream https://github.com/conda-forge/firecrown-feedstock.git
 ```
 
-**Before each handoff** — bring the fork up to date with conda-forge `main`:
+Before every handoff, synchronize the fork and create an update branch. Run
+these commands from the feedstock checkout:
 
 ```sh
 git fetch upstream
-git checkout main
+git switch main
 git merge --ff-only upstream/main
 git push origin main
-
-# Create the fix/update branch off the synced main
-git checkout -b update-firecrown-x.y.z
+git switch -c update-firecrown-x.y.z
 ```
 
-### Handoff Steps
+### Update the recipe
 
-1. Run `make release-conda-forge VERSION=x.y.z`.
-   The target requires:
-   - An authenticated `gh` session; it fails with login instructions when missing.
-   - A rebuilt and verified sdist `dist/firecrown-X.Y.Z.tar.gz`.
-   - The GitHub release `vX.Y.Z` to exist; it fails with instructions to run
-      `make release-github VERSION=x.y.z` when it is missing.
+In the feedstock's `recipe/meta.yaml`:
 
-   The target computes the sha256 of the local sdist and files an issue in
-   [conda-forge/firecrown-feedstock](https://github.com/conda-forge/firecrown-feedstock)
-   with the exact `source.url` (release sdist) and `sha256` ready to paste into
-   the recipe, along with a note that the auto-archive URL is not acceptable.
+- Set the recipe version to `x.y.z`.
+- Set `source.url` and `source.sha256` to the values from the handoff issue.
+- Ensure `setuptools-scm` is listed under `requirements.host`.
+- Update any required non-generated dependencies or recipe fields.
+- Set `build.number` to `0` for a new version. Increment it when correcting and
+  republishing the same version.
+- Ensure `test.commands` asserts both package version values:
 
-2. Sync the feedstock fork and create a branch (see above).
-3. In `recipe/meta.yaml` on the update branch:
-   - Set `source.url` to the release sdist URL from the issue body
-     (`…/releases/download/vX.Y.Z/firecrown-X.Y.Z.tar.gz`).
-   - Set `source.sha256` to the value from the issue body.
-   - Ensure `setuptools-scm` is listed under `requirements.host`.
-   - Ensure `test.commands` contains a version assertion:
+```yaml
+test:
+  commands:
+    - >-
+      python -c "import firecrown, importlib.metadata as md;
+      assert firecrown.__version__ == '{{ version }}';
+      assert md.version('firecrown') == '{{ version }}'"
+```
 
-     ```yaml
-      commands:
-        - python -c "import firecrown, importlib.metadata as md; assert firecrown.__version__ == '{{ version }}'; assert md.version('firecrown') == '{{ version }}'"
-     ```
+For every release, return to the Firecrown repository while it remains at the
+release commit and regenerate the feedstock's dependency blocks:
 
-   - Update any dependency versions required for the release.
-   - Bump `build.number` when re-publishing the same version (corrected build);
-     reset to `0` for a new version.
+```sh
+make feedstock-sync FEEDSTOCK=<path-to-firecrown-feedstock>
+```
 
-4. Push the branch to your fork and open a PR to `conda-forge/firecrown-feedstock`.
-5. Add the comment `@conda-forge-admin, please rerender` to the PR.
-6. Wait for GitHub Actions to finish on all variants.
-   The `test.commands` assertion will fail immediately on any build that does not
-   produce the correct version.
+Do not set `ALLOW_VERSION_MISMATCH=1` for a routine release handoff. The target
+checks that the installed Firecrown version matches the version now specified
+by the recipe. Review and commit all recipe changes on the feedstock update
+branch.
 
-7. Approve and merge the PR after CI passes.
+Push the feedstock update branch to your fork and open a pull request targeting
+`conda-forge/firecrown-feedstock`. Add this comment to request rerendering:
 
-The same conda-forge handoff applies to feature-line releases and maintenance releases.
+```text
+@conda-forge-admin, please rerender
+```
+
+Wait for GitHub Actions to pass for all variants. Approve and merge the pull
+request after CI succeeds.
+
+## 5. Confirm completion
+
+Before considering the release complete, confirm that:
+
+- The intended commit has tag `vx.y.z`.
+- The tag is present on `origin`.
+- The GitHub release exists and contains `firecrown-x.y.z.tar.gz`.
+- Sdist verification reported the expected value from both
+  `firecrown.__version__` and `importlib.metadata.version("firecrown")`.
+- The conda-forge pull request passed all variants and was merged.
+
+## Recovery and local cleanup
+
+For routine local cleanup, remove generated artifacts and cached release
+checks without deleting refs:
+
+```sh
+make release-clean
+```
+
+To discard a failed release attempt that has not been published remotely, run:
+
+```sh
+make release-clean VERSION=x.y.z
+```
+
+The versioned form also deletes the local release tag. For a feature-line
+release, it warns before force-deleting the local support branch and refuses
+to delete that branch while it is checked out.
+
+Neither command changes remote refs. The versioned command does not roll back
+a published release and should not be used as routine post-publication
+cleanup.

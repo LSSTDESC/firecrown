@@ -522,7 +522,7 @@ release-validate: release-common-check ## Run pre-tag release validation VERSION
 		fi
 	fi
 
-$(RELEASE_CHECK_STAMP): release-validate
+$(RELEASE_CHECK_STAMP): | release-validate
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make release-check VERSION=x.y.z"
 		exit 1
@@ -532,10 +532,10 @@ $(RELEASE_CHECK_STAMP): release-validate
 	$(MAKE) pre-commit
 	touch "$@"
 
-release-check: release-validate $(RELEASE_CHECK_STAMP) ## Validate the checkout for release VERSION=x.y.z
+release-check: $(RELEASE_CHECK_STAMP) ## Validate the checkout for release VERSION=x.y.z
 	@echo "✅ Release checks passed for v$(VERSION)"
 
-release-tag: release-validate $(RELEASE_CHECK_STAMP) ## Create local tag, plus .0 support branch VERSION=x.y.z
+release-tag: $(RELEASE_CHECK_STAMP) ## Create local tag, plus .0 support branch VERSION=x.y.z
 	@IFS=. read -r major minor patch <<< "$(VERSION)"
 	if [[ "$$patch" == "0" ]]; then
 		support_branch="v$${major}_$${minor}_support"
