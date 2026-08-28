@@ -15,7 +15,7 @@ SHELL := /bin/bash
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
 	release-env-check release-build-check release-gh-check conda-lock conda-lock-check \
-	deps-sync deps-check feedstock-sync \
+	deps-sync deps-check feedstock-sync release-common-check \
 	release-validate release-check release-tag release-sdist release-verify-sdist release-verify-archive release-push \
 	release-github release-clean \
 	release-conda-forge \
@@ -419,8 +419,8 @@ pre-commit: deps-check format lint docs-verify test-ci ## Run all pre-commit che
 all-checks: pre-commit test-slow test-integration ## Run everything
 
 install:  ## Install firecrown in development mode
-	pip uninstall -y firecrown || true
-	pip install --no-deps -e .
+	$(PYTHON) -m pip uninstall -y firecrown || true
+	$(PYTHON) -m pip install --no-deps -e .
 
 ##@ Release
 
@@ -459,7 +459,7 @@ release-gh-check: release-env-check ## Verify that GitHub CLI is installed and a
 		exit 1
 	fi
 
-release-validate: release-build-check release-gh-check ## Run fast release-specific validation VERSION=x.y.z
+release-common-check: release-build-check release-gh-check ## Run shared release validation VERSION=x.y.z
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
 		exit 1
@@ -472,6 +472,8 @@ release-validate: release-build-check release-gh-check ## Run fast release-speci
 		echo "Release checkout must be clean."
 		exit 1
 	fi
+
+release-validate: release-common-check ## Run pre-tag release validation VERSION=x.y.z
 	if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then
 		echo "Tag v$(VERSION) already exists locally."
 		exit 1
@@ -484,6 +486,11 @@ release-validate: release-build-check release-gh-check ## Run fast release-speci
 	IFS=. read -r major minor patch <<< "$(VERSION)"
 	support_branch="v$${major}_$${minor}_support"
 	if [[ "$$patch" == "0" ]]; then
+		current_branch="$$(git branch --show-current)"
+		if [[ "$$current_branch" != "master" ]]; then
+			echo "Feature releases for v$(VERSION) must be created from master."
+			exit 1
+		fi
 		if git rev-parse -q --verify "refs/heads/$$support_branch" >/dev/null; then
 			echo "Support branch $$support_branch already exists locally."
 			exit 1
@@ -504,9 +511,18 @@ release-validate: release-build-check release-gh-check ## Run fast release-speci
 			echo "Support branch $$support_branch was not found on origin."
 			exit 1
 		fi
+		if git remote get-url origin >/dev/null 2>&1; then
+			remote_head="$$(git ls-remote origin "refs/heads/$$support_branch" | awk '{print $$1}')"
+			local_head="$$(git rev-parse HEAD)"
+			if [[ "$$local_head" != "$$remote_head" ]]; then
+				echo "HEAD must match origin/$$support_branch before creating v$(VERSION)."
+				echo "Fetch origin and fast-forward $$support_branch before continuing."
+				exit 1
+			fi
+		fi
 	fi
 
-$(RELEASE_CHECK_STAMP):
+$(RELEASE_CHECK_STAMP): release-validate
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make release-check VERSION=x.y.z"
 		exit 1
@@ -532,7 +548,7 @@ release-tag: release-validate $(RELEASE_CHECK_STAMP) ## Create local tag, plus .
 		echo "✅ Created local v$(VERSION)"
 	fi
 
-release-sdist: release-build-check ## Build the release sdist VERSION=x.y.z
+release-sdist: release-common-check ## Build the release sdist VERSION=x.y.z
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
 		exit 1
@@ -624,7 +640,7 @@ release-push:  ## Push the verified tag, plus .0 support branch VERSION=x.y.z
 		echo "✅ Pushed v$(VERSION)"
 	fi
 
-release-github: release-gh-check ## Create GitHub release VERSION=x.y.z
+release-github: release-verify-sdist ## Create GitHub release VERSION=x.y.z
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
 		exit 1
@@ -667,19 +683,20 @@ release-clean:  ## Remove local release state. Use VERSION=x.y.z to also remove 
 				echo "Refusing to delete current branch $$support_branch. Switch branches first."
 				exit 1
 			fi
+			echo "Warning: deleting local support branch $$support_branch."
 			git branch -D "$$support_branch"
 		fi
 	fi
 	echo "✅ Local release state cleaned"
 
-release-conda-forge: release-gh-check ## Create conda-forge handoff issue for VERSION=x.y.z (requires verified sdist in dist/)
+release-conda-forge: release-verify-sdist ## Create conda-forge handoff issue for VERSION=x.y.z (requires verified sdist in dist/)
 	@if [[ -z "$(VERSION)" ]]; then
 		echo "VERSION is required. Use: make $@ VERSION=x.y.z"
 		exit 1
 	fi
-	if [[ ! -f "$(RELEASE_SDIST)" ]]; then
-		echo "Release sdist was not found: $(RELEASE_SDIST)"
-		echo "Run: make release-verify-sdist VERSION=$(VERSION)"
+	if ! $(GH) release view "v$(VERSION)" --repo "$(GITHUB_RELEASE_REPO)" >/dev/null 2>&1; then
+		echo "GitHub release v$(VERSION) was not found."
+		echo "Run: make release-github VERSION=$(VERSION)"
 		exit 1
 	fi
 	sdist_sha256="$$(shasum -a 256 "$(RELEASE_SDIST)" | awk '{print $$1}')"
