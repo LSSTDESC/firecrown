@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+lockfile="$repo_root/.github/conda-lock/py3.14.conda-lock.yml"
+prefix="$repo_root/.conda-env"
+
+if [[ ! -f "$lockfile" ]]; then
+    echo "Missing branch-local lockfile: $lockfile" >&2
+    exit 1
+fi
+
+conda-lock install --prefix "$prefix" "$lockfile"
+conda run --prefix "$prefix" \
+    python -m pip install --no-deps --editable "$repo_root"
+
+echo "Environment ready: $prefix"
+echo "Run commands with: conda run --prefix $prefix COMMAND"

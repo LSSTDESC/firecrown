@@ -173,3 +173,5 @@ AGENTS.md
 .github/skills/
 .kilocode
 openspec/
+
+.conda-env
