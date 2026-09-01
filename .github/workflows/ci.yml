@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0
       - name: Detect dependency-impacting changes
         id: filter
-        uses: dorny/paths-filter@v4.0.2
+        uses: dorny/paths-filter@v4.0.3
         with:
           filters: |
             drift:
