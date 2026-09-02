@@ -68,8 +68,10 @@ class TwoPointXY(YAMLSerializable):
                 f"are not compatible."
             )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality test for TwoPointXY objects."""
+        if not isinstance(other, TwoPointXY):
+            return NotImplemented
         return (
             self.x == other.x
             and self.y == other.y
@@ -143,7 +145,7 @@ class TwoPointHarmonic(YAMLSerializable):
         elif self.window_ells is not None:
             raise ValueError("window_ells must be None if window is None.")
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality test for TwoPointHarmonic objects."""
         if not isinstance(other, TwoPointHarmonic):
             raise ValueError("Can only compare TwoPointHarmonic objects.")
@@ -189,7 +191,7 @@ class TwoPointReal(YAMLSerializable):
     XY: TwoPointXY
     thetas: npt.NDArray[np.float64]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate the TwoPointReal data.
 
         Make sure the window is
@@ -213,7 +215,7 @@ class TwoPointReal(YAMLSerializable):
         """Return the SACC name for the two-point function."""
         return _type_to_sacc_string_real(self.XY.x_measurement, self.XY.y_measurement)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality test for TwoPointReal objects."""
         if not isinstance(other, TwoPointReal):
             raise ValueError("Can only compare TwoPointReal objects.")

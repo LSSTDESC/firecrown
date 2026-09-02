@@ -4,6 +4,8 @@ This module defines the measurement types (Galaxies, CMB, Clusters) and related
 constants used throughout Firecrown.
 """
 
+from __future__ import annotations
+
 import re
 from enum import Enum, auto
 from itertools import chain
@@ -11,7 +13,7 @@ from itertools import chain
 from firecrown.utils import YAMLSerializable
 
 
-def _compare_enums(a, b) -> int:
+def _compare_enums(a: Measurement, b: Measurement) -> int:
     """Define a comparison function for the Measurement enumeration.
 
     Return -1 if a comes before b, 0 if they are the same, and +1 if b comes before a.
@@ -128,15 +130,15 @@ class Galaxies(YAMLSerializable, str, Enum):
             return ""
         raise ValueError("Untranslated Galaxy Measurement encountered")
 
-    def __lt__(self, other):
+    def __lt__(self, other: Measurement) -> bool:
         """Define a comparison function for the Galaxy Measurement enumeration."""
         return _compare_enums(self, other) < 0
 
-    def __eq__(self, other):
+    def __eq__(self, other: Measurement) -> bool:
         """Define an equality test for Galaxy Measurement enumeration."""
         return _compare_enums(self, other) == 0
 
-    def __ne__(self, other):
+    def __ne__(self, other: Measurement) -> bool:
         """Negation of __eq__."""
         return not self.__eq__(other)
 
@@ -185,15 +187,15 @@ class CMB(YAMLSerializable, str, Enum):
             return ""
         raise ValueError("Untranslated CMBMeasurement encountered")
 
-    def __lt__(self, other):
+    def __lt__(self, other: Measurement) -> bool:
         """Define a comparison function for the CMBMeasurement enumeration."""
         return _compare_enums(self, other) < 0
 
-    def __eq__(self, other):
+    def __eq__(self, other: Measurement) -> bool:
         """Define an equality test for CMBMeasurement enumeration."""
         return _compare_enums(self, other) == 0
 
-    def __ne__(self, other):
+    def __ne__(self, other: Measurement) -> bool:
         """Negation of __eq__."""
         return not self.__eq__(other)
 
@@ -242,15 +244,15 @@ class Clusters(YAMLSerializable, str, Enum):
             return ""
         raise ValueError("Untranslated ClusterMeasurement encountered")
 
-    def __lt__(self, other):
+    def __lt__(self, other: Measurement) -> bool:
         """Define a comparison function for the ClusterMeasurement enumeration."""
         return _compare_enums(self, other) < 0
 
-    def __eq__(self, other):
+    def __eq__(self, other: Measurement) -> bool:
         """Define an equality test for ClusterMeasurement enumeration."""
         return _compare_enums(self, other) == 0
 
-    def __ne__(self, other):
+    def __ne__(self, other: Measurement) -> bool:
         """Negation of __eq__."""
         return not self.__eq__(other)
 
