@@ -148,7 +148,7 @@ class BinPairSelector(BaseModel):
 
         def dispatch_pair_selector(
             v: Any, dispatch_handler: ValidatorFunctionWrapHandler
-        ):
+        ) -> Any:
             if isinstance(v, cls):
                 return v
             if cls == BinPairSelector:
@@ -189,7 +189,7 @@ class AndBinPairSelector(BinPairSelector):
             pair_selector.keep(field_pair, m) for pair_selector in self.pair_selectors
         )
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: Any, /) -> None:
         """Flatten nested AndBinPairSelectors for efficiency.
 
         This optimization reduces (A & B) & C to a single AndBinPairSelector
@@ -227,7 +227,7 @@ class OrBinPairSelector(BinPairSelector):
             pair_selector.keep(field_pair, m) for pair_selector in self.pair_selectors
         )
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: Any, /) -> None:
         """Flatten nested OrBinPairSelectors for efficiency.
 
         This optimization reduces (A | B) | C to a single OrBinPairSelector
@@ -283,7 +283,7 @@ class CompositeSelector(BinPairSelector):
 
     _impl: BinPairSelector = BadSelector()
 
-    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair):
+    def keep(self, field_pair: ProjectedFieldPair, m: MeasurementPair) -> bool:
         """Delegate to the underlying selector implementation."""
         assert isinstance(self._impl, BinPairSelector)
         return self._impl.keep(field_pair, m)
