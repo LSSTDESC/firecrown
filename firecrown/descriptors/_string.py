@@ -56,14 +56,14 @@ class TypeString:
         if self.predicate is not None and not self.predicate(value):
             raise ValueError(f"Expected {self.predicate} to be true for {value!r}")
 
-    def __set_name__(self, _, name: str) -> None:
+    def __set_name__(self, _: object, name: str) -> None:
         """Create the name of the private instance variable that will hold the value.
 
         :param name: The name of the private instance variable to be created.
         """
         self.private_name = "_" + name  # pylint: disable-msg=W0201
 
-    def __get__(self, obj, objtype=None) -> str:
+    def __get__(self, obj: object, objtype: type | None = None) -> str:
         """Accessor method, which reads controlled value.
 
         This is invoked whenever the validated variable is read.
@@ -73,7 +73,7 @@ class TypeString:
         """
         return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: None | str) -> None:
+    def __set__(self, obj: object, value: None | str) -> None:
         """Setter for the validated variable.
 
         This function invokes the `validate` method of the derived class.
