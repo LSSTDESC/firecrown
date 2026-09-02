@@ -13,7 +13,7 @@ from itertools import chain
 from firecrown.utils import YAMLSerializable
 
 
-def _compare_enums(a: Measurement, b: Measurement) -> int:
+def _compare_enums(a: object, b: object) -> int:
     """Define a comparison function for the Measurement enumeration.
 
     Return -1 if a comes before b, 0 if they are the same, and +1 if b comes before a.
@@ -40,14 +40,26 @@ def _compare_enums(a: Measurement, b: Measurement) -> int:
 
     This ordering is enforced by the __lt__ method implementation in each
     Measurement enum class and is validated during SACC file processing.
+
+    :param a: the first value to compare. Typed as `object` (rather than
+        `Measurement`) because the Measurement `__lt__`/`__eq__`/`__ne__`
+        overrides must accept whatever their `str`/`object` superclass methods
+        accept (see the comment above `Galaxies.__lt__` below); the actual
+        `Measurement` membership check happens here, at runtime.
+    :param b: the second value to compare, see `a` above.
+    :raises ValueError: if either `a` or `b` is not one of `CMB`, `Clusters`,
+        or `Galaxies`, i.e. not a `Measurement`.
     """
     # Get the order dynamically to avoid forward references
     # We know CMB, Clusters, Galaxies will be defined in this module
     order = (CMB, Clusters, Galaxies)
-    if type(a) not in order or type(b) not in order:
+    if not isinstance(a, order) or not isinstance(b, order):
         raise ValueError(
             f"Unknown measurement type encountered ({type(a)}, {type(b)})."
         )
+    # The isinstance check above narrows `a` and `b` from `object` to
+    # `CMB | Clusters | Galaxies` (i.e. `Measurement`) for the remainder of
+    # this function, so the `int()` conversions below type-check correctly.
 
     main_type_index_a = order.index(type(a))
     main_type_index_b = order.index(type(b))
@@ -130,15 +142,25 @@ class Galaxies(YAMLSerializable, str, Enum):
             return ""
         raise ValueError("Untranslated Galaxy Measurement encountered")
 
-    def __lt__(self, other: Measurement) -> bool:
+    # Galaxies subclasses both `str` and `Enum`, so mypy checks these overrides
+    # against *both* superclasses: `str.__lt__` requires `other: str`, while
+    # `str`/`object` `__eq__`/`__ne__` require `other: object`. Narrowing the
+    # parameter to `Measurement` (as before) violates the Liskov substitution
+    # principle, since an override must accept everything the superclass
+    # method accepts. The parameter types below are widened to match the
+    # superclasses purely to satisfy that contract; the actual
+    # `Measurement`-membership check (and the `ValueError` raised for
+    # anything else) still happens inside `_compare_enums`, so runtime
+    # behavior for callers is unchanged.
+    def __lt__(self, other: str) -> bool:
         """Define a comparison function for the Galaxy Measurement enumeration."""
         return _compare_enums(self, other) < 0
 
-    def __eq__(self, other: Measurement) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Define an equality test for Galaxy Measurement enumeration."""
         return _compare_enums(self, other) == 0
 
-    def __ne__(self, other: Measurement) -> bool:
+    def __ne__(self, other: object) -> bool:
         """Negation of __eq__."""
         return not self.__eq__(other)
 
@@ -187,15 +209,20 @@ class CMB(YAMLSerializable, str, Enum):
             return ""
         raise ValueError("Untranslated CMBMeasurement encountered")
 
-    def __lt__(self, other: Measurement) -> bool:
+    # See the comment on Galaxies.__lt__ above: CMB also subclasses both `str`
+    # and `Enum`, so the same widened parameter types are needed to satisfy
+    # the Liskov substitution principle against both `str` and `object`. The
+    # `Measurement`-membership check (and its `ValueError`) still happens
+    # inside `_compare_enums`, so runtime behavior is unchanged.
+    def __lt__(self, other: str) -> bool:
         """Define a comparison function for the CMBMeasurement enumeration."""
         return _compare_enums(self, other) < 0
 
-    def __eq__(self, other: Measurement) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Define an equality test for CMBMeasurement enumeration."""
         return _compare_enums(self, other) == 0
 
-    def __ne__(self, other: Measurement) -> bool:
+    def __ne__(self, other: object) -> bool:
         """Negation of __eq__."""
         return not self.__eq__(other)
 
@@ -244,15 +271,21 @@ class Clusters(YAMLSerializable, str, Enum):
             return ""
         raise ValueError("Untranslated ClusterMeasurement encountered")
 
-    def __lt__(self, other: Measurement) -> bool:
+    # See the comment on Galaxies.__lt__ above: Clusters also subclasses both
+    # `str` and `Enum`, so the same widened parameter types are needed to
+    # satisfy the Liskov substitution principle against both `str` and
+    # `object`. The `Measurement`-membership check (and its `ValueError`)
+    # still happens inside `_compare_enums`, so runtime behavior is
+    # unchanged.
+    def __lt__(self, other: str) -> bool:
         """Define a comparison function for the ClusterMeasurement enumeration."""
         return _compare_enums(self, other) < 0
 
-    def __eq__(self, other: Measurement) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Define an equality test for ClusterMeasurement enumeration."""
         return _compare_enums(self, other) == 0
 
-    def __ne__(self, other: Measurement) -> bool:
+    def __ne__(self, other: object) -> bool:
         """Negation of __eq__."""
         return not self.__eq__(other)
 
