@@ -139,7 +139,7 @@ class TwoPointBinFilter(BaseModel):
         )
 
 
-def bin_spec_from_metadata(metadata: TwoPointReal | TwoPointHarmonic):
+def bin_spec_from_metadata(metadata: TwoPointReal | TwoPointHarmonic) -> BinSpec:
     """Return the bin spec from the metadata."""
     return frozenset(
         (
