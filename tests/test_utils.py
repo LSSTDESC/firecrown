@@ -4,12 +4,14 @@ Tests for the firecrown.utils modle.
 
 import re
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pyccl
 import pytest
 import sacc
 from numpy.testing import assert_allclose
+from pydantic import BaseModel
 
 from firecrown.utils import (
     ClIntegrationMethod,
@@ -187,9 +189,9 @@ def test_compare_optional_arrays_():
     assert not compare_optional_arrays(a, q)
 
 
-def test_base_model_from_yaml_wrong():
+def test_base_model_from_yaml_wrong() -> None:
     with pytest.raises(ValueError):
-        _ = base_model_from_yaml(str, "wrong")
+        _ = base_model_from_yaml(cast(type[BaseModel], str), "wrong")
 
 
 def test_compare_optionals():

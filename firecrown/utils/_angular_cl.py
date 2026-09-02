@@ -1,7 +1,7 @@
 """Angular power spectrum utilities for Firecrown."""
 
 import functools
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum, auto
 from typing import Annotated
 
@@ -18,14 +18,24 @@ class ClLimberMethod(YAMLSerializable, str, Enum):
     """This class defines Cl limber methods."""
 
     @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
+    # pylint: disable-next=arguments-differ
+    def _generate_next_value_(
+        name: str,
+        _start: int,
+        _count: int,
+        _last_values: Sequence[object],
+        /,
+    ) -> str:
+        """Generate the next value for the enum."""
         return name.lower()
 
     GSL_QAG_QUAD = auto()
     GSL_SPLINE = auto()
 
 
-def _validate_cl_limber_method(value: ClLimberMethod | str):
+def _validate_cl_limber_method(
+    value: ClLimberMethod | str,
+) -> ClLimberMethod:
     if isinstance(value, str):
         try:
             return ClLimberMethod(value.lower())  # Convert from string to Enum
@@ -38,7 +48,14 @@ class ClIntegrationMethod(YAMLSerializable, str, Enum):
     """This class defines Cl integration methods."""
 
     @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
+    # pylint: disable-next=arguments-differ
+    def _generate_next_value_(
+        name: str,
+        _start: int,
+        _count: int,
+        _last_values: Sequence[object],
+        /,
+    ) -> str:
         return name.lower()
 
     LIMBER = auto()
@@ -46,7 +63,9 @@ class ClIntegrationMethod(YAMLSerializable, str, Enum):
     FKEM_L_LIMBER = auto()
 
 
-def _validate_cl_integration_method(value: ClIntegrationMethod | str):
+def _validate_cl_integration_method(
+    value: ClIntegrationMethod | str,
+) -> ClIntegrationMethod:
     if isinstance(value, str):
         try:
             return ClIntegrationMethod(value.lower())  # Convert from string to Enum
@@ -83,7 +102,7 @@ class ClIntegrationOptions(BaseModel):
         """Serialize the limber_method parameter."""
         return value.name
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _context: Mapping[str, object] | None, /) -> None:
         """Initialize the WeakLensingFactory object."""
         match self.method:
             case ClIntegrationMethod.LIMBER:
@@ -106,7 +125,7 @@ class ClIntegrationOptions(BaseModel):
             if getattr(self, option) is not None:
                 raise ValueError(f"{option} is incompatible with {self.method!s}.")
 
-    def get_angular_cl_args(self):
+    def get_angular_cl_args(self) -> dict[str, str | int | float]:
         """Get the arguments to pass to pyccl.angular_cl."""
         match self.limber_method:
             case ClLimberMethod.GSL_QAG_QUAD:
@@ -154,11 +173,11 @@ class ClIntegrationOptions(BaseModel):
 def cached_angular_cl(
     cosmo: pyccl.Cosmology,
     tracers: tuple[pyccl.Tracer, pyccl.Tracer],
-    ells: npt.NDArray[np.int64],
-    p_of_k_a=None | Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]],
-    p_of_k_a_lin=None | pyccl.Pk2D | str,
+    ells: tuple[int, ...],
+    p_of_k_a: Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]] | None = None,
+    p_of_k_a_lin: pyccl.Pk2D | str | None = None,
     int_options: ClIntegrationOptions | None = None,
-):
+) -> npt.NDArray[np.float64]:
     """Wrapper for pyccl.angular_cl, with automatic caching.
 
     :param cosmo: the current cosmology
