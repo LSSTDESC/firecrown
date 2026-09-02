@@ -382,4 +382,5 @@ def cleanup(instance: FirecrownLikelihood) -> int:
 
     :returns: 0
     """
+    assert isinstance(instance, FirecrownLikelihood)
     return 0
