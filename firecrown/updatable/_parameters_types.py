@@ -33,7 +33,7 @@ class SamplerParameter:
         """Get the default value of this parameter."""
         return self.default_value
 
-    def set_fullname(self, prefix: str | None, name: str):
+    def set_fullname(self, prefix: str | None, name: str) -> None:
         """Set the prefix and name of this parameter.
 
         If the parameter is shared (shared=True), the prefix will be
@@ -103,7 +103,7 @@ class InternalParameter:
         """
         self.value = value
 
-    def set_value(self, value: float):
+    def set_value(self, value: float) -> None:
         """Set the value of this parameter.
 
         :param value: new value
@@ -117,7 +117,7 @@ class InternalParameter:
 
 def register_new_updatable_parameter(
     value: None | float = None, *, default_value: float, shared: bool = False
-):
+) -> SamplerParameter | InternalParameter:
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
