@@ -17,7 +17,7 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import Annotated, Generic, Literal, TypeVar, final
+from typing import Annotated, Generic, Literal, TypeVar, cast, final
 
 import numpy as np
 import numpy.typing as npt
@@ -393,7 +393,7 @@ class Statistic(Updatable):
         assert len(self.get_data_vector()) > 0
         self.ready = True
 
-    def _reset(self):
+    def _reset(self) -> None:
         """Reset this statistic.
 
         Derived classes that override this function should make sure to call the
@@ -522,7 +522,9 @@ class TrivialStatistic(Statistic):
         # Data and theory will both be of length self.count
         self.count = 3
         self.data_vector: None | DataVector = None
-        self.mean = register_new_updatable_parameter(default_value=0.0)
+        self.mean: float = cast(
+            float, register_new_updatable_parameter(default_value=0.0)
+        )
         self.computed_theory_vector = False
 
     def read(self, sacc_data: sacc.Sacc) -> None:
@@ -639,7 +641,7 @@ class Source(Updatable):
         """
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update(self, params: ParamsMap) -> None:
         """Implementation of Updatable interface method `_update`.
 
         This clears the current hash and tracer, and calls the abstract method
@@ -659,7 +661,9 @@ class Source(Updatable):
         """
 
     @abstractmethod
-    def create_tracers(self, tools: ModelingTools):
+    def create_tracers(
+        self, tools: ModelingTools
+    ) -> tuple[Sequence[Tracer], SourceGalaxyArgs]:
         """Abstract method to create tracers for this Source.
 
         :param tools: The modeling tools used for creating the tracers
@@ -934,8 +938,11 @@ class SourceGalaxyPhotoZShift(
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.delta_z = register_new_updatable_parameter(
-            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+        self.delta_z: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+            ),
         )
         if active:
             self._transform = dndz_shift_and_stretch_active
@@ -1011,8 +1018,11 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         """
         super().__init__(sacc_tracer)
 
-        self.sigma_z = register_new_updatable_parameter(
-            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
+        self.sigma_z: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
+            ),
         )
 
         if active:
@@ -1020,7 +1030,9 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+    def apply(
+        self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT
+    ) -> _SourceGalaxyArgsT:
         """Apply a shift & stretch to the photo-z distribution of a source."""
         new_z, new_dndz = self._transform(
             tracer_arg.z, tracer_arg.dndz, self.delta_z, self.sigma_z
