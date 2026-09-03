@@ -2,7 +2,7 @@
 
 from functools import cache
 from itertools import pairwise
-from typing import Annotated, Any, TypedDict, Unpack
+from typing import Annotated, Any, TypedDict, Unpack, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -174,7 +174,13 @@ class ZDistLSSTSRD:
         """
         return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
-    def distribution(self, z: npt.NDArray) -> npt.NDArray:
+    @overload
+    def distribution(self, z: float) -> float: ...  # noqa: E704
+
+    @overload
+    def distribution(self, z: npt.NDArray) -> npt.NDArray: ...  # noqa: E704
+
+    def distribution(self, z: float | npt.NDArray) -> float | npt.NDArray:
         """Generate the inferred galaxy redshift distribution.
 
         :param z: The redshifts at which to evaluate the distribution
@@ -196,7 +202,7 @@ class ZDistLSSTSRD:
         sqrt_2 = np.sqrt(2.0)
         sqrt_2pi = np.sqrt(2.0 * np.pi)
 
-        def integrand(z):
+        def integrand(z: npt.NDarray[np.float64]) -> npt.NDarray[np.float64]:
             lsigma_z = sigma_z * (1.0 + z)
             return (
                 self.distribution(z)
@@ -264,7 +270,7 @@ class ZDistLSSTSRD:
         :returns: The inferred galaxy redshift distribution
         """
 
-        def m2lndist(z, _):
+        def m2lndist(z: float, _: object) -> float:
             return -2.0 * np.log(
                 self.distribution_zp(z, sigma_z) + self.autoknots_abstol
             )
@@ -296,7 +302,7 @@ class ZDistLSSTSRD:
         :returns: The inferred galaxy redshift distribution
         """
 
-        def m2lndist(z, _):
+        def m2lndist(z: float, _: object) -> float:
             return -2.0 * np.log(self.distribution(z) + self.autoknots_abstol)
 
         s = Ncm.SplineCubicNotaknot()
@@ -373,7 +379,7 @@ class ZDistLSSTSRD:
         :returns: The inferred galaxy redshift distribution
         """
 
-        def _P(z, _):
+        def _P(z: float, _: object) -> float:
             """A local closure.
 
             Used to create a function that captures the ZDistLSSTSRD state and
