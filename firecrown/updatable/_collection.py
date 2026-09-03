@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import UserList
 from collections.abc import Iterable
-from typing import Generic, TypeVar, cast, final
+from typing import Any, Generic, TypeVar, cast, final
 
 from firecrown.updatable._base import Updatable
 from firecrown.updatable._parameters_derived import DerivedParameterCollection
@@ -120,7 +120,8 @@ class UpdatableCollection(UserList[T], Generic[T]):
             )
         super().append(item)
 
-    def __setitem__(self, key, value):
+    # Any preserves UserList's int and slice overloads for this override.
+    def __setitem__(self, key: Any, value: Any) -> None:
         """Set self[key] to value; raise TypeError if Value is not Updatable."""
         if not isinstance(value, Updatable):
             raise TypeError(

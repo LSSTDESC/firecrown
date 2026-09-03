@@ -2,6 +2,7 @@
 
 import copy
 import warnings
+from collections.abc import ItemsView
 
 from ._parameters_names import _validate_params_map_value, parameter_get_full_name
 
@@ -62,7 +63,7 @@ class ParamsMap:
         result.lower_case = self.lower_case
         return result
 
-    def items(self):
+    def items(self) -> ItemsView[str, float]:
         """Return an iterator over the items in the dictionary.
 
         :returns: an iterator over the items in the dictionary
@@ -172,7 +173,7 @@ def handle_unused_params(
     params: ParamsMap,
     updated_records: list,
     raise_on_unused: bool = False,
-):
+) -> None:
     """Check for unused keys in the parameters map."""
     unused_keys = params.get_unused_keys()
     if unused_keys:
