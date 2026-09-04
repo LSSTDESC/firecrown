@@ -2,6 +2,7 @@
 
 import os
 import re
+from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -17,6 +18,7 @@ import firecrown.updatable
 from firecrown.data_functions import extract_all_harmonic_data
 from firecrown.likelihood import ConstGaussianPM, Statistic, TrivialStatistic, TwoPoint
 from firecrown.likelihood._gaussian_pointmass import PointMassData
+from firecrown.likelihood_base import SourceGalaxy, SourceGalaxyArgs, Tracer
 from firecrown.metadata_functions import TwoPointHarmonicIndex
 from firecrown.metadata_types import Galaxies, TracerNames
 from firecrown.modeling_tools import ModelingTools
@@ -578,20 +580,51 @@ class MockStatistic:
         self.get_data_vector = get_data_vector
 
 
-class MockSource:
-    """A mock source with the relevant properties needed to test PM."""
+class MockSource(SourceGalaxy[SourceGalaxyArgs]):
+    """A minimal, concrete SourceGalaxy used to test PM internals in isolation.
 
-    def __init__(self, sacc_tracer, tracer_args):
-        self.sacc_tracer = sacc_tracer
+    ``ConstGaussianPM`` requires that ``source0``/``source1`` on
+    ``galaxy_shearDensity_xi_t`` statistics be genuine ``SourceGalaxy`` instances:
+    ``_gaussian_pointmass.py`` asserts ``isinstance(source, SourceGalaxy)`` before
+    reading ``tracer_args``, so that the attribute access can be statically typed
+    without an unchecked ``cast``. This class satisfies that requirement with the
+    smallest possible implementation, letting tests exercise the point-mass
+    marginalization math (``_generate_maps``, ``_compute_betas``, and friends)
+    without constructing a full SACC file and going through ``TwoPoint.read()``.
+
+    Unlike real sources (e.g. ``WeakLensing``, ``NumberCounts``), this class never
+    reads N(z) data from a SACC file: ``tracer_args`` is supplied directly by the
+    caller at construction time. It intentionally does not implement
+    ``create_tracers`` or ``get_scale``, since no test in this module needs to
+    build a CCL tracer from a ``MockSource``; calling either raises
+    ``NotImplementedError``.
+    """
+
+    def __init__(self, sacc_tracer: str, tracer_args: SourceGalaxyArgs) -> None:
+        """Create a MockSource with the given tracer name and N(z) data.
+
+        :param sacc_tracer: the name to expose as the SACC tracer name.
+        :param tracer_args: the N(z) data to expose as ``tracer_args``, supplied
+            directly here rather than read from a SACC file.
+        """
+        super().__init__(sacc_tracer=sacc_tracer)
         self.tracer_args = tracer_args
 
+    def get_scale(self) -> float:
+        """Not implemented: no test using MockSource needs a CCL scale factor."""
+        msg = (
+            "MockSource.get_scale is not implemented; this mock only supports "
+            "the tracer_args-based tests in this module."
+        )
+        raise NotImplementedError(msg)
 
-class MockTracerArgs:
-    """A mock tracer with the relevant properties needed to test PM."""
-
-    def __init__(self, z, dndz):
-        self.z = z
-        self.dndz = dndz
+    def create_tracers(self, tools: ModelingTools) -> tuple[Sequence[Tracer], object]:
+        """Not implemented: no test using MockSource needs a CCL tracer."""
+        msg = (
+            "MockSource.create_tracers is not implemented; this mock only "
+            "supports the tracer_args-based tests in this module."
+        )
+        raise NotImplementedError(msg)
 
 
 class MockStatisticContainer:
@@ -606,7 +639,7 @@ def fixture_minimal_const_gaussian_PM() -> ConstGaussianPM:
     # Create minimal valid statistics for the class.
     z = np.array([0.1, 0.2, 0.3])
     dndz = np.array([1.0, 2.0, 3.0])
-    tracer_args = MockTracerArgs(z, dndz)
+    tracer_args = SourceGalaxyArgs(z=z, dndz=dndz)
     source0 = MockSource("lens0", tracer_args)
     source1 = MockSource("src0", tracer_args)
     statistic = MockStatistic(
@@ -653,8 +686,12 @@ def test_precomputed_warning(minimal_const_gaussian_PM):
 
 def test_uneven_nz_size_error_lens(minimal_const_gaussian_PM):
     # Check the case of uneven lens N(z) lengths.
-    tracer_args = MockTracerArgs(np.array([0.1, 0.2, 0.3]), np.array([1.0, 2.0, 3.0]))
-    tracer_args_short = MockTracerArgs(np.array([0.1, 0.2]), np.array([1.0, 2.0]))
+    tracer_args = SourceGalaxyArgs(
+        z=np.array([0.1, 0.2, 0.3]), dndz=np.array([1.0, 2.0, 3.0])
+    )
+    tracer_args_short = SourceGalaxyArgs(
+        z=np.array([0.1, 0.2]), dndz=np.array([1.0, 2.0])
+    )
     source0 = MockSource("lens", tracer_args_short)
     source1 = MockSource("src", tracer_args)
     statistic = MockStatistic(
@@ -666,14 +703,21 @@ def test_uneven_nz_size_error_lens(minimal_const_gaussian_PM):
     )
     stat_container = MockStatisticContainer(statistic)
     minimal_const_gaussian_PM.statistics.append(stat_container)
-    with pytest.raises(AssertionError):
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("N(z) sampling must be the same for all lens tracers."),
+    ):
         minimal_const_gaussian_PM._generate_maps()
 
 
 def test_uneven_nz_size_error_source(minimal_const_gaussian_PM):
     # Check the case of uneven source N(z) lengths.
-    tracer_args = MockTracerArgs(np.array([0.1, 0.2, 0.3]), np.array([1.0, 2.0, 3.0]))
-    tracer_args_short = MockTracerArgs(np.array([0.1, 0.2]), np.array([1.0, 2.0]))
+    tracer_args = SourceGalaxyArgs(
+        z=np.array([0.1, 0.2, 0.3]), dndz=np.array([1.0, 2.0, 3.0])
+    )
+    tracer_args_short = SourceGalaxyArgs(
+        z=np.array([0.1, 0.2]), dndz=np.array([1.0, 2.0])
+    )
     source0 = MockSource("lens", tracer_args)
     source1 = MockSource("src", tracer_args_short)
     statistic = MockStatistic(
@@ -685,7 +729,10 @@ def test_uneven_nz_size_error_source(minimal_const_gaussian_PM):
     )
     stat_container = MockStatisticContainer(statistic)
     minimal_const_gaussian_PM.statistics.append(stat_container)
-    with pytest.raises(AssertionError):
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("N(z) sampling must be the same for all source tracers."),
+    ):
         minimal_const_gaussian_PM._generate_maps()
 
 
@@ -716,7 +763,9 @@ def test_prepare_integrand(minimal_const_gaussian_PM):
 def test_compute_betas(minimal_const_gaussian_PM):
     # Check that _compute_betas() generate the correct number of betas.
     cosmo = pyccl.CosmologyVanillaLCDM()
-    tracer_args = MockTracerArgs(np.array([0.1, 0.2, 0.3]), np.array([1.0, 2.0, 3.0]))
+    tracer_args = SourceGalaxyArgs(
+        z=np.array([0.1, 0.2, 0.3]), dndz=np.array([1.0, 2.0, 3.0])
+    )
     source0 = MockSource("lens0", tracer_args)
     source1 = MockSource("src1", tracer_args)
     statistic = MockStatistic(
@@ -839,8 +888,9 @@ def test_collect_data_vectors_missing_attributes():
         def __init__(self):
             # Missing 'thetas' attribute
             self.sacc_data_type = "galaxy_shearDensity_xi_t"
-            self.source0 = MockSource("lens0", None)
-            self.source1 = MockSource("src0", None)
+            tracer_args = SourceGalaxyArgs(z=np.array([0.1]), dndz=np.array([1.0]))
+            self.source0 = MockSource("lens0", tracer_args)
+            self.source1 = MockSource("src0", tracer_args)
             # Missing self.thetas
 
     incomplete_stat = IncompleteStatistic()
