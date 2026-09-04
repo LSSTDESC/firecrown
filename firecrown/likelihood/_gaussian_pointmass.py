@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -14,6 +14,9 @@ from scipy.integrate import simpson
 
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood_base import GuardedStatistic, Statistic
+
+if TYPE_CHECKING:
+    from firecrown.likelihood._two_point import TwoPoint
 
 # Default values for point mass marginalization
 DEFAULT_SIGMA_B = 10000.0
@@ -95,7 +98,7 @@ class ConstGaussianPM(ConstGaussian):
         # Validate that all statistics have the required attributes
         required_attrs = ["sacc_data_type", "source0", "source1", "thetas"]
         for stat in self.statistics:
-            stat_obj = stat.statistic
+            stat_obj = cast("TwoPoint", stat.statistic)
             missing_attrs = [
                 attr for attr in required_attrs if not hasattr(stat_obj, attr)
             ]
@@ -116,7 +119,7 @@ class ConstGaussianPM(ConstGaussian):
         lens_keys = np.concatenate(
             [
                 np.repeat(
-                    stat.statistic.source0.sacc_tracer,  # type: ignore[attr-defined]
+                    cast("TwoPoint", stat.statistic).source0.sacc_tracer,
                     len(stat.statistic.get_data_vector()),
                 )
                 for stat in self.statistics
@@ -125,7 +128,7 @@ class ConstGaussianPM(ConstGaussian):
         src_keys = np.concatenate(
             [
                 np.repeat(
-                    stat.statistic.source1.sacc_tracer,  # type: ignore[attr-defined]
+                    cast("TwoPoint", stat.statistic).source1.sacc_tracer,
                     len(stat.statistic.get_data_vector()),
                 )
                 for stat in self.statistics
@@ -199,8 +202,12 @@ class ConstGaussianPM(ConstGaussian):
         ]
         idx_is_xit = np.array(sacc_types) == "galaxy_shearDensity_xi_t"
         xi_t_stats = np.array(self.statistics)[idx_is_xit]
-        z_l_arr = [s.statistic.source0.tracer_args.z for s in xi_t_stats]
-        z_s_arr = [s.statistic.source1.tracer_args.z for s in xi_t_stats]
+        z_l_arr = [
+            cast("TwoPoint", s.statistic).source0.tracer_args.z for s in xi_t_stats
+        ]
+        z_s_arr = [
+            cast("TwoPoint", s.statistic).source1.tracer_args.z for s in xi_t_stats
+        ]
         z_l = z_l_arr[0]
         z_s = z_s_arr[0]
 
@@ -227,11 +234,15 @@ class ConstGaussianPM(ConstGaussian):
         """
         # Build dN/dz libraries once per unique tracer
         nzL_list = [
-            self._get_lens_statistic(lt).statistic.source0.tracer_args.dndz
+            cast(
+                "TwoPoint", self._get_lens_statistic(lt).statistic
+            ).source0.tracer_args.dndz
             for lt in lens_tracers
         ]
         nzS_list = [
-            self._get_src_statistic(st).statistic.source1.tracer_args.dndz
+            cast(
+                "TwoPoint", self._get_src_statistic(st).statistic
+            ).source1.tracer_args.dndz
             for st in src_tracers
         ]
         nzL = np.stack(nzL_list)
@@ -302,7 +313,7 @@ class ConstGaussianPM(ConstGaussian):
         source_attr = "source0" if is_lens else "source1"
 
         for s in self.statistics:
-            stat = s.statistic
+            stat = cast("TwoPoint", s.statistic)
             is_xi_t = (
                 stat.sacc_data_type  # type: ignore[attr-defined]
                 == "galaxy_shearDensity_xi_t"
