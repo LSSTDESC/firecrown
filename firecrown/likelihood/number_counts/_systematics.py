@@ -281,8 +281,11 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mag_bias = register_new_updatable_parameter(
-            default_value=CONSTANT_MAGNIFICATION_BIAS_DEFAULT_MAG_BIAS
+        self.mag_bias: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=CONSTANT_MAGNIFICATION_BIAS_DEFAULT_MAG_BIAS
+            ),
         )
 
     def apply(
