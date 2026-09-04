@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import replace
+from typing import cast
 
 import numpy as np
 import pyccl
@@ -65,8 +66,11 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mult_bias = register_new_updatable_parameter(
-            default_value=MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS
+        self.mult_bias: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS
+            ),
         )
 
     def apply(
@@ -118,17 +122,29 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_bias = register_new_updatable_parameter(
-            default_value=LINEAR_ALIGNMENT_DEFAULT_IA_BIAS
+        self.ia_bias: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=LINEAR_ALIGNMENT_DEFAULT_IA_BIAS
+            ),
         )
-        self.alphaz = register_new_updatable_parameter(
-            default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAZ
+        self.alphaz: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAZ
+            ),
         )
-        self.alphag = register_new_updatable_parameter(
-            alphag, default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAG
+        self.alphag: float = cast(
+            float,
+            register_new_updatable_parameter(
+                alphag, default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAG
+            ),
         )
-        self.z_piv = register_new_updatable_parameter(
-            default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+        self.z_piv: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+            ),
         )
 
     def apply(
@@ -195,21 +211,36 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_amplitude = register_new_updatable_parameter(
-            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_BIAS, shared=True
+        self.ia_amplitude: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_BIAS, shared=True
+            ),
         )
-        self.ia_mass_scaling = register_new_updatable_parameter(
-            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_SCALING, shared=True
+        self.ia_mass_scaling: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_IA_SCALING, shared=True
+            ),
         )
-        self.red_fraction = register_new_updatable_parameter(
-            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_RED_FRACTION
+        self.red_fraction: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_RED_FRACTION
+            ),
         )
-        self.log10_average_halo_mass = register_new_updatable_parameter(
-            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_LOG10_AVERAGE_HALO_MASS
+        self.log10_average_halo_mass: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_LOG10_AVERAGE_HALO_MASS
+            ),
         )
-        self.pivot_log10_halo_mass = register_new_updatable_parameter(
-            value=13.5,
-            default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_LOG10_AVERAGE_HALO_MASS,
+        self.pivot_log10_halo_mass: float = cast(
+            float,
+            register_new_updatable_parameter(
+                value=13.5,
+                default_value=MASSDEP_LINEAR_ALIGNMENT_DEFAULT_LOG10_AVERAGE_HALO_MASS,
+            ),
         )
 
     def apply(
@@ -283,41 +314,65 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         self.ia_a_1 = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
         )
-        self.ia_zpiv_1 = register_new_updatable_parameter(
-            value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1,
-        )
-        self.ia_alphaz_1 = register_new_updatable_parameter(
-            value=(
-                None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
+        self.ia_zpiv_1: float = cast(
+            float,
+            register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1,
             ),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1,
+        )
+        self.ia_alphaz_1: float = cast(
+            float,
+            register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1,
+            ),
         )
         self.ia_a_2 = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
         )
-        self.ia_zpiv_2 = register_new_updatable_parameter(
-            value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2,
-        )
-        self.ia_alphaz_2 = register_new_updatable_parameter(
-            value=(
-                None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
+        self.ia_zpiv_2: float = cast(
+            float,
+            register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2,
             ),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2,
+        )
+        self.ia_alphaz_2: float = cast(
+            float,
+            register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2,
+            ),
         )
         self.ia_a_d = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
         )
-        self.ia_zpiv_d = register_new_updatable_parameter(
-            value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
-        )
-        self.ia_alphaz_d = register_new_updatable_parameter(
-            value=(
-                None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
+        self.ia_zpiv_d: float = cast(
+            float,
+            register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
             ),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D,
+        )
+        self.ia_alphaz_d: float = cast(
+            float,
+            register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D,
+            ),
         )
 
     def apply(
