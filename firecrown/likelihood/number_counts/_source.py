@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import replace
-from typing import final
+from typing import cast, final
 
 import numpy as np
 import pyccl
@@ -56,8 +56,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.has_rsd = has_rsd
         self.derived_scale = derived_scale
 
-        self.bias = register_new_updatable_parameter(
-            default_value=NUMBER_COUNTS_DEFAULT_BIAS
+        self.bias: float = cast(
+            float,
+            register_new_updatable_parameter(default_value=NUMBER_COUNTS_DEFAULT_BIAS),
         )
         self.systematics: UpdatableCollection[
             SourceGalaxySystematic[NumberCountsArgs]
