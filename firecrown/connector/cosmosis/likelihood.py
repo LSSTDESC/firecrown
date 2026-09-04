@@ -320,7 +320,9 @@ def calculate_firecrown_params(
                 f"module {firecrown_module_name}."
             )
 
-        firecrown_params = ParamsMap({**firecrown_params, **section_params.data})
+        firecrown_params = ParamsMap(
+            firecrown_params.params | section_params.to_float_dict()
+        )
 
     firecrown_params.use_lower_case_keys(True)
     return firecrown_params

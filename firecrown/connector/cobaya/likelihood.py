@@ -306,7 +306,12 @@ class LikelihoodConnector(Likelihood):
         }
         return pyccl_args, pyccl_params_values
 
-    def logp(self, *, _derived=None, **params_values) -> float:
+    def logp(
+        self,
+        *,
+        _derived: dict[str, float] | None = None,
+        **params_values: float,
+    ) -> float:
         """Return the log of the calculated likelihood.
 
         Required by Cobaya.

@@ -314,10 +314,7 @@ class ConstGaussianPM(ConstGaussian):
 
         for s in self.statistics:
             stat = cast("TwoPoint", s.statistic)
-            is_xi_t = (
-                stat.sacc_data_type
-                == "galaxy_shearDensity_xi_t"
-            )
+            is_xi_t = stat.sacc_data_type == "galaxy_shearDensity_xi_t"
             source_obj = getattr(stat, source_attr)
             is_match = source_obj.sacc_tracer == tracer
             if is_xi_t and is_match:

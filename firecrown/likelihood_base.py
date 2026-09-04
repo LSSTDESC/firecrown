@@ -257,6 +257,26 @@ class NamedParameters:
         """
         return set(self.data)
 
+    def to_float_dict(self) -> dict[str, float]:
+        """Return the contained data as a dictionary of floats.
+
+        Sampling parameters must be floats; this is the form required to build a
+        :class:`ParamsMap`. Any other type is a configuration error, and is
+        reported naming the offending parameter.
+
+        :returns: the contained data, with every value typed as a float
+        :raises TypeError: if any contained value is not a float
+        """
+        result: dict[str, float] = {}
+        for name, value in self.data.items():
+            if not isinstance(value, float):
+                raise TypeError(
+                    f"Parameter {name} has type {type(value).__name__}; "
+                    f"only float values can be used as sampling parameters."
+                )
+            result[name] = value
+        return result
+
     def set_from_basic_dict(
         self,
         basic_dict: dict[
