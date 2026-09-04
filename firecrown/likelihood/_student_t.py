@@ -1,6 +1,7 @@
 """The Student-t likelihood."""
 
 from __future__ import annotations
+from typing import cast
 
 import numpy as np
 
@@ -30,7 +31,9 @@ class StudentT(GaussFamily):
         :param nu: The degrees of freedom of the T-distribution
         """
         super().__init__(statistics)
-        self.nu = register_new_updatable_parameter(nu, default_value=3.0)
+        self.nu: float = cast(
+            float, register_new_updatable_parameter(nu, default_value=3.0)
+        )
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Compute the log-likelihood.

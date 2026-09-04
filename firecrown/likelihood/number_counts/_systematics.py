@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import replace
+from typing import cast
 
 import numpy as np
 import pyccl
@@ -82,14 +83,17 @@ class LinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.alphaz = register_new_updatable_parameter(
-            default_value=LINEAR_BIAS_DEFAULT_ALPHAZ
+        self.alphaz: float = cast(
+            float,
+            register_new_updatable_parameter(default_value=LINEAR_BIAS_DEFAULT_ALPHAZ),
         )
-        self.alphag = register_new_updatable_parameter(
-            default_value=LINEAR_BIAS_DEFAULT_ALPHAG
+        self.alphag: float = cast(
+            float,
+            register_new_updatable_parameter(default_value=LINEAR_BIAS_DEFAULT_ALPHAG),
         )
-        self.z_piv = register_new_updatable_parameter(
-            default_value=LINEAR_BIAS_DEFAULT_Z_PIV
+        self.z_piv: float = cast(
+            float,
+            register_new_updatable_parameter(default_value=LINEAR_BIAS_DEFAULT_Z_PIV),
         )
 
     def apply(
@@ -146,11 +150,17 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
-        self.b_2 = register_new_updatable_parameter(
-            default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_2
+        self.b_2: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_2
+            ),
         )
-        self.b_s = register_new_updatable_parameter(
-            default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_S
+        self.b_s: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_S
+            ),
         )
 
     def apply(
@@ -200,11 +210,21 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.r_lim = register_new_updatable_parameter(default_value=24.0)
-        self.sig_c = register_new_updatable_parameter(default_value=9.83)
-        self.eta = register_new_updatable_parameter(default_value=19.0)
-        self.z_c = register_new_updatable_parameter(default_value=0.39)
-        self.z_m = register_new_updatable_parameter(default_value=0.055)
+        self.r_lim: float = cast(
+            float, register_new_updatable_parameter(default_value=24.0)
+        )
+        self.sig_c: float = cast(
+            float, register_new_updatable_parameter(default_value=9.83)
+        )
+        self.eta: float = cast(
+            float, register_new_updatable_parameter(default_value=19.0)
+        )
+        self.z_c: float = cast(
+            float, register_new_updatable_parameter(default_value=0.39)
+        )
+        self.z_m: float = cast(
+            float, register_new_updatable_parameter(default_value=0.055)
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
