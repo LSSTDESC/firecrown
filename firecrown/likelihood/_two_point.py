@@ -488,7 +488,13 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
                 )
-            ells, Cells = gen.generate_ells_cells(self.theory.ell_or_theta_config)
+            # TODO(bug): generate_ells_cells returns float64 bin centers, not
+            # rounded int64 ell values (unlike LogLinearElls.generate()). This
+            # silences mypy only until that generator is fixed to emit integer
+            # ells; ells consumed here must be true integer multipoles.
+            ells, Cells = gen.generate_ells_cells(  # type: ignore[assignment]
+                self.theory.ell_or_theta_config
+            )
             sacc_indices = None
 
             # When generating the ells and Cells we do not have a window function
