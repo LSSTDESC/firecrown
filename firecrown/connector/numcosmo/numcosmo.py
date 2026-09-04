@@ -355,7 +355,7 @@ class NumCosmoData(Ncm.Data):
 
     __gtype_name__ = "FirecrownNumCosmoData"
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a NumCosmoData object.
 
         Default values are provided for all attributes; most default are None.
@@ -433,7 +433,7 @@ class NumCosmoData(Ncm.Data):
         """
         return self._likelihood_source
 
-    def _set_likelihood_source(self, value: None | str):
+    def _set_likelihood_source(self, value: None | str) -> None:
         """Set the likelihood string defining the factory function.
 
         :param value: the filename of the likelihood factory function
@@ -658,7 +658,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         """
         return self._nc_mapping
 
-    def _set_nc_mapping(self, value: MappingNumCosmo | None):
+    def _set_nc_mapping(self, value: MappingNumCosmo | None) -> None:
         """Set the MappingNumCosmo object.
 
         :param: the new value for the MappingNumCosmo object
@@ -804,7 +804,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         nc_mapping: MappingNumCosmo | None,
         likelihood_source: None | str = None,
         likelihood_build_parameters: None | NamedParameters = None,
-    ):
+    ) -> "NumCosmoGaussCov":
         """Initialize a NumCosmoGaussCov object.
 
         This object represents a Gaussian likelihood with a constant covariance.

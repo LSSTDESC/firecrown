@@ -11,7 +11,7 @@ class OutputHandler(ABC):
     methods to report them.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the handler with empty state."""
         self._matched_issues: list[str] = []
 
@@ -66,7 +66,7 @@ class StreamHandler(OutputHandler):
 class TracerNamingViolationHandler(MessageHandler):
     """Handler for SACC convention violation warnings about tracer naming."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the tracer naming violation handler."""
         super().__init__()
         self._pattern = re.compile(
@@ -113,7 +113,7 @@ class TracerNamingViolationHandler(MessageHandler):
 class LegacyCovarianceHandler(MessageHandler):
     """Handler for legacy SACC covariance format warnings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the legacy covariance handler."""
         super().__init__()
         self._pattern = re.compile(
@@ -156,7 +156,7 @@ class LegacyCovarianceHandler(MessageHandler):
 class MissingSaccOrderingHandler(StreamHandler):
     """Handler for missing sacc_ordering metadata in stdout."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the missing sacc_ordering handler."""
         super().__init__()
         self._pattern = re.compile(
@@ -210,7 +210,7 @@ class MissingSaccOrderingHandler(StreamHandler):
 class UnknownWarningHandler(MessageHandler):
     """Catch-all handler for unrecognized warnings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the unknown warning handler."""
         super().__init__()
         self._warnings: list[tuple[str, str]] = []  # (category, message)

@@ -104,7 +104,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
             )
         ]
 
-    def required_cosmology(self):
+    def required_cosmology(self) -> FrameworkCosmology:
         """Return cosmology requirement level."""
         return FrameworkCosmology.BACKGROUND
 

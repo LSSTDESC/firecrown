@@ -127,7 +127,7 @@ class LikelihoodConnector(Likelihood):
     build_parameters: NamedParameters = NamedParameters()
     distance_max_z: float = 4.0
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Initialize the likelihood object by loading its Firecrown configuration."""
         # force Cobaya to raise an exception on error
         self.stop_at_error = True

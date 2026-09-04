@@ -70,7 +70,7 @@ def calculate_angular_cl(
     tracer0: Tracer,
     tracer1: Tracer,
     int_options: ClIntegrationOptions | None = None,
-):
+) -> npt.NDArray[np.float64]:
     """Calculate the angular multipole moments.
 
     :param ells: The angular wavenumbers at which to compute the power spectrum.
@@ -178,7 +178,7 @@ class TwoPoint(Statistic):
         return self.theory.ells_for_xi
 
     @property
-    def cells(self):
+    def cells(self) -> dict[TracerNames, npt.NDArray[np.float64]]:
         """Backwards compatibility for cells."""
         return self.theory.cells
 
@@ -268,7 +268,7 @@ class TwoPoint(Statistic):
     @classmethod
     def _from_metadata_single_base(
         cls, metadata: TwoPointHarmonic | TwoPointReal, tp_factory: TwoPointFactory
-    ):
+    ) -> TwoPoint:
         """Create a single TwoPoint statistic from metadata.
 
         Base method for creating a single TwoPoint statistic from metadata.
@@ -382,7 +382,7 @@ class TwoPoint(Statistic):
 
         super().read(sacc_data)
 
-    def read_real_space(self, sacc_data: sacc.Sacc):
+    def read_real_space(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
         assert self.theory.sacc_tracers is not None
         thetas_xis_indices = read_reals(self.theory, sacc_data)

@@ -71,7 +71,7 @@ def main(
     typenames: List[str] = typer.Argument(
         ..., help="One or more fully qualified type names"
     )
-):
+) -> None:
     """Print the class hierarchy for the given type(s).
 
     This tool displays the Method Resolution Order (MRO) for Python classes,
