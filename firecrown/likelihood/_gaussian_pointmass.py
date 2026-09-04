@@ -315,7 +315,7 @@ class ConstGaussianPM(ConstGaussian):
         for s in self.statistics:
             stat = cast("TwoPoint", s.statistic)
             is_xi_t = (
-                stat.sacc_data_type  # type: ignore[attr-defined]
+                stat.sacc_data_type
                 == "galaxy_shearDensity_xi_t"
             )
             source_obj = getattr(stat, source_attr)
