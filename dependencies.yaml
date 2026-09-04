@@ -129,6 +129,7 @@ devenv:
   - name: requests
     note: firecrown-link-checker, run by make docs-linkcheck
   - name: quarto
+  - name: scipy-stubs
   - name: sphinx
   - name: sphinx-autoapi
   - name: sphinx-autodoc-typehints

@@ -57,6 +57,7 @@ dependencies:
   - rich
   - sacc >=2.4
   - scipy >=1.13
+  - scipy-stubs
   - sphinx
   - sphinx-autoapi
   - sphinx-autodoc-typehints
