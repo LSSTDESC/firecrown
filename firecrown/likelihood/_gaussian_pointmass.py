@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
@@ -13,7 +13,12 @@ import pyccl
 from scipy.integrate import simpson
 
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood_base import GuardedStatistic, Statistic
+from firecrown.likelihood_base import (
+    GuardedStatistic,
+    SourceGalaxy,
+    SourceGalaxyArgs,
+    Statistic,
+)
 
 if TYPE_CHECKING:
     from firecrown.likelihood._two_point import TwoPoint
@@ -202,12 +207,26 @@ class ConstGaussianPM(ConstGaussian):
         ]
         idx_is_xit = np.array(sacc_types) == "galaxy_shearDensity_xi_t"
         xi_t_stats = np.array(self.statistics)[idx_is_xit]
-        z_l_arr = [
-            cast("TwoPoint", s.statistic).source0.tracer_args.z for s in xi_t_stats
-        ]
-        z_s_arr = [
-            cast("TwoPoint", s.statistic).source1.tracer_args.z for s in xi_t_stats
-        ]
+        z_l_arr: list[npt.NDArray[np.float64]] = []
+        z_s_arr: list[npt.NDArray[np.float64]] = []
+        for s in xi_t_stats:
+            stat = cast("TwoPoint", s.statistic)
+            lens_source = stat.source0
+            src_source = stat.source1
+            assert isinstance(lens_source, SourceGalaxy), (
+                "Expected source0 to be a SourceGalaxy for "
+                f"'galaxy_shearDensity_xi_t' statistics, got "
+                f"{type(lens_source).__name__}"
+            )
+            assert isinstance(src_source, SourceGalaxy), (
+                "Expected source1 to be a SourceGalaxy for "
+                f"'galaxy_shearDensity_xi_t' statistics, got "
+                f"{type(src_source).__name__}"
+            )
+            lens_tracer_args: SourceGalaxyArgs = lens_source.tracer_args
+            src_tracer_args: SourceGalaxyArgs = src_source.tracer_args
+            z_l_arr.append(lens_tracer_args.z)
+            z_s_arr.append(src_tracer_args.z)
         z_l = z_l_arr[0]
         z_s = z_s_arr[0]
 
@@ -233,18 +252,12 @@ class ConstGaussianPM(ConstGaussian):
         :returns: Tuple of (nzL_norm, nzS_norm) normalized dN/dz arrays
         """
         # Build dN/dz libraries once per unique tracer
-        nzL_list = [
-            cast(
-                "TwoPoint", self._get_lens_statistic(lt).statistic
-            ).source0.tracer_args.dndz
-            for lt in lens_tracers
-        ]
-        nzS_list = [
-            cast(
-                "TwoPoint", self._get_src_statistic(st).statistic
-            ).source1.tracer_args.dndz
-            for st in src_tracers
-        ]
+        nzL_list = self._build_dndz_list(
+            lens_tracers, self._get_lens_statistic, "source0"
+        )
+        nzS_list = self._build_dndz_list(
+            src_tracers, self._get_src_statistic, "source1"
+        )
         nzL = np.stack(nzL_list)
         nzS = np.stack(nzS_list)
 
@@ -302,6 +315,31 @@ class ConstGaussianPM(ConstGaussian):
 
         # Mark as ready and cache original inverse covariance
         self._pm_inv_cov_original = self.inv_cov
+
+    def _build_dndz_list(
+        self,
+        tracers: list[str],
+        get_statistic: Callable[[str], GuardedStatistic],
+        source_attr: str,
+    ) -> list[npt.NDArray[np.float64]]:
+        """Build the list of dN/dz arrays for each tracer.
+
+        :param tracers: List of tracer names
+        :param get_statistic: Method to retrieve the GuardedStatistic for a tracer
+        :param source_attr: Attribute name on TwoPoint for the source
+        :returns: List of dN/dz arrays, one per tracer
+        """
+        nz_list: list[npt.NDArray[np.float64]] = []
+        for t in tracers:
+            stat = cast("TwoPoint", get_statistic(t).statistic)
+            source = getattr(stat, source_attr)
+            assert isinstance(source, SourceGalaxy), (
+                f"Expected {source_attr} to be a SourceGalaxy for tracer "
+                f"'{t}', got {type(source).__name__}"
+            )
+            tracer_args: SourceGalaxyArgs = source.tracer_args
+            nz_list.append(tracer_args.dndz)
+        return nz_list
 
     def _get_statistic(self, tracer: str, is_lens: bool) -> GuardedStatistic:
         """Get a statistic for a given tracer.
