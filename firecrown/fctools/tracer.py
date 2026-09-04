@@ -29,9 +29,15 @@ N.B.: This tracer should be used only for debugging and development purposes.
 import runpy
 import sys
 from pathlib import Path
+from types import FrameType
+from typing import TYPE_CHECKING
 
 import typer
 from rich.console import Console
+
+if TYPE_CHECKING:
+    # _typeshed is only available to type checkers, not at runtime.
+    from _typeshed import TraceFunction
 
 
 class TracerState:
@@ -47,7 +53,9 @@ class TracerState:
         self.entry = 0  # sequential entry number for each record
         print("entry\tevent\tlevel\tfunction\tvalue\textra", file=self.tracefile)
 
-    def trace_call(self, fr, ev, arg):
+    def trace_call(
+        self, fr: FrameType, ev: str, arg: object
+    ) -> "TraceFunction | None":
         """Callback used by settrace.
 
         :param fr: the frame object

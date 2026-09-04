@@ -22,7 +22,7 @@ def full_type_name(t: type) -> str:
     return f"{t.__module__}.{t.__name__}"
 
 
-def get_defined_methods(cls) -> list[str]:
+def get_defined_methods(cls: type) -> list[str]:
     """Return a list of method names defined in the class.
 
     This includes methods introduced in this class, as well as
