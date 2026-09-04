@@ -144,7 +144,7 @@ class TwoPointExperiment(BaseModel):
     data_source: DataSourceSacc
     ccl_factory: CCLFactory | None = None
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the TwoPointExperiment object."""
         if self.ccl_factory is None:
             self.ccl_factory = CCLFactory()

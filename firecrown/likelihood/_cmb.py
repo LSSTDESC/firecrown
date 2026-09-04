@@ -109,7 +109,7 @@ class CMBConvergenceFactory(BaseModel):
     z_source: float = 1100.0
     scale: float = 1.0
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the CMBConvergenceFactory."""
         self._cache: dict[int, CMBConvergence] = {}
 

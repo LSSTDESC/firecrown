@@ -134,7 +134,7 @@ class WeakLensingFactory(BaseModel):
         default_factory=list
     )
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the WeakLensingFactory object."""
         self._cache: dict[int, WeakLensing] = {}
         self._global_systematics_instances = [

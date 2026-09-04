@@ -147,7 +147,7 @@ class NumberCountsFactory(BaseModel):
     )
     include_rsd: bool = False
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the NumberCountsFactory."""
         self._cache: dict[int, NumberCounts] = {}
         self._global_systematics_instances = [
