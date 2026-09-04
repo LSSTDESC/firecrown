@@ -18,7 +18,7 @@ QuadOpts = TypedDict(
 )
 
 
-def mean_std_tracer(tracer: mdt.TomographicBin):
+def mean_std_tracer(tracer: mdt.TomographicBin) -> tuple[float, float]:
     """Compute the mean and standard deviation of a tracer.
 
     :param tracer: The galaxy redshift distribution tracer to analyze.

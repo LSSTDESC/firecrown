@@ -95,7 +95,7 @@ def main(
         "-v",
         help="Show detailed descriptions and usage examples",
     )
-):
+) -> None:
     """List all available fctools and their descriptions.
 
     This command helps discover what tools are available in the fctools

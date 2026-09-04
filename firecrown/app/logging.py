@@ -31,14 +31,14 @@ class Logging:
         ),
     ] = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Prepare logging."""
         self.console_io = None
         if self.log_file:
             self.console_io = self.log_file.open("w", encoding="utf-8")
         self.console = Console(file=self.console_io, quiet=self.quiet)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destructor to ensure file is closed."""
         # fallback: be defensive (no AttributeError)
         console_io = getattr(self, "console_io", None)

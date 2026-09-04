@@ -29,7 +29,7 @@ class BinnedCluster(Statistic):
         survey_name: str,
         cluster_recipe: BinnedClusterRecipe,
         systematics: None | list[SourceSystematic] = None,
-    ):
+    ) -> None:
         """Initialize this statistic.
 
         :param cluster_properties: The cluster observables to use.
@@ -49,7 +49,7 @@ class BinnedCluster(Statistic):
         self._create_updatable_parameters()
         self.updatable_parameters.init_all_parameters(self.cluster_recipe)
 
-    def _create_updatable_parameters(self):
+    def _create_updatable_parameters(self) -> None:
         cluster_objects_configs: list[_ClusterObjectConfig] = []
         for name in ("cluster_theory", "mass_distribution", "completeness", "purity"):
             _rec_attr = getattr(self.cluster_recipe, name)
@@ -85,7 +85,7 @@ class BinnedCluster(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def check_mor_murata_variance(self):
+    def check_mor_murata_variance(self) -> None:
         """Check if variance is negative."""
         mmin, mmax = self.cluster_recipe.mass_interval
         for bin_i in self.bins:

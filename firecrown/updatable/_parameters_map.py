@@ -2,7 +2,7 @@
 
 import copy
 import warnings
-from collections.abc import ItemsView
+from collections.abc import ItemsView, Iterable, Mapping
 
 from ._parameters_names import _validate_params_map_value, parameter_get_full_name
 
@@ -14,7 +14,11 @@ class ParamsMap:
     with square brackets like x[].
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        *args: Mapping[str, float] | Iterable[tuple[str, float]],
+        **kwargs: float,
+    ) -> None:
         """Initialize the ParamsMap.
 
         :param args: arguments

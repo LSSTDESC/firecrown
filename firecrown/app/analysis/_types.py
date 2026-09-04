@@ -133,7 +133,7 @@ class Parameter(BaseModel):
         default_value: float,
         free: bool,
         prior: Prior | None = None,
-    ):
+    ) -> "Parameter":
         """Create Parameter from tuple of values."""
         return cls(
             name=name,

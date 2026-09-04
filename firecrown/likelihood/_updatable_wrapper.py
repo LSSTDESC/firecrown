@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NotRequired, Protocol, TypedDict, TypeGuard, cast
+from typing import TYPE_CHECKING, NotRequired, Protocol, TypedDict, TypeGuard
 
 from firecrown.updatable import (
     Updatable,
@@ -12,8 +12,6 @@ from firecrown.updatable import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-
-    from firecrown.updatable import InternalParameter, SamplerParameter
 
 
 class _ClusterParameters(Protocol):
@@ -122,11 +120,8 @@ class UpdatableParameters(Updatable):
             ``parameters`` mapping.
         """
         for par_name in self.updatable_parameters:
-            registered_parameter = cast(
-                "SamplerParameter | InternalParameter",
-                register_new_updatable_parameter(
-                    default_value=cluster_object.parameters[par_name]
-                ),
+            registered_parameter = register_new_updatable_parameter(
+                default_value=cluster_object.parameters[par_name]
             )
             setattr(
                 self,

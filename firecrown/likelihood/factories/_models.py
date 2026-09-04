@@ -30,7 +30,7 @@ def _build_two_point_likelihood_harmonic(
     two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
     normalize: bool = True,
-):
+) -> Likelihood:
     """Build a likelihood object for two-point statistics in harmonic space.
 
     This function creates a likelihood object for two-point statistics in harmonic
@@ -65,7 +65,7 @@ def _build_two_point_likelihood_real(
     sacc_data: sacc.Sacc,
     two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
-):
+) -> Likelihood:
     """Build a likelihood object for two-point statistics in real space.
 
     This function creates a likelihood object for two-point statistics in real space

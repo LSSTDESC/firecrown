@@ -13,7 +13,7 @@ import pyccl
 from scipy.integrate import simpson
 
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood_base import Statistic
+from firecrown.likelihood_base import GuardedStatistic, Statistic
 
 # Default values for point mass marginalization
 DEFAULT_SIGMA_B = 10000.0
@@ -292,7 +292,7 @@ class ConstGaussianPM(ConstGaussian):
         # Mark as ready and cache original inverse covariance
         self._pm_inv_cov_original = self.inv_cov
 
-    def _get_statistic(self, tracer: str, is_lens: bool):
+    def _get_statistic(self, tracer: str, is_lens: bool) -> GuardedStatistic:
         """Get a statistic for a given tracer.
 
         :param tracer: The tracer name
@@ -316,7 +316,7 @@ class ConstGaussianPM(ConstGaussian):
         tracer_type = "lens" if is_lens else "source"
         raise StopIteration(f"No {tracer_type} statistic found for {tracer}")
 
-    def _get_lens_statistic(self, lens_tracer: str):
+    def _get_lens_statistic(self, lens_tracer: str) -> GuardedStatistic:
         """Get a statistic for a given lens tracer.
 
         :param lens_tracer: The lens tracer name
@@ -324,7 +324,7 @@ class ConstGaussianPM(ConstGaussian):
         """
         return self._get_statistic(lens_tracer, is_lens=True)
 
-    def _get_src_statistic(self, src_tracer: str):
+    def _get_src_statistic(self, src_tracer: str) -> GuardedStatistic:
         """Get a statistic for a given source tracer.
 
         :param src_tracer: The source tracer name

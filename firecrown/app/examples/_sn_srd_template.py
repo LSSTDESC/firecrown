@@ -17,7 +17,7 @@ from firecrown.modeling_tools import (
 )
 
 
-def build_likelihood(params: NamedParameters):
+def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:
     """Build a supernova SRD likelihood.
 
     Creates a Gaussian likelihood for supernova analysis with:

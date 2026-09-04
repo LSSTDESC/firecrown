@@ -68,7 +68,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         return obj
 
     @final
-    def _update_source(self, params: ParamsMap):
+    def _update_source(self, params: ParamsMap) -> None:
         """Implementation of Source interface `_update_source`.
 
         This updates all the contained systematics.
@@ -89,7 +89,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
 
         super()._read(sacc_data)
 
-    def create_tracers(self, tools: ModelingTools):
+    def create_tracers(self, tools: ModelingTools) -> tuple[list[Tracer], object]:
         """Render a source by applying systematics."""
         ccl_cosmo = tools.get_ccl_cosmology()
         tracer_args = self.tracer_args
@@ -153,7 +153,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
 
         return tracers, tracer_args
 
-    def get_scale(self):
+    def get_scale(self) -> float:
         """Returns the scales for this Source."""
         assert self.current_tracer_args
         return self.current_tracer_args.scale

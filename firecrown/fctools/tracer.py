@@ -139,7 +139,7 @@ def main(
     module: bool = typer.Option(
         False, "--module", "-m", help="Run target as a module (like python -m module)"
     ),
-):
+) -> None:
     """Trace execution of a Python script or module.
 
     This tool enables method tracing for Python code, recording function

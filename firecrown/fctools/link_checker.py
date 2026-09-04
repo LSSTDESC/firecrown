@@ -483,7 +483,7 @@ def cli(
             ),
         ),
     ] = None,
-):
+) -> None:
     """Command-line entry point using Typer and Rich for output."""
     code = main(
         root_dir,

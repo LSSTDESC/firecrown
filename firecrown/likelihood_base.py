@@ -661,9 +661,7 @@ class Source(Updatable):
         """
 
     @abstractmethod
-    def create_tracers(
-        self, tools: ModelingTools
-    ) -> tuple[Sequence[Tracer], SourceGalaxyArgs]:
+    def create_tracers(self, tools: ModelingTools) -> tuple[Sequence[Tracer], object]:
         """Abstract method to create tracers for this Source.
 
         :param tools: The modeling tools used for creating the tracers
