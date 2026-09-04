@@ -449,6 +449,6 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         :param tracer_arg: The WeakLensingArgs to which apply the systematic.
         :returns: A new WeakLensingArgs object with the systematic applied.
         """
-        return replace(
-            tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h
-        )
+        ia_a_1h = np.asarray(self.ia_a_1h, dtype=np.float64)
+        ia_a_2h = np.asarray(self.ia_a_2h, dtype=np.float64)
+        return replace(tracer_arg, has_hm=True, ia_a_1h=ia_a_1h, ia_a_2h=ia_a_2h)
