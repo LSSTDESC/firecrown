@@ -1,7 +1,7 @@
 """Angular power spectrum utilities for Firecrown."""
 
 import functools
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum, auto
 from typing import Annotated
 
@@ -102,7 +102,7 @@ class ClIntegrationOptions(BaseModel):
         """Serialize the limber_method parameter."""
         return value.name
 
-    def model_post_init(self, _context: Mapping[str, object] | None, /) -> None:
+    def model_post_init(self, _context: object, /) -> None:
         """Initialize the WeakLensingFactory object."""
         match self.method:
             case ClIntegrationMethod.LIMBER:

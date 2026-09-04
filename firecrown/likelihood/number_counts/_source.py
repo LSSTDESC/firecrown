@@ -8,6 +8,7 @@ from typing import cast, final
 
 import numpy as np
 import pyccl
+import sacc
 
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood_base import (
@@ -137,7 +138,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
 
         return derived_parameters
 
-    def _read(self, sacc_data) -> None:
+    def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this source from the SACC file.
 
         :param sacc_data: The data in the sacc format.

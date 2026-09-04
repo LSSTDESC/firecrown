@@ -1,7 +1,7 @@
 """Model classes for CCL factory module."""
 
 from types import TracebackType
-from typing import Annotated, Mapping
+from typing import Annotated
 
 import pyccl
 from pyccl.modified_gravity import MuSigmaMG
@@ -52,7 +52,7 @@ class CAMBExtraParams(BaseModel):
     lmax: Annotated[int | None, Field(frozen=True)] = None
     dark_energy_model: Annotated[str | None, Field(frozen=True)] = None
 
-    def model_post_init(self, _: Mapping[str, object] | None, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Validate that HMCode parameters are compatible with halofit_version."""
         if self.is_mead():
             if self.HMCode_logT_AGN is not None:

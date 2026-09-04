@@ -808,7 +808,7 @@ class TwoPointFactory(BaseModel):
     _nc_factory_map: dict[TypeSource, NumberCountsFactory] = PrivateAttr()
     _cmb_factory_map: dict[TypeSource, CMBConvergenceFactory] = PrivateAttr()
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the WeakLensingFactory object."""
         self._wl_factory_map: dict[TypeSource, WeakLensingFactory] = {}
         self._nc_factory_map: dict[TypeSource, NumberCountsFactory] = {}

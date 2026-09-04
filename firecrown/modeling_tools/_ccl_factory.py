@@ -1,6 +1,6 @@
 """CCLFactory class for creating pyccl.Cosmology instances."""
 
-from typing import Annotated, Any, Mapping, cast
+from typing import Annotated, Any, cast
 
 import pyccl
 from pyccl.neutrinos import NeutrinoMassSplits
@@ -219,7 +219,7 @@ class CCLFactory(Updatable, BaseModel):
         """Serialize the mass split parameter."""
         return value.value
 
-    def model_post_init(self, _: Mapping[str, object] | None, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the WeakLensingFactory object."""
 
     def create(
