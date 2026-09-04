@@ -21,6 +21,7 @@ from firecrown.modeling_tools import (
     CCLCalculatorArgs,
     CCLCreationMode,
     ModelingTools,
+    PowerSpec,
     PoweSpecAmplitudeParameter,
 )
 from firecrown.updatable import ParamsMap, UpdatableUsageRecord, handle_unused_params
@@ -273,7 +274,7 @@ class MappingNumCosmo(GObject.Object):
                 )
         return ccl_args
 
-    def extract_pk_nonlinear(self, mapping, hi_cosmo):
+    def extract_pk_nonlinear(self, mapping: Mapping, hi_cosmo: Nc.HICosmo) -> PowerSpec:
         """Extract the nonlinear power spectrum from the NumCosmo PowspecMNL object.
 
         :param mapping: The mapping object used to convert redshift to scale factor.
@@ -293,7 +294,7 @@ class MappingNumCosmo(GObject.Object):
         p_mnl = mapping.redshift_to_scale_factor_p_k(p_mnl)
         return {"a": scale_mpnl, "k": k, "delta_matter:delta_matter": p_mnl}
 
-    def extract_pk_linear(self, mapping, hi_cosmo):
+    def extract_pk_linear(self, mapping: Mapping, hi_cosmo: Nc.HICosmo) -> PowerSpec:
         """Extract the linear power spectrum from the NumCosmo PowspecMNL object.
 
         :param mapping: The mapping object used to convert redshift to scale factor.
@@ -584,7 +585,9 @@ class NumCosmoData(Ncm.Data):
             raise_on_unused=self.likelihood.raise_on_unused_parameter,
         )
 
-    def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
+    def do_m2lnL_val(  # pylint: disable-msg=arguments-differ
+        self, _: Ncm.MSet
+    ) -> float:
         """Implements the virtual method `m2lnL`.
 
         This method should calculate the value of the likelihood for
@@ -895,7 +898,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
             self.tools.prepare()
 
     # pylint: disable-next=arguments-differ
-    def do_mean_func(self, _, vp) -> None:
+    def do_mean_func(self, _: Ncm.MSet, vp: Ncm.Vector) -> None:
         """Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
 
         This method should compute the theoretical mean for the gaussian
