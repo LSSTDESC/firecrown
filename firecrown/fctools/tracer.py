@@ -53,9 +53,7 @@ class TracerState:
         self.entry = 0  # sequential entry number for each record
         print("entry\tevent\tlevel\tfunction\tvalue\textra", file=self.tracefile)
 
-    def trace_call(
-        self, fr: FrameType, ev: str, arg: object
-    ) -> "TraceFunction | None":
+    def trace_call(self, fr: FrameType, ev: str, arg: object) -> "TraceFunction | None":
         """Callback used by settrace.
 
         :param fr: the frame object
