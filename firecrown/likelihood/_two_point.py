@@ -842,7 +842,7 @@ class TwoPointFactory(BaseModel):
         self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
     ) -> WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory:
         """Get the Factory for the given Measurement and TypeSource."""
-        candidates: Sequence[tuple[tuple[str, ...], dict, str]] = [
+        candidates: Sequence[tuple[tuple[str, ...], dict[TypeSource, object], str]] = [
             (GALAXY_SOURCE_TYPES, self._wl_factory_map, "WeakLensingFactory"),
             (GALAXY_LENS_TYPES, self._nc_factory_map, "NumberCountsFactory"),
             (CMB_TYPES, self._cmb_factory_map, "CMBConvergenceFactory"),

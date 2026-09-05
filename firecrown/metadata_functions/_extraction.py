@@ -710,11 +710,13 @@ def extract_window_function(
 
 
 def maybe_enforce_window(
-    ells: npt.NDArray,
+    ells: npt.NDArray[np.int64],
     indices: npt.NDArray[np.int64],
     sacc_data: sacc.Sacc,
     normalize: bool = True,
-) -> tuple[npt.NDArray[np.int64], None | npt.NDArray[np.float64], None | npt.NDArray]:
+) -> tuple[
+    npt.NDArray[np.int64], None | npt.NDArray[np.float64], None | npt.NDArray[np.int64]
+]:
     """Possibly enforce a window function on the given ells.
 
     :param ells: The original ell values.

@@ -4,7 +4,9 @@ import numpy as np
 from numpy import typing as npt
 
 
-def compare_optional_arrays(x: None | npt.NDArray, y: None | npt.NDArray) -> bool:
+def compare_optional_arrays(
+    x: None | npt.NDArray[object], y: None | npt.NDArray[object]
+) -> bool:
     """Compare two arrays, allowing for either or both to be None.
 
     :param x: first array

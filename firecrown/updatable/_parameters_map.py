@@ -2,9 +2,10 @@
 
 import copy
 import warnings
-from collections.abc import ItemsView, Iterable, Mapping
+from collections.abc import ItemsView, Iterable, Mapping, Sequence
 
 from ._parameters_names import _validate_params_map_value, parameter_get_full_name
+from ._records import UpdatableUsageRecord
 
 
 class ParamsMap:
@@ -175,7 +176,7 @@ class ParamsMap:
 
 def handle_unused_params(
     params: ParamsMap,
-    updated_records: list,
+    updated_records: Sequence[UpdatableUsageRecord],
     raise_on_unused: bool = False,
 ) -> None:
     """Check for unused keys in the parameters map."""

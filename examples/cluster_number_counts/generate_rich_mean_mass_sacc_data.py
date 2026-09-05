@@ -61,7 +61,7 @@ def setup_cosmology(
 
 def setup_cluster_models(
     z_min: float, z_max: float, M0: float, z0: float, lnRl: float, lnRu: float
-) -> tuple:
+) -> tuple[object, ...]:
     """
     Set up cluster redshift and mass models.
 
@@ -140,7 +140,7 @@ def generate_cluster_data(
     return Table(ncdata_data)
 
 
-def process_data_for_sacc(data_table: Table) -> tuple:
+def process_data_for_sacc(data_table: Table) -> tuple[object, ...]:
     """
     Process cluster data for SACC file generation.
 
