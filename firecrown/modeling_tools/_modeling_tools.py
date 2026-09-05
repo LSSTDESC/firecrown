@@ -71,7 +71,9 @@ class ModelingTools(Updatable):
         self.hm_calculator: None | pyccl.halos.HMCalculator = hm_calculator
         self.cM_relation: None | str = cM_relation
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
-        self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
+        self.pk_modifiers: UpdatableCollection[Updatable] = UpdatableCollection(
+            pk_modifiers
+        )
         self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory

@@ -35,8 +35,8 @@ class PointMassData:
     theta: np.ndarray | None = None
     row_lens_idx: np.ndarray | None = None
     row_src_idx: np.ndarray | None = None
-    lens_tracers: list | None = None
-    src_tracers: list | None = None
+    lens_tracers: list[str] | None = None
+    src_tracers: list[str] | None = None
     z_l: np.ndarray | None = None
     z_s: np.ndarray | None = None
     nzL_norm: np.ndarray | None = None
@@ -172,7 +172,7 @@ class ConstGaussianPM(ConstGaussian):
         xi_rows: np.ndarray,
         lens_keys: np.ndarray,
         src_keys: np.ndarray,
-    ) -> tuple[list, list, np.ndarray, np.ndarray]:
+    ) -> tuple[list[str], list[str], np.ndarray, np.ndarray]:
         """Create tracer index mappings.
 
         :param xi_pairs: Array of (lens, source) tracer pairs
@@ -241,7 +241,11 @@ class ConstGaussianPM(ConstGaussian):
         return z_l, z_s
 
     def _compute_normalized_dndz(
-        self, lens_tracers: list, src_tracers: list, z_l: np.ndarray, z_s: np.ndarray
+        self,
+        lens_tracers: list[str],
+        src_tracers: list[str],
+        z_l: np.ndarray,
+        z_s: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Compute normalized dN/dz distributions for all tracers.
 
@@ -436,7 +440,9 @@ class ConstGaussianPM(ConstGaussian):
         self._pm_data.assert_prepared()
         # After assert_prepared(), we know all fields are not None
         row_src_idx = cast(np.ndarray, self._pm_data.row_src_idx)
-        lens_tracers = cast(list, self._pm_data.lens_tracers)
+        # assert_prepared() establishes that this field is initialized, but
+        # mypy cannot propagate narrowing through a separate method call.
+        lens_tracers = cast(list[str], self._pm_data.lens_tracers)
         row_lens_idx = cast(np.ndarray, self._pm_data.row_lens_idx)
         theta = cast(np.ndarray, self._pm_data.theta)
 

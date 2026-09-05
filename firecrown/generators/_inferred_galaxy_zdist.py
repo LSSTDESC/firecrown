@@ -21,7 +21,7 @@ class BinsType(TypedDict):
     Contains bin edges array and photometric redshift scatter parameter.
     """
 
-    edges: npt.NDArray
+    edges: npt.NDArray[np.float64]
     sigma_z: float
 
 
@@ -178,9 +178,13 @@ class ZDistLSSTSRD:
     def distribution(self, z: float) -> float: ...  # noqa: E704
 
     @overload
-    def distribution(self, z: npt.NDArray) -> npt.NDArray: ...  # noqa: E704
+    def distribution(  # noqa: E704
+        self, z: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]: ...
 
-    def distribution(self, z: float | npt.NDArray) -> float | npt.NDArray:
+    def distribution(
+        self, z: float | npt.NDArray[np.float64]
+    ) -> float | npt.NDArray[np.float64]:
         """Generate the inferred galaxy redshift distribution.
 
         :param z: The redshifts at which to evaluate the distribution
@@ -236,8 +240,8 @@ class ZDistLSSTSRD:
         return (erf((z - zpl) / denom) - erf((z - zpu) / denom)) / erfc(-z / denom)
 
     def _integrated_gaussian(
-        self, zpl: float, zpu: float, sigma_z: float, z: npt.NDArray
-    ) -> npt.NDArray:
+        self, zpl: float, zpu: float, sigma_z: float, z: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         """Generate the integrated Gaussian distribution."""
         denom = np.sqrt(2.0) * sigma_z * (1.0 + z)
         result = np.zeros_like(denom)
@@ -329,7 +333,7 @@ class ZDistLSSTSRD:
         sigma_z: float,
         last_z: float,
         use_true_distribution: bool = False,
-    ) -> npt.NDArray:
+    ) -> npt.NDArray[np.float64]:
         """Generate equal area bins for the distribution.
 
         In order to compute the bin edges, the convolution of the distribution
@@ -363,7 +367,7 @@ class ZDistLSSTSRD:
         zpl: float,
         zpu: float,
         sigma_z: float,
-        z: npt.NDArray,
+        z: npt.NDArray[np.float64],
         name: str,
         measurements: set[Measurement],
     ) -> TomographicBin:
@@ -431,7 +435,7 @@ class LinearGrid1D(BaseModel):
     end: float
     num: int
 
-    def generate(self) -> npt.NDArray:
+    def generate(self) -> npt.NDArray[np.float64]:
         """Generate the 1D linear grid."""
         return np.linspace(self.start, self.end, self.num)
 
@@ -443,7 +447,7 @@ class RawGrid1D(BaseModel):
 
     values: list[float]
 
-    def generate(self) -> npt.NDArray:
+    def generate(self) -> npt.NDArray[np.float64]:
         """Generate the 1D grid."""
         return np.array(self.values)
 
@@ -465,7 +469,7 @@ class ZDistLSSTSRDBin(BaseModel):
 
     @field_serializer("measurements")
     @classmethod
-    def serialize_measurements(cls, value: set[Measurement]) -> list[dict]:
+    def serialize_measurements(cls, value: set[Measurement]) -> list[dict[str, object]]:
         """Serialize the Measurement."""
         return make_measurements_dict(value)
 

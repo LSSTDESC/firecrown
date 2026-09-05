@@ -85,7 +85,7 @@ class CAMBExtraParams(BaseModel):
                     f"mead2016, mead2020_feedback"
                 )
 
-    def get_dict(self) -> dict:
+    def get_dict(self) -> dict[str, object]:
         """Return the extra parameters as a dictionary."""
         return {
             key: value for key, value in self.model_dump().items() if value is not None

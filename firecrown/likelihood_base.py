@@ -819,11 +819,6 @@ class SourceGalaxySystematic(SourceSystematic, Generic[_SourceGalaxyArgsT]):
         """
 
 
-_SourceGalaxySystematicT = TypeVar(
-    "_SourceGalaxySystematicT", bound=SourceGalaxySystematic
-)
-
-
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z = 1.0
 
@@ -983,7 +978,7 @@ class SourceGalaxyPhotoZShift(
         return replace(tracer_arg, z=new_z, dndz=new_dndz)
 
 
-class PhotoZShift(SourceGalaxyPhotoZShift):
+class PhotoZShift(SourceGalaxyPhotoZShift[SourceGalaxyArgs]):
     """Photo-z shift systematic."""
 
 
@@ -1058,7 +1053,7 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         return replace(tracer_arg, z=new_z, dndz=new_dndz)
 
 
-class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch[SourceGalaxyArgs]):
     """Photo-z shift and stretch systematic."""
 
 
@@ -1119,7 +1114,7 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         self,
         *,
         sacc_tracer: str,
-        systematics: None | Sequence[SourceGalaxySystematic] = None,
+        systematics: None | Sequence[SourceGalaxySystematic[_SourceGalaxyArgsT]] = None,
     ):
         """Initialize the SourceGalaxy object.
 
@@ -1131,9 +1126,9 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
 
         self.sacc_tracer = sacc_tracer
         self.current_tracer_args: None | _SourceGalaxyArgsT = None
-        self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
-            UpdatableCollection(systematics)
-        )
+        self.systematics: UpdatableCollection[
+            SourceGalaxySystematic[_SourceGalaxyArgsT]
+        ] = UpdatableCollection(systematics)
         self.tracer_args: _SourceGalaxyArgsT
 
     def read_systematics(self, sacc_data: sacc.Sacc) -> None:

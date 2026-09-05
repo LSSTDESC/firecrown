@@ -97,7 +97,7 @@ def _build_symbol_sets(
     return fully_qualified_symbols, unqualified_symbols
 
 
-def _compile_exclude_pattern(exclude_pattern: str | None) -> re.Pattern | None:
+def _compile_exclude_pattern(exclude_pattern: str | None) -> re.Pattern[str] | None:
     """Compile the exclude pattern regex if provided.
 
     :param exclude_pattern: Optional regex pattern string

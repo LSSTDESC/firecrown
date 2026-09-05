@@ -1114,7 +1114,7 @@ def test_make_two_point_xy_sacc_convention_explanation():
 
 
 def test_extract_all_real_metadata_indices_no_swap(
-    sacc_galaxy_xis_src0_lens0: tuple,
+    sacc_galaxy_xis_src0_lens0: tuple[object, ...],
 ):
     """Test extract_all_real_metadata_indices with no tracer swap needed.
 
@@ -1314,7 +1314,7 @@ def test_extract_all_real_metadata_indices_multiple_combinations():
 
 
 def test_extract_all_harmonic_metadata_indices_no_swap(
-    sacc_galaxy_cells_src0_lens0: tuple,
+    sacc_galaxy_cells_src0_lens0: tuple[object, ...],
 ):
     """Test extract_all_harmonic_metadata_indices with no tracer swap needed.
 

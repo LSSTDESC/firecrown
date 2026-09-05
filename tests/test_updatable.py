@@ -268,7 +268,7 @@ def test_simple_updatable():
 
 #  pylint: disable-msg=E1101
 def test_updatable_collection_appends():
-    coll: UpdatableCollection = UpdatableCollection()
+    coll: UpdatableCollection[Updatable] = UpdatableCollection()
     assert len(coll) == 0
 
     coll.append(SimpleUpdatable())
@@ -295,7 +295,7 @@ def test_updatable_collection_appends():
 
 
 def test_updatable_collection_updates():
-    coll: UpdatableCollection = UpdatableCollection()
+    coll: UpdatableCollection[Updatable] = UpdatableCollection()
     assert len(coll) == 0
 
     coll.append(SimpleUpdatable())
@@ -311,7 +311,7 @@ def test_updatable_collection_updates():
 
 
 def test_updatable_collection_rejects_nonupdatables():
-    coll: UpdatableCollection = UpdatableCollection()
+    coll: UpdatableCollection[Updatable] = UpdatableCollection()
     assert len(coll) == 0
 
     with pytest.raises(TypeError):
@@ -458,7 +458,7 @@ def test_update_rejects_internal_parameters():
 
 
 def test_updatable_collection_is_updated():
-    obj: UpdatableCollection = UpdatableCollection([SimpleUpdatable()])
+    obj: UpdatableCollection[Updatable] = UpdatableCollection([SimpleUpdatable()])
     new_params = {"x": -1.0, "y": 5.5}
 
     assert not obj.is_updated()
@@ -467,14 +467,14 @@ def test_updatable_collection_is_updated():
 
 
 def test_updatablecollection_without_derived_parameters():
-    obj: UpdatableCollection = UpdatableCollection()
+    obj: UpdatableCollection[Updatable] = UpdatableCollection()
 
     assert obj.get_derived_parameters() is None
 
 
 def test_updatablecollection_with_items_without_derived_parameters():
     """get_derived_parameters returns None when all items have no derived parameters."""
-    obj: UpdatableCollection = UpdatableCollection()
+    obj: UpdatableCollection[Updatable] = UpdatableCollection()
 
     # Add updatables that do not implement _get_derived_parameters (return None)
     obj.append(MinimalUpdatable())

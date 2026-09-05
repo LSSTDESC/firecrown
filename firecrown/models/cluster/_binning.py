@@ -105,7 +105,7 @@ class SaccBin(NDimensionalBin):
 class TupleBin(NDimensionalBin):
     """An implementation of the N dimensional bin using sacc tracers."""
 
-    def __init__(self, coordinate_bins: list[tuple]):
+    def __init__(self, coordinate_bins: list[tuple[float, float]]):
         self.coordinate_bins = coordinate_bins
 
     @property
