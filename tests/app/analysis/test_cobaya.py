@@ -279,13 +279,13 @@ class TestAddModels:
 
     def test_add_models_to_empty_config(self, sample_model: Model) -> None:
         """Test adding models to empty configuration."""
-        config: dict[str, object] = {"params": {}}
+        config: dict[str, dict[str, object]] = {"params": {}}
         add_models(config, [sample_model])
         assert "test_param" in config["params"]
 
     def test_add_models_preserves_existing_params(self, sample_model: Model) -> None:
         """Test that adding models preserves existing parameters."""
-        config: dict[str, object] = {"params": {"existing_param": 1.0}}
+        config: dict[str, dict[str, object]] = {"params": {"existing_param": 1.0}}
         add_models(config, [sample_model])
         assert "existing_param" in config["params"]
         assert "test_param" in config["params"]
@@ -320,14 +320,14 @@ class TestAddModels:
                 )
             ],
         )
-        config: dict[str, object] = {"params": {}}
+        config: dict[str, dict[str, object]] = {"params": {}}
         add_models(config, [model1, model2])
         assert "param1" in config["params"]
         assert "param2" in config["params"]
 
     def test_add_models_empty_list(self) -> None:
         """Test adding empty model list."""
-        config: dict[str, object] = {"params": {"existing": 1.0}}
+        config: dict[str, dict[str, object]] = {"params": {"existing": 1.0}}
         add_models(config, [])
         assert config["params"] == {"existing": 1.0}
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import itertools
 import warnings
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Annotated
 
 import numpy as np
@@ -842,7 +842,10 @@ class TwoPointFactory(BaseModel):
         self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
     ) -> WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory:
         """Get the Factory for the given Measurement and TypeSource."""
-        candidates: Sequence[tuple[tuple[str, ...], dict[TypeSource, object], str]] = [
+        factory_map_type = Mapping[
+            TypeSource, WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory
+        ]
+        candidates: Sequence[tuple[tuple[Measurement, ...], factory_map_type, str]] = [
             (GALAXY_SOURCE_TYPES, self._wl_factory_map, "WeakLensingFactory"),
             (GALAXY_LENS_TYPES, self._nc_factory_map, "NumberCountsFactory"),
             (CMB_TYPES, self._cmb_factory_map, "CMBConvergenceFactory"),

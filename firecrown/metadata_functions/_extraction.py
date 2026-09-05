@@ -715,7 +715,9 @@ def maybe_enforce_window(
     sacc_data: sacc.Sacc,
     normalize: bool = True,
 ) -> tuple[
-    npt.NDArray[np.int64], None | npt.NDArray[np.float64], None | npt.NDArray[np.int64]
+    npt.NDArray[np.int64],
+    None | npt.NDArray[np.float64],
+    None | npt.NDArray[np.float64],
 ]:
     """Possibly enforce a window function on the given ells.
 
@@ -728,8 +730,9 @@ def maybe_enforce_window(
         function is applied).
     """
     replacement_ells, weights = extract_window_function(sacc_data, indices, normalize)
+    window_ells: None | npt.NDArray[np.float64]
     if replacement_ells is not None:
-        window_ells = ells
+        window_ells = ells.astype(np.float64)
         ells = replacement_ells
     else:
         window_ells = None

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -116,6 +116,23 @@ WeakLensingSystematicFactory = Annotated[
 ]
 
 
+def _as_weak_lensing_systematic(
+    systematic: Any,
+) -> SourceGalaxySystematic[WeakLensingArgs]:
+    """Bind a systematic created by a domain-agnostic factory to WeakLensingArgs.
+
+    PhotoZShiftFactory and PhotoZShiftandStretchFactory are shared (defined once in
+    ``firecrown.likelihood_base``) and build systematics generically over the common
+    ``SourceGalaxyArgs`` base. Their ``apply()`` only reads/replaces the ``z`` and
+    ``dndz`` fields declared on that base via ``dataclasses.replace``, which
+    preserves the caller's concrete args subtype, so treating the result as
+    ``SourceGalaxySystematic[WeakLensingArgs]`` is safe at runtime even though the
+    generic is invariant. Systematics that are already WeakLensingArgs-specific
+    (e.g. MultiplicativeShearBias) pass through unchanged.
+    """
+    return cast(SourceGalaxySystematic[WeakLensingArgs], systematic)
+
+
 class WeakLensingFactory(BaseModel):
     """Factory class for WeakLensing objects."""
 
@@ -138,7 +155,7 @@ class WeakLensingFactory(BaseModel):
         """Initialize the WeakLensingFactory object."""
         self._cache: dict[int, WeakLensing] = {}
         self._global_systematics_instances = [
-            wl_systematic_factory.create_global()
+            _as_weak_lensing_systematic(wl_systematic_factory.create_global())
             for wl_systematic_factory in self.global_systematics
         ]
 
@@ -150,7 +167,9 @@ class WeakLensingFactory(BaseModel):
             return self._cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
-            systematic_factory.create(tomographic_bin.bin_name)
+            _as_weak_lensing_systematic(
+                systematic_factory.create(tomographic_bin.bin_name)
+            )
             for systematic_factory in self.per_bin_systematics
         ]
         systematics.extend(self._global_systematics_instances)
@@ -169,7 +188,7 @@ class WeakLensingFactory(BaseModel):
         if sacc_tracer_id in self._cache:
             return self._cache[sacc_tracer_id]
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
-            systematic_factory.create(sacc_tracer)
+            _as_weak_lensing_systematic(systematic_factory.create(sacc_tracer))
             for systematic_factory in self.per_bin_systematics
         ]
         systematics.extend(self._global_systematics_instances)

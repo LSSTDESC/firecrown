@@ -8,6 +8,9 @@ from abc import ABC, abstractmethod
 
 import sacc
 
+#: A coordinate bin is (lower, upper) or, for the radius bin, (lower, upper, center).
+CoordinateBin = tuple[float, float] | tuple[float, float, float]
+
 
 class NDimensionalBin(ABC):
     """Class which defines the interface for an N dimensional bin."""
@@ -105,7 +108,7 @@ class SaccBin(NDimensionalBin):
 class TupleBin(NDimensionalBin):
     """An implementation of the N dimensional bin using sacc tracers."""
 
-    def __init__(self, coordinate_bins: list[tuple[float, float]]):
+    def __init__(self, coordinate_bins: list[CoordinateBin]):
         self.coordinate_bins = coordinate_bins
 
     @property
@@ -135,6 +138,8 @@ class TupleBin(NDimensionalBin):
     def radius_center(self) -> float:
         """Radius bin center."""
         radius_bin = self.coordinate_bins[2]
+        if len(radius_bin) != 3:
+            raise ValueError("TupleBin radius bin does not have a center value")
         return radius_bin[2]
 
     def __eq__(self, other: object) -> bool:

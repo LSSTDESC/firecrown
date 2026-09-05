@@ -206,7 +206,7 @@ class ZDistLSSTSRD:
         sqrt_2 = np.sqrt(2.0)
         sqrt_2pi = np.sqrt(2.0 * np.pi)
 
-        def integrand(z: npt.NDarray[np.float64]) -> npt.NDarray[np.float64]:
+        def integrand(z: float) -> float | np.floating[Any]:
             lsigma_z = sigma_z * (1.0 + z)
             return (
                 self.distribution(z)
@@ -469,7 +469,7 @@ class ZDistLSSTSRDBin(BaseModel):
 
     @field_serializer("measurements")
     @classmethod
-    def serialize_measurements(cls, value: set[Measurement]) -> list[dict[str, object]]:
+    def serialize_measurements(cls, value: set[Measurement]) -> list[dict[str, str]]:
         """Serialize the Measurement."""
         return make_measurements_dict(value)
 

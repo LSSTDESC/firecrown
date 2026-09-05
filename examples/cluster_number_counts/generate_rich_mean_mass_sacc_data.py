@@ -15,6 +15,7 @@ import sacc
 from astropy.io import fits
 from astropy.table import Table
 from numcosmo_py import Nc, Ncm
+from numpy import typing as npt
 from scipy import stats
 
 
@@ -61,7 +62,7 @@ def setup_cosmology(
 
 def setup_cluster_models(
     z_min: float, z_max: float, M0: float, z0: float, lnRl: float, lnRu: float
-) -> tuple[object, ...]:
+) -> tuple[Nc.ClusterRedshiftNodist, Nc.ClusterMassAscaso]:
     """
     Set up cluster redshift and mass models.
 
@@ -140,7 +141,15 @@ def generate_cluster_data(
     return Table(ncdata_data)
 
 
-def process_data_for_sacc(data_table: Table) -> tuple[object, ...]:
+def process_data_for_sacc(
+    data_table: Table,
+) -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """
     Process cluster data for SACC file generation.
 
