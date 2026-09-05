@@ -54,7 +54,7 @@ class PriorUniform(BaseModel):
     lower: float
     upper: float
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: Any, /) -> None:
         """Validate that lower < upper."""
         if not self.lower < self.upper:
             raise ValueError("lower must be < upper")
@@ -68,7 +68,7 @@ class PriorGaussian(BaseModel):
     mean: float
     sigma: float
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: Any, /) -> None:
         """Validate that sigma > 0."""
         if not self.sigma > 0:
             raise ValueError("sigma must be > 0")
@@ -161,7 +161,7 @@ class Model(BaseModel):
 
     _param_dict: dict[str, Parameter] = PrivateAttr(default_factory=dict)
 
-    def model_post_init(self, context, /) -> None:
+    def model_post_init(self, context: Any, /) -> None:
         """Validate that parameter names are unique.
 
         Creates a dictionary of parameters by name.
@@ -257,7 +257,7 @@ class CCLCosmologySpec(Model):
     matter_power_spectrum: str | Any = "halofit"
     extra_parameters: CAMBExtraParams | None = None
 
-    def model_post_init(self, context, /) -> None:
+    def model_post_init(self, context: Any, /) -> None:
         """Validate that all parameters are cosmological."""
         super().model_post_init(context)
         for param in self.parameters:
