@@ -68,7 +68,9 @@ class CMBConvergence(Source):
             raise RuntimeError("current_tracer_args is not initialized")
         return current_args.scale
 
-    def create_tracers(self, tools: ModelingTools) -> tuple[list[Tracer], object]:
+    def create_tracers(
+        self, tools: ModelingTools
+    ) -> tuple[list[Tracer], CMBConvergenceArgs]:
         """Create the CMB convergence tracer."""
         ccl_cosmo = tools.get_ccl_cosmology()
         tracer_args = self.tracer_args

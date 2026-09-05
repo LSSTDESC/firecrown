@@ -3,6 +3,7 @@ Tests for the Updatable class.
 """
 
 from itertools import permutations
+from typing import cast
 
 import numpy as np
 import pytest
@@ -49,8 +50,14 @@ class UpdatableWithDerived(Updatable):
         """Initialize object with defaulted values."""
         super().__init__()
 
-        self.A = updatable.register_new_updatable_parameter(default_value=2.0)
-        self.B = updatable.register_new_updatable_parameter(default_value=1.0)
+        # These attributes hold SamplerParameter until update() runs, after
+        # which Updatable.__setattr__ replaces them with their float value.
+        self.A: float = cast(
+            float, updatable.register_new_updatable_parameter(default_value=2.0)
+        )
+        self.B: float = cast(
+            float, updatable.register_new_updatable_parameter(default_value=1.0)
+        )
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         derived_scale = DerivedParameter("Section", "Name", self.A + self.B)
@@ -352,7 +359,7 @@ def test_set_sampler_parameter_rejects_internal_parameter():
     )
 
     with pytest.raises(TypeError):
-        my_updatable.set_sampler_parameter(my_param)
+        my_updatable.set_sampler_parameter(my_param)  # type: ignore[arg-type]
 
 
 def test_set_sampler_parameter_rejects_duplicates():
@@ -393,7 +400,9 @@ def test_set_internal_parameter_rejects_sampler_parameter():
     with pytest.raises(TypeError):
         my_updatable.set_internal_parameter(
             "sampler_param",
-            updatable.register_new_updatable_parameter(default_value=1.0),
+            updatable.register_new_updatable_parameter(  # type: ignore[arg-type]
+                default_value=1.0
+            ),
         )
 
 

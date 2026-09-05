@@ -9,13 +9,41 @@ Tests the method tracing facility.
 
 import subprocess
 import sys
+import types
 from pathlib import Path
+from types import FrameType
+from typing import cast
 
 import pytest
 
 from firecrown.fctools.tracer import TracerState, settrace, untrace
 
 from . import match_wrapped
+
+
+def _make_frame(
+    co_qualname: str,
+    *,
+    co_argcount: int = 0,
+    co_varnames: tuple[str, ...] = (),
+    f_locals: dict[str, object] | None = None,
+) -> FrameType:
+    """Build a minimal frame double for exercising TracerState.trace_call.
+
+    types.FrameType cannot be constructed directly, so a SimpleNamespace
+    exposing only the attributes trace_call reads is cast to FrameType.
+    """
+    return cast(
+        FrameType,
+        types.SimpleNamespace(
+            f_code=types.SimpleNamespace(
+                co_argcount=co_argcount,
+                co_varnames=co_varnames,
+                co_qualname=co_qualname,
+            ),
+            f_locals=f_locals if f_locals is not None else {},
+        ),
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -85,15 +113,8 @@ def test_trace_call_event(tmp_path):
     tracer = TracerState(str(trace_file))
 
     # Create a simple frame-like object for testing
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(
-            co_argcount=2,
-            co_varnames=("x", "y"),
-            co_qualname="test_func",
-        ),
-        f_locals={"x": 1, "y": 2},
+    frame_obj = _make_frame(
+        "test_func", co_argcount=2, co_varnames=("x", "y"), f_locals={"x": 1, "y": 2}
     )
 
     tracer.trace_call(frame_obj, "call", None)
@@ -120,15 +141,8 @@ def test_trace_call_with_self_argument(tmp_path):
 
     obj = TestClass()
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(
-            co_argcount=1,
-            co_varnames=("self",),
-            co_qualname="TestClass.method",
-        ),
-        f_locals={"self": obj},
+    frame_obj = _make_frame(
+        "TestClass.method", co_argcount=1, co_varnames=("self",), f_locals={"self": obj}
     )
 
     tracer.trace_call(frame_obj, "call", None)
@@ -147,14 +161,7 @@ def test_trace_call_no_arguments(tmp_path):
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(
-            co_argcount=0, co_varnames=(), co_qualname="no_args_func"
-        ),
-        f_locals={},
-    )
+    frame_obj = _make_frame("no_args_func")
 
     tracer.trace_call(frame_obj, "call", None)
 
@@ -176,12 +183,7 @@ def test_trace_return_event(tmp_path):
     tracer = TracerState(str(trace_file))
     tracer.level = 1  # Simulate being inside a function
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(co_qualname="test_func"),
-        f_locals={},
-    )
+    frame_obj = _make_frame("test_func")
 
     tracer.trace_call(frame_obj, "return", 42)
 
@@ -202,12 +204,7 @@ def test_trace_return_with_none(tmp_path):
     tracer = TracerState(str(trace_file))
     tracer.level = 1
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(co_qualname="test_func"),
-        f_locals={},
-    )
+    frame_obj = _make_frame("test_func")
 
     tracer.trace_call(frame_obj, "return", None)
 
@@ -233,12 +230,7 @@ def test_trace_return_with_unprintable_object(tmp_path):
 
     obj = UnprintableObject()
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(co_qualname="test_func"),
-        f_locals={},
-    )
+    frame_obj = _make_frame("test_func")
 
     tracer.trace_call(frame_obj, "return", obj)
 
@@ -263,12 +255,7 @@ def test_trace_return_with_recursion_error(tmp_path):
 
     obj = RecursiveObject()
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(co_qualname="test_func"),
-        f_locals={},
-    )
+    frame_obj = _make_frame("test_func")
 
     tracer.trace_call(frame_obj, "return", obj)
 
@@ -293,12 +280,7 @@ def test_trace_return_with_type_error(tmp_path):
 
     obj = TypeErrorObject()
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(co_qualname="test_func"),
-        f_locals={},
-    )
+    frame_obj = _make_frame("test_func")
 
     tracer.trace_call(frame_obj, "return", obj)
 
@@ -320,12 +302,7 @@ def test_trace_exception_event(tmp_path):
     tracer = TracerState(str(trace_file))
     tracer.level = 1
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(co_qualname="test_func"),
-        f_locals={},
-    )
+    frame_obj = _make_frame("test_func")
 
     tracer.trace_call(frame_obj, "exception", None)
 
@@ -344,14 +321,7 @@ def test_trace_call_returns_itself(tmp_path):
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
 
-    import types  # pylint: disable=import-outside-toplevel
-
-    frame_obj = types.SimpleNamespace(
-        f_code=types.SimpleNamespace(
-            co_argcount=0, co_varnames=(), co_qualname="test_func"
-        ),
-        f_locals={},
-    )
+    frame_obj = _make_frame("test_func")
 
     result = tracer.trace_call(frame_obj, "call", None)
 
