@@ -17,6 +17,7 @@ from firecrown.app.analysis._numcosmo import (
     _set_amplitude_sigma8,
     _set_neutrino_masses,
 )
+from firecrown.connector.numcosmo.numcosmo import MappingNumCosmo
 from firecrown.app.analysis._types import (
     CCLCosmologySpec,
     FrameworkCosmology,
@@ -240,18 +241,13 @@ class TestAmplitudeParametersGenerator:
             _set_amplitude_sigma8(config_opts, cosmo, prim, None, priors)
 
         # Test with mapping.p_ml=None
-        # Create a mock-like object with p_ml=None
-        class MockMapping:
-            """Mock mapping with p_ml set to None."""
-
-            p_ml = None
-
+        # Use a real MappingNumCosmo instance, which defaults p_ml to None.
         with pytest.raises(ValueError, match="Mapping must have p_ml set for sigma8"):
             _set_amplitude_sigma8(
                 config_opts,
                 cosmo,
                 prim,
-                MockMapping(),  # type: ignore[arg-type]
+                MappingNumCosmo(),
                 priors,
             )
 

@@ -5,6 +5,7 @@ be used without an installation of NumCosmo.
 """
 
 import warnings
+from typing import cast
 
 import numpy as np
 from numcosmo_py import GObject, Nc, Ncm, dict_to_var_dict, var_dict_to_dict
@@ -95,12 +96,17 @@ class MappingNumCosmo(GObject.Object):
         self._mapping_name = value
         self.mapping = Mapping()
 
-    mapping_name: str = GObject.Property(  # type: ignore
-        type=str,
-        default="default",
-        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY,
-        getter=_get_mapping_name,
-        setter=_set_mapping_name,
+    # cast: gi-stubs types GObject.Property as "Property", not the property's
+    # actual value type; getter/setter above guarantee this is really a str.
+    mapping_name: str = cast(
+        str,
+        GObject.Property(
+            type=str,
+            default="default",
+            flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY,
+            getter=_get_mapping_name,
+            setter=_set_mapping_name,
+        ),
     )
 
     def _get_p_ml(self) -> None | Nc.PowspecML:
@@ -122,11 +128,16 @@ class MappingNumCosmo(GObject.Object):
         else:
             self._p = helpers.PowerSpec(value, None)
 
-    p_ml: Nc.PowspecML = GObject.Property(  # type: ignore
-        type=Nc.PowspecML,
-        flags=GObject.ParamFlags.READWRITE,
-        getter=_get_p_ml,
-        setter=_set_p_ml,
+    # cast: gi-stubs types GObject.Property as "Property", not the property's
+    # actual value type; getter/setter above guarantee this is really a PowspecML.
+    p_ml: Nc.PowspecML = cast(
+        Nc.PowspecML,
+        GObject.Property(
+            type=Nc.PowspecML,
+            flags=GObject.ParamFlags.READWRITE,
+            getter=_get_p_ml,
+            setter=_set_p_ml,
+        ),
     )
 
     def _get_p_mnl(self) -> None | Nc.PowspecMNL:
@@ -151,11 +162,16 @@ class MappingNumCosmo(GObject.Object):
         if self._p is not None:
             self._p.nonlinear = value
 
-    p_mnl: Nc.PowspecMNL = GObject.Property(  # type: ignore
-        type=Nc.PowspecMNL,
-        flags=GObject.ParamFlags.READWRITE,
-        getter=_get_p_mnl,
-        setter=_set_p_mnl,
+    # cast: gi-stubs types GObject.Property as "Property", not the property's
+    # actual value type; getter/setter above guarantee this is really a PowspecMNL.
+    p_mnl: Nc.PowspecMNL = cast(
+        Nc.PowspecMNL,
+        GObject.Property(
+            type=Nc.PowspecMNL,
+            flags=GObject.ParamFlags.READWRITE,
+            getter=_get_p_mnl,
+            setter=_set_p_mnl,
+        ),
     )
 
     def _get_dist(self) -> None | Nc.Distance:
@@ -169,11 +185,16 @@ class MappingNumCosmo(GObject.Object):
         """Set the NumCosmo Distance object."""
         self._dist = value
 
-    dist: Nc.Distance = GObject.Property(  # type: ignore
-        type=Nc.Distance,
-        flags=GObject.ParamFlags.READWRITE,
-        getter=_get_dist,
-        setter=_set_dist,
+    # cast: gi-stubs types GObject.Property as "Property", not the property's
+    # actual value type; getter/setter above guarantee this is really a Distance.
+    dist: Nc.Distance = cast(
+        Nc.Distance,
+        GObject.Property(
+            type=Nc.Distance,
+            flags=GObject.ParamFlags.READWRITE,
+            getter=_get_dist,
+            setter=_set_dist,
+        ),
     )
 
     def set_params_from_numcosmo(
@@ -388,7 +409,9 @@ class NumCosmoData(Ncm.Data):
         self._model_list = value
 
     model_list = GObject.Property(
-        type=GObject.TYPE_STRV,  # type: ignore
+        # GObject.TYPE_STRV is a raw GType constant with no Python type
+        # equivalent; the Property stub's `type` parameter cannot express it.
+        type=GObject.TYPE_STRV,  # type: ignore[arg-type]
         flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
         getter=_get_model_list,
         setter=_set_model_list,
@@ -648,7 +671,9 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self._model_list = value
 
     model_list = GObject.Property(
-        type=GObject.TYPE_STRV,  # type: ignore
+        # GObject.TYPE_STRV is a raw GType constant with no Python type
+        # equivalent; the Property stub's `type` parameter cannot express it.
+        type=GObject.TYPE_STRV,  # type: ignore[arg-type]
         flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
         getter=_get_model_list,
         setter=_set_model_list,

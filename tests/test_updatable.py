@@ -273,8 +273,10 @@ def test_updatable_collection_appends():
 
     coll.append(SimpleUpdatable())
     assert len(coll) == 1
-    assert coll[0].x is None
-    assert coll[0].y is None
+    first = coll[0]
+    assert isinstance(first, SimpleUpdatable)
+    assert first.x is None
+    assert first.y is None
     assert coll.required_parameters() == RequiredParameters(
         [
             SamplerParameter(name="x", default_value=2.0),
@@ -284,7 +286,9 @@ def test_updatable_collection_appends():
 
     coll.append(MinimalUpdatable())
     assert len(coll) == 2
-    assert coll[1].a is None
+    second = coll[1]
+    assert isinstance(second, MinimalUpdatable)
+    assert second.a is None
     assert coll.required_parameters() == RequiredParameters(
         [
             SamplerParameter(name="x", default_value=2.0),
@@ -300,14 +304,16 @@ def test_updatable_collection_updates():
 
     coll.append(SimpleUpdatable())
     assert len(coll) == 1
-    assert coll[0].x is None
-    assert coll[0].y is None
+    first = coll[0]
+    assert isinstance(first, SimpleUpdatable)
+    assert first.x is None
+    assert first.y is None
 
     new_params = {"x": -1.0, "y": 5.5}
     coll.update(ParamsMap(new_params))
     assert len(coll) == 1
-    assert coll[0].x == -1.0
-    assert coll[0].y == 5.5
+    assert first.x == -1.0
+    assert first.y == 5.5
 
 
 def test_updatable_collection_rejects_nonupdatables():
@@ -315,7 +321,7 @@ def test_updatable_collection_rejects_nonupdatables():
     assert len(coll) == 0
 
     with pytest.raises(TypeError):
-        coll.append(3)
+        coll.append(3)  # type: ignore[arg-type] # intentionally wrong type
     assert len(coll) == 0
 
 

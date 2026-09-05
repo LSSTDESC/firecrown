@@ -10,9 +10,11 @@ method when necessary.
 import io
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import cast
 
 import pytest
 import requests
+from requests import Response
 from rich.console import Console
 from typer.testing import CliRunner
 
@@ -90,7 +92,8 @@ def make_429_response(_: str):
         def raise_for_status(self):
             """Simulate HTTP 429 error."""
             http_error = requests.HTTPError("429 Client Error: Too Many Requests")
-            http_error.response = self
+            # Test double: only status_code is read by the code under test.
+            http_error.response = cast(Response, self)
             raise http_error
 
     return Fake429Resp()
