@@ -24,7 +24,7 @@ from ._exceptions import MissingSamplerParameterError
 # Import parameter-related classes (formerly from firecrown.parameters)
 from ._parameters_derived import DerivedParameter, DerivedParameterCollection
 from ._parameters_map import ParamsMap, handle_unused_params
-from ._parameters_names import parameter_get_full_name
+from ._parameters_names import parameter_get_full_name, validate_params_map_value
 from ._parameters_required import RequiredParameters
 from ._parameters_types import (
     InternalParameter,
@@ -63,4 +63,5 @@ __all__ = [
     "handle_unused_params",
     "parameter_get_full_name",
     "register_new_updatable_parameter",
+    "validate_params_map_value",
 ]

@@ -4,7 +4,7 @@ import copy
 import warnings
 from collections.abc import ItemsView, Iterable, Mapping, Sequence
 
-from ._parameters_names import _validate_params_map_value, parameter_get_full_name
+from ._parameters_names import parameter_get_full_name, validate_params_map_value
 from ._records import UpdatableUsageRecord
 
 
@@ -27,7 +27,7 @@ class ParamsMap:
         """
         self.params: dict[str, float] = dict(*args, **kwargs)
         for name, value in self.params.items():
-            _validate_params_map_value(name, value)
+            validate_params_map_value(name, value)
 
         self.lower_case: bool = False
         self.used_keys: set[str] = set()

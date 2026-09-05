@@ -952,7 +952,7 @@ def test_handle_unused_params_all_used():
 def test_params_map_with_list_of_floats():
     """Test ParamsMap accepts a list of floats as a valid value.
 
-    This covers the branch in _validate_params_map_value where
+    This covers the branch in validate_params_map_value where
     the value is a list and all elements are floats.
     """
     params = ParamsMap({"a": [1.0, 2.0, 3.0]})  # type: ignore[arg-type]
