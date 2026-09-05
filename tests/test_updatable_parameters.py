@@ -296,14 +296,18 @@ def test_params_map_wrong_type():
     with pytest.raises(
         TypeError, match="Value for parameter a is not a float or a list of floats.*"
     ):
-        _ = ParamsMap({"a": "not a float or a list of floats"})
+        _ = ParamsMap(
+            {"a": "not a float or a list of floats"}  # type: ignore[arg-type]
+        )
 
 
 def test_params_map_wrong_type_list():
     with pytest.raises(
         TypeError, match="Value for parameter a is not a float or a list of floats.*"
     ):
-        _ = ParamsMap({"a": ["not a float or a list of floats"]})
+        _ = ParamsMap(
+            {"a": ["not a float or a list of floats"]}  # type: ignore[arg-type]
+        )
 
 
 def test_parameter_get_full_name_reject_empty_name():
@@ -744,7 +748,7 @@ def test_params_map_list_with_ints_raises_typeerror():
     """A list value containing ints (not floats) should trigger the list
     element type check and raise TypeError."""
     with pytest.raises(TypeError, match="Value for parameter a is not a float"):
-        _ = ParamsMap({"a": [1, 2.0]})
+        _ = ParamsMap({"a": [1, 2.0]})  # type: ignore[arg-type]
 
 
 def test_params_map_setitem():
@@ -951,5 +955,5 @@ def test_params_map_with_list_of_floats():
     This covers the branch in _validate_params_map_value where
     the value is a list and all elements are floats.
     """
-    params = ParamsMap({"a": [1.0, 2.0, 3.0]})
+    params = ParamsMap({"a": [1.0, 2.0, 3.0]})  # type: ignore[arg-type]
     assert "a" in params

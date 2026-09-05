@@ -1,5 +1,7 @@
 """Parameter types and creation functions."""
 
+from typing import overload
+
 from ._parameters_names import parameter_get_full_name
 
 
@@ -113,6 +115,24 @@ class InternalParameter:
     def get_value(self) -> float:
         """Return the current value of this parameter."""
         return self.value
+
+
+@overload
+def register_new_updatable_parameter(  # noqa: E704
+    value: None = None, *, default_value: float, shared: bool = False
+) -> SamplerParameter: ...
+
+
+@overload
+def register_new_updatable_parameter(  # noqa: E704
+    value: float, *, default_value: float, shared: bool = False
+) -> InternalParameter: ...
+
+
+@overload
+def register_new_updatable_parameter(  # noqa: E704
+    value: None | float, *, default_value: float, shared: bool = False
+) -> SamplerParameter | InternalParameter: ...
 
 
 def register_new_updatable_parameter(
