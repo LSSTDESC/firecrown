@@ -24,7 +24,7 @@ import numpy as np
 from numcosmo_py import Nc, Ncm
 from numcosmo_py.helper import register_model_class
 
-from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
+from firecrown.connector.numcosmo import NumCosmoFactory
 from firecrown.likelihood import NamedParameters
 
 from ._types import (
