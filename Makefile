@@ -302,8 +302,7 @@ unit-tests-post: test-updatable test-utils test-parameters test-modeling-tools t
 	@COVERAGE_FILE=$(UNIT_COVERAGE_COMBINED) coverage report
 
 test-updatable:  ## Run tests for firecrown.updatable module with coverage
-	@COVERAGE_FILE=$(UNIT_COVERAGE_UPDATABLE) $(PYTEST) tests/test_updatable.py \
-		tests/test_assert_updatable_interface.py \
+	@COVERAGE_FILE=$(UNIT_COVERAGE_UPDATABLE) $(PYTEST) tests/updatable/ \
 		tests/test_updatable_parameters.py \
 		--cov=firecrown.updatable \
 		--cov-report=term-missing \
