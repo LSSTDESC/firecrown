@@ -88,6 +88,7 @@ class TattAlignmentSystematicFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "TattAlignmentSystematicFactory"
     include_z_dependence: bool = False
+    ia_a_d_is_bta: bool = False
 
     def create(self, bin_name: str) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
@@ -96,14 +97,20 @@ class TattAlignmentSystematicFactory(BaseModel):
             the created TattAlignmentSystematic object.
         :returns: The created TattAlignmentSystematic object.
         """
-        return TattAlignmentSystematic(bin_name, self.include_z_dependence)
+        return TattAlignmentSystematic(bin_name,
+                                       self.include_z_dependence,
+                                       self.ia_a_d_is_bta
+                                       )
 
     def create_global(self) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
 
         :returns: The created TattAlignmentSystematic object.
         """
-        return TattAlignmentSystematic(None, self.include_z_dependence)
+        return TattAlignmentSystematic(None,
+                                       self.include_z_dependence,
+                                       self.ia_a_d_is_bta
+                                       )
 
 
 WeakLensingSystematicFactory = Annotated[
