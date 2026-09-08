@@ -256,6 +256,11 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     a function in redshift, parameterized by the relationship:
     $A_i \times \frac{1 + z}{1 + z_{piv,i}}^{\alpha_i}$
 
+    The density-dependent amplitude can also be expressed as $b_{TA} \times A_1(z)$,
+    which is a common parameterization in the literature. The user can choose this
+    parameterization by setting the `ia_a_d_is_bta` argument to True when creating
+    the TattAlignmentSystematic object.
+
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
     prefix for the parameters:
@@ -266,20 +271,29 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     :ivar ia_a_2: the amplitude of the quadratic alignment model.
     :ivar ia_zpiv_2: the pivot redshift of the quadratic alignment model.
     :ivar ia_alphaz_2: the redshift dependence of the quadratic alignment model.
-    :ivar ia_a_d: the amplitude of the density-dependent alignment model.
-    :ivar ia_zpiv_d: the pivot redshift of the density-dependent alignment model.
-    :ivar ia_alphaz_d: the redshift dependence of the density-dependent alignment model.
+    :ivar ia_a_d: the amplitude of the density-dependent alignment model,
+        or $b_{TA}$ if the user chooses to use the $b_{TA}$ parameterization.
+    :ivar ia_zpiv_d: the pivot redshift of the density-dependent alignment model,
+        not applied if the user chooses to use the $b_{TA}$ parameterization.
+    :ivar ia_alphaz_d: the redshift dependence of the density-dependent alignment model,
+        not applied if the user chooses to use the $b_{TA}$ parameterization.
     """
 
     def __init__(
-        self, sacc_tracer: None | str = None, include_z_dependence: bool = False
+        self, sacc_tracer: None | str = None, include_z_dependence: bool = False,
+        ia_a_d_is_bta: bool = False
     ):
         """Create a TattAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
+        :param include_z_dependence: whether to include
+            redshift dependence in the parameters.
+        :param ia_a_d_is_bta: whether the density-dependent
+            amplitude is to be used as $b_{TA}$.
         """
         super().__init__(parameter_prefix=sacc_tracer)
+        self.ia_a_d_is_bta = ia_a_d_is_bta
         self.ia_a_1 = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
         )
@@ -309,16 +323,19 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         self.ia_a_d = register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
         )
-        self.ia_zpiv_d = register_new_updatable_parameter(
-            value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
-        )
-        self.ia_alphaz_d = register_new_updatable_parameter(
-            value=(
-                None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
-            ),
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D,
-        )
+        if not ia_a_d_is_bta:
+            self.ia_zpiv_d = register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
+            )
+            self.ia_alphaz_d = register_new_updatable_parameter(
+                value=(
+                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
+                ),
+                default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D,
+            )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -334,14 +351,17 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             ccl_cosmo,
             z=z,
             a1=self.ia_a_1,
-            a1delta=self.ia_a_d,
+            a1delta=self.ia_a_1 * self.ia_a_d if self.ia_a_d_is_bta else self.ia_a_d,
             a2=self.ia_a_2,
             Om_m2_for_c2=False,
         )
 
         c_1 *= ((1.0 + z) / (1.0 + self.ia_zpiv_1)) ** self.ia_alphaz_1
-        c_d *= ((1.0 + z) / (1.0 + self.ia_zpiv_d)) ** self.ia_alphaz_d
         c_2 *= ((1.0 + z) / (1.0 + self.ia_zpiv_2)) ** self.ia_alphaz_2
+        if not self.ia_a_d_is_bta:
+            c_d *= ((1.0 + z) / (1.0 + self.ia_zpiv_d)) ** self.ia_alphaz_d
+        else:
+            c_d *= ((1.0 + z) / (1.0 + self.ia_zpiv_1)) ** self.ia_alphaz_1
 
         return replace(
             tracer_arg,
