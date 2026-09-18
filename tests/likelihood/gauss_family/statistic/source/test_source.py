@@ -170,7 +170,9 @@ def test_trivial_source_galaxy_construction():
 def test_trivial_source_select_field():
     tools = ModelingTools()
     trivial = TrivialSourceGalaxy(sacc_tracer="no-sacc-tracer")
-    select_field: SourceGalaxySelectField = SourceGalaxySelectField("new_field")
+    select_field: SourceGalaxySelectField[SourceGalaxyArgs] = SourceGalaxySelectField(
+        "new_field"
+    )
     trivial.tracer_args = TrivialSourceGalaxyArgs(
         z=np.array([1.0]), dndz=np.array([1.0]), field="old_field"
     )

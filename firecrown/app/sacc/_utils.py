@@ -18,7 +18,7 @@ QuadOpts = TypedDict(
 )
 
 
-def mean_std_tracer(tracer: mdt.TomographicBin):
+def mean_std_tracer(tracer: mdt.TomographicBin) -> tuple[float, float]:
     """Compute the mean and standard deviation of a tracer.
 
     :param tracer: The galaxy redshift distribution tracer to analyze.
@@ -28,8 +28,9 @@ def mean_std_tracer(tracer: mdt.TomographicBin):
     spline = PchipInterpolator(tracer.z, tracer.dndz, extrapolate=False)
     quad_opts: QuadOpts = {"limit": 10000, "epsabs": 0.0, "epsrel": 1.0e-3}
 
-    def spline_func(t):
-        return spline(t)
+    def spline_func(t: float) -> float:
+        # PchipInterpolator.__call__ returns a 0-d ndarray for scalar input.
+        return float(spline(t))
 
     # Normalization
     norm, _ = quad(spline_func, tracer.z[0], tracer.z[-1], **quad_opts)

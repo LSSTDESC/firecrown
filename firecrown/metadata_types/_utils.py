@@ -1,5 +1,6 @@
 """Utility types and functions for metadata types."""
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,7 +16,7 @@ class TracerNames(YAMLSerializable):
     name1: str
     name2: str
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> str:
         """Get the name of the tracer at the given index."""
         if item == 0:
             return self.name1
@@ -23,7 +24,7 @@ class TracerNames(YAMLSerializable):
             return self.name2
         raise IndexError
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Iterate through the data members.
 
         This is to allow automatic unpacking.
@@ -52,7 +53,7 @@ class TypeSource(str):
 
     DEFAULT: "TypeSource"
 
-    def __new__(cls, value):
+    def __new__(cls, value: str) -> "TypeSource":
         """Create a new TypeSource."""
         return super().__new__(cls, value)
 

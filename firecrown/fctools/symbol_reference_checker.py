@@ -47,6 +47,21 @@ def extract_code_spans(content: str) -> list[tuple[int, str]]:
     return results
 
 
+def _validate_symbol_map(data: dict[str, object]) -> dict[str, str]:
+    """Validate that a loaded JSON symbol map has only string values.
+
+    :param data: Raw JSON data loaded from the symbol map file
+    :returns: Validated symbol map
+    """
+    validated: dict[str, str] = {}
+    for key, value in data.items():
+        if not isinstance(value, str):
+            print_error(f"Symbol map entry '{key}' has non-string value: {value!r}")
+            sys.exit(1)
+        validated[key] = value
+    return validated
+
+
 def _load_external_symbols(external_symbols_file: Path | None) -> set[str]:
     """Load external symbols from a text file.
 
@@ -97,7 +112,7 @@ def _build_symbol_sets(
     return fully_qualified_symbols, unqualified_symbols
 
 
-def _compile_exclude_pattern(exclude_pattern: str | None) -> re.Pattern | None:
+def _compile_exclude_pattern(exclude_pattern: str | None) -> re.Pattern[str] | None:
     """Compile the exclude pattern regex if provided.
 
     :param exclude_pattern: Optional regex pattern string
@@ -247,7 +262,7 @@ def main(
     console = Console(stderr=True)
 
     # Load the symbol map (typer validates exists=True)
-    symbol_map: dict[str, str] = load_json_file(symbol_map_file)
+    symbol_map = _validate_symbol_map(load_json_file(symbol_map_file))
 
     # Load external symbols if provided
     external_symbols = _load_external_symbols(external_symbols_file)

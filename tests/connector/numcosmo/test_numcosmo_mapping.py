@@ -7,7 +7,7 @@ import pyccl as ccl
 import pytest
 from numcosmo_py import GObject, Nc, Ncm
 
-from firecrown.connector.numcosmo.numcosmo import (
+from firecrown.connector.numcosmo import (
     MappingNumCosmo,
     NumCosmoData,
     NumCosmoFactory,

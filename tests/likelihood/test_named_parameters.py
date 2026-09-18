@@ -337,6 +337,19 @@ def test_named_parameters_to_set():
     assert params.to_set() == {"a", "b", "c"}
 
 
+def test_named_parameters_to_float_dict():
+    params = NamedParameters({"a": 1.0, "b": 2.0})
+
+    assert params.to_float_dict() == {"a": 1.0, "b": 2.0}
+
+
+def test_named_parameters_to_float_dict_wrong_type():
+    params = NamedParameters({"a": 1})
+
+    with pytest.raises(TypeError, match="only float values"):
+        params.to_float_dict()
+
+
 def test_invalid_set_from_basic_dict():
     params = NamedParameters()
     with pytest.raises(ValueError):

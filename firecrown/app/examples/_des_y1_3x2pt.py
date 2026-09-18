@@ -373,7 +373,7 @@ ccl_factory:
         models.append(firecrown_model)
         return models
 
-    def required_cosmology(self):
+    def required_cosmology(self) -> FrameworkCosmology:
         """Cosmology requirement level."""
         if self.factory_type in (
             DESY1FactoryType.YAML_PURE_CCL,

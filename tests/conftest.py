@@ -789,7 +789,13 @@ def fixture_sacc_galaxy_xis_src0_lens0() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_cells", scope="module")
-def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
+def fixture_sacc_galaxy_cells() -> tuple[
+    sacc.Sacc,
+    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    dict[
+        tuple[TracerNames, str], tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]
+    ],
+]:
     """Fixture for a SACC data without window functions.
 
     Module-scoped because SACC objects are expensive to create and are

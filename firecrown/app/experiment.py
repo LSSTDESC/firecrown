@@ -2,7 +2,7 @@
 
 import dataclasses
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Sequence
 
 import typer
 from rich.panel import Panel
@@ -67,7 +67,7 @@ class View(Load):
         table.add_column("Per-bin systematics")
         table.add_column("Global systematics")
 
-        def fmt_sys(seq):
+        def fmt_sys(seq: Sequence[object]) -> str:
             if not seq:
                 return "-"
             return ", ".join(getattr(s, "type", str(s)) for s in seq)
