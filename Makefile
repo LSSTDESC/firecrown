@@ -720,4 +720,12 @@ test-ci: test-all-coverage test-slow test-integration test-example ## Run exactl
 test-all-coverage: unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
 
 unit-tests-core:  ## Internal target for core tests with coverage
-	$(PYTEST) -vv --cov firecrown --cov-report xml --cov-branch -n auto
+	# tests/connector/cobaya is excluded from the parallel run and executed
+	# serially below: each of its tests builds a full CAMB model via
+	# cobaya.model.get_model(), which is memory-heavy. Running several of
+	# these concurrently under xdist can exhaust memory on CI runners and
+	# crash workers (see issue with "node down: Not properly terminated").
+	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch -n auto \
+		--ignore tests/connector/cobaya
+	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch \
+		tests/connector/cobaya
