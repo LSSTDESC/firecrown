@@ -205,6 +205,10 @@ def test_two_point_xy_invalid():
         )
 
 
+def test_two_point_xy_neq_other_type(harmonic_two_point_xy: TwoPointXY):
+    assert harmonic_two_point_xy != object()
+
+
 def test_two_point_harmonic():
     x = TomographicBin(
         bin_name="b_name1",
