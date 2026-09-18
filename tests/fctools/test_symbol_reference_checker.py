@@ -2,9 +2,11 @@
 
 import json
 
+import pytest
 from typer.testing import CliRunner
 
 from firecrown.fctools.symbol_reference_checker import (
+    _validate_symbol_map,
     app,
     check_qmd_file,
     extract_code_spans,
@@ -210,6 +212,13 @@ def test_main_missing_symbol_map(tmp_path):
     result = runner.invoke(app, [str(tmp_path), str(tmp_path / "nonexistent.json")])
 
     assert result.exit_code != 0
+
+
+def test_validate_symbol_map_rejects_non_string_value():
+    with pytest.raises(SystemExit) as exc_info:
+        _validate_symbol_map({"symbol": 123})
+
+    assert exc_info.value.code == 1
 
 
 def test_main_with_exclude_pattern(tmp_path):
