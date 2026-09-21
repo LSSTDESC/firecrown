@@ -958,6 +958,189 @@ def test_hm_sampling_configuration(halofit_version: str) -> None:
     # pylint: enable=no-member
 
 
+HM_SAMPLED_NAMES = {
+    "mead": ["HMCode_A_baryon", "HMCode_eta_baryon"],
+    "mead2015": ["HMCode_A_baryon", "HMCode_eta_baryon"],
+    "mead2016": ["HMCode_A_baryon", "HMCode_eta_baryon"],
+    "mead2020_feedback": ["HMCode_logT_AGN"],
+}
+
+
+@pytest.mark.parametrize("halofit_version", list(HM_SAMPLED_NAMES))
+def test_hm_sampling_required_parameters(halofit_version: str) -> None:
+    """The HMCode parameters are required with the spelling CAMB expects."""
+    factory = CCLFactory(
+        creation_mode=CCLCreationMode.PURE_CCL_MODE,
+        use_camb_hm_sampling=True,
+        camb_extra_params=CAMBExtraParams(halofit_version=halofit_version),
+    )
+    required = set(factory.required_parameters().get_params_names())
+    assert set(HM_SAMPLED_NAMES[halofit_version]) <= required
+    # The parameters not belonging to this halofit version must not be required.
+    all_names = set(it.chain.from_iterable(HM_SAMPLED_NAMES.values()))
+    assert (all_names - set(HM_SAMPLED_NAMES[halofit_version])) & required == set()
+
+
+@pytest.mark.parametrize("halofit_version", list(HM_SAMPLED_NAMES))
+def test_hm_sampling_lower_case_names(halofit_version: str) -> None:
+    """HMCode parameters are found when the sampler lower-cases every name.
+
+    This is what CosmoSIS does to the contents of its DataBlock.
+    """
+    factory = CCLFactory(
+        creation_mode=CCLCreationMode.PURE_CCL_MODE,
+        use_camb_hm_sampling=True,
+        camb_extra_params=CAMBExtraParams(halofit_version=halofit_version),
+    )
+    sampled_values = {
+        name: 0.5 + i for i, name in enumerate(HM_SAMPLED_NAMES[halofit_version])
+    }
+    default_params = get_default_params_map(factory)
+    lower_case_params = ParamsMap(
+        {name.lower(): value for name, value in default_params.items()}
+        | {name.lower(): value for name, value in sampled_values.items()}
+    )
+    lower_case_params.use_lower_case_keys(True)
+
+    factory.update(lower_case_params)
+
+    assert factory.camb_extra_params is not None
+    camb_extra_params: CAMBExtraParams = factory.camb_extra_params
+    for name, value in sampled_values.items():
+        assert getattr(camb_extra_params, name) == value
+    # Every supplied parameter was consumed, so no unused-parameter warning is due.
+    assert lower_case_params.get_unused_keys() == set()
+
+
+@pytest.mark.parametrize("halofit_version", list(HM_SAMPLED_NAMES))
+def test_hm_sampling_reaches_ccl(halofit_version: str) -> None:
+    """The sampled HMCode values are the ones handed over to CCL."""
+    factory = CCLFactory(
+        creation_mode=CCLCreationMode.PURE_CCL_MODE,
+        use_camb_hm_sampling=True,
+        camb_extra_params=CAMBExtraParams(halofit_version=halofit_version),
+    )
+    sampled_values = {
+        name: 0.5 + i for i, name in enumerate(HM_SAMPLED_NAMES[halofit_version])
+    }
+    params = ParamsMap(get_default_params_map(factory).params | sampled_values)
+
+    factory.update(params)
+
+    assert factory.camb_extra_params is not None
+    camb_extra_params: CAMBExtraParams = factory.camb_extra_params
+    extra_params = camb_extra_params.get_dict()
+    for name, value in sampled_values.items():
+        assert extra_params[name] == value
+
+
+def test_hm_sampling_unknown_halofit_version() -> None:
+    """Sampling must be refused when the halofit version has no HMCode parameters."""
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"There are no HMCode parameters to sample for "
+            r"halofit_version=takahashi\."
+        ),
+    ):
+        CCLFactory(
+            creation_mode=CCLCreationMode.PURE_CCL_MODE,
+            use_camb_hm_sampling=True,
+            camb_extra_params=CAMBExtraParams(halofit_version="takahashi"),
+        )
+
+
+def test_hm_parameters_not_sampled_when_not_requested() -> None:
+    """Without use_camb_hm_sampling the HMCode parameters keep their configured values.
+
+    They are neither required from the sampler nor silently picked up from the
+    parameters supplied to update.
+    """
+    factory = CCLFactory(
+        creation_mode=CCLCreationMode.PURE_CCL_MODE,
+        camb_extra_params=CAMBExtraParams(
+            halofit_version="mead", HMCode_A_baryon=3.13, HMCode_eta_baryon=0.603
+        ),
+    )
+    assert "HMCode_A_baryon" not in factory.required_parameters().get_params_names()
+
+    params = ParamsMap(
+        get_default_params_map(factory).params | {"HMCode_A_baryon": 4.0}
+    )
+    factory.update(params)
+
+    assert factory.camb_extra_params is not None
+    camb_extra_params: CAMBExtraParams = factory.camb_extra_params
+    assert camb_extra_params.HMCode_A_baryon == 3.13
+    assert camb_extra_params.HMCode_eta_baryon == 0.603
+    assert params.get_unused_keys() == {"HMCode_A_baryon"}
+
+
+@pytest.mark.parametrize("halofit_version", list(HM_SAMPLED_NAMES))
+def test_hm_sampling_honors_parameter_prefix(halofit_version: str) -> None:
+    """The HMCode parameters carry the factory's parameter prefix.
+
+    The values still reach camb_extra_params under the names CAMB expects.
+    """
+    factory = CCLFactory(
+        creation_mode=CCLCreationMode.PURE_CCL_MODE,
+        use_camb_hm_sampling=True,
+        camb_extra_params=CAMBExtraParams(halofit_version=halofit_version),
+        parameter_prefix="ccl",
+    )
+    required = set(factory.required_parameters().get_params_names())
+    prefixed = {f"ccl_{name}" for name in HM_SAMPLED_NAMES[halofit_version]}
+    assert prefixed <= required
+
+    sampled_values = {
+        f"ccl_{name}": 0.5 + i
+        for i, name in enumerate(HM_SAMPLED_NAMES[halofit_version])
+    }
+    params = ParamsMap(get_default_params_map(factory).params | sampled_values)
+    factory.update(params)
+
+    assert factory.camb_extra_params is not None
+    camb_extra_params: CAMBExtraParams = factory.camb_extra_params
+    for name in HM_SAMPLED_NAMES[halofit_version]:
+        assert getattr(camb_extra_params, name) == sampled_values[f"ccl_{name}"]
+
+
+@pytest.mark.parametrize("halofit_version", list(HM_SAMPLED_NAMES))
+def test_camb_extra_params_hm_sampling_defaults(halofit_version: str) -> None:
+    """Each halofit version reports exactly the HMCode parameters CAMB expects."""
+    params = CAMBExtraParams(halofit_version=halofit_version)
+    defaults = params.get_hm_sampling_defaults()
+    assert list(defaults) == HM_SAMPLED_NAMES[halofit_version]
+    assert all(isinstance(value, float) for value in defaults.values())
+
+
+def test_camb_extra_params_no_hm_sampling_defaults() -> None:
+    """A halofit version without HMCode support reports no parameters."""
+    assert CAMBExtraParams(halofit_version="takahashi").get_hm_sampling_defaults() == {}
+
+
+def test_camb_extra_params_set_hm_parameters() -> None:
+    """The HMCode parameters are set from the values given to set_hm_parameters."""
+    params = CAMBExtraParams(halofit_version="mead")
+    params.set_hm_parameters({"HMCode_A_baryon": 4.0, "HMCode_eta_baryon": 0.8})
+    assert params.HMCode_A_baryon == 4.0
+    assert params.HMCode_eta_baryon == 0.8
+    assert params.HMCode_logT_AGN is None
+
+
+def test_camb_extra_params_set_hm_parameters_wrong_name() -> None:
+    """Setting a parameter foreign to the halofit version is an error."""
+    params = CAMBExtraParams(halofit_version="mead")
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"HMCode parameters \['HMCode_logT_AGN'\] are not available for "
+            r"halofit_version=mead\."
+        ),
+    ):
+        params.set_hm_parameters({"HMCode_logT_AGN": 8.0})
+
+
 @pytest.mark.parametrize(
     "creation_mode,transfer_function,expected",
     [
