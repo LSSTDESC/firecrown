@@ -167,17 +167,23 @@ class CCLFactory(Updatable, BaseModel):
                     "To sample over the halo model, "
                     "you must include camb_extra_parameters."
                 )
-            # The default values are taken from CAMB v1.6.0
-            if self.camb_extra_params.is_mead():
-                self.HMCode_A_baryon = register_new_updatable_parameter(
-                    default_value=3.13
+            hm_defaults = self.camb_extra_params.get_hm_sampling_defaults()
+            if not hm_defaults:
+                raise ValueError(
+                    f"There are no HMCode parameters to sample for "
+                    f"halofit_version={self.camb_extra_params.halofit_version}. "
+                    f"Valid halofit versions are: mead, mead2015, mead2016, "
+                    f"mead2020_feedback"
                 )
-                self.HMCode_eta_baryon = register_new_updatable_parameter(
-                    default_value=0.603
-                )
-            if self.camb_extra_params.is_mead2020_feedback():
-                self.HMCode_logT_AGN = register_new_updatable_parameter(
-                    default_value=7.8
+            # Registering the parameters under the names CAMB uses lets the sampler
+            # parameter machinery resolve them, which is what makes the lower-cased
+            # names supplied by CosmoSIS match. Going through setattr rather than
+            # set_sampler_parameter is what applies the parameter prefix.
+            for name, default_value in hm_defaults.items():
+                setattr(
+                    self,
+                    name,
+                    register_new_updatable_parameter(default_value=default_value),
                 )
 
     def _update(self, params: ParamsMap) -> None:
@@ -186,8 +192,17 @@ class CCLFactory(Updatable, BaseModel):
         :param params: The parameters to update.
         :returns: None
         """
-        if self.camb_extra_params is not None:
-            self.camb_extra_params.update(params)
+        if not self.use_camb_hm_sampling:
+            return
+        assert self.camb_extra_params is not None
+        camb_extra_params: CAMBExtraParams = self.camb_extra_params
+        # There is something here that is confusing pylint
+        # pylint: disable=no-member
+        hm_names = camb_extra_params.get_hm_sampling_defaults().keys()
+        camb_extra_params.set_hm_parameters(
+            {name: getattr(self, name) for name in hm_names}
+        )
+        # pylint: enable=no-member
 
     def using_camb(self) -> bool:
         """Return True if the CCLFactory is using CAMB for the matter power spectrum.
