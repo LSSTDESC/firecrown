@@ -945,7 +945,7 @@ def test_hm_sampling_configuration(halofit_version: str) -> None:
         assert camb_extra_params.HMCode_A_baryon is None
         assert camb_extra_params.HMCode_eta_baryon is None
     if is_mead2020_feedback:
-        assert factory.HMCode_logT_AGN is None
+        assert camb_extra_params.HMCode_logT_AGN is None
 
     # Update the factory to make it have default values
     params = get_default_params_map(factory)
@@ -983,7 +983,7 @@ def test_hm_sampling_required_parameters(halofit_version: str) -> None:
 
 @pytest.mark.parametrize("halofit_version", list(HM_SAMPLED_NAMES))
 def test_hm_sampling_lower_case_names(halofit_version: str) -> None:
-    """HMCode parameters are found when the sampler lower-cases every name.
+    """The HMCode parameters are found when the sampler lower-cases every name.
 
     This is what CosmoSIS does to the contents of its DataBlock.
     """
@@ -1015,10 +1015,11 @@ def test_hm_sampling_lower_case_names(halofit_version: str) -> None:
 @pytest.mark.parametrize("halofit_version", list(HM_SAMPLED_NAMES))
 def test_hm_sampling_reaches_ccl(halofit_version: str) -> None:
     """The sampled HMCode values are the ones handed over to CCL."""
+    camb_extra_params = CAMBExtraParams(halofit_version=halofit_version)
     factory = CCLFactory(
         creation_mode=CCLCreationMode.PURE_CCL_MODE,
         use_camb_hm_sampling=True,
-        camb_extra_params=CAMBExtraParams(halofit_version=halofit_version),
+        camb_extra_params=camb_extra_params,
     )
     sampled_values = {
         name: 0.5 + i for i, name in enumerate(HM_SAMPLED_NAMES[halofit_version])
@@ -1027,8 +1028,6 @@ def test_hm_sampling_reaches_ccl(halofit_version: str) -> None:
 
     factory.update(params)
 
-    assert factory.camb_extra_params is not None
-    camb_extra_params: CAMBExtraParams = factory.camb_extra_params
     extra_params = camb_extra_params.get_dict()
     for name, value in sampled_values.items():
         assert extra_params[name] == value
@@ -1056,11 +1055,12 @@ def test_hm_parameters_not_sampled_when_not_requested() -> None:
     They are neither required from the sampler nor silently picked up from the
     parameters supplied to update.
     """
+    camb_extra_params = CAMBExtraParams(
+        halofit_version="mead", HMCode_A_baryon=3.13, HMCode_eta_baryon=0.603
+    )
     factory = CCLFactory(
         creation_mode=CCLCreationMode.PURE_CCL_MODE,
-        camb_extra_params=CAMBExtraParams(
-            halofit_version="mead", HMCode_A_baryon=3.13, HMCode_eta_baryon=0.603
-        ),
+        camb_extra_params=camb_extra_params,
     )
     assert "HMCode_A_baryon" not in factory.required_parameters().get_params_names()
 
@@ -1069,8 +1069,6 @@ def test_hm_parameters_not_sampled_when_not_requested() -> None:
     )
     factory.update(params)
 
-    assert factory.camb_extra_params is not None
-    camb_extra_params: CAMBExtraParams = factory.camb_extra_params
     assert camb_extra_params.HMCode_A_baryon == 3.13
     assert camb_extra_params.HMCode_eta_baryon == 0.603
     assert params.get_unused_keys() == {"HMCode_A_baryon"}
