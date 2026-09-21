@@ -1,0 +1,50 @@
+schema: spec-driven
+
+context: |
+  Project: Firecrown (Python cosmology likelihood framework).
+  Conventions:
+  - Python style: PEP8 + Black formatting.
+  - Use Sphinx-style docstrings.
+  - Type annotations are required for new or changed Python code.
+  - Prefer focused tests near changed modules, then broader test runs.
+  Runtime prerequisite:
+  - Before running any command that imports or executes Firecrown, its tests,
+    examples, tutorials, documentation builds, linters, type checks, or Make
+    targets, verify that CONDA_DEFAULT_ENV is exactly firecrown_developer.
+  - Run no Firecrown-related command when that precondition is false.
+  - The required check is: test "${CONDA_DEFAULT_ENV:-}" = "firecrown_developer"
+  Key commands:
+  - make lint
+  - make test
+  - openspec validate "<change-id>" --type change --strict --no-interactive
+  Domain notes:
+  - Firecrown handles likelihood orchestration, metadata/data extraction, and sampler integration.
+  - Preserve backward compatibility unless a change explicitly states otherwise.
+
+rules:
+  proposal:
+    - Include sections: Why, What Changes, Non-goals, Impact.
+    - State backward-compatibility expectations explicitly.
+    - Keep scope bounded; defer unrelated concerns as follow-up changes.
+  design:
+    - Describe architecture boundaries and migration implications.
+    - Explain rejected alternatives briefly when trade-offs are non-trivial.
+  spec:
+    - Use normative language (MUST, SHOULD, MUST NOT) for requirements.
+    - Include validation/error behavior and compatibility behavior.
+  tasks:
+    - Include implementation, tests, and docs/tutorial update tasks when relevant.
+    - Mark deferred work explicitly as follow-up, not in-scope.
+
+operations:
+  apply:
+    guidance:
+      - Keep patches small and behavior-focused.
+      - Before the first Firecrown-related command, verify that CONDA_DEFAULT_ENV is exactly firecrown_developer.
+      - If the environment check fails, do not run tests, examples, tutorials, documentation builds, linting, type checks, package installation, or any Firecrown Make target. Report: conda activate firecrown_developer.
+      - Run the narrowest relevant checks only after that verification.
+      - Report what changed and what was verified.
+  archive:
+    guidance:
+      - Validate the change in strict mode before archiving.
+      - Summarize archived scope and any intentional deferrals.
