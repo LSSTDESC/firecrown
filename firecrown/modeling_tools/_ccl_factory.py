@@ -194,15 +194,11 @@ class CCLFactory(Updatable, BaseModel):
         """
         if not self.use_camb_hm_sampling:
             return
-        assert self.camb_extra_params is not None
-        camb_extra_params: CAMBExtraParams = self.camb_extra_params
-        # There is something here that is confusing pylint
-        # pylint: disable=no-member
-        hm_names = camb_extra_params.get_hm_sampling_defaults().keys()
-        camb_extra_params.set_hm_parameters(
-            {name: getattr(self, name) for name in hm_names}
-        )
-        # pylint: enable=no-member
+        if self.camb_extra_params is not None:
+            hm_names = self.camb_extra_params.get_hm_sampling_defaults().keys()
+            self.camb_extra_params.set_hm_parameters(
+                {name: getattr(self, name) for name in hm_names}
+            )
 
     def using_camb(self) -> bool:
         """Return True if the CCLFactory is using CAMB for the matter power spectrum.
