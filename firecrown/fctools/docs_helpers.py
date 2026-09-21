@@ -12,7 +12,9 @@ from pathlib import Path
 from rich.console import Console
 
 
-def load_json_file(file_path: Path, error_prefix: str = "JSON file") -> dict:
+def load_json_file(
+    file_path: Path, error_prefix: str = "JSON file"
+) -> dict[str, object]:
     """Load and parse a JSON file with error handling.
 
     :param file_path: Path to the JSON file

@@ -1,10 +1,16 @@
 """Comparison utilities for optional values."""
 
+from typing import TypeVar
+
 import numpy as np
 from numpy import typing as npt
 
+_ScalarT = TypeVar("_ScalarT", bound=np.generic)
 
-def compare_optional_arrays(x: None | npt.NDArray, y: None | npt.NDArray) -> bool:
+
+def compare_optional_arrays(
+    x: None | npt.NDArray[_ScalarT], y: None | npt.NDArray[_ScalarT]
+) -> bool:
     """Compare two arrays, allowing for either or both to be None.
 
     :param x: first array

@@ -230,7 +230,7 @@ def test_main_missing_expected_key(tmp_path):
     output_file = tmp_path / "output.tsv"
 
     # Missing the 'files' key at top level
-    coverage_data: dict[str, dict] = {"something_else": {}}
+    coverage_data: dict[str, dict[str, object]] = {"something_else": {}}
 
     coverage_file.write_text(json.dumps(coverage_data))
 

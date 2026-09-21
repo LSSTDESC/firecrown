@@ -22,7 +22,7 @@ def full_type_name(t: type) -> str:
     return f"{t.__module__}.{t.__name__}"
 
 
-def get_defined_methods(cls) -> list[str]:
+def get_defined_methods(cls: type) -> list[str]:
     """Return a list of method names defined in the class.
 
     This includes methods introduced in this class, as well as
@@ -71,7 +71,7 @@ def main(
     typenames: List[str] = typer.Argument(
         ..., help="One or more fully qualified type names"
     )
-):
+) -> None:
     """Print the class hierarchy for the given type(s).
 
     This tool displays the Method Resolution Order (MRO) for Python classes,

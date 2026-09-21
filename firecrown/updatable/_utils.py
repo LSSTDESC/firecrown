@@ -46,7 +46,7 @@ def assert_updatable_interface(
     obj: UpdatableProtocol,
     recursive: bool = True,
     raise_on_override: bool = False,
-):
+) -> None:
     """Asserts that all final methods were not overridden.
 
     The methods:

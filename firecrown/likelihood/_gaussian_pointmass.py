@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -13,7 +13,15 @@ import pyccl
 from scipy.integrate import simpson
 
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood_base import Statistic
+from firecrown.likelihood_base import (
+    GuardedStatistic,
+    SourceGalaxy,
+    SourceGalaxyArgs,
+    Statistic,
+)
+
+if TYPE_CHECKING:
+    from firecrown.likelihood._two_point import TwoPoint
 
 # Default values for point mass marginalization
 DEFAULT_SIGMA_B = 10000.0
@@ -27,8 +35,8 @@ class PointMassData:
     theta: np.ndarray | None = None
     row_lens_idx: np.ndarray | None = None
     row_src_idx: np.ndarray | None = None
-    lens_tracers: list | None = None
-    src_tracers: list | None = None
+    lens_tracers: list[str] | None = None
+    src_tracers: list[str] | None = None
     z_l: np.ndarray | None = None
     z_s: np.ndarray | None = None
     nzL_norm: np.ndarray | None = None
@@ -95,7 +103,7 @@ class ConstGaussianPM(ConstGaussian):
         # Validate that all statistics have the required attributes
         required_attrs = ["sacc_data_type", "source0", "source1", "thetas"]
         for stat in self.statistics:
-            stat_obj = stat.statistic
+            stat_obj = cast("TwoPoint", stat.statistic)
             missing_attrs = [
                 attr for attr in required_attrs if not hasattr(stat_obj, attr)
             ]
@@ -116,7 +124,7 @@ class ConstGaussianPM(ConstGaussian):
         lens_keys = np.concatenate(
             [
                 np.repeat(
-                    stat.statistic.source0.sacc_tracer,  # type: ignore[attr-defined]
+                    cast("TwoPoint", stat.statistic).source0.sacc_tracer,
                     len(stat.statistic.get_data_vector()),
                 )
                 for stat in self.statistics
@@ -125,7 +133,7 @@ class ConstGaussianPM(ConstGaussian):
         src_keys = np.concatenate(
             [
                 np.repeat(
-                    stat.statistic.source1.sacc_tracer,  # type: ignore[attr-defined]
+                    cast("TwoPoint", stat.statistic).source1.sacc_tracer,
                     len(stat.statistic.get_data_vector()),
                 )
                 for stat in self.statistics
@@ -164,7 +172,7 @@ class ConstGaussianPM(ConstGaussian):
         xi_rows: np.ndarray,
         lens_keys: np.ndarray,
         src_keys: np.ndarray,
-    ) -> tuple[list, list, np.ndarray, np.ndarray]:
+    ) -> tuple[list[str], list[str], np.ndarray, np.ndarray]:
         """Create tracer index mappings.
 
         :param xi_pairs: Array of (lens, source) tracer pairs
@@ -199,8 +207,26 @@ class ConstGaussianPM(ConstGaussian):
         ]
         idx_is_xit = np.array(sacc_types) == "galaxy_shearDensity_xi_t"
         xi_t_stats = np.array(self.statistics)[idx_is_xit]
-        z_l_arr = [s.statistic.source0.tracer_args.z for s in xi_t_stats]
-        z_s_arr = [s.statistic.source1.tracer_args.z for s in xi_t_stats]
+        z_l_arr: list[npt.NDArray[np.float64]] = []
+        z_s_arr: list[npt.NDArray[np.float64]] = []
+        for s in xi_t_stats:
+            stat = cast("TwoPoint", s.statistic)
+            lens_source = stat.source0
+            src_source = stat.source1
+            assert isinstance(lens_source, SourceGalaxy), (
+                "Expected source0 to be a SourceGalaxy for "
+                f"'galaxy_shearDensity_xi_t' statistics, got "
+                f"{type(lens_source).__name__}"
+            )
+            assert isinstance(src_source, SourceGalaxy), (
+                "Expected source1 to be a SourceGalaxy for "
+                f"'galaxy_shearDensity_xi_t' statistics, got "
+                f"{type(src_source).__name__}"
+            )
+            lens_tracer_args: SourceGalaxyArgs = lens_source.tracer_args
+            src_tracer_args: SourceGalaxyArgs = src_source.tracer_args
+            z_l_arr.append(lens_tracer_args.z)
+            z_s_arr.append(src_tracer_args.z)
         z_l = z_l_arr[0]
         z_s = z_s_arr[0]
 
@@ -215,7 +241,11 @@ class ConstGaussianPM(ConstGaussian):
         return z_l, z_s
 
     def _compute_normalized_dndz(
-        self, lens_tracers: list, src_tracers: list, z_l: np.ndarray, z_s: np.ndarray
+        self,
+        lens_tracers: list[str],
+        src_tracers: list[str],
+        z_l: np.ndarray,
+        z_s: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Compute normalized dN/dz distributions for all tracers.
 
@@ -226,14 +256,12 @@ class ConstGaussianPM(ConstGaussian):
         :returns: Tuple of (nzL_norm, nzS_norm) normalized dN/dz arrays
         """
         # Build dN/dz libraries once per unique tracer
-        nzL_list = [
-            self._get_lens_statistic(lt).statistic.source0.tracer_args.dndz
-            for lt in lens_tracers
-        ]
-        nzS_list = [
-            self._get_src_statistic(st).statistic.source1.tracer_args.dndz
-            for st in src_tracers
-        ]
+        nzL_list = self._build_dndz_list(
+            lens_tracers, self._get_lens_statistic, "source0"
+        )
+        nzS_list = self._build_dndz_list(
+            src_tracers, self._get_src_statistic, "source1"
+        )
         nzL = np.stack(nzL_list)
         nzS = np.stack(nzS_list)
 
@@ -292,7 +320,32 @@ class ConstGaussianPM(ConstGaussian):
         # Mark as ready and cache original inverse covariance
         self._pm_inv_cov_original = self.inv_cov
 
-    def _get_statistic(self, tracer: str, is_lens: bool):
+    def _build_dndz_list(
+        self,
+        tracers: list[str],
+        get_statistic: Callable[[str], GuardedStatistic],
+        source_attr: str,
+    ) -> list[npt.NDArray[np.float64]]:
+        """Build the list of dN/dz arrays for each tracer.
+
+        :param tracers: List of tracer names
+        :param get_statistic: Method to retrieve the GuardedStatistic for a tracer
+        :param source_attr: Attribute name on TwoPoint for the source
+        :returns: List of dN/dz arrays, one per tracer
+        """
+        nz_list: list[npt.NDArray[np.float64]] = []
+        for t in tracers:
+            stat = cast("TwoPoint", get_statistic(t).statistic)
+            source = getattr(stat, source_attr)
+            assert isinstance(source, SourceGalaxy), (
+                f"Expected {source_attr} to be a SourceGalaxy for tracer "
+                f"'{t}', got {type(source).__name__}"
+            )
+            tracer_args: SourceGalaxyArgs = source.tracer_args
+            nz_list.append(tracer_args.dndz)
+        return nz_list
+
+    def _get_statistic(self, tracer: str, is_lens: bool) -> GuardedStatistic:
         """Get a statistic for a given tracer.
 
         :param tracer: The tracer name
@@ -302,11 +355,8 @@ class ConstGaussianPM(ConstGaussian):
         source_attr = "source0" if is_lens else "source1"
 
         for s in self.statistics:
-            stat = s.statistic
-            is_xi_t = (
-                stat.sacc_data_type  # type: ignore[attr-defined]
-                == "galaxy_shearDensity_xi_t"
-            )
+            stat = cast("TwoPoint", s.statistic)
+            is_xi_t = stat.sacc_data_type == "galaxy_shearDensity_xi_t"
             source_obj = getattr(stat, source_attr)
             is_match = source_obj.sacc_tracer == tracer
             if is_xi_t and is_match:
@@ -316,7 +366,7 @@ class ConstGaussianPM(ConstGaussian):
         tracer_type = "lens" if is_lens else "source"
         raise StopIteration(f"No {tracer_type} statistic found for {tracer}")
 
-    def _get_lens_statistic(self, lens_tracer: str):
+    def _get_lens_statistic(self, lens_tracer: str) -> GuardedStatistic:
         """Get a statistic for a given lens tracer.
 
         :param lens_tracer: The lens tracer name
@@ -324,7 +374,7 @@ class ConstGaussianPM(ConstGaussian):
         """
         return self._get_statistic(lens_tracer, is_lens=True)
 
-    def _get_src_statistic(self, src_tracer: str):
+    def _get_src_statistic(self, src_tracer: str) -> GuardedStatistic:
         """Get a statistic for a given source tracer.
 
         :param src_tracer: The source tracer name
@@ -390,7 +440,9 @@ class ConstGaussianPM(ConstGaussian):
         self._pm_data.assert_prepared()
         # After assert_prepared(), we know all fields are not None
         row_src_idx = cast(np.ndarray, self._pm_data.row_src_idx)
-        lens_tracers = cast(list, self._pm_data.lens_tracers)
+        # assert_prepared() establishes that this field is initialized, but
+        # mypy cannot propagate narrowing through a separate method call.
+        lens_tracers = cast(list[str], self._pm_data.lens_tracers)
         row_lens_idx = cast(np.ndarray, self._pm_data.row_lens_idx)
         theta = cast(np.ndarray, self._pm_data.theta)
 

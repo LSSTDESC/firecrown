@@ -17,7 +17,7 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import Annotated, Generic, Literal, TypeVar, final
+from typing import Annotated, Generic, Literal, TypeVar, cast, final
 
 import numpy as np
 import numpy.typing as npt
@@ -257,6 +257,26 @@ class NamedParameters:
         """
         return set(self.data)
 
+    def to_float_dict(self) -> dict[str, float]:
+        """Return the contained data as a dictionary of floats.
+
+        Sampling parameters must be floats; this is the form required to build a
+        :class:`ParamsMap`. Any other type is a configuration error, and is
+        reported naming the offending parameter.
+
+        :returns: the contained data, with every value typed as a float
+        :raises TypeError: if any contained value is not a float
+        """
+        result: dict[str, float] = {}
+        for name, value in self.data.items():
+            if not isinstance(value, float):
+                raise TypeError(
+                    f"Parameter {name} has type {type(value).__name__}; "
+                    f"only float values can be used as sampling parameters."
+                )
+            result[name] = value
+        return result
+
     def set_from_basic_dict(
         self,
         basic_dict: dict[
@@ -393,7 +413,7 @@ class Statistic(Updatable):
         assert len(self.get_data_vector()) > 0
         self.ready = True
 
-    def _reset(self):
+    def _reset(self) -> None:
         """Reset this statistic.
 
         Derived classes that override this function should make sure to call the
@@ -522,7 +542,9 @@ class TrivialStatistic(Statistic):
         # Data and theory will both be of length self.count
         self.count = 3
         self.data_vector: None | DataVector = None
-        self.mean = register_new_updatable_parameter(default_value=0.0)
+        self.mean: float = cast(
+            float, register_new_updatable_parameter(default_value=0.0)
+        )
         self.computed_theory_vector = False
 
     def read(self, sacc_data: sacc.Sacc) -> None:
@@ -639,7 +661,7 @@ class Source(Updatable):
         """
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update(self, params: ParamsMap) -> None:
         """Implementation of Updatable interface method `_update`.
 
         This clears the current hash and tracer, and calls the abstract method
@@ -659,7 +681,7 @@ class Source(Updatable):
         """
 
     @abstractmethod
-    def create_tracers(self, tools: ModelingTools):
+    def create_tracers(self, tools: ModelingTools) -> tuple[Sequence[Tracer], object]:
         """Abstract method to create tracers for this Source.
 
         :param tools: The modeling tools used for creating the tracers
@@ -797,11 +819,6 @@ class SourceGalaxySystematic(SourceSystematic, Generic[_SourceGalaxyArgsT]):
         """
 
 
-_SourceGalaxySystematicT = TypeVar(
-    "_SourceGalaxySystematicT", bound=SourceGalaxySystematic
-)
-
-
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z = 1.0
 
@@ -934,8 +951,11 @@ class SourceGalaxyPhotoZShift(
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.delta_z = register_new_updatable_parameter(
-            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+        self.delta_z: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+            ),
         )
         if active:
             self._transform = dndz_shift_and_stretch_active
@@ -958,7 +978,7 @@ class SourceGalaxyPhotoZShift(
         return replace(tracer_arg, z=new_z, dndz=new_dndz)
 
 
-class PhotoZShift(SourceGalaxyPhotoZShift):
+class PhotoZShift(SourceGalaxyPhotoZShift[SourceGalaxyArgs]):
     """Photo-z shift systematic."""
 
 
@@ -1011,8 +1031,11 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         """
         super().__init__(sacc_tracer)
 
-        self.sigma_z = register_new_updatable_parameter(
-            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
+        self.sigma_z: float = cast(
+            float,
+            register_new_updatable_parameter(
+                default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
+            ),
         )
 
         if active:
@@ -1020,7 +1043,9 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+    def apply(
+        self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT
+    ) -> _SourceGalaxyArgsT:
         """Apply a shift & stretch to the photo-z distribution of a source."""
         new_z, new_dndz = self._transform(
             tracer_arg.z, tracer_arg.dndz, self.delta_z, self.sigma_z
@@ -1028,7 +1053,7 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         return replace(tracer_arg, z=new_z, dndz=new_dndz)
 
 
-class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch[SourceGalaxyArgs]):
     """Photo-z shift and stretch systematic."""
 
 
@@ -1089,7 +1114,7 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         self,
         *,
         sacc_tracer: str,
-        systematics: None | Sequence[SourceGalaxySystematic] = None,
+        systematics: None | Sequence[SourceGalaxySystematic[_SourceGalaxyArgsT]] = None,
     ):
         """Initialize the SourceGalaxy object.
 
@@ -1101,9 +1126,9 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
 
         self.sacc_tracer = sacc_tracer
         self.current_tracer_args: None | _SourceGalaxyArgsT = None
-        self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
-            UpdatableCollection(systematics)
-        )
+        self.systematics: UpdatableCollection[
+            SourceGalaxySystematic[_SourceGalaxyArgsT]
+        ] = UpdatableCollection(systematics)
         self.tracer_args: _SourceGalaxyArgsT
 
     def read_systematics(self, sacc_data: sacc.Sacc) -> None:

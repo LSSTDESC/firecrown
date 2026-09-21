@@ -109,7 +109,7 @@ class AnalysisBuilder(logging.Logging):
         table.expand = False
 
         # Simple helper to add labeled rows
-        def add_row(label, value):
+        def add_row(label: str, value: str) -> None:
             table.add_row(f"[bold cyan]{label}[/bold cyan]", value)
 
         add_row("Analysis prefix:", self.prefix)

@@ -9,7 +9,7 @@ from firecrown.updatable import (
     UpdatableCollection,
     assert_updatable_interface,
 )
-from tests.test_updatable import SimpleUpdatable
+from tests.updatable.updatable_test_support import SimpleUpdatable
 
 
 def test_warn_override():

@@ -120,7 +120,9 @@ class EllOrThetaConfig(TypedDict):
     binning: str
 
 
-def generate_ells_cells(ell_config: EllOrThetaConfig):
+def generate_ells_cells(
+    ell_config: EllOrThetaConfig,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Generate ells or theta values from the configuration dictionary.
 
     :param ell_config: the configuration parameters.
@@ -132,7 +134,9 @@ def generate_ells_cells(ell_config: EllOrThetaConfig):
     return ells, Cells
 
 
-def generate_reals(theta_config: EllOrThetaConfig):
+def generate_reals(
+    theta_config: EllOrThetaConfig,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Generate theta and xi values from the configuration dictionary.
 
     :param ell_config: the configuration parameters.

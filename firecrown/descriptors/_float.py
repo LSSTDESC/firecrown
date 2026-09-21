@@ -52,14 +52,14 @@ class TypeFloat:
         """Return if this validation enforces any constraint."""
         return not ((self.minvalue is None) and (self.maxvalue is None))
 
-    def __set_name__(self, _, name: str) -> None:
+    def __set_name__(self, _: object, name: str) -> None:
         """Create the name of the private instance variable that will hold the value.
 
         :param name: The name of the private instance variable to be created.
         """
         self.private_name = "_" + name  # pylint: disable-msg=W0201
 
-    def __get__(self, obj, objtype=None) -> float:
+    def __get__(self, obj: object, objtype: type | None = None) -> float:
         """Accessor method, which reads controlled value.
 
         This is invoked whenever the validated variable is read.
@@ -69,7 +69,7 @@ class TypeFloat:
         """
         return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: None | float) -> None:
+    def __set__(self, obj: object, value: None | float) -> None:
         """Setter for the validated variable.
 
         This function invokes the `validate` method of the derived class.

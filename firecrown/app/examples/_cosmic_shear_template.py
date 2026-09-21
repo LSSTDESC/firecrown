@@ -19,7 +19,7 @@ from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import CCLFactory, ModelingTools
 
 
-def build_likelihood(params: NamedParameters):
+def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:
     """Build a cosmic shear likelihood with configurable tomographic bins.
 
     Creates a Gaussian likelihood for cosmic shear analysis with:

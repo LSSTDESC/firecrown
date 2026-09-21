@@ -111,7 +111,7 @@ def main(
     no_markdown: bool = typer.Option(
         False, "--no-markdown", help="Output plain code without markdown code blocks"
     ),
-):
+) -> None:
     """Display class definitions with attributes and decorators.
 
     This tool inspects Python classes and displays their definitions

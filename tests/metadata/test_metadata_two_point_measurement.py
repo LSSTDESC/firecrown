@@ -270,3 +270,17 @@ def test_two_point_measurement_neq(optimized_real_two_point_xy: TwoPointXY):
         metadata=TwoPointReal(XY=optimized_real_two_point_xy, thetas=thetas),
     )
     assert measure_5 != measure_6
+
+
+def test_two_point_measurement_neq_other_type(
+    optimized_real_two_point_xy: TwoPointXY,
+):
+    thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
+    measurement = TwoPointMeasurement(
+        data=np.array([1.0, 2.0, 3.0, 4.0, 5.0]),
+        indices=np.array([1, 2, 3, 4, 5]),
+        covariance_name="cov",
+        metadata=TwoPointReal(XY=optimized_real_two_point_xy, thetas=thetas),
+    )
+
+    assert measurement != object()

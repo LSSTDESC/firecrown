@@ -1,6 +1,6 @@
 """CCLFactory class for creating pyccl.Cosmology instances."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import pyccl
 from pyccl.neutrinos import NeutrinoMassSplits
@@ -37,7 +37,8 @@ from firecrown.updatable import (
 )
 
 
-def _validate_neutrino_mass_splits(value):
+def _validate_neutrino_mass_splits(value: object) -> object:
+    # Preserve non-strings for Pydantic's subsequent validation.
     if isinstance(value, str):
         try:
             return NeutrinoMassSplits(value)  # Convert from string to StrEnum
@@ -76,7 +77,7 @@ class CCLFactory(Updatable, BaseModel):
     ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
     # pylint: disable=too-many-branches
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         """Initialize the CCLFactory object."""
         parameter_prefix = parameter_prefix = data.pop("parameter_prefix", None)
         BaseModel.__init__(self, **data)
@@ -119,8 +120,11 @@ class CCLFactory(Updatable, BaseModel):
                         )
             case _:
                 assert self.num_neutrino_masses is None
-                self.m_nu = register_new_updatable_parameter(
-                    default_value=temp_cosmology["m_nu"]
+                self.m_nu = cast(
+                    float | None,
+                    register_new_updatable_parameter(
+                        default_value=temp_cosmology["m_nu"]
+                    ),
                 )
 
         self.w0 = register_new_updatable_parameter(default_value=temp_cosmology["w0"])
@@ -198,7 +202,9 @@ class CCLFactory(Updatable, BaseModel):
         return False
 
     @model_serializer(mode="wrap")
-    def serialize_model(self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo):
+    def serialize_model(
+        self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo
+    ) -> dict[str, Any]:
         """Serialize the CCLFactory object."""
         model_dump = nxt(self)
         exclude_params = [param.name for param in self._sampler_parameters] + list(
@@ -213,7 +219,7 @@ class CCLFactory(Updatable, BaseModel):
         """Serialize the mass split parameter."""
         return value.value
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the WeakLensingFactory object."""
 
     def create(

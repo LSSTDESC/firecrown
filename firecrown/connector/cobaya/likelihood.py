@@ -7,6 +7,7 @@ of a Cobaya likelihood.
 """
 
 import warnings
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -27,6 +28,7 @@ from firecrown.likelihood import (
 from firecrown.modeling_tools import (
     CCLCalculatorArgs,
     CCLCreationMode,
+    PowerSpec,
     PoweSpecAmplitudeParameter,
 )
 from firecrown.updatable import (
@@ -127,7 +129,7 @@ class LikelihoodConnector(Likelihood):
     build_parameters: NamedParameters = NamedParameters()
     distance_max_z: float = 4.0
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Initialize the likelihood object by loading its Firecrown configuration."""
         # force Cobaya to raise an exception on error
         self.stop_at_error = True
@@ -192,13 +194,25 @@ class LikelihoodConnector(Likelihood):
         This version has nothing to do.
         """
 
-    def initialize_with_provider(self, provider) -> None:
+    def initialize_with_provider(self, provider: Any) -> None:
         """Set the object's provider.
 
         Required by Cobaya.
 
         :param provider: A Cobaya provider.
         """
+        # Cobaya's cobaya.theory.Provider class ships without type annotations and
+        # without a py.typed marker, so mypy treats it as Any regardless of how we
+        # annotate this parameter. A Protocol capturing the subset of the interface
+        # we use (get_comoving_radial_distance, get_Hubble, get_Pk_grid) would only
+        # check calls made from *our* code against *our own* assumptions; it cannot
+        # verify that the real Provider actually satisfies those assumptions, since
+        # the object is constructed and passed to us from within Cobaya's untyped
+        # code, which mypy never analyzes here. We use Any explicitly to make that
+        # limitation clear rather than imply a static guarantee we don't have.
+        # Compatibility with Cobaya's actual interface is exercised by the
+        # integration tests in tests/connector/cobaya, which call this connector
+        # against a real Cobaya provider.
         self.provider = provider
 
     def get_can_provide_params(self) -> list[str]:
@@ -269,7 +283,7 @@ class LikelihoodConnector(Likelihood):
 
         return likelihood_requires
 
-    def must_provide(self, **requirements) -> None:
+    def must_provide(self, **requirements: object) -> None:
         """Required by Cobaya.
 
         This version does nothing.
@@ -300,13 +314,23 @@ class LikelihoodConnector(Likelihood):
         self.a_Pk = self.map.redshift_to_scale_factor(z)
         pk_a = self.map.redshift_to_scale_factor_p_k(pk)
 
+        pk_linear: PowerSpec = {
+            "a": self.a_Pk,
+            "k": k,
+            "delta_matter:delta_matter": pk_a,
+        }
         pyccl_args: CCLCalculatorArgs = {
             "background": {"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
-            "pk_linear": {"a": self.a_Pk, "k": k, "delta_matter:delta_matter": pk_a},
+            "pk_linear": pk_linear,
         }
         return pyccl_args, pyccl_params_values
 
-    def logp(self, *, _derived=None, **params_values) -> float:
+    def logp(
+        self,
+        *,
+        _derived: dict[str, float] | None = None,
+        **params_values: float,
+    ) -> float:
         """Return the log of the calculated likelihood.
 
         Required by Cobaya.

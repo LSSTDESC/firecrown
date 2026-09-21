@@ -123,7 +123,9 @@ class ExampleCosmicShear(AnalysisBuilder):
         ),
     ] = 0.25
 
-    def _setup_phase(self, progress, summary, _output_path):
+    def _setup_phase(
+        self, progress: Progress, summary: Table, _output_path: Path
+    ) -> tuple[pyccl.Cosmology, np.ndarray, np.ndarray]:
         """Setup phase of SACC generation."""
         task1 = progress.add_task("Setting up cosmology and coordinates...", total=None)
         cosmo = self.cosmology_analysis_spec().to_ccl_cosmology()
@@ -138,7 +140,13 @@ class ExampleCosmicShear(AnalysisBuilder):
 
         return cosmo, z_range, ell_range
 
-    def _tracer_phase(self, progress, summary, cosmo, z_range):
+    def _tracer_phase(
+        self,
+        progress: Progress,
+        summary: Table,
+        cosmo: pyccl.Cosmology,
+        z_range: np.ndarray,
+    ) -> tuple[sacc.Sacc, np.ndarray, list[pyccl.WeakLensingTracer]]:
         """Tracer generation phase."""
         task2 = progress.add_task("Creating tomographic tracers...", total=None)
         np.random.seed(self.seed)
@@ -152,7 +160,15 @@ class ExampleCosmicShear(AnalysisBuilder):
 
         return sacc_data, bin_centers, tracers
 
-    def _spectra_phase(self, progress, summary, sacc_data, cosmo, tracers, ell_range):
+    def _spectra_phase(
+        self,
+        progress: Progress,
+        summary: Table,
+        sacc_data: sacc.Sacc,
+        cosmo: pyccl.Cosmology,
+        tracers: list[pyccl.WeakLensingTracer],
+        ell_range: np.ndarray,
+    ) -> list[np.ndarray]:
         """Power spectra computation phase."""
         task3 = progress.add_task("Computing power spectra...", total=None)
         theory_cls = self._generate_power_spectra(sacc_data, cosmo, tracers, ell_range)
@@ -162,7 +178,13 @@ class ExampleCosmicShear(AnalysisBuilder):
         progress.update(task3, completed=True)
         return theory_cls
 
-    def _covariance_phase(self, progress, summary, sacc_data, theory_cls):
+    def _covariance_phase(
+        self,
+        progress: Progress,
+        summary: Table,
+        sacc_data: sacc.Sacc,
+        theory_cls: list[np.ndarray],
+    ) -> None:
         """Covariance matrix generation phase."""
         task4 = progress.add_task("Adding covariance matrix...", total=None)
         summary.add_section()
@@ -171,7 +193,9 @@ class ExampleCosmicShear(AnalysisBuilder):
         self._add_covariance_matrix(sacc_data, theory_cls)
         progress.update(task4, completed=True)
 
-    def _save_phase(self, progress, sacc_data, output_path):
+    def _save_phase(
+        self, progress: Progress, sacc_data: sacc.Sacc, output_path: Path
+    ) -> Path:
         """Save SACC file phase."""
         sacc_full_file = output_path / f"{self.prefix}.sacc"
         task5 = progress.add_task("Saving SACC file...", total=None)
@@ -417,7 +441,7 @@ class ExampleCosmicShear(AnalysisBuilder):
             )
         ]
 
-    def required_cosmology(self):
+    def required_cosmology(self) -> FrameworkCosmology:
         """Return cosmology requirement level."""
         return FrameworkCosmology.NONLINEAR
 

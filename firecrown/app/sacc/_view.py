@@ -9,7 +9,10 @@ from typing import Annotated
 import matplotlib.pyplot as plt
 import numpy as np
 import typer
+from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
+from matplotlib.figure import Figure
+from matplotlib.image import AxesImage
 from matplotlib.patches import Patch
 from rich.panel import Panel
 from rich.table import Table
@@ -578,7 +581,9 @@ class View(Load):
         self._add_plot_decorations(fig, ax, im)
         plt.show()
 
-    def _get_ordered_correlation(self, all_bins):
+    def _get_ordered_correlation(
+        self, all_bins: list[dtype.TwoPointMeasurement]
+    ) -> np.ndarray:
         """Get the ordered correlation matrix."""
         assert self.sacc_data.covariance is not None
         cov = self.sacc_data.covariance.dense
@@ -586,7 +591,7 @@ class View(Load):
         indices_ordered = np.concatenate([b.indices for b in all_bins])
         return cor[np.ix_(indices_ordered, indices_ordered)]
 
-    def _plot_correlation_matrix(self, ax, cor_ordered):
+    def _plot_correlation_matrix(self, ax: Axes, cor_ordered: np.ndarray) -> AxesImage:
         """Plot the correlation matrix."""
         return ax.matshow(
             cor_ordered,
@@ -594,7 +599,9 @@ class View(Load):
             norm=Normalize(vmin=-1, vmax=1),
         )
 
-    def _add_bin_annotations(self, ax, all_bins):
+    def _add_bin_annotations(
+        self, ax: Axes, all_bins: list[dtype.TwoPointMeasurement]
+    ) -> None:
         """Add bin annotations to the plot."""
         legend_patches = []
         current_index = 0
@@ -614,7 +621,7 @@ class View(Load):
             current_index += length
         ax.legend(handles=legend_patches, title="Bins", loc="best", fontsize=8)
 
-    def _add_plot_decorations(self, fig, ax, im):
+    def _add_plot_decorations(self, fig: Figure, ax: Axes, im: AxesImage) -> None:
         """Add title and colorbar to the plot."""
         fig.colorbar(im, ax=ax, label="Correlation")
 

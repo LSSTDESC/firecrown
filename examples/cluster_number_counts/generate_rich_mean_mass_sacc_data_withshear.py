@@ -178,7 +178,23 @@ def generate_cluster_data(
 ####################################################################
 
 
-def compute_profiles(N_z: int, N_rich: int, cosmo_ccl, z, richness, logM):
+def compute_profiles(
+    N_z: int,
+    N_rich: int,
+    cosmo_ccl: ccl.Cosmology,
+    z: np.ndarray,
+    richness: np.ndarray,
+    logM: np.ndarray,
+) -> Tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+]:
     """Compute lensing profile, Delta Sigma and g_t."""
     # binning
     counts, z_edges, r_edges, _ = stats.binned_statistic_2d(
@@ -302,7 +318,9 @@ def compute_profiles(N_z: int, N_rich: int, cosmo_ccl, z, richness, logM):
 ####################################################################
 
 
-def build_tracers(s, z_edges, r_edges, R_edges):
+def build_tracers(
+    s: sacc.Sacc, z_edges: np.ndarray, r_edges: np.ndarray, R_edges: np.ndarray
+) -> Tuple[list[str], list[str], list[str]]:
     """Add all tracers to SACC and return label lists."""
     z_labels, r_labels, R_labels = [], [], []
 
@@ -391,7 +409,7 @@ def fill_profiles(
                 )
 
 
-def generate_sacc_file():
+def generate_sacc_file() -> None:
     """Generate the full SACC file for the simulated cluster data."""
     # --- config ---
     area = 439.78986

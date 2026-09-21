@@ -24,7 +24,7 @@ class RequiredParameters:
         """Construct an instance from an Iterable yielding strings."""
         self.params_set: set["SamplerParameter"] = set(params)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of parameters contained."""
         return len(self.params_set)
 
@@ -44,7 +44,7 @@ class RequiredParameters:
         """
         return RequiredParameters(self.params_set - other.params_set)
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         """Compare two RequiredParameters objects for equality.
 
         This implementation raises a NotImplemented exception unless both

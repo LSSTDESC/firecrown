@@ -1,9 +1,13 @@
 """YAML serialization utilities for Firecrown."""
 
+from typing import TypeVar
+
 import yaml
 from pydantic import BaseModel
 from typing_extensions import Self
 from yaml import Dumper, Loader
+
+ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
 class YAMLSerializable:
@@ -19,7 +23,7 @@ class YAMLSerializable:
         return yaml.load(yaml_str, Loader=Loader)
 
 
-def base_model_from_yaml(cls: type, yaml_str: str):
+def base_model_from_yaml(cls: type[ModelT], yaml_str: str) -> ModelT:
     """Create a base model from a yaml string."""
     if not issubclass(cls, BaseModel):
         raise ValueError("cls must be a subclass of pydantic.BaseModel")

@@ -1,5 +1,6 @@
 """Model classes for CCL factory module."""
 
+from types import TracebackType
 from typing import Annotated
 
 import pyccl
@@ -12,7 +13,7 @@ from firecrown.updatable import ParamsMap, Updatable, register_new_updatable_par
 class MuSigmaModel(Updatable):
     """Model for the mu-sigma modified gravity model."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the MuSigmaModel object."""
         super().__init__(parameter_prefix="mg_musigma")
 
@@ -51,7 +52,7 @@ class CAMBExtraParams(BaseModel):
     lmax: Annotated[int | None, Field(frozen=True)] = None
     dark_energy_model: Annotated[str | None, Field(frozen=True)] = None
 
-    def model_post_init(self, _, /):
+    def model_post_init(self, _: object, /) -> None:
         """Validate that HMCode parameters are compatible with halofit_version."""
         if self.is_mead():
             if self.HMCode_logT_AGN is not None:
@@ -84,7 +85,7 @@ class CAMBExtraParams(BaseModel):
                     f"mead2016, mead2020_feedback"
                 )
 
-    def get_dict(self) -> dict:
+    def get_dict(self) -> dict[str, object]:
         """Return the extra parameters as a dictionary."""
         return {
             key: value for key, value in self.model_dump().items() if value is not None
@@ -209,7 +210,12 @@ class CCLSplineParams(BaseModel):
                 pyccl.spline_params[key.upper()] = value
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Exit the context manager.
 
         This method resets the CCL global spline parameters to their original
