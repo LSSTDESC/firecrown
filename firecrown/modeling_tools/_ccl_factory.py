@@ -192,13 +192,14 @@ class CCLFactory(Updatable, BaseModel):
         :param params: The parameters to update.
         :returns: None
         """
-        if not self.use_camb_hm_sampling:
-            return
+        # This ugly construction is necessary otherwise pylint complains about the type
+        # of self.camb_extra_params being None.
         if self.camb_extra_params is not None:
-            hm_names = self.camb_extra_params.get_hm_sampling_defaults().keys()
-            self.camb_extra_params.set_hm_parameters(
-                {name: getattr(self, name) for name in hm_names}
-            )
+            if self.use_camb_hm_sampling:
+                hm_names = self.camb_extra_params.get_hm_sampling_defaults().keys()
+                self.camb_extra_params.set_hm_parameters(
+                    {name: getattr(self, name) for name in hm_names}
+                )
 
     def using_camb(self) -> bool:
         """Return True if the CCLFactory is using CAMB for the matter power spectrum.
