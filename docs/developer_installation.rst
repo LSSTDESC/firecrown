@@ -83,21 +83,19 @@ Because the CI system is typically using the newest environment available, devel
 Worktrunk worktrees
 ===================
 
-New worktrees created with ``wt switch`` run ``tools/create-worktree-environment``
-as a blocking pre-start hook. It installs the branch-local Python 3.14 lockfile
-into ``.conda-env``, configures ``CSL_DIR`` and ``FIRECROWN_DIR`` for that
-environment, builds the CosmoSIS Standard Library, and installs Firecrown in
-editable mode. This requires ``conda``, ``conda-lock``, and ``git``; the lockfile
-currently supports ``linux-64`` and ``osx-arm64``.
+`Worktrunk<//https://worktrunk.dev>`__ is a command-line tool for managing Git worktrees.
+It provides a convenient interface for creating, switching between, and removing worktrees, making it easier to work on multiple branches or tasks in parallel without repeatedly changing the state of a single working directory.
+In Firecrown, using Worktrunk is optional; the workflow described below can also be carried out using standard Git commands.
 
-To use the worktree environment without activating it, run commands with
-``conda run --prefix .conda-env COMMAND``. Alternatively, activate it using
-``conda activate ./.conda-env`` from the worktree root. The setup script can
-also be rerun from another directory after an interrupted setup or a lockfile
-change.
+New worktrees created with ``wt switch`` run ``tools/create-worktree-environment`` as a blocking pre-start hook.
+It installs the branch-local Python 3.14 lockfile into ``.conda-env``, configures ``CSL_DIR`` and ``FIRECROWN_DIR`` for that environment, builds the CosmoSIS Standard Library, and installs Firecrown in editable mode.
+This requires ``conda``, ``conda-lock``, and ``git``; the lockfile currently supports ``linux-64`` and ``osx-arm64``.
+
+To use the worktree environment without activating it, run commands with ``conda run --prefix .conda-env COMMAND``.
+Alternatively, activate it using ``conda activate ./.conda-env`` from the worktree root.
+The setup script can also be rerun from another directory after an interrupted setup or a lockfile change.
 Worktrunk does not rerun ``pre-start`` when switching to an existing worktree.
-To repair an existing worktree, update its checkout to include the revised hook
-and run ``./tools/create-worktree-environment`` there explicitly.
+To repair an existing worktree, update its checkout to include the revised hook and run ``./tools/create-worktree-environment`` there explicitly.
 
 Setting your environment for development
 ========================================
