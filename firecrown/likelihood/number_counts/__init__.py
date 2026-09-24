@@ -26,20 +26,22 @@ from firecrown.likelihood_base import (
 )
 
 __all__ = [
+    # Sources and systematics
+    "ConstantMagnificationBiasSystematic",
+    "LinearBiasSystematic",
+    "MagnificationBiasSystematic",
     "NumberCounts",
+    "PhotoZShift",
+    "PhotoZShiftandStretch",
+    "PTNonLinearBiasSystematic",
+    "SelectField",
+    # Factories
+    "ConstantMagnificationBiasSystematicFactory",
+    "LinearBiasSystematicFactory",
+    "MagnificationBiasSystematicFactory",
     "NumberCountsFactory",
     "NumberCountsSystematicFactory",
-    "PhotoZShift",
-    "PhotoZShiftFactory",
-    "PhotoZShiftandStretch",
     "PhotoZShiftandStretchFactory",
-    "SelectField",
-    "ConstantMagnificationBiasSystematic",
-    "ConstantMagnificationBiasSystematicFactory",
-    "LinearBiasSystematic",
-    "LinearBiasSystematicFactory",
-    "PTNonLinearBiasSystematic",
+    "PhotoZShiftFactory",
     "PTNonLinearBiasSystematicFactory",
-    "MagnificationBiasSystematic",
-    "MagnificationBiasSystematicFactory",
 ]
