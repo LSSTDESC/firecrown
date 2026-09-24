@@ -83,7 +83,7 @@ Because the CI system is typically using the newest environment available, devel
 Worktrunk worktrees
 ===================
 
-`Worktrunk<//https://worktrunk.dev>`__ is a command-line tool for managing Git worktrees.
+`Worktrunk <https://worktrunk.dev>`__ is a command-line tool for managing Git worktrees.
 It provides a convenient interface for creating, switching between, and removing worktrees, making it easier to work on multiple branches or tasks in parallel without repeatedly changing the state of a single working directory.
 In Firecrown, using Worktrunk is optional; the workflow described below can also be carried out using standard Git commands.
 
