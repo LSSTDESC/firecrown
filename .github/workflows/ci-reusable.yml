@@ -317,17 +317,29 @@ jobs:
           make lint
           echo "done with make lint"
       - name: Run CI tests
+        id: ci-tests
+        env:
+          DIAGNOSTIC_REF: ${{ inputs.ref || github.sha }}
         shell: bash -l {0}
         run: |
           if [[ "${{ matrix.coverage || false }}" == "true" ]]; then
+            echo "artifact-ref=$(printf '%s' "$DIAGNOSTIC_REF" | tr -c 'A-Za-z0-9._-' '_')" >> "$GITHUB_OUTPUT"
             echo "starting make test-ci"
-            make test-ci
+            bash .github/scripts/diagnose-ci.sh "$RUNNER_TEMP/ci-diagnostics" make test-ci
             echo "done with make test-ci"
           else
             echo "starting make test-all"
             make test-all
             echo "done with make test-all"
           fi
+      - name: Upload temporary CI diagnostics
+        if: ${{ always() && matrix.coverage == true }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ci-diagnostics-${{ steps.ci-tests.outputs.artifact-ref }}-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-diagnostics/
+          retention-days: 7
+          if-no-files-found: warn
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v7.0.0

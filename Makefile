@@ -280,28 +280,14 @@ test-slow:  ## Run only slow tests (with --runslow)
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) -m slow --runslow $(TESTS_DIR)
 
 test-example:  ## Run example tests only
-	# cobaya-run examples occasionally get killed by the OS under CI resource
-	# pressure (e.g. exit status 15) rather than failing for a genuine
-	# correctness reason. If every FAILED test is a cobaya example, report it
-	# clearly in the log but do not fail the target; any other failure (or a
-	# mix of cobaya and non-cobaya failures) still fails as before.
 	@tmpfile=$$(mktemp /tmp/test-example.XXXXXX); \
 	set -o pipefail; \
 	if $(PYTEST) -v --example -m example tests/example 2>&1 | tee "$$tmpfile"; then \
 		rm -f "$$tmpfile"; \
 	else \
-		total_failed=$$(grep -c '^FAILED ' "$$tmpfile" || true); \
-		cobaya_failed=$$(grep -c '^FAILED .*\[cobaya' "$$tmpfile" || true); \
-		if [ "$$total_failed" -gt 0 ] && [ "$$total_failed" -eq "$$cobaya_failed" ]; then \
-			echo ""; \
-			echo "⚠️  Ignoring known-flaky cobaya example failure(s) (cobaya-run can be killed under CI resource pressure):"; \
-			grep '^FAILED ' "$$tmpfile"; \
-			echo "Full output saved to: $$tmpfile"; \
-		else \
-			echo ""; \
-			echo "❌ test-example failed. Output saved to: $$tmpfile"; \
-			exit 1; \
-		fi; \
+		echo ""; \
+		echo "❌ test-example failed. Output saved to: $$tmpfile"; \
+		exit 1; \
 	fi
 
 test-integration:  ## Run integration tests only
@@ -755,12 +741,4 @@ test-ci: test-all-coverage test-slow test-integration test-example ## Run exactl
 test-all-coverage: unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
 
 unit-tests-core:  ## Internal target for core tests with coverage
-	# tests/connector/cobaya is excluded from the parallel run and executed
-	# serially below: each of its tests builds a full CAMB model via
-	# cobaya.model.get_model(), which is memory-heavy. Running several of
-	# these concurrently under xdist can exhaust memory on CI runners and
-	# crash workers (see issue with "node down: Not properly terminated").
-	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch -n auto \
-		--ignore tests/connector/cobaya
-	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch \
-		tests/connector/cobaya
+	$(PYTEST) -vv --cov firecrown --cov-report xml --cov-branch -n auto
