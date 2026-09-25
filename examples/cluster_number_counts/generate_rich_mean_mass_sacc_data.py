@@ -185,7 +185,15 @@ def process_data_for_sacc(
         np.concatenate((cluster_counts.flatten(), var_mean_logM.flatten()))
     )
 
-    return cluster_counts, z_edges, richness_edges, mean_logM, covariance
+    # SciPy's stubs leave several binned-statistic arrays as unions of numeric
+    # dtypes; normalize the public result to this function's float-array contract.
+    return (
+        np.asarray(cluster_counts, dtype=np.float64),
+        np.asarray(z_edges, dtype=np.float64),
+        np.asarray(richness_edges, dtype=np.float64),
+        np.asarray(mean_logM, dtype=np.float64),
+        np.asarray(covariance, dtype=np.float64),
+    )
 
 
 def generate_sacc_file() -> None:
