@@ -55,7 +55,7 @@ def test_cmb_cross_run(cmb_cross_example):
             assert result.returncode == 0
         case Frameworks.COBAYA:
             result = subprocess.run(
-                ["cobaya-run", "-f", "cobaya_cmb_cross.yaml"],
+                ["cobaya-run", "--no-mpi", "-f", "cobaya_cmb_cross.yaml"],
                 cwd=output_path,
                 capture_output=True,
                 text=True,
