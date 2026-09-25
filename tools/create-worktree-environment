@@ -1,18 +1,77 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(git rev-parse --show-toplevel)"
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 lockfile="$repo_root/.github/conda-lock/py3.14.conda-lock.yml"
 prefix="$repo_root/.conda-env"
+csl_dir="$prefix/cosmosis-standard-library"
+
+for command in conda conda-lock git; do
+    if ! command -v "$command" >/dev/null 2>&1; then
+        echo "Required command not found: $command" >&2
+        exit 1
+    fi
+done
 
 if [[ ! -f "$lockfile" ]]; then
     echo "Missing branch-local lockfile: $lockfile" >&2
     exit 1
 fi
 
-conda-lock install --prefix "$prefix" "$lockfile"
-conda run --prefix "$prefix" \
-    python -m pip install --no-deps --editable "$repo_root"
+if [[ ! -f "$prefix/conda-meta/history" ]] ||
+    ! cmp -s "$lockfile" "$prefix/.firecrown-lockfile"; then
+    # Invalidate completion markers before modifying an existing environment.
+    rm -f "$prefix/.firecrown-lockfile" "$prefix/.firecrown-csl-built" \
+        "$prefix/.firecrown-editable-installed"
+    conda-lock install --prefix "$prefix" "$lockfile"
+    cp "$lockfile" "$prefix/.firecrown-lockfile"
+fi
+
+conda env config vars set --prefix "$prefix" \
+    "CSL_DIR=$csl_dir" "FIRECROWN_DIR=$repo_root"
+
+if [[ ! -f "$prefix/bin/cosmosis-configure" ]]; then
+    echo "Missing CosmoSIS configuration: $prefix/bin/cosmosis-configure" >&2
+    exit 1
+fi
+
+if [[ ! -f "$prefix/.firecrown-csl-built" ]] || [[ ! -d "$csl_dir" ]]; then
+    rm -f "$prefix/.firecrown-csl-built"
+    (
+        # Conda's compiler hooks preserve inherited FC/flags and can restore
+        # another prefix from CONDA_BACKUP_* when switching environments.
+        for name in ${!CONDA_BACKUP_@}; do
+            unset "$name"
+        done
+        unset CC CXX CPP FC F77 F90 F95 GFORTRAN FC_FOR_BUILD CC_FOR_BUILD \
+            CXX_FOR_BUILD CPP_FOR_BUILD CFLAGS CXXFLAGS CPPFLAGS FFLAGS \
+            FORTRANFLAGS DEBUG_CFLAGS DEBUG_CXXFLAGS DEBUG_FFLAGS \
+            DEBUG_FORTRANFLAGS LDFLAGS LDFLAGS_LD LIBRARY_PATH \
+            LD_LIBRARY_PATH CMAKE_PREFIX_PATH CMAKE_ARGS
+        # shellcheck disable=SC2016
+        conda run --no-capture-output --prefix "$prefix" bash -c '
+            set -eo pipefail
+            source "$CONDA_PREFIX/bin/cosmosis-configure"
+            if [[ -d "$CSL_DIR" ]]; then
+                command -v make >/dev/null || { echo "Required command not found: make" >&2; exit 1; }
+                make -C "$CSL_DIR"
+            else
+                command -v cosmosis-build-standard-library >/dev/null || {
+                    echo "Required command not found: cosmosis-build-standard-library" >&2; exit 1;
+                }
+                cd "$CONDA_PREFIX"
+                cosmosis-build-standard-library
+            fi
+        '
+    )
+    touch "$prefix/.firecrown-csl-built"
+fi
+
+if [[ ! -f "$prefix/.firecrown-editable-installed" ]]; then
+    conda run --prefix "$prefix" \
+        python -m pip install --no-deps --editable "$repo_root"
+    touch "$prefix/.firecrown-editable-installed"
+fi
 
 echo "Environment ready: $prefix"
-echo "Run commands with: conda run --prefix $prefix COMMAND"
+echo "Run commands with: conda run --prefix \"$prefix\" COMMAND, or activate the environment."
