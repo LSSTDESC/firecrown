@@ -152,6 +152,10 @@ To regenerate lockfiles and manage the lockfile generation process, see
 
 ## Pull Request Process
 
+If your change affects Firecrown's public Python API, use the
+[API checking guide](CONTRIBUTING_API_CHECKING.md) to preview the changes and
+interpret the API report in pull-request CI.
+
 1. **Create a Branch**: Always work on a new branch for your feature or bug fix.
 2. **Write Tests**: Ensure your changes are covered by unit tests. We aim for 100% coverage on new code.
 3. **Verify Locally**: Run `make pre-commit` to ensure everything is in order. If you modified `dependencies.yaml`, also run `make deps-sync`, then `make conda-lock`, and commit the regenerated files.
