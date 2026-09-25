@@ -10,12 +10,13 @@ SHELL := /bin/bash
 .PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
-	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
+	lint-pylint-tests lint-pylint-examples lint-pylint-tools lint-mypy pre-commit install all-checks \
 	test-updatable test-utils test-parameters test-modeling-tools \
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
 	release-env-check release-build-check release-gh-check conda-lock conda-lock-check \
 	deps-sync deps-check feedstock-sync \
+	api-support-check api-release-notes api-pr-report \
 	release-validate release-check release-tag release-sdist release-verify-sdist release-verify-archive release-push \
 	release-github release-clean \
 	release-conda-forge \
@@ -47,6 +48,7 @@ RELEASE_CONDA_ENV := firecrown_developer
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
+TOOLS_DIR := tools
 TESTS_DIR := tests
 EXAMPLES_DIR := examples
 PYLINT_PLUGINS_DIR := pylint_plugins
@@ -101,7 +103,7 @@ RELEASE_CHECK_STAMP := $(RELEASE_STATE_DIR)/release-check-$(VERSION)-$(RELEASE_H
 # Test configuration
 PYTEST_PARALLEL := $(PYTEST) -n auto
 PYTEST_DURATIONS := --durations 10
-PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov-report json:$(COVERAGE_JSON) --cov-report html:$(HTMLCOV_DIR) --cov-report term-missing --cov-branch
+PYTEST_COV_FLAGS := --cov $(FIRECROWN_PKG_DIR) --cov $(TOOLS_DIR) --cov-report json:$(COVERAGE_JSON) --cov-report html:$(HTMLCOV_DIR) --cov-report term-missing --cov-branch
 
 # These targets create shared temporary files and should always run serially.
 .NOTPARALLEL: conda-lock conda-lock-check release-sdist release-verify-sdist
@@ -132,6 +134,8 @@ help:  ## Show common developer targets
 	@echo "  make release-push VERSION=x.y.z       - Push the verified tag and support branch"
 	@echo "  make release-github VERSION=x.y.z     - Publish GitHub release and upload sdist"
 	@echo "  make release-conda-forge VERSION=x.y.z - Start feedstock handoff"
+	@echo "  make api-release-notes VERSION=x.y.z - Generate API release notes"
+	@echo "  make api-support-check - Check the current support branch for API breaks"
 	@echo ""
 	@echo "Other useful targets:"
 	@echo "  make help-all        - Show all available targets"
@@ -158,6 +162,9 @@ help-all:  ## Show this help message
 	@echo "  make release-push VERSION=x.y.z       - Push the verified tag and any required support branch"
 	@echo "  make release-github VERSION=x.y.z     - Create a GitHub release and upload the verified sdist"
 	@echo "  make release-conda-forge VERSION=x.y.z - Create the conda-forge handoff issue"
+	@echo "  make api-support-check - Check HEAD against latest tag on this support line"
+	@echo "  make api-pr-report BASE=master - Report PR API changes from the merge base"
+	@echo "  make api-release-notes VERSION=x.y.z - Generate API release notes"
 	@echo ""
 	@echo "Parallel execution:"
 	@echo "  Parallel execution is ENABLED by default using $(JOBS) jobs."
@@ -168,10 +175,10 @@ help-all:  ## Show this help message
 ##@ Formatting
 
 format:  ## Format code with black
-	black $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/
+	black $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/
 
 format-check:  ## Check code formatting without modifying files
-	black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/
+	black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/
 
 ##@ Dependencies
 
@@ -211,20 +218,20 @@ lint: lint-black lint-flake8 lint-mypy lint-pylint  ## Run all linting tools
 
 lint-black:  ## Check code formatting with black
 	@echo "Running black..."
-	@black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ || (echo "❌ black failed" && exit 1)
+	@black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/ || (echo "❌ black failed" && exit 1)
 	@echo "✅ black passed"
 
 lint-flake8:  ## Run flake8 linter
 	@echo "Running flake8..."
-	@flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
+	@flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
 	@echo "✅ flake8 passed"
 
 lint-mypy:  ## Run mypy type checker
 	@echo "Running mypy..."
-	@mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) || (echo "❌ mypy failed" && exit 1)
+	@mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) -p $(TOOLS_DIR) || (echo "❌ mypy failed" && exit 1)
 	@echo "✅ mypy passed"
 
-lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-examples ## Run all pylint checks
+lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-examples lint-pylint-tools ## Run all pylint checks
 	@echo "✅ All pylint checks passed!"
 
 lint-pylint-firecrown:  ## Run pylint on firecrown package
@@ -247,6 +254,11 @@ lint-pylint-examples:  ## Run pylint on examples
 	@pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) || (echo "❌ pylint failed for examples" && exit 1)
 	@echo "✅ pylint passed for examples"
 
+lint-pylint-tools:  ## Run pylint on tools
+	@echo "Running pylint on tools..."
+	@pylint $(TOOLS_DIR) || (echo "❌ pylint failed for tools" && exit 1)
+	@echo "✅ pylint passed for tools"
+
 typecheck: lint-mypy  ## Alias for mypy type checking
 
 ##@ Testing
@@ -260,7 +272,7 @@ test-coverage:  ## Run tests with coverage reporting
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) $(PYTEST_COV_FLAGS)
 	@echo ""
 	@echo "Coverage reports generated:"
-	@echo "  - JSON: coverage.json"
+	@echo "  - JSON: $(COVERAGE_JSON)"
 	@echo "  - HTML: $(HTMLCOV_DIR)/index.html"
 	@echo "  - Terminal output above"
 
@@ -268,28 +280,14 @@ test-slow:  ## Run only slow tests (with --runslow)
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) -m slow --runslow $(TESTS_DIR)
 
 test-example:  ## Run example tests only
-	# cobaya-run examples occasionally get killed by the OS under CI resource
-	# pressure (e.g. exit status 15) rather than failing for a genuine
-	# correctness reason. If every FAILED test is a cobaya example, report it
-	# clearly in the log but do not fail the target; any other failure (or a
-	# mix of cobaya and non-cobaya failures) still fails as before.
 	@tmpfile=$$(mktemp /tmp/test-example.XXXXXX); \
 	set -o pipefail; \
 	if $(PYTEST) -v --example -m example tests/example 2>&1 | tee "$$tmpfile"; then \
 		rm -f "$$tmpfile"; \
 	else \
-		total_failed=$$(grep -c '^FAILED ' "$$tmpfile" || true); \
-		cobaya_failed=$$(grep -c '^FAILED .*\[cobaya' "$$tmpfile" || true); \
-		if [ "$$total_failed" -gt 0 ] && [ "$$total_failed" -eq "$$cobaya_failed" ]; then \
-			echo ""; \
-			echo "⚠️  Ignoring known-flaky cobaya example failure(s) (cobaya-run can be killed under CI resource pressure):"; \
-			grep '^FAILED ' "$$tmpfile"; \
-			echo "Full output saved to: $$tmpfile"; \
-		else \
-			echo ""; \
-			echo "❌ test-example failed. Output saved to: $$tmpfile"; \
-			exit 1; \
-		fi; \
+		echo ""; \
+		echo "❌ test-example failed. Output saved to: $$tmpfile"; \
+		exit 1; \
 	fi
 
 test-integration:  ## Run integration tests only
@@ -436,6 +434,15 @@ install:  ## Install firecrown in development mode
 	pip install --no-deps -e .
 
 ##@ Release
+
+api-support-check: ## Check current support branch against its latest release tag
+	@$(PYTHON) tools/api_changes.py support $(if $(OUTPUT),--output "$(OUTPUT)",)
+
+api-pr-report: ## Report PR API changes relative to BASE=<target branch>
+	@$(PYTHON) tools/api_changes.py pr --base "$(BASE)" $(if $(OUTPUT),--output "$(OUTPUT)",)
+
+api-release-notes: ## Generate API Markdown for VERSION=x.y.z
+	@$(PYTHON) tools/api_changes.py release --version "$(VERSION)" $(if $(OUTPUT),--output "$(OUTPUT)",)
 
 release-env-check:  ## Verify that the expected developer environment is active
 	@if [[ -z "$${CONDA_DEFAULT_ENV:-}" ]]; then
@@ -734,12 +741,4 @@ test-ci: test-all-coverage test-slow test-integration test-example ## Run exactl
 test-all-coverage: unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
 
 unit-tests-core:  ## Internal target for core tests with coverage
-	# tests/connector/cobaya is excluded from the parallel run and executed
-	# serially below: each of its tests builds a full CAMB model via
-	# cobaya.model.get_model(), which is memory-heavy. Running several of
-	# these concurrently under xdist can exhaust memory on CI runners and
-	# crash workers (see issue with "node down: Not properly terminated").
-	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch -n auto \
-		--ignore tests/connector/cobaya
-	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch \
-		tests/connector/cobaya
+	$(PYTEST) -vv --cov firecrown --cov-report xml --cov-branch -n auto

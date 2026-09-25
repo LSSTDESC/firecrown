@@ -12,6 +12,7 @@ This guide covers feature-line releases, maintenance releases, GitHub releases, 
 5. Open a PR targeting `master` and let CI run.
 6. Merge the PR after CI passes.
 7. Check out a clean local copy of `master` at the merged release commit.
+   Run `make api-release-notes VERSION=x.y.0 OUTPUT=api-notes.md` to review public API changes and new API against the previous published release.
 8. Run `make release-tag VERSION=x.y.0`.
    This reruns the fast release-specific checks and reuses the successful full check for the same `HEAD` and `VERSION` instead of rerunning `make pre-commit`.
 9. Run `make release-sdist VERSION=x.y.0`.
@@ -30,6 +31,7 @@ After the sdist is verified, `release-push` pushes both refs to `origin`.
 5. Open a PR targeting `vx_y_support` and let CI run.
 6. Merge the PR after CI passes.
 7. Check out a clean local copy of `vx_y_support` at the merged release commit.
+   Run `make api-release-notes VERSION=x.y.z OUTPUT=api-notes.md` to review public API changes against the previous tag on this support line.
 8. Run `make release-tag VERSION=x.y.z`.
    This reruns the fast release-specific checks and reuses the successful full check for the same `HEAD` and `VERSION` instead of rerunning `make pre-commit`.
 9. Run `make release-sdist VERSION=x.y.z`.
@@ -39,6 +41,8 @@ After the sdist is verified, `release-push` pushes both refs to `origin`.
 For maintenance releases, `release-check` requires the checked-out branch to be `vx_y_support` and confirms that the support branch exists on `origin` before validation continues.
 
 ## Shared validation and tagging behavior
+
+On a support branch, `make api-support-check` compares `HEAD` with the highest numeric `vX.Y.Z` tag for that line and fails if public API breaks are found. It reports no changes when `HEAD` is the tag's commit. The API notes file is a Markdown draft to review and incorporate into release notes; it does not replace GitHub's generated notes automatically. Keep it outside `dist/`, which `release-sdist` clears. PR CI publishes the PR's API changes relative to its target branch at the merge base in its job summary, and blocks support-branch PRs with breaks (master PRs are informational).
 
 Before running any release target, activate the `firecrown_developer` conda environment so the release tooling, documentation tools, and test dependencies come from the project developer environment.
 Run `conda activate firecrown_developer` before invoking the release targets.
