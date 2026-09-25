@@ -735,11 +735,9 @@ test-all-coverage: unit-tests-core unit-tests-post ## Run core tests with covera
 
 unit-tests-core:  ## Internal target for core tests with coverage
 	# tests/connector/cobaya is excluded from the parallel run and executed
-	# serially below: each of its tests builds a full CAMB model via
-	# cobaya.model.get_model(), which is memory-heavy. Running several of
-	# these concurrently under xdist can exhaust memory on CI runners and
-	# crash workers (see issue with "node down: Not properly terminated").
+	# serially below: its tests build full CAMB models via cobaya.model.get_model().
 	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch -n auto \
 		--ignore tests/connector/cobaya
-	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch \
+	# Avoid UCX probing unsupported UD transport on GitHub runners' MANA devices.
+	UCX_TLS=tcp,sm,self $(PYTEST) -vv -s --cov firecrown --cov-append --cov-report xml --cov-branch \
 		tests/connector/cobaya
