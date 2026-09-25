@@ -741,5 +741,5 @@ unit-tests-core:  ## Internal target for core tests with coverage
 	# crash workers (see issue with "node down: Not properly terminated").
 	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch -n auto \
 		--ignore tests/connector/cobaya
-	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch \
+	$(PYTEST) -vv -s --cov firecrown --cov-append --cov-report xml --cov-branch \
 		tests/connector/cobaya
