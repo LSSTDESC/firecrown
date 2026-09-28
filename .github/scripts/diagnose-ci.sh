@@ -1,5 +1,38 @@
 #!/usr/bin/env bash
-# Temporary Linux runner instrumentation. Usage: diagnose-ci.sh OUTPUT COMMAND [ARG...]
+# Temporary Linux CI instrumentation for diagnosing flaky or resource-related
+# test failures.
+#
+# Usage:
+#   diagnose-ci.sh OUTPUT COMMAND [ARG...]
+#
+# OUTPUT is created if needed and receives the diagnostic files listed below.
+# COMMAND and its arguments are run with diagnostics enabled; its combined
+# stdout/stderr is also streamed to the terminal. The script exits with the
+# command's exit status.
+#
+# Collected files:
+#   runner.log        Linux/kernel details, online CPU count, shell limits, and
+#                     the current cgroup path at startup.
+#   kernel-before.log Kernel messages matching OOM, killed-process, segfault,
+#   kernel-after.log  or trap terms, captured before and after the command.
+#                     Reading dmesg requires passwordless sudo; if unavailable,
+#                     the reason is recorded instead.
+#   resources.log     A sample every two seconds, plus a final sample, of load,
+#                     memory, CPU/memory/I/O pressure, process resource usage,
+#                     and cgroup memory/swap/process limits and counters. The
+#                     cgroup and its ancestors are sampled where readable.
+#   command.log       UTC command start/end timestamps and exit status. The
+#                     command line and environment are deliberately omitted.
+#   tests.log         Combined stdout/stderr from COMMAND.
+#   pytest-<pid>.jsonl Per-process pytest events: session/worker identity, test
+#                     start times and phase outcomes, pytest exit status, and
+#                     xdist worker-down errors. For failed subprocess.run
+#                     calls using check=True, includes return code and captured
+#                     stdout/stderr when present. Subprocess output may contain
+#                     test data; command arguments and environment are omitted.
+#
+# Pytest event files are produced only when COMMAND starts pytest and loads the
+# bundled plugin. /proc and cgroup resource snapshots are Linux-specific.
 set -uo pipefail
 output=$1
 shift
