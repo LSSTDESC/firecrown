@@ -741,4 +741,10 @@ test-ci: test-all-coverage test-slow test-integration test-example ## Run exactl
 test-all-coverage: unit-tests-core unit-tests-post ## Run core tests with coverage (fast)
 
 unit-tests-core:  ## Internal target for core tests with coverage
-	$(PYTEST) -vv --cov firecrown --cov-report xml --cov-branch -n auto
+	# tests/connector/cobaya is excluded from the parallel run and executed
+	# serially below: its tests build full CAMB models via cobaya.model.get_model().
+	$(PYTEST) -vv --cov firecrown --cov-append --cov-report xml --cov-branch -n auto \
+		--ignore tests/connector/cobaya
+	# Avoid UCX probing unsupported UD transport on GitHub runners' MANA devices.
+	UCX_TLS=tcp,sm,self $(PYTEST) -vv -s --cov firecrown --cov-append --cov-report xml --cov-branch \
+		tests/connector/cobaya
