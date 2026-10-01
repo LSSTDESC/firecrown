@@ -21,3 +21,15 @@ The ability to freshly resolve and install Firecrown's declared dependency envir
 
 **Lock compatibility**:
 Agreement between locked package selections and the dependency requirements applicable to each supported environment. Compatible selections need not be newly resolved or use the newest available package versions.
+
+**Dependency consistency**:
+Agreement between dependency declarations and committed artifacts, encompassing dependency-list consistency, project dependency and Python-requirement agreement with the dependency manifest, lock compatibility across all supported environments, and reproducibility of validated constraints from committed locks. It establishes neither environment rebuildability nor Firecrown runtime compatibility.
+
+**Validated constraints**:
+Dependency constraints derived from committed locked package selections. Reproducibility means those constraints agree with regeneration from the committed locks; a derived version range does not imply that every version within it was runtime-tested.
+
+**PR rebuild canary**:
+An advisory, technically non-blocking sample of environment rebuildability for a pull request, using a fresh resolve and installation on Linux/Python 3.12, whose failures require author investigation and reviewer acceptance of unresolved risk before merge. Its result establishes neither rebuildability for other supported environments, Firecrown runtime compatibility, nor agreement with locked versions.
+
+**API policy verdict**:
+The target-dependent interpretation of a completed static public API comparison: no detected breaking changes, informational breaking changes on `master`, or rejection of detected breaking changes on a support target. The verdict is distinct from whether analysis and reporting succeeded; missing analysis or reporting is not evidence of compatibility, and no detected breaks does not establish complete behavioral compatibility.

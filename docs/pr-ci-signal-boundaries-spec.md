@@ -258,6 +258,62 @@ The user confirmed these testing boundaries before this draft was written:
   rationale are review obligations, not facts an automated test can establish.
   Verify their documentation and retain explicit reviewer responsibility.
 
+### Local macOS Development and Verification
+
+Discussion recorded 2026-09-30 for colleague review, following approval of the
+13-ticket breakdown in
+[the local ticket directory](../.scratch/pr-ci-signal-boundaries/issues/).
+This records the intended development and verification boundary, not evidence
+that the implementation or its local test infrastructure already exists.
+
+Development and automated acceptance testing for this batch should be possible
+on a macOS laptop without GitHub CI runs. GitHub-hosted execution is a separate
+integration-validation step, not a prerequisite for implementation or local
+acceptance testing. Local verification does not establish hosted CI correctness.
+
+| Ticket area | Local verification approach |
+| --- | --- |
+| Dependency declarations and locks (01-04) | Exercise the real checker with fixture manifests, declarations, validated constraints, and lockfiles. No fresh solve or installation of all supported environments is required. |
+| PR gating and canary (05-09) | Exercise production orchestration with controlled success, failure, timeout, missing-log, and publication outcomes; check workflow configuration and wiring separately. |
+| API CLI (10-11) | Use temporary local Git repositories and small Python packages, without a GitHub connection. |
+| API workflow failure handling (12-13) | Exercise production failure handling with controlled outcomes at GitHub-facing boundaries, including failures before comparison and during publication. |
+
+Linux lockfiles can be inspected and validated as data on macOS; that does not
+require running Linux or prove those environments install successfully. Timeout
+tests use short deadlines or controlled timing rather than waiting 35 minutes,
+while separately verifying the production 5/35/45-minute budgets.
+
+#### Implementation Requirements for Local Tests
+
+- Introduce small testable entry points where needed. CI must invoke the same
+  orchestration logic exercised locally, not a separately implemented simulation.
+- Make GitHub-facing operations, including artifact publication, replaceable at
+  test boundaries so local tests can supply controlled outcomes.
+- Keep Linux-specific execution details from requiring Linux for the ordinary
+  local acceptance suite. Any platform-specific behavior not exercised locally
+  must be identified as an integration-validation gap.
+- Isolate tooling tests from scientific-dependency imports in the existing test
+  configuration where necessary. This work belongs within the relevant tickets;
+  it is not a claim that a lightweight harness is already available.
+
+#### Limits and Completion Reporting
+
+Local tests alone cannot fully verify GitHub Actions scheduling, permissions,
+job-status propagation, cancellation behavior, third-party actions on hosted
+runners, or actual artifact upload and summary publication. They also do not
+establish that the real Linux/Python 3.12 fresh resolve/install currently succeeds
+against live package services. Required-check repository settings remain a
+separate, explicitly authorized concern.
+
+Completion reports must distinguish locally verified behavior from behavior
+verified on GitHub and list remaining hosted or platform-specific validation
+gaps. A passing local suite is not evidence of a successful hosted CI run.
+
+The current prohibition on CI runs remains in force. Recording this discussion
+does not authorize implementation, test execution, commits, pushes, remote
+publication, or repository-setting changes. This record and the tickets remain
+uncommitted and local to this checkout until separately authorized otherwise.
+
 ## Out of Scope
 
 - Firecrown runtime tests in freshly resolved environments.
