@@ -3,7 +3,7 @@
 The manifest is the single source of truth.  This script writes:
 
 * ``environment.yml``                      -- the developer conda environment
-* ``pyproject.toml`` ``[project]`` deps    -- the pip metadata
+* ``pyproject.toml`` ``[project]`` deps and Python requirement -- pip metadata
 * ``recipe/meta.yaml`` requirement blocks  -- the conda-forge feedstock
 
 ``dependencies-validated.yaml`` belongs to a later stage: it is derived from
@@ -189,16 +189,44 @@ def render_environment(data: dict[str, Any]) -> str:
 # --------------------------------------------------------------------------
 # pyproject.toml
 # --------------------------------------------------------------------------
-def render_pyproject(data: dict[str, Any], current: str) -> str:
-    """Return ``pyproject.toml`` with a regenerated ``dependencies`` array."""
+def render_pyproject(data: dict[str, object], current: str) -> str:
+    """Regenerate declarations within the project table, preserving other tables.
+
+    :param data: Authoritative dependency manifest.
+    :param current: Existing pyproject.toml contents.
+    :returns: Metadata with project dependencies and Python requirement updated.
+    """
+    project = re.search(r"^[ \t]*\[project\][ \t]*(?:#[^\n]*)?$", current, re.M)
+    if project is None:
+        raise ValueError("no [project] table found in pyproject.toml")
+    start = project.end()
+    next_table = re.search(r"^[ \t]*\[", current[start:], re.M)
+    end = start + next_table.start() if next_table else len(current)
+    content = current[start:end]
     specs = sorted(e.spec(e.pip).replace(" ", "") for e in required(data) if e.pip)
     block = "dependencies = [\n"
     block += "".join(f'    "{spec}",\n' for spec in specs)
     block += "]"
-    pattern = re.compile(r"^dependencies = \[.*?^\]", re.MULTILINE | re.DOTALL)
-    if not pattern.search(current):
+    dependency_pattern = re.compile(
+        r"^dependencies = \[.*?^\]", re.MULTILINE | re.DOTALL
+    )
+    if not dependency_pattern.search(content):
         raise ValueError("no [project] dependencies array found in pyproject.toml")
-    return pattern.sub(lambda _: block, current, count=1)
+    content = dependency_pattern.sub(lambda _: block, content, count=1)
+    python_pattern = re.compile(
+        r'^[ \t]*requires-python[ \t]*=[ \t]*["\'][^"\']*["\']'
+        r"(?P<suffix>[ \t]*(?:#[^\n]*)?)$",
+        re.M,
+    )
+    if not python_pattern.search(content):
+        raise ValueError(
+            "no [project] requires-python declaration found in pyproject.toml"
+        )
+    python_line = f"requires-python = {json.dumps(data['python'])}"
+    content = python_pattern.sub(
+        lambda match: python_line + match.group("suffix"), content, count=1
+    )
+    return current[:start] + content + current[end:]
 
 
 # --------------------------------------------------------------------------
@@ -473,8 +501,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.pins:
         return 0 if emit(VALIDATED_YAML, render_validated(data), args.check) else 1
 
-    ok = emit(ENVIRONMENT_YML, render_environment(data), args.check)
-    ok &= emit(
+    targets_ok = emit(ENVIRONMENT_YML, render_environment(data), args.check)
+    targets_ok &= emit(
         PYPROJECT_TOML,
         render_pyproject(data, PYPROJECT_TOML.read_text(encoding="utf-8")),
         args.check,
@@ -492,10 +520,10 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-        ok &= emit(path, render_recipe(data, recipe, version), args.check)
-    if not ok:
+        targets_ok &= emit(path, render_recipe(data, recipe, version), args.check)
+    if not targets_ok:
         print("\nRun `make deps-sync` and commit the result.", file=sys.stderr)
-    return 0 if ok and pins_are_current() else 1
+    return 0 if targets_ok and pins_are_current() else 1
 
 
 if __name__ == "__main__":

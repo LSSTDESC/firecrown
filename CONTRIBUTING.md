@@ -42,17 +42,21 @@ To maintain high code quality and consistency, we use several automated tools. W
 
 ### Dependencies
 
-`environment.yml` and the `dependencies` list in `pyproject.toml` are generated
-from [`dependencies.yaml`](dependencies.yaml), which is the single source of
-truth for every dependency of the project. Add or change a dependency there and
+`environment.yml`, `requires-python`, and the `dependencies` list in
+`pyproject.toml` are generated from [`dependencies.yaml`](dependencies.yaml),
+which is the single source of truth for dependency requirements and the declared
+Python requirement. Add or change a dependency or Python requirement there and
 regenerate:
 
 ```bash
 make deps-sync
 ```
 
-`make deps-check`, which `make pre-commit` runs for you, fails if the generated
-files no longer match the manifest.
+`make deps-check` checks the generated environment, project dependency list,
+and Python requirement without changing files or solving the environment. It
+fails with a diff when any generated declaration has drifted. It also retains
+the existing check that validated pins correspond to the current generated
+environment. `make pre-commit` runs this check for you.
 
 The manifest has three groups.
 
