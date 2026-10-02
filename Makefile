@@ -185,7 +185,7 @@ format-check:  ## Check code formatting without modifying files
 deps-sync:  ## Regenerate environment.yml and pyproject.toml from $(DEPS_MANIFEST)
 	@$(PYTHON) $(DEPS_SCRIPT)
 
-deps-check:  ## Verify dependency declarations and direct lock compatibility
+deps-check:  ## Verify dependency declarations, locks, and validated constraints
 	@$(PYTHON) $(DEPS_SCRIPT) --check
 
 feedstock-sync: deps-sync  ## Also regenerate the recipe in FEEDSTOCK=<path>

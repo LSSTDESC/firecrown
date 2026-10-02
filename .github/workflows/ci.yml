@@ -54,6 +54,27 @@ jobs:
     uses: ./.github/workflows/ci-reusable.yml
     secrets: inherit
 
+  pr-dependency-consistency:
+    name: PR dependency consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4.0.1
+        with:
+          miniforge-version: latest
+          python-version: "3.12"
+          activate-environment: firecrown_developer
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Install checker dependencies
+        run: conda run -n base python -m pip install packaging PyYAML
+      - name: Check dependency consistency
+        run: conda run -n base python .github/scripts/sync_deps.py --check
+
   pr-drift-paths:
     name: Detect PR drift-relevant changes
     runs-on: ubuntu-latest
@@ -81,8 +102,8 @@ jobs:
 
   pr-rebuild-drift:
     name: PR rebuild drift canary
-    needs: [ pr-drift-paths ]
-    if: ${{ needs.pr-drift-paths.outputs.should_run == 'true' }}
+    needs: [ pr-dependency-consistency, pr-drift-paths ]
+    if: ${{ needs.pr-dependency-consistency.result == 'success' && needs.pr-drift-paths.outputs.should_run == 'true' }}
     continue-on-error: true
     timeout-minutes: 45
     runs-on: ubuntu-latest

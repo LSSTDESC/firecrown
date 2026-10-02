@@ -107,7 +107,7 @@ def repository(tmp_path: Path) -> Path:
         yaml.safe_dump(yaml.safe_load(environment), sort_keys=True).encode()
     ).hexdigest()
     (tmp_path / "dependencies-validated.yaml").write_text(
-        f'environment-sha256: "{digest}"\nconstraints:\n  sample: ">=1,<2"\n',
+        f'environment-sha256: "{digest}"\nconstraints:\n  sample: ">=1.0,<1.1"\n',
         encoding="utf-8",
     )
     lock_dir = tmp_path / ".github/conda-lock"
@@ -198,7 +198,11 @@ def locked_repository(repository: Path) -> Path:
         yaml.safe_dump(environment, sort_keys=True).encode()
     ).hexdigest()
     (repository / "dependencies-validated.yaml").write_text(
-        f'environment-sha256: "{digest}"\nconstraints: {{}}\n', encoding="utf-8"
+        f'environment-sha256: "{digest}"\n'
+        'constraints:\n  pip: ">=1.0,<1.1"\n'
+        '  sample-conda: ">=1.0,<1.1"\n'
+        '  workaround-conda: ">=1.0,<1.1"\n',
+        encoding="utf-8",
     )
     return repository
 
@@ -215,6 +219,46 @@ def test_cli_check_accepts_complete_lock_presence_without_writing(
     assert result.returncode == 0, result.stderr
     assert "presence" in result.stdout.lower()
     assert _snapshot(locked_repository) == before
+
+
+@pytest.mark.parametrize("change_kind", ["relevant", "irrelevant"])
+@pytest.mark.parametrize("consistent", [True, False])
+def test_pr_consistency_gate_is_unconditional_for_path_and_checker_outcomes(
+    repository: Path, change_kind: str, consistent: bool
+) -> None:
+    """Workflow wiring and production checker preserve the independent gate.
+
+    :param repository: Isolated repository with matching declarations and locks.
+    :param change_kind: Whether a PR edit is relevant to the rebuild canary.
+    :param consistent: Whether committed dependency artifacts agree.
+    """
+    workflow = yaml.load(
+        (SCRIPT.parents[2] / ".github/workflows/ci.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    jobs = workflow["jobs"]
+    consistency = jobs["pr-dependency-consistency"]
+    assert "if" not in consistency
+    assert any(
+        ".github/scripts/sync_deps.py --check" in step.get("run", "")
+        for step in consistency["steps"]
+    )
+    canary = jobs["pr-rebuild-drift"]
+    assert "pr-dependency-consistency" in canary["needs"]
+    assert "needs.pr-drift-paths.outputs.should_run" in canary["if"]
+    assert "needs.pr-dependency-consistency.result == 'success'" in canary["if"]
+
+    changed_file = repository / (
+        "dependencies.yaml" if change_kind == "relevant" else "README.md"
+    )
+    existing = changed_file.read_text(encoding="utf-8") if changed_file.exists() else ""
+    changed_file.write_text(f"{existing}\n# PR edit\n", encoding="utf-8")
+    if not consistent:
+        _set_locked_version(repository, ("3.13", "osx-arm64"), "sample", "conda", "0.9")
+
+    result = _run_cli(repository, "--check")
+
+    assert result.returncode == (0 if consistent else 1), result.stderr
 
 
 def test_cli_check_rejects_incompatible_lock_with_current_digest(
@@ -318,6 +362,56 @@ def test_cli_check_accepts_compatible_older_locks_with_stale_digests(
     result = _run_cli(repository, "--check")
     assert result.returncode == 0, result.stderr
     assert "lock compatibility pass" in result.stdout
+    assert _snapshot(repository) == before
+    pins_result = _run_cli(repository, "--pins", "--check")
+    assert pins_result.returncode == 0, pins_result.stderr
+    assert _snapshot(repository) == before
+
+
+def test_cli_check_accepts_constraints_reproduced_from_committed_locks(
+    repository: Path,
+) -> None:
+    """Validated constraints derive from changed committed selections.
+
+    :param repository: Matching declarations and baseline committed locks.
+    """
+    for python, platform in ENVIRONMENTS:
+        _set_locked_version(repository, (python, platform), "sample", "conda", "2.1")
+    pins_path = repository / "dependencies-validated.yaml"
+    pins = yaml.safe_load(pins_path.read_text(encoding="utf-8"))
+    pins["constraints"]["sample"] = ">=2.1,<2.2"
+    pins_path.write_text(yaml.safe_dump(pins, sort_keys=False), encoding="utf-8")
+    before = _snapshot(repository)
+
+    result = _run_cli(repository, "--check")
+
+    assert result.returncode == 0, result.stderr
+    assert "Validated constraints match committed locks." in result.stdout
+    assert _snapshot(repository) == before
+
+
+def test_cli_check_reports_validated_constraint_drift_from_committed_locks(
+    repository: Path,
+) -> None:
+    """Changed locked selections make stale validated constraints fail clearly.
+
+    :param repository: Matching declarations and baseline committed locks.
+    """
+    for python, platform in ENVIRONMENTS:
+        _set_locked_version(repository, (python, platform), "sample", "conda", "2.1")
+    before = _snapshot(repository)
+
+    result = _run_cli(repository, "--check")
+
+    assert result.returncode == 1
+    assert "validated constraint sample differs from committed locks" in result.stderr
+    assert "recorded >=1.0,<1.1; regenerated >=2.1,<2.2" in result.stderr
+    assert _snapshot(repository) == before
+    pins_result = _run_cli(repository, "--pins", "--check")
+    assert pins_result.returncode == 1
+    assert (
+        "validated constraint sample differs from committed locks" in pins_result.stderr
+    )
     assert _snapshot(repository) == before
 
 
@@ -581,7 +675,7 @@ def feedstock(repository: Path) -> Path:
         "    # END GENERATED firecrown-deps\n"
         "  run_constrained:\n"
         "    # BEGIN GENERATED firecrown-deps-validated\n"
-        "    - sample >=1,<2\n"
+        "    - sample >=1.0,<1.1\n"
         "    # END GENERATED firecrown-deps-validated\n"
         "test:\n  commands:\n"
         "    # BEGIN GENERATED firecrown-deps-imports\n"
@@ -640,7 +734,11 @@ def test_cli_check_accepts_matching_declarations_without_writing(
         ("pyproject.toml", '"sample>=1"', '"sample>=2"'),
         ("pyproject.toml", 'requires-python = ">=3.12"', 'requires-python = ">=3.11"'),
         ("feedstock/recipe/meta.yaml", "- sample >=1\n", "- sample >=2\n"),
-        ("feedstock/recipe/meta.yaml", "- sample >=1,<2", "- sample >=2,<3"),
+        (
+            "feedstock/recipe/meta.yaml",
+            "- sample >=1.0,<1.1",
+            "- sample >=2,<3",
+        ),
         ("feedstock/recipe/meta.yaml", 'import sample"', 'import other"'),
         ("feedstock/recipe/meta.yaml", "- dev-tool", "- other-tool"),
     ],

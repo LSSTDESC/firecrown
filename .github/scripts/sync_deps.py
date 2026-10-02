@@ -13,8 +13,9 @@ right after the lockfiles it reads.  It records the hash of the
 ``environment.yml`` it was derived alongside as historical metadata.  The
 ordinary read-only ``--check`` path validates direct lock compatibility rather
 than digest currency; compatible older selections remain valid.  Write mode
-retains the legacy pin-digest warning.  Validated-constraint reproducibility is
-handled separately by ``--pins --check``.
+retains the legacy pin-digest warning.  The ordinary read-only ``--check`` path
+also verifies validated-constraint reproducibility; ``--pins --check`` runs the
+lock and constraint checks without checking generated declaration files.
 
 The feedstock blocks are delimited by ``BEGIN GENERATED``/``END GENERATED``
 marker comments; everything outside them is left untouched.
@@ -460,6 +461,88 @@ def validated_specs(data: dict[str, Any]) -> list[str]:
     return [f"{name} {constraint}" for name, constraint in sorted(pins.items())]
 
 
+def constraints_from_locks(data: dict[str, Any]) -> tuple[dict[str, str], list[str]]:
+    """Derive the existing validated-constraint scope from committed conda locks.
+
+    :param data: Authoritative dependency manifest.
+    :returns: Constraint mapping and package names absent from the lockfiles.
+    """
+    locked = locked_versions()
+    constraints: dict[str, str] = {}
+    missing: list[str] = []
+    for entry in required(data):
+        if not entry.conda:
+            continue
+        versions = locked.get(entry.conda)
+        if not versions:
+            missing.append(entry.conda)
+            continue
+        constraints[entry.conda] = validated_constraint(versions)
+    return constraints, missing
+
+
+def check_validated_constraints(data: dict[str, Any]) -> bool:
+    """Check validated constraints against committed conda selections.
+
+    The historical environment digest is intentionally excluded: direct lock
+    compatibility is checked separately, and matching constraints establish
+    reproducibility from those committed selections.
+
+    :param data: Authoritative dependency manifest.
+    :returns: Whether every recorded constraint matches committed locks.
+    """
+    if not VALIDATED_YAML.exists():
+        print(f"{VALIDATED_YAML} is missing", file=sys.stderr)
+        return False
+    try:
+        pins = yaml.safe_load(VALIDATED_YAML.read_text(encoding="utf-8"))
+        if not isinstance(pins, dict):
+            raise ValueError("missing pin metadata mapping")
+        recorded = pins.get("constraints")
+        if not isinstance(recorded, dict) or not all(
+            isinstance(name, str) for name in recorded
+        ):
+            raise ValueError("missing constraints mapping")
+        expected, missing = constraints_from_locks(data)
+    except (AttributeError, OSError, TypeError, ValueError, yaml.YAMLError) as error:
+        print(f"Validated constraints could not be checked: {error}", file=sys.stderr)
+        return False
+
+    complete = True
+    for name in missing:
+        print(
+            f"validated constraint {name} cannot be regenerated: package is absent "
+            "from the committed conda locks",
+            file=sys.stderr,
+        )
+        complete = False
+    for name in sorted(recorded.keys() | expected.keys()):
+        actual = recorded.get(name)
+        wanted = expected.get(name)
+        if actual == wanted:
+            continue
+        if wanted is None:
+            print(
+                f"validated constraint {name} is not present in committed locks",
+                file=sys.stderr,
+            )
+        elif actual is None:
+            print(
+                f"validated constraint {name} is missing; regenerated {wanted}",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"validated constraint {name} differs from committed locks: "
+                f"recorded {actual}; regenerated {wanted}",
+                file=sys.stderr,
+            )
+        complete = False
+    if complete:
+        print("Validated constraints match committed locks.")
+    return complete
+
+
 def environment_digest() -> str:
     """Return the digest of the environment the lockfiles are solved from.
 
@@ -490,7 +573,7 @@ def pins_are_current() -> bool:
 
 def render_validated(data: dict[str, Any]) -> str:
     """Render the derived pins, so that they are reviewable and shippable."""
-    locked = locked_versions()
+    constraints, missing = constraints_from_locks(data)
     lines = [
         f"# Generated from the conda lockfiles by `{GENERATED_PINS_BY}`"
         " -- do not edit.",
@@ -500,19 +583,12 @@ def render_validated(data: dict[str, Any]) -> str:
         "# firecrown-deps-validated metapackage.",
         "#",
         "# The digest records which environment.yml the lockfiles were solved",
-        "# from, so that pins left behind by a manifest edit are detected.",
+        "# from as historical metadata; --check verifies constraints from locks.",
         f'environment-sha256: "{environment_digest()}"',
         "constraints:",
     ]
-    missing = []
-    for entry in required(data):
-        if not entry.conda:
-            continue
-        versions = locked.get(entry.conda)
-        if not versions:
-            missing.append(entry.conda)
-            continue
-        lines.append(f'  {entry.conda}: "{validated_constraint(versions)}"')
+    for name, constraint in sorted(constraints.items()):
+        lines.append(f'  {name}: "{constraint}"')
     for name in missing:
         lines.append(f"  # {name}: absent from the lockfiles")
     return "\n".join(lines) + "\n"
@@ -681,6 +757,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if check_installed(data, args.check_installed) else 1
 
     if args.pins:
+        if args.check:
+            locks_ok = check_locked_compatibility(data)
+            constraints_ok = check_validated_constraints(data)
+            return 0 if locks_ok and constraints_ok else 1
         return 0 if emit(VALIDATED_YAML, render_validated(data), args.check) else 1
 
     targets_ok = emit(ENVIRONMENT_YML, render_environment(data), args.check)
@@ -707,6 +787,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\nRun `make deps-sync` and commit the result.", file=sys.stderr)
     if args.check:
         targets_ok &= check_locked_compatibility(data)
+        targets_ok &= check_validated_constraints(data)
         return 0 if targets_ok else 1
     return 0 if targets_ok and pins_are_current() else 1
 

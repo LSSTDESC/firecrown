@@ -100,7 +100,7 @@ To repair an existing worktree, update its checkout to include the revised hook 
 Checking dependency declarations and lock compatibility
 =======================================================
 
-Run ``conda run --prefix .conda-env make deps-check`` to check generated dependency declarations and direct lock compatibility without writing files or solving an environment.
+Run ``conda run --prefix .conda-env make deps-check`` to check generated dependency declarations, direct lock compatibility, and validated-constraint reproducibility without writing files or solving an environment.
 The checker requires ``packaging`` and access to conda's Python library; ``conda run`` supplies ``CONDA_PYTHON_EXE`` when conda is installed outside the developer environment.
 It covers Python 3.12, 3.13, and 3.14 on ``linux-64`` and ``osx-arm64``, requiring each lock's interpreter to match its supported Python line.
 All routed runtime, workaround, and development requirements apply to each environment.
@@ -109,10 +109,15 @@ Pip distribution names are normalized, and committed prereleases are eligible wh
 Requirements disabled for both managers have no locked selection to check.
 
 Missing environments, missing direct packages, or incompatible versions fail with the affected environment and requirement.
-Compatible older selections pass even when historical lock input hashes or the validated-pin environment digest differ; neither newest versions nor a fresh solve are required.
+Validated constraints must match regeneration from the committed conda selections. Compatible older selections pass even when historical lock input hashes or the validated-pin environment digest differ; neither newest versions nor a fresh solve are required. A derived range does not assert that every version within it was runtime-tested.
 This establishes direct lock compatibility, not environment rebuildability or Firecrown runtime compatibility.
 Conda-lock remains responsible for transitive solving, and runtime tests remain separate.
-The ordinary check does not yet verify validated-constraint reproducibility; that integration is the separate work in ticket 04.
+
+Pull request CI runs this consistency check for every PR, even when the rebuild
+canary's path filter does not match. A consistency failure is mandatory and
+prevents the advisory canary from running. The workflow does not establish that
+the repository's GitHub required-check settings include this check; those
+settings are managed separately.
 
 Setting your environment for development
 ========================================

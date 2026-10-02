@@ -62,6 +62,12 @@ Run it through `conda run --prefix .conda-env make deps-check` to provide access
 to conda's version library; pip checks use `packaging` in the invoking environment.
 `make pre-commit` runs this check for you.
 
+Pull request CI runs the dependency consistency check on every PR, independent
+of the rebuild canary's path filter. A failed consistency check is mandatory
+and blocks the canary from running; the canary itself remains advisory. A
+workflow check does not establish that the repository's GitHub required-check
+settings include it. Those settings are managed separately.
+
 The manifest has three groups.
 
 `runtime` is what it takes to finish an installation and run everything
@@ -103,18 +109,18 @@ dependencies.yaml -> environment.yml -> lockfiles -> dependencies-validated.yaml
        \____ make deps-sync ____/       \______ make conda-lock ______/
 ```
 
-The pins record a historical digest of the `environment.yml` they were derived
-alongside. `make deps-check` accepts compatible older locks even when that
-digest or a lock input hash differs; it does not require newest versions or a
-fresh solve. A current digest cannot make an incompatible selection pass.
-Lock compatibility establishes agreement with direct requirements, not
-environment rebuildability or Firecrown runtime compatibility. Conda-lock owns
-transitive solving, and runtime tests supply a separate signal.
+`make deps-check` checks that the committed validated constraints reproduce
+from the committed compatible lock selections. The historical environment
+digest and lock input hashes do not invalidate compatible locks, and checking
+does not solve an environment or rewrite artifacts. An incompatible selection
+still fails even if a digest is current. These checks establish agreement with
+direct requirements, not environment rebuildability or Firecrown runtime
+compatibility. Conda-lock owns transitive solving, and runtime tests supply a
+separate signal.
 
-Ordinary checking does not yet verify validated-constraint reproducibility;
-ticket 04 integrates that stage. The existing `--pins --check` path compares
-the generated pin artifact, including its digest, and write mode still retains
-the legacy pin-digest warning.
+A validated range is derived from the committed selections; it does not claim
+that every version inside the range was runtime-tested. `make conda-lock` still
+regenerates the pins and their historical digest after lockfiles are solved.
 
 The same manifest generates the requirement lists of the [conda-forge
 recipe](https://github.com/conda-forge/firecrown-feedstock), which builds the
