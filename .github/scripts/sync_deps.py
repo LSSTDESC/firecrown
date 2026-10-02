@@ -3,16 +3,19 @@
 The manifest is the single source of truth.  This script writes:
 
 * ``environment.yml``                      -- the developer conda environment
-* ``pyproject.toml`` ``[project]`` deps    -- the pip metadata
+* ``pyproject.toml`` ``[project]`` deps and Python requirement -- pip metadata
 * ``recipe/meta.yaml`` requirement blocks  -- the conda-forge feedstock
 
 ``dependencies-validated.yaml`` belongs to a later stage: it is derived from
 the lockfiles, which are themselves solved from the generated
 ``environment.yml``.  Regenerating it therefore happens in ``make conda-lock``,
 right after the lockfiles it reads.  It records the hash of the
-``environment.yml`` it was derived alongside, so that a manifest edit which has
-not been re-locked is reported rather than silently producing pins for an
-environment that no longer exists.
+``environment.yml`` it was derived alongside as historical metadata.  The
+ordinary read-only ``--check`` path validates direct lock compatibility rather
+than digest currency; compatible older selections remain valid.  Write mode
+retains the legacy pin-digest warning.  The ordinary read-only ``--check`` path
+also verifies validated-constraint reproducibility; ``--pins --check`` runs the
+lock and constraint checks without checking generated declaration files.
 
 The feedstock blocks are delimited by ``BEGIN GENERATED``/``END GENERATED``
 marker comments; everything outside them is left untouched.
@@ -37,11 +40,14 @@ import importlib.metadata as metadata
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Iterable
 
 import yaml
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = REPO_ROOT / "dependencies.yaml"
@@ -49,6 +55,8 @@ ENVIRONMENT_YML = REPO_ROOT / "environment.yml"
 VALIDATED_YAML = REPO_ROOT / "dependencies-validated.yaml"
 PYPROJECT_TOML = REPO_ROOT / "pyproject.toml"
 LOCK_DIR = REPO_ROOT / ".github" / "conda-lock"
+SUPPORTED_PYTHONS = ("3.12", "3.13", "3.14")
+SUPPORTED_PLATFORMS = ("linux-64", "osx-arm64")
 
 GENERATED_BY = "make deps-sync"
 GENERATED_PINS_BY = "make conda-lock"
@@ -189,16 +197,44 @@ def render_environment(data: dict[str, Any]) -> str:
 # --------------------------------------------------------------------------
 # pyproject.toml
 # --------------------------------------------------------------------------
-def render_pyproject(data: dict[str, Any], current: str) -> str:
-    """Return ``pyproject.toml`` with a regenerated ``dependencies`` array."""
+def render_pyproject(data: dict[str, object], current: str) -> str:
+    """Regenerate declarations within the project table, preserving other tables.
+
+    :param data: Authoritative dependency manifest.
+    :param current: Existing pyproject.toml contents.
+    :returns: Metadata with project dependencies and Python requirement updated.
+    """
+    project = re.search(r"^[ \t]*\[project\][ \t]*(?:#[^\n]*)?$", current, re.M)
+    if project is None:
+        raise ValueError("no [project] table found in pyproject.toml")
+    start = project.end()
+    next_table = re.search(r"^[ \t]*\[", current[start:], re.M)
+    end = start + next_table.start() if next_table else len(current)
+    content = current[start:end]
     specs = sorted(e.spec(e.pip).replace(" ", "") for e in required(data) if e.pip)
     block = "dependencies = [\n"
     block += "".join(f'    "{spec}",\n' for spec in specs)
     block += "]"
-    pattern = re.compile(r"^dependencies = \[.*?^\]", re.MULTILINE | re.DOTALL)
-    if not pattern.search(current):
+    dependency_pattern = re.compile(
+        r"^dependencies = \[.*?^\]", re.MULTILINE | re.DOTALL
+    )
+    if not dependency_pattern.search(content):
         raise ValueError("no [project] dependencies array found in pyproject.toml")
-    return pattern.sub(lambda _: block, current, count=1)
+    content = dependency_pattern.sub(lambda _: block, content, count=1)
+    python_pattern = re.compile(
+        r'^[ \t]*requires-python[ \t]*=[ \t]*["\'][^"\']*["\']'
+        r"(?P<suffix>[ \t]*(?:#[^\n]*)?)$",
+        re.M,
+    )
+    if not python_pattern.search(content):
+        raise ValueError(
+            "no [project] requires-python declaration found in pyproject.toml"
+        )
+    python_line = f"requires-python = {json.dumps(data['python'])}"
+    content = python_pattern.sub(
+        lambda match: python_line + match.group("suffix"), content, count=1
+    )
+    return current[:start] + content + current[end:]
 
 
 # --------------------------------------------------------------------------
@@ -217,6 +253,179 @@ def locked_versions() -> dict[str, list[str]]:
                 continue
             found.setdefault(package["name"], set()).add(package["version"])
     return {name: sorted(versions, key=version_key) for name, versions in found.items()}
+
+
+def pip_identity(name: str) -> str:
+    """Normalize a PyPI distribution name as lock records may spell it.
+
+    :param name: Manifest or locked distribution name.
+    :returns: Canonical name for presence comparison.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def conda_version_matches(checks: list[tuple[str, str]]) -> list[bool | str]:
+    """Evaluate version constraints with conda's own library, without solving.
+
+    The developer environment need not install conda itself. Under ``conda run``
+    or activation, ``CONDA_PYTHON_EXE`` identifies conda's tooling interpreter.
+    Otherwise the invoking interpreter must provide conda.
+
+    :param checks: Constraint and locked version pairs.
+    :returns: Match verdicts or invalid-version diagnostics in input order.
+    """
+    if not checks:
+        return []
+    program = """
+import json
+import sys
+from conda.exceptions import InvalidVersionSpec
+from conda.models.version import VersionOrder, VersionSpec
+
+results = []
+for constraint, version in json.load(sys.stdin):
+    try:
+        VersionOrder(version)
+        results.append(bool(VersionSpec(constraint).match(version)))
+    except (InvalidVersionSpec, ValueError) as error:
+        results.append(str(error))
+json.dump(results, sys.stdout)
+"""
+    result = subprocess.run(
+        [os.environ.get("CONDA_PYTHON_EXE", sys.executable), "-c", program],
+        input=json.dumps(checks),
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    if result.returncode:
+        raise RuntimeError(
+            "conda version evaluation failed; use an interpreter providing conda "
+            f"or invoke through conda run:\n{result.stderr.strip()}"
+        )
+    verdicts = json.loads(result.stdout)
+    if not isinstance(verdicts, list) or len(verdicts) != len(checks):
+        raise RuntimeError("conda version evaluation returned invalid results")
+    if not all(isinstance(verdict, (bool, str)) for verdict in verdicts):
+        raise RuntimeError("conda version evaluation returned invalid verdicts")
+    return verdicts
+
+
+def pip_version_matches(constraint: str, version: str) -> bool:
+    """Check a committed pip selection against PEP 440 requirement bounds.
+
+    Prereleases already selected by conda-lock are eligible, as with installed
+    versions; this is compatibility checking rather than candidate selection.
+    PEP 440's exclusive bounds and local-version rules still apply.
+
+    :param constraint: Manifest version constraint, or empty for no bounds.
+    :param version: Committed pip distribution version.
+    :returns: Whether the selection satisfies the requirement.
+    """
+    return SpecifierSet(constraint).contains(Version(version), prereleases=True)
+
+
+def check_locked_compatibility(data: dict[str, object]) -> bool:
+    """Check direct package selections in every supported locked environment.
+
+    :param data: Authoritative dependency manifest.
+    :returns: Whether all six selections satisfy their routed requirements.
+    """
+    requirements = [python_entry(data), *entries(data, *GROUPS)]
+    complete = True
+    conda_checks: list[tuple[str, str]] = []
+    conda_diagnostics: list[str] = []
+    for python in SUPPORTED_PYTHONS:
+        lockfile = LOCK_DIR / f"py{python}.conda-lock.yml"
+        if not lockfile.is_file():
+            print(f"Python {python}: missing lockfile {lockfile}", file=sys.stderr)
+            complete = False
+            continue
+        lock = yaml.safe_load(lockfile.read_text(encoding="utf-8"))
+        platforms = set(lock.get("metadata", {}).get("platforms", []))
+        for platform in SUPPORTED_PLATFORMS:
+            selection = f"Python {python} / {platform}"
+            if platform not in platforms:
+                print(f"{selection}: missing supported environment", file=sys.stderr)
+                complete = False
+                continue
+            present = {
+                (package["manager"], package["name"]): package["version"]
+                for package in lock["package"]
+                if package["platform"] == platform
+            }
+            conda = {
+                name: version
+                for (manager, name), version in present.items()
+                if manager == "conda"
+            }
+            pip = {
+                pip_identity(name): version
+                for (manager, name), version in present.items()
+                if manager == "pip"
+            }
+            for entry in requirements:
+                if entry.conda:
+                    found = entry.conda in conda
+                    version = conda.get(entry.conda)
+                    route = f"conda:{entry.conda}"
+                elif entry.pip:
+                    found = pip_identity(entry.pip) in pip
+                    version = pip.get(pip_identity(entry.pip))
+                    route = f"pip:{entry.pip}"
+                else:
+                    continue
+                if not found:
+                    print(
+                        f"{selection}: missing {entry.group} requirement "
+                        f"{entry.name} ({route})",
+                        file=sys.stderr,
+                    )
+                    complete = False
+                    continue
+                assert version is not None
+                diagnostic = (
+                    f"{selection}: incompatible {entry.group} requirement "
+                    f"{entry.name} ({route}): locked {version}, "
+                    f"requires {entry.version or '*'}"
+                )
+                if entry.conda:
+                    conda_checks.append((entry.version or "*", version))
+                    conda_diagnostics.append(diagnostic)
+                    if entry.conda == "python":
+                        conda_checks.append((f"{python}.*", version))
+                        conda_diagnostics.append(
+                            f"{selection}: incompatible runtime requirement "
+                            f"python (conda:python): locked {version}, "
+                            f"requires supported Python {python}.*"
+                        )
+                else:
+                    try:
+                        matches = pip_version_matches(entry.version or "", version)
+                    except ValueError as error:
+                        print(f"{diagnostic} ({error})", file=sys.stderr)
+                        complete = False
+                        continue
+                    if not matches:
+                        print(diagnostic, file=sys.stderr)
+                        complete = False
+    try:
+        verdicts = conda_version_matches(conda_checks)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+        print(f"Lock compatibility could not be checked: {error}", file=sys.stderr)
+        return False
+    for diagnostic, verdict in zip(conda_diagnostics, verdicts, strict=True):
+        if verdict is not True:
+            detail = f" ({verdict})" if isinstance(verdict, str) else ""
+            print(diagnostic + detail, file=sys.stderr)
+            complete = False
+    if complete:
+        print(
+            "Locked package presence and lock compatibility pass "
+            "for all six supported environments."
+        )
+    return complete
 
 
 def version_key(version: str) -> tuple[int, ...]:
@@ -252,6 +461,88 @@ def validated_specs(data: dict[str, Any]) -> list[str]:
     return [f"{name} {constraint}" for name, constraint in sorted(pins.items())]
 
 
+def constraints_from_locks(data: dict[str, Any]) -> tuple[dict[str, str], list[str]]:
+    """Derive the existing validated-constraint scope from committed conda locks.
+
+    :param data: Authoritative dependency manifest.
+    :returns: Constraint mapping and package names absent from the lockfiles.
+    """
+    locked = locked_versions()
+    constraints: dict[str, str] = {}
+    missing: list[str] = []
+    for entry in required(data):
+        if not entry.conda:
+            continue
+        versions = locked.get(entry.conda)
+        if not versions:
+            missing.append(entry.conda)
+            continue
+        constraints[entry.conda] = validated_constraint(versions)
+    return constraints, missing
+
+
+def check_validated_constraints(data: dict[str, Any]) -> bool:
+    """Check validated constraints against committed conda selections.
+
+    The historical environment digest is intentionally excluded: direct lock
+    compatibility is checked separately, and matching constraints establish
+    reproducibility from those committed selections.
+
+    :param data: Authoritative dependency manifest.
+    :returns: Whether every recorded constraint matches committed locks.
+    """
+    if not VALIDATED_YAML.exists():
+        print(f"{VALIDATED_YAML} is missing", file=sys.stderr)
+        return False
+    try:
+        pins = yaml.safe_load(VALIDATED_YAML.read_text(encoding="utf-8"))
+        if not isinstance(pins, dict):
+            raise ValueError("missing pin metadata mapping")
+        recorded = pins.get("constraints")
+        if not isinstance(recorded, dict) or not all(
+            isinstance(name, str) for name in recorded
+        ):
+            raise ValueError("missing constraints mapping")
+        expected, missing = constraints_from_locks(data)
+    except (AttributeError, OSError, TypeError, ValueError, yaml.YAMLError) as error:
+        print(f"Validated constraints could not be checked: {error}", file=sys.stderr)
+        return False
+
+    complete = True
+    for name in missing:
+        print(
+            f"validated constraint {name} cannot be regenerated: package is absent "
+            "from the committed conda locks",
+            file=sys.stderr,
+        )
+        complete = False
+    for name in sorted(recorded.keys() | expected.keys()):
+        actual = recorded.get(name)
+        wanted = expected.get(name)
+        if actual == wanted:
+            continue
+        if wanted is None:
+            print(
+                f"validated constraint {name} is not present in committed locks",
+                file=sys.stderr,
+            )
+        elif actual is None:
+            print(
+                f"validated constraint {name} is missing; regenerated {wanted}",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"validated constraint {name} differs from committed locks: "
+                f"recorded {actual}; regenerated {wanted}",
+                file=sys.stderr,
+            )
+        complete = False
+    if complete:
+        print("Validated constraints match committed locks.")
+    return complete
+
+
 def environment_digest() -> str:
     """Return the digest of the environment the lockfiles are solved from.
 
@@ -282,7 +573,7 @@ def pins_are_current() -> bool:
 
 def render_validated(data: dict[str, Any]) -> str:
     """Render the derived pins, so that they are reviewable and shippable."""
-    locked = locked_versions()
+    constraints, missing = constraints_from_locks(data)
     lines = [
         f"# Generated from the conda lockfiles by `{GENERATED_PINS_BY}`"
         " -- do not edit.",
@@ -292,19 +583,12 @@ def render_validated(data: dict[str, Any]) -> str:
         "# firecrown-deps-validated metapackage.",
         "#",
         "# The digest records which environment.yml the lockfiles were solved",
-        "# from, so that pins left behind by a manifest edit are detected.",
+        "# from as historical metadata; --check verifies constraints from locks.",
         f'environment-sha256: "{environment_digest()}"',
         "constraints:",
     ]
-    missing = []
-    for entry in required(data):
-        if not entry.conda:
-            continue
-        versions = locked.get(entry.conda)
-        if not versions:
-            missing.append(entry.conda)
-            continue
-        lines.append(f'  {entry.conda}: "{validated_constraint(versions)}"')
+    for name, constraint in sorted(constraints.items()):
+        lines.append(f'  {name}: "{constraint}"')
     for name in missing:
         lines.append(f"  # {name}: absent from the lockfiles")
     return "\n".join(lines) + "\n"
@@ -442,7 +726,9 @@ def main(argv: list[str] | None = None) -> int:
     """Regenerate, or check, every derived dependency list."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--check", action="store_true", help="verify the derived files are current"
+        "--check",
+        action="store_true",
+        help="verify generated declarations and direct lock compatibility without writing",
     )
     parser.add_argument(
         "--feedstock", type=Path, help="path to a firecrown-feedstock checkout"
@@ -471,10 +757,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if check_installed(data, args.check_installed) else 1
 
     if args.pins:
+        if args.check:
+            locks_ok = check_locked_compatibility(data)
+            constraints_ok = check_validated_constraints(data)
+            return 0 if locks_ok and constraints_ok else 1
         return 0 if emit(VALIDATED_YAML, render_validated(data), args.check) else 1
 
-    ok = emit(ENVIRONMENT_YML, render_environment(data), args.check)
-    ok &= emit(
+    targets_ok = emit(ENVIRONMENT_YML, render_environment(data), args.check)
+    targets_ok &= emit(
         PYPROJECT_TOML,
         render_pyproject(data, PYPROJECT_TOML.read_text(encoding="utf-8")),
         args.check,
@@ -492,10 +782,14 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-        ok &= emit(path, render_recipe(data, recipe, version), args.check)
-    if not ok:
+        targets_ok &= emit(path, render_recipe(data, recipe, version), args.check)
+    if not targets_ok:
         print("\nRun `make deps-sync` and commit the result.", file=sys.stderr)
-    return 0 if ok and pins_are_current() else 1
+    if args.check:
+        targets_ok &= check_locked_compatibility(data)
+        targets_ok &= check_validated_constraints(data)
+        return 0 if targets_ok else 1
+    return 0 if targets_ok and pins_are_current() else 1
 
 
 if __name__ == "__main__":

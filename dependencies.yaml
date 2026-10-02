@@ -136,6 +136,7 @@ devenv:
   - name: sphinx-rtd-theme
   - name: sphinxcontrib-apidoc
   - name: types-requests
+  - name: griffe
 
 # Packages firecrown does not import but constrains anyway: upstream bugs that
 # have to be routed around, and dependencies that the packages pulling them in

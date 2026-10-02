@@ -24,6 +24,7 @@ dependencies:
   - getdist
   - glib
   - graphviz
+  - griffe
   - hypothesis
   - idna
   - jupyter

@@ -97,6 +97,28 @@ The setup script can also be rerun from another directory after an interrupted s
 Worktrunk does not rerun ``pre-start`` when switching to an existing worktree.
 To repair an existing worktree, update its checkout to include the revised hook and run ``./tools/create-worktree-environment`` there explicitly.
 
+Checking dependency declarations and lock compatibility
+=======================================================
+
+Run ``conda run --prefix .conda-env make deps-check`` to check generated dependency declarations, direct lock compatibility, and validated-constraint reproducibility without writing files or solving an environment.
+The checker requires ``packaging`` and access to conda's Python library; ``conda run`` supplies ``CONDA_PYTHON_EXE`` when conda is installed outside the developer environment.
+It covers Python 3.12, 3.13, and 3.14 on ``linux-64`` and ``osx-arm64``, requiring each lock's interpreter to match its supported Python line.
+All routed runtime, workaround, and development requirements apply to each environment.
+Conda-enabled entries use their conda identities and conda version semantics; entries with ``conda: false`` use their pip identities and PEP 440 semantics.
+Pip distribution names are normalized, and committed prereleases are eligible when their PEP 440 bounds permit them.
+Requirements disabled for both managers have no locked selection to check.
+
+Missing environments, missing direct packages, or incompatible versions fail with the affected environment and requirement.
+Validated constraints must match regeneration from the committed conda selections. Compatible older selections pass even when historical lock input hashes or the validated-pin environment digest differ; neither newest versions nor a fresh solve are required. A derived range does not assert that every version within it was runtime-tested.
+This establishes direct lock compatibility, not environment rebuildability or Firecrown runtime compatibility.
+Conda-lock remains responsible for transitive solving, and runtime tests remain separate.
+
+Pull request CI runs this consistency check for every PR, even when the rebuild
+canary's path filter does not match. A consistency failure is mandatory and
+prevents the advisory canary from running. The workflow does not establish that
+the repository's GitHub required-check settings include this check; those
+settings are managed separately.
+
 Setting your environment for development
 ========================================
 
