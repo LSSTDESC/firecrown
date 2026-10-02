@@ -77,7 +77,180 @@ def repository(tmp_path: Path) -> Path:
         f'environment-sha256: "{digest}"\nconstraints:\n  sample: ">=1,<2"\n',
         encoding="utf-8",
     )
+    lock_dir = tmp_path / ".github/conda-lock"
+    lock_dir.mkdir()
+    for version in ("3.12", "3.13", "3.14"):
+        (lock_dir / f"py{version}.conda-lock.yml").write_text(
+            yaml.safe_dump(
+                {
+                    "version": 1,
+                    "metadata": {"platforms": ["linux-64", "osx-arm64"]},
+                    "package": [
+                        {
+                            "name": name,
+                            "version": "1.0",
+                            "manager": "conda",
+                            "platform": platform,
+                        }
+                        for platform in ("linux-64", "osx-arm64")
+                        for name in ("python", "sample", "dev-tool")
+                    ],
+                },
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
     return tmp_path
+
+
+@pytest.fixture
+def locked_repository(repository: Path) -> Path:
+    """Add direct requirements routed through conda and pip to every lock.
+
+    :param repository: Isolated repository with six baseline lock selections.
+    :returns: Repository with all manifest groups and installation routes.
+    """
+    manifest_path = repository / "dependencies.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["runtime"] = [
+        {"name": "sample", "conda": "sample-conda", "pip": "sample-pypi"},
+        {"name": "pip-runtime", "conda": False, "pip": "pip_runtime"},
+        {"name": "pip", "pip": False},
+    ]
+    manifest["workarounds"] = [
+        {"name": "workaround", "conda": "workaround-conda", "pip": "workaround-pypi"}
+    ]
+    manifest["devenv"] = [
+        {"name": "dev-tool", "conda": "dev-tool-conda", "pip": False},
+        {"name": "pip-dev", "conda": False, "pip": "pip_dev"},
+    ]
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    for lock_path in (repository / ".github/conda-lock").glob("*.yml"):
+        lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+        lock["package"] = [
+            {"name": name, "version": "1.0", "manager": manager, "platform": platform}
+            for platform in ("linux-64", "osx-arm64")
+            for name, manager in (
+                ("python", "conda"),
+                ("pip", "conda"),
+                ("sample-conda", "conda"),
+                ("pip_runtime", "pip"),
+                ("workaround-conda", "conda"),
+                ("dev-tool-conda", "conda"),
+                ("pip_dev", "pip"),
+            )
+        ]
+        lock_path.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
+    sync = _run_cli(repository)
+    assert (repository / "environment.yml").read_text(encoding="utf-8").count(
+        "pip_runtime"
+    ) == 1, sync.stderr
+    environment = yaml.safe_load(
+        (repository / "environment.yml").read_text(encoding="utf-8")
+    )
+    digest = hashlib.sha256(
+        yaml.safe_dump(environment, sort_keys=True).encode()
+    ).hexdigest()
+    (repository / "dependencies-validated.yaml").write_text(
+        f'environment-sha256: "{digest}"\nconstraints: {{}}\n', encoding="utf-8"
+    )
+    return repository
+
+
+def test_cli_check_accepts_complete_lock_presence_without_writing(
+    locked_repository: Path,
+) -> None:
+    """Each direct requirement is present in all six lock selections.
+
+    :param locked_repository: Repository with complete conda and pip selections.
+    """
+    before = _snapshot(locked_repository)
+    result = _run_cli(locked_repository, "--check")
+    assert result.returncode == 0, result.stderr
+    assert "presence" in result.stdout.lower()
+    assert _snapshot(locked_repository) == before
+
+
+def test_cli_check_rejects_missing_supported_environment_without_writing(
+    locked_repository: Path,
+) -> None:
+    """A missing platform fails even when the other lockfiles are complete.
+
+    :param locked_repository: Repository with complete conda and pip selections.
+    """
+    lock_path = locked_repository / ".github/conda-lock/py3.13.conda-lock.yml"
+    lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+    lock["metadata"]["platforms"].remove("osx-arm64")
+    lock["package"] = [
+        package for package in lock["package"] if package["platform"] != "osx-arm64"
+    ]
+    lock_path.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
+    before = _snapshot(locked_repository)
+    result = _run_cli(locked_repository, "--check")
+    assert result.returncode == 1
+    assert "Python 3.13" in result.stderr
+    assert "osx-arm64" in result.stderr
+    assert _snapshot(locked_repository) == before
+
+
+def test_cli_check_rejects_missing_lockfile_without_writing(
+    locked_repository: Path,
+) -> None:
+    """Expected Python coverage is independent of the files on disk.
+
+    :param locked_repository: Repository with complete conda and pip selections.
+    """
+    lock_path = locked_repository / ".github/conda-lock/py3.12.conda-lock.yml"
+    lock_path.unlink()
+    before = _snapshot(locked_repository)
+    result = _run_cli(locked_repository, "--check")
+    assert result.returncode == 1
+    assert "Python 3.12" in result.stderr
+    assert "py3.12.conda-lock.yml" in result.stderr
+    assert _snapshot(locked_repository) == before
+
+
+@pytest.mark.parametrize(
+    "name, manager, identity",
+    [
+        ("sample-conda", "conda", "sample"),
+        ("pip_runtime", "pip", "pip-runtime"),
+        ("workaround-conda", "conda", "workaround"),
+        ("dev-tool-conda", "conda", "dev-tool"),
+        ("pip_dev", "pip", "pip-dev"),
+    ],
+)
+def test_cli_check_rejects_package_missing_in_one_environment(
+    locked_repository: Path, name: str, manager: str, identity: str
+) -> None:
+    """A selection elsewhere cannot satisfy a missing direct requirement.
+
+    :param locked_repository: Repository with complete conda and pip selections.
+    :param name: Locked package name to remove from one environment.
+    :param manager: Installation manager for the locked package.
+    :param identity: Manifest requirement identity used in diagnostics.
+    """
+    lock_path = locked_repository / ".github/conda-lock/py3.14.conda-lock.yml"
+    lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+    lock["package"] = [
+        package
+        for package in lock["package"]
+        if not (
+            package["platform"] == "linux-64"
+            and package["name"] == name
+            and package["manager"] == manager
+        )
+    ]
+    lock_path.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
+    before = _snapshot(locked_repository)
+    result = _run_cli(locked_repository, "--check")
+    assert result.returncode == 1
+    assert "Python 3.14" in result.stderr
+    assert "linux-64" in result.stderr
+    assert identity in result.stderr
+    assert _snapshot(locked_repository) == before
 
 
 @pytest.mark.parametrize(

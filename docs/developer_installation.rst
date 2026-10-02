@@ -97,6 +97,14 @@ The setup script can also be rerun from another directory after an interrupted s
 Worktrunk does not rerun ``pre-start`` when switching to an existing worktree.
 To repair an existing worktree, update its checkout to include the revised hook and run ``./tools/create-worktree-environment`` there explicitly.
 
+Checking dependency declarations and lock presence
+==================================================
+
+Run ``make deps-check`` to check generated dependency declarations and the presence of direct manifest requirements in the committed locks.
+The lock presence check covers Python 3.12, 3.13, and 3.14 on ``linux-64`` and ``osx-arm64``; it includes conda and pip selections in each environment.
+A passing presence check says that the required package records exist in all six selections.
+It does not establish lock compatibility: version compatibility is handled by the separate work in ticket 03 of the PR CI signal boundaries effort.
+
 Setting your environment for development
 ========================================
 

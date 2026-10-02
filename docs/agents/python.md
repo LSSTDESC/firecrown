@@ -6,10 +6,16 @@ remains configured for editor feedback.
 
 ## Required checks
 
-- **Types:** Annotate functions and methods. Avoid `Any` in signatures. Run mypy
-  on modified Python code.
-- **Format and lint:** Run `black format` on modified Python files and `make lint`
-  before finishing.
+- **Tool environment:** Run Python checks in this worktree's `.conda-env`:
+  `conda run --prefix .conda-env make typecheck` and
+  `conda run --prefix .conda-env make lint`. If the environment is activated
+  instead, verify that `python`, `mypy`, and `black` all resolve inside the
+  same environment before running the Make targets. A `python` path inside
+  `.conda-env` alone does not establish which tools Make will invoke.
+- **Types:** Annotate functions and methods. Avoid `Any` in signatures. Use
+  `make typecheck` for type checking; it runs the project's mypy target.
+- **Format and lint:** Format modified Python files with `black` from the
+  project environment, then run `make lint` before finishing.
 - **Docstrings:** Give every public module, class, function, method, and test a
   descriptive docstring. Use Sphinx-style `:param:` entries to describe each
   parameter and `:returns:` when a function returns a value. Omit
@@ -21,6 +27,11 @@ remains configured for editor feedback.
 
 ## Testing
 
+- **Test environment:** Run pytest and Make test targets through `.conda-env`.
+  NumCosmo tests write FFTW wisdom under `~/.numcosmo`, and download tests use
+  `~/.firecrown`; ensure these directories are writable before running those
+  tests in a sandbox. Treat a denied cache write as a sandbox failure, then
+  rerun with scoped access before judging the test result.
 - **Avoid monkeypatching**: Prefer use of fixtures, parameterized tests, and
   dependency injection to the use of monkeypatching. Use monkeypatching only
   when other techniques would lead to more complicated code.  Any use of

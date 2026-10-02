@@ -49,6 +49,8 @@ ENVIRONMENT_YML = REPO_ROOT / "environment.yml"
 VALIDATED_YAML = REPO_ROOT / "dependencies-validated.yaml"
 PYPROJECT_TOML = REPO_ROOT / "pyproject.toml"
 LOCK_DIR = REPO_ROOT / ".github" / "conda-lock"
+SUPPORTED_PYTHONS = ("3.12", "3.13", "3.14")
+SUPPORTED_PLATFORMS = ("linux-64", "osx-arm64")
 
 GENERATED_BY = "make deps-sync"
 GENERATED_PINS_BY = "make conda-lock"
@@ -245,6 +247,68 @@ def locked_versions() -> dict[str, list[str]]:
                 continue
             found.setdefault(package["name"], set()).add(package["version"])
     return {name: sorted(versions, key=version_key) for name, versions in found.items()}
+
+
+def pip_identity(name: str) -> str:
+    """Normalize a PyPI distribution name as lock records may spell it.
+
+    :param name: Manifest or locked distribution name.
+    :returns: Canonical name for presence comparison.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def check_locked_presence(data: dict[str, Any]) -> bool:
+    """Check direct package presence in every supported lock selection.
+
+    :param data: Authoritative dependency manifest.
+    :returns: Whether all six selections contain their routed requirements.
+    """
+    requirements = [python_entry(data), *entries(data, *GROUPS)]
+    complete = True
+    for python in SUPPORTED_PYTHONS:
+        lockfile = LOCK_DIR / f"py{python}.conda-lock.yml"
+        if not lockfile.is_file():
+            print(f"Python {python}: missing lockfile {lockfile}", file=sys.stderr)
+            complete = False
+            continue
+        lock = yaml.safe_load(lockfile.read_text(encoding="utf-8"))
+        platforms = set(lock.get("metadata", {}).get("platforms", []))
+        for platform in SUPPORTED_PLATFORMS:
+            selection = f"Python {python} / {platform}"
+            if platform not in platforms:
+                print(f"{selection}: missing supported environment", file=sys.stderr)
+                complete = False
+                continue
+            present = {
+                (package["manager"], package["name"])
+                for package in lock["package"]
+                if package["platform"] == platform
+            }
+            conda = {name for manager, name in present if manager == "conda"}
+            pip = {pip_identity(name) for manager, name in present if manager == "pip"}
+            for entry in requirements:
+                if entry.conda:
+                    found = entry.conda in conda
+                    route = f"conda:{entry.conda}"
+                elif entry.pip:
+                    found = pip_identity(entry.pip) in pip
+                    route = f"pip:{entry.pip}"
+                else:
+                    continue
+                if not found:
+                    print(
+                        f"{selection}: missing {entry.group} requirement "
+                        f"{entry.name} ({route})",
+                        file=sys.stderr,
+                    )
+                    complete = False
+    if complete:
+        print(
+            "Locked package presence passes for all six supported environments; "
+            "version compatibility is not checked."
+        )
+    return complete
 
 
 def version_key(version: str) -> tuple[int, ...]:
@@ -523,6 +587,8 @@ def main(argv: list[str] | None = None) -> int:
         targets_ok &= emit(path, render_recipe(data, recipe, version), args.check)
     if not targets_ok:
         print("\nRun `make deps-sync` and commit the result.", file=sys.stderr)
+    if args.check:
+        targets_ok &= check_locked_presence(data)
     return 0 if targets_ok and pins_are_current() else 1
 
 
