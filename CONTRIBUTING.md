@@ -54,9 +54,13 @@ make deps-sync
 
 `make deps-check` checks the generated environment, project dependency list,
 and Python requirement without changing files or solving the environment. It
-fails with a diff when any generated declaration has drifted. It also retains
-the existing check that validated pins correspond to the current generated
-environment. `make pre-commit` runs this check for you.
+fails with a diff when any generated declaration has drifted, and rejects
+missing or incompatible direct locked selections for all six supported
+Python/platform environments. It checks runtime, workaround, and development
+requirements with their mapped conda/pip identities and ecosystem version rules.
+Run it through `conda run --prefix .conda-env make deps-check` to provide access
+to conda's version library; pip checks use `packaging` in the invoking environment.
+`make pre-commit` runs this check for you.
 
 The manifest has three groups.
 
@@ -99,9 +103,18 @@ dependencies.yaml -> environment.yml -> lockfiles -> dependencies-validated.yaml
        \____ make deps-sync ____/       \______ make conda-lock ______/
 ```
 
-You do not have to remember that. The pins record a digest of the
-`environment.yml` they were derived alongside, and `make deps-check` fails if
-the manifest has moved on since, telling you to re-run `make conda-lock`.
+The pins record a historical digest of the `environment.yml` they were derived
+alongside. `make deps-check` accepts compatible older locks even when that
+digest or a lock input hash differs; it does not require newest versions or a
+fresh solve. A current digest cannot make an incompatible selection pass.
+Lock compatibility establishes agreement with direct requirements, not
+environment rebuildability or Firecrown runtime compatibility. Conda-lock owns
+transitive solving, and runtime tests supply a separate signal.
+
+Ordinary checking does not yet verify validated-constraint reproducibility;
+ticket 04 integrates that stage. The existing `--pins --check` path compares
+the generated pin artifact, including its digest, and write mode still retains
+the legacy pin-digest warning.
 
 The same manifest generates the requirement lists of the [conda-forge
 recipe](https://github.com/conda-forge/firecrown-feedstock), which builds the

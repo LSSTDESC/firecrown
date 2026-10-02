@@ -13,6 +13,11 @@ import pytest
 import yaml
 
 SCRIPT = Path(__file__).resolve().parents[1] / ".github/scripts/sync_deps.py"
+ENVIRONMENTS = [
+    (python, platform)
+    for python in ("3.12", "3.13", "3.14")
+    for platform in ("linux-64", "osx-arm64")
+]
 
 
 def _run_cli(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -39,6 +44,34 @@ def _snapshot(root: Path) -> dict[Path, bytes]:
     :returns: File paths and their exact contents.
     """
     return {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+
+
+def _set_locked_version(
+    root: Path,
+    environment: tuple[str, str],
+    name: str,
+    manager: str,
+    version: str,
+) -> None:
+    """Replace one environment's committed direct selection.
+
+    :param root: Isolated repository fixture.
+    :param environment: Python and platform identities of the locked selection.
+    :param name: Locked package identity.
+    :param manager: Installation route of the selection.
+    :param version: Replacement locked version.
+    """
+    python, platform = environment
+    lock_path = root / f".github/conda-lock/py{python}.conda-lock.yml"
+    lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+    for package in lock["package"]:
+        if (
+            package["name"] == name
+            and package["manager"] == manager
+            and package["platform"] == platform
+        ):
+            package["version"] = version
+    lock_path.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
 
 
 @pytest.fixture
@@ -88,7 +121,7 @@ def repository(tmp_path: Path) -> Path:
                     "package": [
                         {
                             "name": name,
-                            "version": "1.0",
+                            "version": f"{version}.1" if name == "python" else "1.0",
                             "manager": "conda",
                             "platform": platform,
                         }
@@ -118,7 +151,8 @@ def locked_repository(repository: Path) -> Path:
         {"name": "pip", "pip": False},
     ]
     manifest["workarounds"] = [
-        {"name": "workaround", "conda": "workaround-conda", "pip": "workaround-pypi"}
+        {"name": "workaround", "conda": "workaround-conda", "pip": "workaround-pypi"},
+        {"name": "pip-workaround", "conda": False, "pip": "pip_workaround"},
     ]
     manifest["devenv"] = [
         {"name": "dev-tool", "conda": "dev-tool-conda", "pip": False},
@@ -130,7 +164,16 @@ def locked_repository(repository: Path) -> Path:
     for lock_path in (repository / ".github/conda-lock").glob("*.yml"):
         lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
         lock["package"] = [
-            {"name": name, "version": "1.0", "manager": manager, "platform": platform}
+            {
+                "name": name,
+                "version": (
+                    lock_path.name.removeprefix("py").split(".conda-lock")[0] + ".1"
+                    if name == "python"
+                    else "1.0"
+                ),
+                "manager": manager,
+                "platform": platform,
+            }
             for platform in ("linux-64", "osx-arm64")
             for name, manager in (
                 ("python", "conda"),
@@ -138,6 +181,7 @@ def locked_repository(repository: Path) -> Path:
                 ("sample-conda", "conda"),
                 ("pip_runtime", "pip"),
                 ("workaround-conda", "conda"),
+                ("pip_workaround", "pip"),
                 ("dev-tool-conda", "conda"),
                 ("pip_dev", "pip"),
             )
@@ -170,6 +214,230 @@ def test_cli_check_accepts_complete_lock_presence_without_writing(
     result = _run_cli(locked_repository, "--check")
     assert result.returncode == 0, result.stderr
     assert "presence" in result.stdout.lower()
+    assert _snapshot(locked_repository) == before
+
+
+def test_cli_check_rejects_incompatible_lock_with_current_digest(
+    repository: Path,
+) -> None:
+    """A current digest cannot make an incompatible direct selection pass.
+
+    :param repository: Matching declarations and current historical pin digest.
+    """
+    lock_path = repository / ".github/conda-lock/py3.13.conda-lock.yml"
+    lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+    for package in lock["package"]:
+        if package["name"] == "sample" and package["platform"] == "osx-arm64":
+            package["version"] = "0.9"
+    lock_path.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
+    before = _snapshot(repository)
+    result = _run_cli(repository, "--check")
+    assert result.returncode == 1
+    assert "Python 3.13 / osx-arm64" in result.stderr
+    assert "runtime requirement sample (conda:sample)" in result.stderr
+    assert "0.9" in result.stderr and ">=1" in result.stderr
+    assert _snapshot(repository) == before
+
+
+@pytest.mark.parametrize(
+    "constraint, version, compatible",
+    [
+        ("==1.0", "1.0+local", True),
+        ("<1.0", "1.0rc1", False),
+        (">=1,<2", "1.5rc1", True),
+        ("~=1.4.2", "1.4.9", True),
+        ("~=1.4.2", "1.5", False),
+        ("==1.0.*", "1.0.9", True),
+        (">=1,!=1.5", "1.5", False),
+    ],
+)
+def test_cli_check_uses_pip_version_semantics(
+    locked_repository: Path, constraint: str, version: str, compatible: bool
+) -> None:
+    """Pip selections obey PEP 440, including existing prerelease selections.
+
+    :param locked_repository: Repository with mapped conda and pip requirements.
+    :param constraint: PEP 440 requirement to apply to the pip runtime package.
+    :param version: Locked version selected on every supported environment.
+    :param compatible: Expected compatibility verdict from the stated examples.
+    """
+    manifest_path = locked_repository / "dependencies.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["runtime"][1]["version"] = constraint
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    _run_cli(locked_repository)
+    for lock_path in (locked_repository / ".github/conda-lock").glob("*.yml"):
+        lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+        for package in lock["package"]:
+            if package["manager"] == "pip" and package["name"] == "pip_runtime":
+                package["version"] = version
+                package["name"] = "PIP.Runtime"
+        lock_path.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
+    # Keep the historical digest current to isolate the compatibility verdict.
+    environment = yaml.safe_load(
+        (locked_repository / "environment.yml").read_text(encoding="utf-8")
+    )
+    pins_path = locked_repository / "dependencies-validated.yaml"
+    pins = yaml.safe_load(pins_path.read_text(encoding="utf-8"))
+    pins["environment-sha256"] = hashlib.sha256(
+        yaml.safe_dump(environment, sort_keys=True).encode()
+    ).hexdigest()
+    pins_path.write_text(yaml.safe_dump(pins, sort_keys=False), encoding="utf-8")
+    before = _snapshot(locked_repository)
+    result = _run_cli(locked_repository, "--check")
+    assert result.returncode == (0 if compatible else 1), result.stderr
+    if compatible:
+        assert "lock compatibility pass" in result.stdout
+    else:
+        assert "pip-runtime (pip:pip_runtime)" in result.stderr
+        assert constraint in result.stderr and version in result.stderr
+    assert _snapshot(locked_repository) == before
+
+
+def test_cli_check_accepts_compatible_older_locks_with_stale_digests(
+    repository: Path,
+) -> None:
+    """Historical input changes alone do not require a fresh solve.
+
+    :param repository: Matching declarations with older compatible selections.
+    """
+    pins_path = repository / "dependencies-validated.yaml"
+    pins = yaml.safe_load(pins_path.read_text(encoding="utf-8"))
+    pins["environment-sha256"] = "historical-environment"
+    pins_path.write_text(yaml.safe_dump(pins, sort_keys=False), encoding="utf-8")
+    for lock_path in (repository / ".github/conda-lock").glob("*.yml"):
+        lock = yaml.safe_load(lock_path.read_text(encoding="utf-8"))
+        lock["metadata"]["content_hash"] = {
+            "linux-64": "historical-lock-input",
+            "osx-arm64": "historical-lock-input",
+        }
+        lock_path.write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
+    before = _snapshot(repository)
+    result = _run_cli(repository, "--check")
+    assert result.returncode == 0, result.stderr
+    assert "lock compatibility pass" in result.stdout
+    assert _snapshot(repository) == before
+
+
+@pytest.mark.parametrize("python, platform", ENVIRONMENTS)
+def test_cli_check_rejects_wrong_python_identity(
+    repository: Path, python: str, platform: str
+) -> None:
+    """A valid manifest interpreter cannot stand in for another supported line.
+
+    :param repository: Repository with complete supported selections.
+    :param python: Supported Python identity whose selection is changed.
+    :param platform: Supported platform whose selection is changed.
+    """
+    _set_locked_version(repository, (python, platform), "python", "conda", "3.15.1")
+    before = _snapshot(repository)
+    result = _run_cli(repository, "--check")
+    assert result.returncode == 1
+    assert f"Python {python} / {platform}" in result.stderr
+    assert "python (conda:python)" in result.stderr and "3.15.1" in result.stderr
+    assert _snapshot(repository) == before
+
+
+@pytest.mark.parametrize("environment", ENVIRONMENTS)
+@pytest.mark.parametrize(
+    "requirement",
+    [
+        ("runtime", "sample", "sample-conda", "conda"),
+        ("runtime", "pip-runtime", "pip_runtime", "pip"),
+        ("workarounds", "workaround", "workaround-conda", "conda"),
+        ("workarounds", "pip-workaround", "pip_workaround", "pip"),
+        ("devenv", "dev-tool", "dev-tool-conda", "conda"),
+        ("devenv", "pip-dev", "pip_dev", "pip"),
+    ],
+)
+def test_cli_check_validates_each_requirement_in_each_environment(
+    locked_repository: Path,
+    environment: tuple[str, str],
+    requirement: tuple[str, str, str, str],
+) -> None:
+    """Compatible selections elsewhere cannot mask one incompatible selection.
+
+    :param locked_repository: Repository with complete routed selections.
+    :param environment: Python and platform identities of the selected environment.
+    :param requirement: Group, logical identity, locked name and manager to constrain.
+    """
+    python, platform = environment
+    group, identity, name, manager = requirement
+    manifest_path = locked_repository / "dependencies.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    for entry in manifest[group]:
+        if entry["name"] == identity:
+            entry["version"] = ">=1,<2"
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    _run_cli(locked_repository)
+    before = _snapshot(locked_repository)
+    compatible = _run_cli(locked_repository, "--check")
+    assert compatible.returncode == 0, compatible.stderr
+    assert _snapshot(locked_repository) == before
+    _set_locked_version(locked_repository, environment, name, manager, "0.9")
+    before = _snapshot(locked_repository)
+    incompatible = _run_cli(locked_repository, "--check")
+    assert incompatible.returncode == 1
+    assert f"Python {python} / {platform}" in incompatible.stderr
+    assert f"{group} requirement {identity} ({manager}:{name})" in incompatible.stderr
+    assert "locked 0.9, requires >=1,<2" in incompatible.stderr
+    assert _snapshot(locked_repository) == before
+
+
+@pytest.mark.parametrize(
+    "constraint, version, compatible",
+    [
+        ("==1.0", "1.0+local", False),
+        ("<1.0", "1.0rc1", True),
+        ("=1.0", "1.0.9", True),
+        ("1.0|2.0", "2.0", True),
+        ("1.0|2.0", "3.0", False),
+        ("~=1.4.2", "1.4.9", True),
+        ("~=1.4.2", "1.5", False),
+        (">=1,!=1.5", "1.5", False),
+    ],
+)
+def test_cli_check_uses_conda_version_semantics(
+    locked_repository: Path, constraint: str, version: str, compatible: bool
+) -> None:
+    """Conda versions use conda ordering, prefix, union and bound semantics.
+
+    :param locked_repository: Repository with mapped direct requirements.
+    :param constraint: Conda version constraint for the development requirement.
+    :param version: Version selected in one supported environment.
+    :param compatible: Expected verdict for the stated conda example.
+    """
+    manifest_path = locked_repository / "dependencies.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["devenv"][0]["version"] = constraint
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    _run_cli(locked_repository)
+    # All environments must satisfy the new constraint before one is changed.
+    baseline = (
+        "1.4.2"
+        if constraint == "~=1.4.2"
+        else "1.0rc1" if constraint == "<1.0" else "1.0"
+    )
+    for environment in ENVIRONMENTS:
+        _set_locked_version(
+            locked_repository, environment, "dev-tool-conda", "conda", baseline
+        )
+    _set_locked_version(
+        locked_repository, ("3.12", "linux-64"), "dev-tool-conda", "conda", version
+    )
+    before = _snapshot(locked_repository)
+    result = _run_cli(locked_repository, "--check")
+    assert result.returncode == (0 if compatible else 1), result.stderr
+    if not compatible:
+        assert "Python 3.12 / linux-64" in result.stderr
+        assert "devenv requirement dev-tool (conda:dev-tool-conda)" in result.stderr
+        assert constraint in result.stderr and version in result.stderr
     assert _snapshot(locked_repository) == before
 
 

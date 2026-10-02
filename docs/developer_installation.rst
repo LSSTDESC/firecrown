@@ -97,13 +97,22 @@ The setup script can also be rerun from another directory after an interrupted s
 Worktrunk does not rerun ``pre-start`` when switching to an existing worktree.
 To repair an existing worktree, update its checkout to include the revised hook and run ``./tools/create-worktree-environment`` there explicitly.
 
-Checking dependency declarations and lock presence
-==================================================
+Checking dependency declarations and lock compatibility
+=======================================================
 
-Run ``make deps-check`` to check generated dependency declarations and the presence of direct manifest requirements in the committed locks.
-The lock presence check covers Python 3.12, 3.13, and 3.14 on ``linux-64`` and ``osx-arm64``; it includes conda and pip selections in each environment.
-A passing presence check says that the required package records exist in all six selections.
-It does not establish lock compatibility: version compatibility is handled by the separate work in ticket 03 of the PR CI signal boundaries effort.
+Run ``conda run --prefix .conda-env make deps-check`` to check generated dependency declarations and direct lock compatibility without writing files or solving an environment.
+The checker requires ``packaging`` and access to conda's Python library; ``conda run`` supplies ``CONDA_PYTHON_EXE`` when conda is installed outside the developer environment.
+It covers Python 3.12, 3.13, and 3.14 on ``linux-64`` and ``osx-arm64``, requiring each lock's interpreter to match its supported Python line.
+All routed runtime, workaround, and development requirements apply to each environment.
+Conda-enabled entries use their conda identities and conda version semantics; entries with ``conda: false`` use their pip identities and PEP 440 semantics.
+Pip distribution names are normalized, and committed prereleases are eligible when their PEP 440 bounds permit them.
+Requirements disabled for both managers have no locked selection to check.
+
+Missing environments, missing direct packages, or incompatible versions fail with the affected environment and requirement.
+Compatible older selections pass even when historical lock input hashes or the validated-pin environment digest differ; neither newest versions nor a fresh solve are required.
+This establishes direct lock compatibility, not environment rebuildability or Firecrown runtime compatibility.
+Conda-lock remains responsible for transitive solving, and runtime tests remain separate.
+The ordinary check does not yet verify validated-constraint reproducibility; that integration is the separate work in ticket 04.
 
 Setting your environment for development
 ========================================
