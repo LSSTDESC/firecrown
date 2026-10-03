@@ -455,9 +455,7 @@ def test_numcosmo_data_pure_ccl_mode():
     model.params_set_default_ftype()
 
     # Create a basic cosmology model as well
-    cosmo = Nc.HICosmoDEXcdm()
-    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
-    cosmo.add_submodel(Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
 
     mset = Ncm.MSet()
     mset.set(cosmo)
@@ -569,9 +567,7 @@ def test_numcosmo_gauss_cov_pure_ccl_mode():
     model.params_set_default_ftype()
 
     # Create a basic cosmology model as well
-    cosmo = Nc.HICosmoDEXcdm()
-    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
-    cosmo.add_submodel(Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
 
     mset = Ncm.MSet()
     mset.set(cosmo)

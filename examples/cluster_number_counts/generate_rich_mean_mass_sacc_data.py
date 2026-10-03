@@ -32,12 +32,9 @@ def setup_cosmology(
     :param sigma8: The amplitude of matter fluctuations on scales of 8 Mpc/h.
     :return: Configured cosmology object.
     """
-    cosmo = Nc.HICosmoDEXcdm()
     reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
     prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
-
-    cosmo.add_submodel(reion)
-    cosmo.add_submodel(prim)
+    cosmo = Nc.HICosmoDEXcdm(reion=reion, prim=prim)
 
     tf = Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
     psml = Nc.PowspecMLTransfer.new(tf)

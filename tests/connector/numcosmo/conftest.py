@@ -10,7 +10,16 @@ from numcosmo_py import GObject, Nc, Ncm
 @pytest.fixture(name="numcosmo_cosmo_xcdm")
 def fixture_numcosmo_cosmo_xcdm():
     """Create a NumCosmo cosmology instance of XCDM."""
-    cosmo = Nc.HICosmoDEXcdm(massnu_length=1)
+    prim = Nc.HIPrimPowerLaw.new()
+    prim.param_set_by_name(  # pylint: disable=no-member
+        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
+    )
+    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
+    reion = Nc.HIReionCamb.new()
+    bbn = Nc.BBNParametrized.new()
+    bbn.param_set_by_name("Yp", 0.2454)  # pylint: disable=no-member
+
+    cosmo = Nc.HICosmoDEXcdm(massnu_length=1, prim=prim, reion=reion, bbn=bbn)
     cosmo.omega_x2omega_k()
     cosmo.param_set_by_name("H0", 68.2)
     cosmo.param_set_by_name("Omegak", 0.0)
@@ -18,20 +27,9 @@ def fixture_numcosmo_cosmo_xcdm():
     cosmo.param_set_by_name("Omegac", 0.118374058 / 0.682**2)
     cosmo.param_set_by_name("massnu_0", 0.06)
     cosmo.param_set_by_name("ENnu", 2.0328)
-    cosmo.param_set_by_name("Yp", 0.2454)
     cosmo.param_set_by_name("w", -1.0)
 
-    prim = Nc.HIPrimPowerLaw.new()
-    prim.param_set_by_name(  # pylint: disable=no-member
-        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
-    )
-    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
-
-    reion = Nc.HIReionCamb.new()
-    reion.set_z_from_tau(cosmo, 0.0561)  # pylint: disable=no-member
-
-    cosmo.add_submodel(prim)
-    cosmo.add_submodel(reion)
+    reion.set_z_from_tau(0.0561)  # pylint: disable=no-member
 
     p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
@@ -44,27 +42,25 @@ def fixture_numcosmo_cosmo_xcdm():
 @pytest.fixture(name="numcosmo_cosmo_xcdm_no_nu")
 def fixture_numcosmo_cosmo_xcdm_no_nu():
     """Create a NumCosmo cosmology instance of XCDM without neutrinos."""
-    cosmo = Nc.HICosmoDEXcdm()
+    prim = Nc.HIPrimPowerLaw.new()
+    prim.param_set_by_name(  # pylint: disable=no-member
+        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
+    )
+    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
+    reion = Nc.HIReionCamb.new()
+    bbn = Nc.BBNParametrized.new()
+    bbn.param_set_by_name("Yp", 0.2454)  # pylint: disable=no-member
+
+    cosmo = Nc.HICosmoDEXcdm(prim=prim, reion=reion, bbn=bbn)
     cosmo.omega_x2omega_k()
     cosmo.param_set_by_name("H0", 68.2)
     cosmo.param_set_by_name("Omegak", 0.0)
     cosmo.param_set_by_name("Omegab", 0.022558514 / 0.682**2)
     cosmo.param_set_by_name("Omegac", 0.118374058 / 0.682**2)
     cosmo.param_set_by_name("ENnu", 3.046)
-    cosmo.param_set_by_name("Yp", 0.2454)
     cosmo.param_set_by_name("w", -1.0)
 
-    prim = Nc.HIPrimPowerLaw.new()
-    prim.param_set_by_name(  # pylint: disable=no-member
-        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
-    )
-    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
-
-    reion = Nc.HIReionCamb.new()
-    reion.set_z_from_tau(cosmo, 0.0561)  # pylint: disable=no-member
-
-    cosmo.add_submodel(prim)
-    cosmo.add_submodel(reion)
+    reion.set_z_from_tau(0.0561)  # pylint: disable=no-member
 
     p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
@@ -79,28 +75,26 @@ def fixture_numcosmo_cosmo_cpl():
     """Create a NumCosmo cosmology instance using CPL parametrization for the dark
     energy equation of state."""
 
-    cosmo = Nc.HICosmoDECpl()
+    prim = Nc.HIPrimPowerLaw.new()
+    prim.param_set_by_name(  # pylint: disable=no-member
+        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
+    )
+    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
+    reion = Nc.HIReionCamb.new()
+    bbn = Nc.BBNParametrized.new()
+    bbn.param_set_by_name("Yp", 0.2454)  # pylint: disable=no-member
+
+    cosmo = Nc.HICosmoDECpl(prim=prim, reion=reion, bbn=bbn)
     cosmo.omega_x2omega_k()
     cosmo.param_set_by_name("H0", 68.2)
     cosmo.param_set_by_name("Omegak", 0.0)
     cosmo.param_set_by_name("Omegab", 0.022558514 / 0.682**2)
     cosmo.param_set_by_name("Omegac", 0.118374058 / 0.682**2)
     cosmo.param_set_by_name("ENnu", 3.046)
-    cosmo.param_set_by_name("Yp", 0.2454)
     cosmo.param_set_by_name("w0", -1.0)
     cosmo.param_set_by_name("w1", 0.1)
 
-    prim = Nc.HIPrimPowerLaw.new()
-    prim.param_set_by_name(  # pylint: disable=no-member
-        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
-    )
-    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
-
-    reion = Nc.HIReionCamb.new()
-    reion.set_z_from_tau(cosmo, 0.0561)  # pylint: disable=no-member
-
-    cosmo.add_submodel(prim)
-    cosmo.add_submodel(reion)
+    reion.set_z_from_tau(0.0561)  # pylint: disable=no-member
 
     p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)

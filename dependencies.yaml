@@ -71,7 +71,7 @@ runtime:
     import: matplotlib
     note: firecrown sacc view
   - name: numcosmo
-    version: ">=0.27"
+    version: ">=0.28,<1.0"
     pip: numcosmo_py
     import: numcosmo_py
   - name: numpy
