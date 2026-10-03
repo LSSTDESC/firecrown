@@ -54,15 +54,13 @@ def generate_cosmo(
         - Nc.HICosmoDECpl cosmology object.
         - pyccl cosmology object.
     """
-    cosmo = Nc.HICosmoDECpl()
     cosmo_ccl = ccl.Cosmology(
         Omega_b=Ob0, Omega_c=Odm0, sigma8=sigma8, w0=-1, wa=0, h=H0 / 100.0, n_s=n_s
     )
 
     reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
     prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
-    cosmo.add_submodel(reion)
-    cosmo.add_submodel(prim)
+    cosmo = Nc.HICosmoDECpl(reion=reion, prim=prim)
 
     tf = Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
     psml = Nc.PowspecMLTransfer.new(tf)

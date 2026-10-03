@@ -19,7 +19,7 @@ dependencies = [
     "isitgr",
     "lsstdesc-crow",
     "matplotlib",
-    "numcosmo_py>=0.27",
+    "numcosmo_py>=0.28,<1.0",
     "numpy>=2.0,<2.4",
     "pyccl>=2.8.0",
     "pydantic",

@@ -32,7 +32,7 @@ dependencies:
   - matplotlib-base # firecrown sacc view
   - more-itertools
   - mypy
-  - numcosmo >=0.27
+  - numcosmo >=0.28,<1.0
   - numpy >=2.0,<2.4
   - pandas # tutorials
   - pip >=20.1 # installs cobaya, which conda-forge does not package
