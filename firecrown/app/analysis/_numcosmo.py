@@ -441,14 +441,14 @@ def _setup_cosmology(
 
     assert mapping is not None
 
-    cosmo = Nc.HICosmoDECpl(
-        massnu_length=options.cosmo_spec.get_num_massive_neutrinos()
-    )
-    cosmo.omega_x2omega_k()
     prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
     reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
-    cosmo.add_submodel(prim)
-    cosmo.add_submodel(reion)
+    cosmo = Nc.HICosmoDECpl(
+        massnu_length=options.cosmo_spec.get_num_massive_neutrinos(),
+        prim=prim,
+        reion=reion,
+    )
+    cosmo.omega_x2omega_k()
     mset.set(cosmo)
 
     _set_standard_params(options, mset, cosmo, prim, reion, priors)
