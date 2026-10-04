@@ -58,7 +58,8 @@ runtime:
     conda: false
     note: cobaya connector; not packaged on conda-forge
   - name: cosmosis
-    version: ">=3.0"
+    version: ">=3.0,<3.26"
+    note: 3.26 .mod files need gfortran 15; camb <2.0 holds compilers at 14
   - name: cosmosis-build-standard-library
     pip: false
     import: false
