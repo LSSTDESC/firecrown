@@ -11,7 +11,7 @@ dependencies:
   - charset-normalizer
   - clmm # part of the DESC stack; needed indirectly through lsstdesc-crow
   - compilers # two-phase cosmosis-standard-library installation
-  - cosmosis >=3.0
+  - cosmosis >=3.0,<3.26 # 3.26 .mod files need gfortran 15; camb <2.0 holds compilers at 14
   - cosmosis-build-standard-library
   - coverage
   - cython

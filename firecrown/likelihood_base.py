@@ -14,7 +14,7 @@ Classes moved from:
 from __future__ import annotations
 
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Annotated, Generic, Literal, TypeVar, cast, final
@@ -1107,8 +1107,10 @@ class SourceGalaxySelectField(
         return replace(tracer_arg, field=self.field)
 
 
-class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
+class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT], ABC):
     """Source class for galaxy based sources."""
+
+    tracer_args: _SourceGalaxyArgsT
 
     def __init__(
         self,
@@ -1129,7 +1131,6 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         self.systematics: UpdatableCollection[
             SourceGalaxySystematic[_SourceGalaxyArgsT]
         ] = UpdatableCollection(systematics)
-        self.tracer_args: _SourceGalaxyArgsT
 
     def read_systematics(self, sacc_data: sacc.Sacc) -> None:
         """Read the systematics for this source from the SACC file.

@@ -182,7 +182,13 @@ def process_data_for_sacc(
         np.concatenate((cluster_counts.flatten(), var_mean_logM.flatten()))
     )
 
-    return cluster_counts, z_edges, richness_edges, mean_logM, covariance
+    return (
+        np.asarray(cluster_counts, dtype=np.float64),
+        np.asarray(z_edges, dtype=np.float64),
+        np.asarray(richness_edges, dtype=np.float64),
+        mean_logM,
+        covariance,
+    )
 
 
 def generate_sacc_file() -> None:
