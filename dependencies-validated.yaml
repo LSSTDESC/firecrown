@@ -6,14 +6,14 @@
 #
 # The digest records which environment.yml the lockfiles were solved
 # from, so that pins left behind by a manifest edit are detected.
-environment-sha256: "0666faf5b0577a74acdf1a88efb38b5d3c05b4e4da6d0333c96b4519c7192134"
+environment-sha256: "8ae1c74c52779a6ee2629b45214868940f345aa1005984f635ae7a3636e2d6a2"
 constraints:
   astropy: ">=8.0.1,<8.1"
   camb: ">=1.6.5,<1.7"
   charset-normalizer: ">=3.5.1,<3.6"
   clmm: ">=1.16.10,<1.17"
   compilers: ">=1.11.0,<1.12"
-  cosmosis: ">=3.26,<3.27"
+  cosmosis: ">=3.25.2,<3.26"
   cosmosis-build-standard-library: ">=1.3,<1.4"
   cython: ">=3.3.0,<3.4"
   dill: ">=0.4.1,<0.5"
