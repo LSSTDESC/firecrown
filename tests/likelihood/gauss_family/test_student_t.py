@@ -28,6 +28,12 @@ def test_require_nonempty_statistics():
         _ = StudentT(statistics=[])
 
 
+def test_make_realization_vector_not_supported(trivial_stats):
+    likelihood = StudentT(statistics=trivial_stats)
+    with pytest.raises(NotImplementedError, match="StudentT"):
+        likelihood.make_realization_vector()
+
+
 def test_update_fails_before_read(trivial_stats, trivial_params_student_t):
     likelihood = StudentT(statistics=trivial_stats)
     with pytest.raises(AssertionError):

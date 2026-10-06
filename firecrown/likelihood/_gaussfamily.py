@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from abc import ABC
 from collections.abc import Callable, Sequence
 from enum import Enum
 from functools import wraps
@@ -113,7 +114,7 @@ def enforce_states(
     return decorator_enforce_states
 
 
-class GaussFamily(Likelihood):
+class GaussFamily(Likelihood, ABC):
     """GaussFamily is the base class for likelihoods based on a chi-squared calculation.
 
     It provides an implementation of Likelihood.compute_chisq. Derived classes must

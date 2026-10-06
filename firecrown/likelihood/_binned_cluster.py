@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from abc import ABC
+
 import numpy as np
 from crow.properties import ClusterProperty
 from crow.recipes.binned_parent import (
@@ -20,7 +22,7 @@ from firecrown.likelihood_base import SourceSystematic, Statistic
 from firecrown.models.cluster import ClusterData, SaccBin
 
 
-class BinnedCluster(Statistic):
+class BinnedCluster(Statistic, ABC):
     """A statistic representing clusters in a z, mass bin."""
 
     def __init__(

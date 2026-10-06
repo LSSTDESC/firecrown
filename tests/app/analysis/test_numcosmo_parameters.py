@@ -85,9 +85,8 @@ class TestAmplitudeParameterHandling:
         )
 
         # Create minimal NumCosmo objects with proper hierarchy
-        cosmo = Nc.HICosmoDECpl.new()  # pylint: disable=no-value-for-parameter
         prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
-        cosmo.add_submodel(prim)
+        cosmo = Nc.HICosmoDECpl(prim=prim)
         mset = Ncm.MSet.new_array([cosmo])
 
         priors: list[Ncm.Prior] = []
