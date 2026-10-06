@@ -2,7 +2,7 @@
 
 Accepted in the CI design interview on 2026-09-29. This records agreed intent,
 not completed implementation or authorization to implement it. Terminology is
-defined in [CONTEXT.md](../../CONTEXT.md).
+defined in [GLOASSARY.md](../../GLOSSARY.md).
 
 Local dependency consistency must block merging, while live environment
 rebuildability remains a reviewed advisory signal. Package repositories can

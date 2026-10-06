@@ -1,6 +1,6 @@
 # Checking Firecrown's public API
 
-Use the API change report to review changes to Firecrown's public Python import paths before merging or releasing. The definition of a public API path and the meaning of a support line are in [CONTEXT.md](CONTEXT.md). The comparison uses Griffe to inspect the current checkout against a Git baseline. Run these commands from the repository root with the developer environment active (see [CONTRIBUTING.md](CONTRIBUTING.md)); the environment provides Griffe.
+Use the API change report to review changes to Firecrown's public Python import paths before merging or releasing. The definition of a public API path and the meaning of a support line are in [GLOSSARY.md](GLOSSARY.md). The comparison uses Griffe to inspect the current checkout against a Git baseline. Run these commands from the repository root with the developer environment active (see [CONTRIBUTING.md](CONTRIBUTING.md)); the environment provides Griffe.
 
 ## Check unreleased support-line work
 

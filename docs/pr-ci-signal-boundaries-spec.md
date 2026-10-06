@@ -6,7 +6,7 @@ not authorize implementation, commits, pushes, or CI reruns.
 
 Decision authority: [ADR 0001](adr/0001-pr-ci-signal-boundaries.md) and the
 confirmed CI design interview. Use the definitions in
-[CONTEXT.md](../CONTEXT.md). Unconfirmed suggestions in the original handoff
+[GLOSSARY.md](../GLOSSARY.md). Unconfirmed suggestions in the original handoff
 are not requirements.
 
 ## Problem Statement

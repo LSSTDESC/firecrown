@@ -4,10 +4,10 @@
 
 This repo uses the existing single-context layout:
 
-- `CONTEXT.md` at the repository root holds domain terminology.
+- `GLOSSARY.md` at the repository root holds domain terminology.
 - `docs/adr/` holds architectural decisions.
 
-Before exploring the codebase, read `CONTEXT.md` and the ADRs relevant
+Before exploring the codebase, read `GLOSSARY.md` and the ADRs relevant
 to the work. For CI signal-boundary work, read
 `docs/adr/0001-pr-ci-signal-boundaries.md`.
 
@@ -20,7 +20,7 @@ when terminology or decisions are actually resolved.
 
 ## Use the Glossary's Vocabulary
 
-Use concepts as defined in `CONTEXT.md` in ticket titles, proposals,
+Use concepts as defined in `GLOSSARY.md` in ticket titles, proposals,
 hypotheses, and test names. Avoid substituting synonyms that change
 their meaning.
 
