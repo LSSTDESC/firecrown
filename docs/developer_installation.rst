@@ -113,11 +113,16 @@ Validated constraints must match regeneration from the committed conda selection
 This establishes direct lock compatibility, not environment rebuildability or Firecrown runtime compatibility.
 Conda-lock remains responsible for transitive solving, and runtime tests remain separate.
 
-Pull request CI runs this consistency check for every PR, even when the rebuild
-canary's path filter does not match. A consistency failure is mandatory and
-prevents the advisory canary from running. The workflow does not establish that
-the repository's GitHub required-check settings include this check; those
-settings are managed separately.
+Pull request CI runs this consistency check for every PR, independent of
+canary routing. The production routing decision examines the PR diff and
+conservatively includes dependency declarations, Python/project requirements,
+locks, generators, build/check entry points, and GitHub configuration. An
+irrelevant change produces an explained skip; a routing error fails visibly.
+A consistency failure remains mandatory, and the canary admission report
+explains why the fresh rebuild did not run. The rebuild is advisory: authors
+investigate failures, and reviewers accept unresolved canary risk before merge.
+The workflow does not establish that the repository's GitHub required-check
+settings include the consistency gate; those settings are managed separately.
 
 Setting your environment for development
 ========================================

@@ -245,7 +245,8 @@ def test_pr_consistency_gate_is_unconditional_for_path_and_checker_outcomes(
     )
     canary = jobs["pr-rebuild-drift"]
     assert "pr-dependency-consistency" in canary["needs"]
-    assert "needs.pr-drift-paths.outputs.should_run" in canary["if"]
+    assert "pr-canary-decision" in canary["needs"]
+    assert "needs.pr-canary-decision.outputs.should_run == 'true'" in canary["if"]
     assert "needs.pr-dependency-consistency.result == 'success'" in canary["if"]
 
     changed_file = repository / (

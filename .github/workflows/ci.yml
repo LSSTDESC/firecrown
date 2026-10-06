@@ -75,35 +75,42 @@ jobs:
       - name: Check dependency consistency
         run: conda run -n base python .github/scripts/sync_deps.py --check
 
-  pr-drift-paths:
-    name: Detect PR drift-relevant changes
+  pr-canary-decision:
+    name: Route and admit PR rebuild canary
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [ pr-dependency-consistency ]
     runs-on: ubuntu-latest
     outputs:
-      should_run: ${{ steps.filter.outputs.drift }}
+      should_run: ${{ steps.decision.outputs.should_run }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: Detect dependency-impacting changes
-        id: filter
-        uses: dorny/paths-filter@v4.0.3
-        with:
-          filters: |
-            drift:
-              - 'dependencies.yaml'
-              - 'dependencies-validated.yaml'
-              - 'environment.yml'
-              - '.github/scripts/sync_deps.py'
-              - '.github/update_ci.py'
-              - '.github/conda-lock/**'
-              - '.github/scripts/generate_conda_locks.sh'
-              - '.github/workflows/ci-reusable.yml'
-              - '.github/ci-branches.json'
+      - name: Fetch PR target branch
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: |
+          git check-ref-format "refs/heads/$BASE_BRANCH"
+          git fetch origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+      - name: Evaluate canary routing and admission
+        id: decision
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CONSISTENCY_RESULT: ${{ needs.pr-dependency-consistency.result }}
+        run: >-
+          python .github/scripts/route_pr_rebuild_canary.py
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+          --consistency-result "$CONSISTENCY_RESULT"
+          --github-output "$GITHUB_OUTPUT"
+          --summary "$GITHUB_STEP_SUMMARY"
 
   pr-rebuild-drift:
     name: PR rebuild drift canary
-    needs: [ pr-dependency-consistency, pr-drift-paths ]
-    if: ${{ needs.pr-dependency-consistency.result == 'success' && needs.pr-drift-paths.outputs.should_run == 'true' }}
+    needs: [ pr-dependency-consistency, pr-canary-decision ]
+    if: ${{ needs.pr-dependency-consistency.result == 'success' && needs.pr-canary-decision.result == 'success' && needs.pr-canary-decision.outputs.should_run == 'true' }}
     continue-on-error: true
     timeout-minutes: 45
     runs-on: ubuntu-latest

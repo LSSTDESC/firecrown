@@ -63,10 +63,16 @@ to conda's version library; pip checks use `packaging` in the invoking environme
 `make pre-commit` runs this check for you.
 
 Pull request CI runs the dependency consistency check on every PR, independent
-of the rebuild canary's path filter. A failed consistency check is mandatory
-and blocks the canary from running; the canary itself remains advisory. A
-workflow check does not establish that the repository's GitHub required-check
-settings include it. Those settings are managed separately.
+of canary routing. Routing examines the PR diff and conservatively includes
+dependency declarations, Python/project requirements, locks, generators,
+build/check entry points, and GitHub configuration. An unrelated change skips
+the fresh rebuild with a reason; a routing error fails visibly. A failed
+consistency check remains mandatory and the admission report explains why the
+fresh rebuild did not run. The rebuild itself remains advisory: authors must
+investigate failures, and reviewers must accept any unresolved canary risk
+before merge. A workflow check does not establish that the repository's GitHub
+required-check settings include the consistency gate. Those settings are
+managed separately.
 
 The manifest has three groups.
 
