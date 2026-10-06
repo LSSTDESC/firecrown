@@ -1,5 +1,6 @@
 """Model classes for CCL factory module."""
 
+from collections.abc import Mapping
 from types import TracebackType
 from typing import Annotated
 
@@ -7,7 +8,14 @@ import pyccl
 from pyccl.modified_gravity import MuSigmaMG
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
-from firecrown.updatable import ParamsMap, Updatable, register_new_updatable_parameter
+from firecrown.updatable import Updatable, register_new_updatable_parameter
+
+# CAMB default values for the HMCode parameters, taken from CAMB v1.6.0.
+HMCODE_CAMB_DEFAULTS: dict[str, float] = {
+    "HMCode_A_baryon": 3.13,
+    "HMCode_eta_baryon": 0.603,
+    "HMCode_logT_AGN": 7.8,
+}
 
 
 class MuSigmaModel(Updatable):
@@ -91,18 +99,45 @@ class CAMBExtraParams(BaseModel):
             key: value for key, value in self.model_dump().items() if value is not None
         }
 
-    def update(self, params: ParamsMap) -> None:
-        """Update the CAMB sampling parameters.
+    def get_hm_sampling_defaults(self) -> dict[str, float]:
+        """Return the HMCode parameters CAMB expects for this halofit version.
 
-        :param params: The parameters to update.
-        :returns: None
+        The keys are the parameter names spelled exactly as CAMB expects them, and
+        the values are the CAMB defaults for those parameters. The mapping is empty
+        when the halofit version has no HMCode parameters.
+
+        :returns: a mapping from HMCode parameter name to its CAMB default value
         """
-        if "HMCode_A_baryon" in params:
-            self.HMCode_A_baryon = params["HMCode_A_baryon"]
-        if "HMCode_eta_baryon" in params:
-            self.HMCode_eta_baryon = params["HMCode_eta_baryon"]
-        if "HMCode_logT_AGN" in params:
-            self.HMCode_logT_AGN = params["HMCode_logT_AGN"]
+        if self.is_mead():
+            return {
+                name: HMCODE_CAMB_DEFAULTS[name]
+                for name in ("HMCode_A_baryon", "HMCode_eta_baryon")
+            }
+        if self.is_mead2020_feedback():
+            return {"HMCode_logT_AGN": HMCODE_CAMB_DEFAULTS["HMCode_logT_AGN"]}
+        return {}
+
+    def set_hm_parameters(self, values: Mapping[str, float]) -> None:
+        """Set the HMCode parameters to the given values.
+
+        The names in `values` must be exactly those returned by
+        :meth:`get_hm_sampling_defaults`; the case-insensitive lookup of names coming
+        from a sampler is the caller's responsibility.
+
+        :param values: a mapping from HMCode parameter name to its new value
+        :raises ValueError: if `values` contains a name not expected for the
+            configured halofit version
+        """
+        expected = self.get_hm_sampling_defaults().keys()
+        unexpected = sorted(values.keys() - expected)
+        if unexpected:
+            raise ValueError(
+                f"HMCode parameters {unexpected} are not available for "
+                f"halofit_version={self.halofit_version}. "
+                f"The available parameters are: {sorted(expected)}"
+            )
+        for name, value in values.items():
+            setattr(self, name, value)
 
     def is_mead2020_feedback(self) -> bool:
         """Return True if the halofit_version is mead2020_feedback."""
