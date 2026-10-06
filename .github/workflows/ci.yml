@@ -112,7 +112,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v4.0.1
+        uses: conda-incubator/setup-miniconda@v4.1.0
         with:
           miniforge-version: latest
           python-version: "3.12"
