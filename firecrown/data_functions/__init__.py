@@ -19,6 +19,7 @@ from firecrown.data_functions._types import (
     TwoPointBinFilter,
     TwoPointTracerSpec,
     bin_spec_from_metadata,
+    make_interval_from_list,
 )
 from firecrown.data_functions._utils import cov_hash
 
@@ -33,6 +34,7 @@ from firecrown.data_functions._validation import (
 __all__ = [
     # Utility functions
     "cov_hash",
+    "make_interval_from_list",
     "bin_spec_from_metadata",
     # Type definitions and Pydantic models
     "TwoPointTracerSpec",
