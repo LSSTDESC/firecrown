@@ -218,16 +218,22 @@ This avoids routine conda solves on standard pull request cache misses and
 aligns pull request environment behavior with nightly mode.
 
 To preserve dependency-drift signal in pull request context,
-`.github/workflows/ci.yml` defines a non-blocking rebuild-drift canary job.
-That canary is path-filtered and runs only when dependency-impacting files
-change,
-such as `dependencies.yaml`, `environment.yml`, lockfiles in `.github/conda-lock/`, CI environment scripts, or reusable
-workflow dependency setup.
+`.github/workflows/ci.yml` defines a routing and admission job plus a
+non-blocking rebuild-drift canary. The routing job uses the production
+`.github/scripts/route_pr_rebuild_canary.py` decision logic against the PR diff.
+It conservatively routes dependency declarations, Python/project requirements,
+locks, generators, build/check entry points, and GitHub configuration changes.
+An irrelevant change produces an explained skip, and a routing error fails the
+decision job instead of appearing as an irrelevant-change skip. If mandatory
+dependency consistency fails, the decision report explains that the rebuild
+was not admitted while the consistency job remains failed independently.
 
-When it runs,
-the canary performs a fresh rebuild from `environment.yml`-derived `env_tmp.yml`.
-Failures are reported with summary text and an uploaded log artifact,
-but do not fail the pull request check suite.
+For relevant changes with consistent inputs, the canary performs a fresh
+Linux/Python 3.12 rebuild from `environment.yml`-derived `env_tmp.yml`. The
+rebuild is advisory: authors investigate failures and reviewers accept
+unresolved canary risk before merge. Its sample does not establish behavior on
+other environments, Firecrown runtime compatibility, or agreement with locked
+versions.
 
 ### Adding or removing a supported branch
 

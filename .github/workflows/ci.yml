@@ -16,39 +16,107 @@ on:
   workflow_dispatch:
 
 jobs:
+  api-changes:
+    name: PR public API changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Fetch PR target branch
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: |
+          git check-ref-format "refs/heads/$BASE_BRANCH"
+          git fetch origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install Griffe
+        run: python -m pip install griffe==2.3.0
+      - name: Report PR API changes
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: |
+          set +e
+          python tools/api_changes.py pr --base "refs/remotes/origin/$BASE_BRANCH" --target "$BASE_BRANCH" --output "$RUNNER_TEMP/api-changes.md" --github-actions
+          result=$?
+          if [[ -f "$RUNNER_TEMP/api-changes.md" ]]; then
+            cat "$RUNNER_TEMP/api-changes.md"
+            if ! cat "$RUNNER_TEMP/api-changes.md" >> "$GITHUB_STEP_SUMMARY"; then
+              echo '::error title=Public API reporting failed::Could not publish the API report to the workflow summary. See the step log.'
+              result=2
+            fi
+          else
+            echo '::error title=Public API reporting failed::No API report was generated. Compatibility was not assessed; see job logs.'
+            echo 'API comparison failed; compatibility was not assessed. See job logs.' >> "$GITHUB_STEP_SUMMARY"
+            result=2
+          fi
+          exit "$result"
+
   ci:
     uses: ./.github/workflows/ci-reusable.yml
     secrets: inherit
 
-  pr-drift-paths:
-    name: Detect PR drift-relevant changes
+  pr-dependency-consistency:
+    name: PR dependency consistency
     runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.filter.outputs.drift }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
-          fetch-depth: 0
-      - name: Detect dependency-impacting changes
-        id: filter
-        uses: dorny/paths-filter@v4.0.3
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v4.0.1
         with:
-          filters: |
-            drift:
-              - 'dependencies.yaml'
-              - 'dependencies-validated.yaml'
-              - 'environment.yml'
-              - '.github/scripts/sync_deps.py'
-              - '.github/update_ci.py'
-              - '.github/conda-lock/**'
-              - '.github/scripts/generate_conda_locks.sh'
-              - '.github/workflows/ci-reusable.yml'
-              - '.github/ci-branches.json'
+          miniforge-version: latest
+          python-version: "3.12"
+          activate-environment: firecrown_developer
+          auto-activate: true
+          conda-remove-defaults: true
+          use-mamba: false
+      - name: Install checker dependencies
+        run: conda run -n base python -m pip install packaging PyYAML
+      - name: Check dependency consistency
+        run: conda run -n base python .github/scripts/sync_deps.py --check
+
+  pr-canary-decision:
+    name: Route and admit PR rebuild canary
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [ pr-dependency-consistency ]
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.decision.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Fetch PR target branch
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: |
+          git check-ref-format "refs/heads/$BASE_BRANCH"
+          git fetch origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
+      - name: Evaluate canary routing and admission
+        id: decision
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CONSISTENCY_RESULT: ${{ needs.pr-dependency-consistency.result }}
+        run: >-
+          python .github/scripts/route_pr_rebuild_canary.py
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+          --consistency-result "$CONSISTENCY_RESULT"
+          --github-output "$GITHUB_OUTPUT"
+          --summary "$GITHUB_STEP_SUMMARY"
 
   pr-rebuild-drift:
     name: PR rebuild drift canary
-    needs: [ pr-drift-paths ]
-    if: ${{ needs.pr-drift-paths.outputs.should_run == 'true' }}
+    needs: [ pr-dependency-consistency, pr-canary-decision ]
+    if: ${{ needs.pr-dependency-consistency.result == 'success' && needs.pr-canary-decision.result == 'success' && needs.pr-canary-decision.outputs.should_run == 'true' }}
     continue-on-error: true
     timeout-minutes: 45
     runs-on: ubuntu-latest

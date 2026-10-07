@@ -62,7 +62,8 @@ firecrown-link-checker = "firecrown.fctools.link_checker:app"
 branch = true
 parallel = true
 concurrency = ["multiprocessing"]
-source = ["firecrown"]
+source = ["firecrown", "tools"]
+patch = ["subprocess"]
 
 [tool.coverage.report]
 exclude_also = [

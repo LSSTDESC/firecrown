@@ -42,17 +42,37 @@ To maintain high code quality and consistency, we use several automated tools. W
 
 ### Dependencies
 
-`environment.yml` and the `dependencies` list in `pyproject.toml` are generated
-from [`dependencies.yaml`](dependencies.yaml), which is the single source of
-truth for every dependency of the project. Add or change a dependency there and
+`environment.yml`, `requires-python`, and the `dependencies` list in
+`pyproject.toml` are generated from [`dependencies.yaml`](dependencies.yaml),
+which is the single source of truth for dependency requirements and the declared
+Python requirement. Add or change a dependency or Python requirement there and
 regenerate:
 
 ```bash
 make deps-sync
 ```
 
-`make deps-check`, which `make pre-commit` runs for you, fails if the generated
-files no longer match the manifest.
+`make deps-check` checks the generated environment, project dependency list,
+and Python requirement without changing files or solving the environment. It
+fails with a diff when any generated declaration has drifted, and rejects
+missing or incompatible direct locked selections for all six supported
+Python/platform environments. It checks runtime, workaround, and development
+requirements with their mapped conda/pip identities and ecosystem version rules.
+Run it through `conda run --prefix .conda-env make deps-check` to provide access
+to conda's version library; pip checks use `packaging` in the invoking environment.
+`make pre-commit` runs this check for you.
+
+Pull request CI runs the dependency consistency check on every PR, independent
+of canary routing. Routing examines the PR diff and conservatively includes
+dependency declarations, Python/project requirements, locks, generators,
+build/check entry points, and GitHub configuration. An unrelated change skips
+the fresh rebuild with a reason; a routing error fails visibly. A failed
+consistency check remains mandatory and the admission report explains why the
+fresh rebuild did not run. The rebuild itself remains advisory: authors must
+investigate failures, and reviewers must accept any unresolved canary risk
+before merge. A workflow check does not establish that the repository's GitHub
+required-check settings include the consistency gate. Those settings are
+managed separately.
 
 The manifest has three groups.
 
@@ -95,9 +115,18 @@ dependencies.yaml -> environment.yml -> lockfiles -> dependencies-validated.yaml
        \____ make deps-sync ____/       \______ make conda-lock ______/
 ```
 
-You do not have to remember that. The pins record a digest of the
-`environment.yml` they were derived alongside, and `make deps-check` fails if
-the manifest has moved on since, telling you to re-run `make conda-lock`.
+`make deps-check` checks that the committed validated constraints reproduce
+from the committed compatible lock selections. The historical environment
+digest and lock input hashes do not invalidate compatible locks, and checking
+does not solve an environment or rewrite artifacts. An incompatible selection
+still fails even if a digest is current. These checks establish agreement with
+direct requirements, not environment rebuildability or Firecrown runtime
+compatibility. Conda-lock owns transitive solving, and runtime tests supply a
+separate signal.
+
+A validated range is derived from the committed selections; it does not claim
+that every version inside the range was runtime-tested. `make conda-lock` still
+regenerates the pins and their historical digest after lockfiles are solved.
 
 The same manifest generates the requirement lists of the [conda-forge
 recipe](https://github.com/conda-forge/firecrown-feedstock), which builds the
@@ -151,6 +180,10 @@ To regenerate lockfiles and manage the lockfile generation process, see
 [CONTRIBUTING_ADVANCED.md#conda-lock](CONTRIBUTING_ADVANCED.md#conda-lock).
 
 ## Pull Request Process
+
+If your change affects Firecrown's public Python API, use the
+[API checking guide](CONTRIBUTING_API_CHECKING.md) to preview the changes and
+interpret the API report in pull-request CI.
 
 1. **Create a Branch**: Always work on a new branch for your feature or bug fix.
 2. **Write Tests**: Ensure your changes are covered by unit tests. We aim for 100% coverage on new code.

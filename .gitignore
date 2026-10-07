@@ -175,3 +175,5 @@ AGENTS.md
 openspec/
 
 .conda-env
+.codex
+.scratch
