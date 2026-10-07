@@ -1,13 +1,16 @@
 """Behavioral tests for the public API change report."""
 
 from collections import Counter
+import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 from typing import cast
 
 import griffe
 import pytest
+import yaml
 
 from tools.api_changes import (
     Report,
@@ -424,6 +427,138 @@ def test_non_support_pr_reports_break_without_blocking(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert "firecrown.public" in result.stdout
     assert "required" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("target", "status", "level", "verdict"),
+    [
+        ("master", 0, "notice", "No breaking API changes detected."),
+        (
+            "master",
+            0,
+            "warning",
+            "Informational because the target is `master`. "
+            "Reviewer assessment required.",
+        ),
+        (
+            "v1_0_support",
+            1,
+            "error",
+            "This fails support-line policy.",
+        ),
+    ],
+)
+def test_pr_github_actions_verdict(
+    api_repo: Path,
+    target: str,
+    status: int,
+    level: str,
+    verdict: str,
+) -> None:
+    """Publish an explicit policy verdict without changing compatibility policy.
+
+    :param api_repo: Repository containing a committed baseline API.
+    :param target: PR target used for the compatibility policy.
+    :param status: Expected CLI exit status.
+    :param level: Expected GitHub annotation severity.
+    :param verdict: Expected policy explanation.
+    """
+    if level != "notice":
+        (api_repo / "firecrown" / "__init__.py").write_text("", encoding="utf-8")
+    output = api_repo / "report.md"
+    result = run_api(
+        api_repo,
+        "pr",
+        "--base",
+        "main",
+        "--target",
+        target,
+        "--output",
+        str(output),
+        "--github-actions",
+    )
+
+    assert result.returncode == status, result.stderr
+    assert f"::{level} title=Public API compatibility::" in result.stdout
+    assert verdict in result.stdout
+    report = output.read_text(encoding="utf-8")
+    assert verdict in report
+    assert f"Target: `{target}`" in report
+    revision = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=api_repo, text=True
+    ).strip()
+    assert f"Revision: `{revision}`" in report
+    assert "Static analysis" in report
+    if level != "notice":
+        assert "Breaking API changes detected" in report
+        assert "`firecrown.public`: Public object removed" in report
+
+
+@pytest.mark.parametrize("publish", [True, False])
+def test_pr_workflow_publishes_verdict_and_reports_publication_failure(
+    api_repo: Path, publish: bool
+) -> None:
+    """Exercise the actual workflow shell with a broken API and summary sink.
+
+    :param api_repo: Repository containing a committed baseline API.
+    :param publish: Whether the summary destination is writable as a file.
+    """
+    root = Path(__file__).resolve().parents[1]
+    workflow = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
+    step = next(
+        step
+        for step in workflow["jobs"]["api-changes"]["steps"]
+        if step.get("name") == "Report PR API changes"
+    )
+    command = step["run"].replace(
+        "python tools/api_changes.py",
+        shlex.join([sys.executable, str(root / "tools/api_changes.py")]),
+    )
+    subprocess.run(
+        ["git", "update-ref", "refs/remotes/origin/master", "HEAD"],
+        cwd=api_repo,
+        check=True,
+    )
+    (api_repo / "firecrown" / "__init__.py").write_text("", encoding="utf-8")
+    summary = api_repo / "summary.md" if publish else api_repo
+    result = subprocess.run(
+        ["bash", "-e", "-c", command],
+        cwd=api_repo,
+        env=os.environ
+        | {
+            "BASE_BRANCH": "master",
+            "RUNNER_TEMP": str(api_repo),
+            "GITHUB_STEP_SUMMARY": str(summary),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert (
+        "::warning title=Public API compatibility::Breaking API changes detected"
+        in (result.stdout)
+    )
+    assert "`firecrown.public`: Public object removed" in result.stdout
+    if publish:
+        assert result.returncode == 0, result.stderr
+        assert "**Breaking API changes detected" in summary.read_text()
+    else:
+        assert result.returncode == 2
+        assert "::error title=Public API reporting failed::" in result.stdout
+
+
+def test_pr_github_annotation_reports_analysis_failure(api_repo: Path) -> None:
+    """Distinguish analysis failure from a completed compatibility verdict.
+
+    :param api_repo: Repository containing a committed baseline API.
+    """
+    result = run_api(api_repo, "pr", "--base", "missing", "--github-actions")
+    assert result.returncode == 2
+    assert "::error title=Public API compatibility::API analysis/reporting failed." in (
+        result.stdout
+    )
+    assert "Compatibility was not assessed" in result.stdout
+    assert "No breaking API changes detected" not in result.stdout
 
 
 def test_release_reports_against_latest_eligible_tag_without_blocking(

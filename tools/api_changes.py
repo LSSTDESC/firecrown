@@ -200,6 +200,33 @@ def should_fail(mode: str, target: str, report: Report) -> bool:
     )
 
 
+def pr_verdict(report: Report, target: str) -> tuple[str, str]:
+    """Return the PR's GitHub annotation severity and compatibility verdict.
+
+    :param report: Completed static API comparison.
+    :param target: Target branch governing compatibility policy.
+    :returns: Annotation severity and a human-readable policy verdict.
+    """
+    if not report.breaks:
+        return "notice", "No breaking API changes detected."
+    message = f"Breaking API changes detected ({len(report.breaks)} findings). "
+    if should_fail("pr", target, report):
+        return "error", message + "This fails support-line policy."
+    return "warning", message + (
+        f"Informational because the target is `{target}`. Reviewer assessment required."
+    )
+
+
+def github_annotation(level: str, message: str) -> None:
+    """Emit a workflow command without interpreting message data as commands.
+
+    :param level: GitHub annotation severity.
+    :param message: Annotation text, including optional newlines.
+    """
+    escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    print(f"::{level} title=Public API compatibility::{escaped}")
+
+
 def load(ref: str) -> griffe.Module:
     """Load Firecrown from the checkout or a committed Git ref."""
     if ref == "HEAD":
@@ -260,6 +287,9 @@ def main() -> int:  # noqa: C901  # pylint: disable=inconsistent-return-statemen
     parser.add_argument(
         "--output", help="Write Markdown to this path instead of stdout"
     )
+    parser.add_argument(
+        "--github-actions", action="store_true", help="Emit GitHub workflow annotations"
+    )
     args = parser.parse_args()
     try:
         tags = git("tag", "--list", "v*").splitlines()
@@ -288,14 +318,38 @@ def main() -> int:  # noqa: C901  # pylint: disable=inconsistent-return-statemen
             )
         report = compare(load(old), load(new))
         text = markdown(report, old, new)
+        level, verdict = pr_verdict(report, args.target or args.base or "")
+        if args.mode == "pr":
+            revision = git("rev-parse", "HEAD")
+            text = (
+                f"# PR public API verdict\n\n**{verdict}**\n\n"
+                f"Target: `{args.target or args.base}`  \n"
+                f"Revision: `{revision}`  \n"
+                f"Baseline: `{old}`\n\n"
+                "Static analysis only: no behavioral compatibility guarantee or "
+                "external-dependency signature analysis.\n\n" + text
+            )
         if args.output:
             output = Path(args.output)
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(text, encoding="utf-8")
         else:
             sys.stdout.write(text)
+        if args.github_actions and args.mode == "pr":
+            message = "\n".join([verdict, *report.breaks])
+            github_annotation(level, message)
         return int(should_fail(args.mode, args.target or args.base or "", report))
-    except (ValueError, subprocess.CalledProcessError, griffe.GriffeError) as exc:
+    except (
+        OSError,
+        ValueError,
+        subprocess.CalledProcessError,
+        griffe.GriffeError,
+    ) as exc:
+        if args.github_actions:
+            github_annotation(
+                "error",
+                f"API analysis/reporting failed. Compatibility was not assessed: {exc}",
+            )
         parser.exit(2, f"API comparison failed: {exc}\n")
 
 

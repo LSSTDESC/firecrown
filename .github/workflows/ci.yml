@@ -41,12 +41,18 @@ jobs:
           BASE_BRANCH: ${{ github.base_ref }}
         run: |
           set +e
-          python tools/api_changes.py pr --base "refs/remotes/origin/$BASE_BRANCH" --target "$BASE_BRANCH" --output "$RUNNER_TEMP/api-changes.md"
+          python tools/api_changes.py pr --base "refs/remotes/origin/$BASE_BRANCH" --target "$BASE_BRANCH" --output "$RUNNER_TEMP/api-changes.md" --github-actions
           result=$?
           if [[ -f "$RUNNER_TEMP/api-changes.md" ]]; then
-            cat "$RUNNER_TEMP/api-changes.md" >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/api-changes.md"
+            if ! cat "$RUNNER_TEMP/api-changes.md" >> "$GITHUB_STEP_SUMMARY"; then
+              echo '::error title=Public API reporting failed::Could not publish the API report to the workflow summary. See the step log.'
+              result=2
+            fi
           else
-            echo 'API comparison failed; see job logs.' >> "$GITHUB_STEP_SUMMARY"
+            echo '::error title=Public API reporting failed::No API report was generated. Compatibility was not assessed; see job logs.'
+            echo 'API comparison failed; compatibility was not assessed. See job logs.' >> "$GITHUB_STEP_SUMMARY"
+            result=2
           fi
           exit "$result"
 
