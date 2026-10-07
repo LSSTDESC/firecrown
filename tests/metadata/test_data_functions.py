@@ -13,8 +13,8 @@ from firecrown.data_functions import (
     TwoPointBinFilterCollection,
     TwoPointTracerSpec,
     bin_spec_from_metadata,
-    make_interval_from_list,
 )
+from firecrown.data_functions._types import make_interval_from_list
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_functions import make_all_photoz_bin_combinations
 from firecrown.metadata_types import (
