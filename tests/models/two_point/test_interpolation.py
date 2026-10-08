@@ -6,7 +6,7 @@ from pydantic import BaseModel, ValidationError
 from firecrown.models.two_point import ApplyInterpolationWhen
 
 
-def test_apply_interpolation_when_none():
+def test_apply_interpolation_when_none() -> None:
     """Test ApplyInterpolationWhen.NONE flag."""
     apply_interp_when = ApplyInterpolationWhen.NONE
     assert apply_interp_when == ApplyInterpolationWhen.NONE
@@ -15,7 +15,7 @@ def test_apply_interpolation_when_none():
     assert not apply_interp_when & ApplyInterpolationWhen.HARMONIC_WINDOW
 
 
-def test_apply_interpolation_when_all():
+def test_apply_interpolation_when_all() -> None:
     """Test ApplyInterpolationWhen.ALL flag."""
     apply_interp_when = ApplyInterpolationWhen.ALL
     assert apply_interp_when == ApplyInterpolationWhen.ALL
@@ -24,7 +24,7 @@ def test_apply_interpolation_when_all():
     assert apply_interp_when & ApplyInterpolationWhen.HARMONIC_WINDOW
 
 
-def test_apply_interpolation_when_default():
+def test_apply_interpolation_when_default() -> None:
     """Test ApplyInterpolationWhen.DEFAULT flag composition."""
     apply_interp_when = ApplyInterpolationWhen.DEFAULT
     assert apply_interp_when == ApplyInterpolationWhen.DEFAULT
@@ -33,7 +33,7 @@ def test_apply_interpolation_when_default():
     assert not apply_interp_when & ApplyInterpolationWhen.HARMONIC
 
 
-def test_apply_interpolation_when_real():
+def test_apply_interpolation_when_real() -> None:
     """Test ApplyInterpolationWhen.REAL flag."""
     apply_interp_when = ApplyInterpolationWhen.REAL
     assert apply_interp_when & ApplyInterpolationWhen.REAL
@@ -41,7 +41,7 @@ def test_apply_interpolation_when_real():
     assert not apply_interp_when & ApplyInterpolationWhen.HARMONIC_WINDOW
 
 
-def test_apply_interpolation_when_harmonic():
+def test_apply_interpolation_when_harmonic() -> None:
     """Test ApplyInterpolationWhen.HARMONIC flag."""
     apply_interp_when = ApplyInterpolationWhen.HARMONIC
     assert not apply_interp_when & ApplyInterpolationWhen.REAL
@@ -49,7 +49,7 @@ def test_apply_interpolation_when_harmonic():
     assert not apply_interp_when & ApplyInterpolationWhen.HARMONIC_WINDOW
 
 
-def test_apply_interpolation_when_harmonic_window():
+def test_apply_interpolation_when_harmonic_window() -> None:
     """Test ApplyInterpolationWhen.HARMONIC_WINDOW flag."""
     apply_interp_when = ApplyInterpolationWhen.HARMONIC_WINDOW
     assert not apply_interp_when & ApplyInterpolationWhen.REAL
@@ -57,7 +57,7 @@ def test_apply_interpolation_when_harmonic_window():
     assert apply_interp_when & ApplyInterpolationWhen.HARMONIC_WINDOW
 
 
-def test_apply_interpolation_when_bitwise_or():
+def test_apply_interpolation_when_bitwise_or() -> None:
     """Test bitwise OR operations on ApplyInterpolationWhen flags."""
     combined = ApplyInterpolationWhen.REAL | ApplyInterpolationWhen.HARMONIC
     assert combined & ApplyInterpolationWhen.REAL
@@ -65,7 +65,7 @@ def test_apply_interpolation_when_bitwise_or():
     assert not combined & ApplyInterpolationWhen.HARMONIC_WINDOW
 
 
-def test_apply_interpolation_when_iteration():
+def test_apply_interpolation_when_iteration() -> None:
     """Test that all ApplyInterpolationWhen values are iterable."""
     all_values = list(ApplyInterpolationWhen)
     assert len(all_values) >= 3  # At minimum: REAL, HARMONIC, HARMONIC_WINDOW
@@ -74,7 +74,7 @@ def test_apply_interpolation_when_iteration():
     assert ApplyInterpolationWhen.HARMONIC_WINDOW in all_values
 
 
-def test_pydantic_schema_exists():
+def test_pydantic_schema_exists() -> None:
     """Test that Pydantic core schema can be retrieved."""
     result = ApplyInterpolationWhen.__get_pydantic_core_schema__(
         ApplyInterpolationWhen, None  # type: ignore[arg-type]
@@ -82,7 +82,7 @@ def test_pydantic_schema_exists():
     assert result is not None
 
 
-def test_pydantic_model_with_apply_interpolation_when():
+def test_pydantic_model_with_apply_interpolation_when() -> None:
     """Test using ApplyInterpolationWhen in a Pydantic model."""
 
     class TestModel(BaseModel):
@@ -108,7 +108,7 @@ def test_pydantic_model_with_apply_interpolation_when():
     assert model4.interp == ApplyInterpolationWhen.NONE
 
 
-def test_pydantic_serialization_with_model():
+def test_pydantic_serialization_with_model() -> None:
     """Test serialization of ApplyInterpolationWhen in Pydantic model."""
 
     class TestModel(BaseModel):
@@ -134,7 +134,7 @@ def test_pydantic_serialization_with_model():
     assert "HARMONIC" in data3["interp"]
 
 
-def test_pydantic_validation_errors():
+def test_pydantic_validation_errors() -> None:
     """Test that invalid inputs raise proper validation errors."""
 
     class TestModel(BaseModel):
@@ -151,7 +151,7 @@ def test_pydantic_validation_errors():
         TestModel(interp=123)  # type: ignore[arg-type]
 
 
-def test_pydantic_serialize_none():
+def test_pydantic_serialize_none() -> None:
     """Test Pydantic serialization of NONE flag."""
     schema = ApplyInterpolationWhen.__get_pydantic_core_schema__(
         ApplyInterpolationWhen, None  # type: ignore[arg-type]
@@ -164,7 +164,7 @@ def test_pydantic_serialize_none():
     assert result == "NONE"
 
 
-def test_pydantic_serialize_single_flag():
+def test_pydantic_serialize_single_flag() -> None:
     """Test Pydantic serialization of a single flag."""
     schema = ApplyInterpolationWhen.__get_pydantic_core_schema__(
         ApplyInterpolationWhen, None  # type: ignore[arg-type]
@@ -176,7 +176,7 @@ def test_pydantic_serialize_single_flag():
     assert result == "REAL"
 
 
-def test_pydantic_serialize_multiple_flags():
+def test_pydantic_serialize_multiple_flags() -> None:
     """Test Pydantic serialization of combined flags."""
     schema = ApplyInterpolationWhen.__get_pydantic_core_schema__(
         ApplyInterpolationWhen, None  # type: ignore[arg-type]
@@ -193,7 +193,7 @@ def test_pydantic_serialize_multiple_flags():
     assert "|" in result
 
 
-def test_pydantic_serialize_default():
+def test_pydantic_serialize_default() -> None:
     """Test Pydantic serialization of DEFAULT flag."""
     schema = ApplyInterpolationWhen.__get_pydantic_core_schema__(
         ApplyInterpolationWhen, None  # type: ignore[arg-type]

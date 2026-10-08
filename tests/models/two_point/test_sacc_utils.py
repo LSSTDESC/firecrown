@@ -8,7 +8,7 @@ import firecrown.modeling_tools as mt
 import firecrown.models.two_point as models
 
 
-def test_determine_ccl_kind():
+def test_determine_ccl_kind() -> None:
     assert models.determine_ccl_kind("galaxy_density_cl") == "cl"
     assert models.determine_ccl_kind("galaxy_shearDensity_cl_e") == "cl"
     assert models.determine_ccl_kind("galaxy_shear_cl_ee") == "cl"
@@ -27,7 +27,7 @@ def test_determine_ccl_kind():
 
 def test_calculate_pk_lacking_pk(
     tools_with_vanilla_cosmology: mt.ModelingTools, empty_pyccl_tracer: pyccl.Tracer
-):
+) -> None:
     dummy = source.Tracer(empty_pyccl_tracer)
     with pytest.raises(ValueError):
         _ = models.calculate_pk(
