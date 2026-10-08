@@ -4,6 +4,7 @@ Tests the AST parsing and analysis utilities.
 """
 
 import ast
+from pathlib import Path
 
 import pytest
 
@@ -22,7 +23,7 @@ from ..conftest import _make_class_def
 class TestGetModuleDocstring:
     """Tests for get_module_docstring function."""
 
-    def test_get_simple_docstring(self, tmp_path):
+    def test_get_simple_docstring(self, tmp_path: Path) -> None:
         """Test extracting a simple module docstring."""
         py_file = tmp_path / "test_module.py"
         py_file.write_text('"""This is a module docstring."""\n\ndef func():\n    pass')
@@ -31,7 +32,7 @@ class TestGetModuleDocstring:
 
         assert result == "This is a module docstring."
 
-    def test_get_multiline_docstring(self, tmp_path):
+    def test_get_multiline_docstring(self, tmp_path: Path) -> None:
         """Test extracting a multi-line module docstring."""
         py_file = tmp_path / "test_module.py"
         content = '''"""This is the first line.
@@ -50,7 +51,7 @@ def func():
         assert "This is the first line." in result
         assert "This is the second paragraph." in result
 
-    def test_get_no_docstring(self, tmp_path):
+    def test_get_no_docstring(self, tmp_path: Path) -> None:
         """Test file with no module docstring."""
         py_file = tmp_path / "test_module.py"
         py_file.write_text("def func():\n    pass")
@@ -59,7 +60,7 @@ def func():
 
         assert result is None
 
-    def test_get_single_quote_docstring(self, tmp_path):
+    def test_get_single_quote_docstring(self, tmp_path: Path) -> None:
         """Test extracting docstring with single quotes."""
         py_file = tmp_path / "test_module.py"
         py_file.write_text("'''Single quote docstring'''\n\ndef func():\n    pass")
@@ -68,14 +69,14 @@ def func():
 
         assert result == "Single quote docstring"
 
-    def test_nonexistent_file(self, tmp_path):
+    def test_nonexistent_file(self, tmp_path: Path) -> None:
         """Test reading from a nonexistent file."""
         py_file = tmp_path / "nonexistent.py"
 
         with pytest.raises(OSError):
             get_module_docstring(py_file)
 
-    def test_invalid_python_syntax(self, tmp_path):
+    def test_invalid_python_syntax(self, tmp_path: Path) -> None:
         """Test file with invalid Python syntax."""
         py_file = tmp_path / "invalid.py"
         py_file.write_text("def broken(\n    # missing closing paren")
@@ -87,7 +88,7 @@ def func():
 class TestGetClassDefinition:
     """Tests for get_class_definition function."""
 
-    def test_find_simple_class(self):
+    def test_find_simple_class(self) -> None:
         """Test finding a simple class definition."""
         source = """
 class MyClass:
@@ -99,7 +100,7 @@ class MyClass:
         assert isinstance(result, ast.ClassDef)
         assert result.name == "MyClass"
 
-    def test_find_class_with_docstring(self):
+    def test_find_class_with_docstring(self) -> None:
         """Test finding a class with a docstring."""
         source = '''
 class DocumentedClass:
@@ -113,7 +114,7 @@ class DocumentedClass:
         docstring = ast.get_docstring(result)
         assert docstring == "This is a documented class."
 
-    def test_find_nested_class(self):
+    def test_find_nested_class(self) -> None:
         """Test finding a nested class."""
         source = """
 class OuterClass:
@@ -125,7 +126,7 @@ class OuterClass:
         assert result is not None
         assert result.name == "InnerClass"
 
-    def test_class_not_found(self):
+    def test_class_not_found(self) -> None:
         """Test searching for a nonexistent class."""
         source = """
 class MyClass:
@@ -135,7 +136,7 @@ class MyClass:
 
         assert result is None
 
-    def test_multiple_classes(self):
+    def test_multiple_classes(self) -> None:
         """Test finding the correct class among multiple classes."""
         source = """
 class FirstClass:
@@ -152,7 +153,7 @@ class ThirdClass:
         assert result is not None
         assert result.name == "SecondClass"
 
-    def test_invalid_syntax(self):
+    def test_invalid_syntax(self) -> None:
         """Test parsing source with invalid syntax."""
         source = "class BrokenClass"
 
@@ -163,13 +164,13 @@ class ThirdClass:
 class TestFormatDocstringSummary:
     """Tests for format_docstring_summary function."""
 
-    def test_format_simple_docstring(self):
+    def test_format_simple_docstring(self) -> None:
         """Test formatting a simple one-line docstring."""
         result = format_docstring_summary("This is a simple docstring.")
 
         assert result == "This is a simple docstring."
 
-    def test_format_multiline_docstring(self):
+    def test_format_multiline_docstring(self) -> None:
         """Test formatting a multi-line docstring (returns first line)."""
         docstring = """This is the first line.
 
@@ -180,25 +181,25 @@ And another line.
 
         assert result == "This is the first line."
 
-    def test_format_none_docstring(self):
+    def test_format_none_docstring(self) -> None:
         """Test formatting None docstring."""
         result = format_docstring_summary(None)
 
         assert result == "No description available"
 
-    def test_format_empty_docstring(self):
+    def test_format_empty_docstring(self) -> None:
         """Test formatting an empty docstring."""
         result = format_docstring_summary("")
 
         assert result == "No description available"
 
-    def test_format_whitespace_only_docstring(self):
+    def test_format_whitespace_only_docstring(self) -> None:
         """Test formatting a docstring with only whitespace."""
         result = format_docstring_summary("   \n\n   ")
 
         assert result == "No description available"
 
-    def test_format_long_docstring_truncation(self):
+    def test_format_long_docstring_truncation(self) -> None:
         """Test truncation of long docstrings."""
         long_text = "a" * 100
         result = format_docstring_summary(long_text, max_length=80)
@@ -207,7 +208,7 @@ And another line.
         assert result.endswith("...")
         assert result.startswith("aaa")
 
-    def test_format_docstring_with_triple_quotes(self):
+    def test_format_docstring_with_triple_quotes(self) -> None:
         """Test docstring that includes triple quotes gets filtered correctly."""
         # The function filters out lines starting with triple quotes
         result = format_docstring_summary('"""This is a docstring."""')
@@ -215,7 +216,7 @@ And another line.
         # Since the only line starts with triple quotes, it's filtered
         assert result == "No description available"
 
-    def test_format_docstring_preserves_short_text(self):
+    def test_format_docstring_preserves_short_text(self) -> None:
         """Test that short docstrings are not truncated."""
         short_text = "Short description"
         result = format_docstring_summary(short_text, max_length=80)
@@ -223,7 +224,7 @@ And another line.
         assert result == short_text
         assert not result.endswith("...")
 
-    def test_format_custom_max_length(self):
+    def test_format_custom_max_length(self) -> None:
         """Test custom maximum length parameter."""
         text = "This is a moderately long description"
         result = format_docstring_summary(text, max_length=20)
@@ -235,7 +236,7 @@ And another line.
 class TestExtractClassAttributes:
     """Tests for extract_class_attributes function."""
 
-    def test_extract_simple_attributes(self):
+    def test_extract_simple_attributes(self) -> None:
         """Test extracting simple class attributes."""
         source = """
 class MyClass:
@@ -251,7 +252,7 @@ class MyClass:
         assert "attr2" in result
         assert "attr3" in result
 
-    def test_extract_annotated_attributes(self):
+    def test_extract_annotated_attributes(self) -> None:
         """Test extracting type-annotated attributes."""
         source = """
 class MyClass:
@@ -267,7 +268,7 @@ class MyClass:
         assert "age" in result
         assert "value" in result
 
-    def test_extract_no_attributes(self):
+    def test_extract_no_attributes(self) -> None:
         """Test class with no attributes."""
         source = """
 class MyClass:
@@ -280,7 +281,7 @@ class MyClass:
 
         assert not result
 
-    def test_extract_mixed_attributes(self):
+    def test_extract_mixed_attributes(self) -> None:
         """Test class with both annotated and simple attributes."""
         source = """
 class MyClass:
@@ -296,7 +297,7 @@ class MyClass:
         assert "annotated" in result
         assert "no_value" in result
 
-    def test_ignores_instance_attributes(self):
+    def test_ignores_instance_attributes(self) -> None:
         """Test that instance attributes in __init__ are not extracted."""
         source = """
 class MyClass:
@@ -312,7 +313,7 @@ class MyClass:
         assert "class_attr" in result
         assert "instance_attr" not in result
 
-    def test_extract_non_name_targets(self):
+    def test_extract_non_name_targets(self) -> None:
         """Test handling of assignments to non-Name targets."""
         source = """
 class MyClass:
@@ -334,7 +335,7 @@ class MyClass:
 class TestFormatClassDocstring:
     """Tests for format_class_docstring function."""
 
-    def test_format_simple_docstring(self):
+    def test_format_simple_docstring(self) -> None:
         """Test formatting a simple class docstring."""
         source = '''
 class MyClass:
@@ -348,7 +349,7 @@ class MyClass:
         assert len(result) > 0
         assert any("Simple docstring." in line for line in result)
 
-    def test_format_multiline_docstring(self):
+    def test_format_multiline_docstring(self) -> None:
         """Test formatting a multi-line class docstring."""
         source = '''
 class MyClass:
@@ -366,7 +367,7 @@ class MyClass:
         joined = " ".join(result)
         assert "First line." in joined
 
-    def test_format_no_docstring(self):
+    def test_format_no_docstring(self) -> None:
         """Test formatting when class has no docstring."""
         source = """
 class MyClass:
@@ -378,7 +379,7 @@ class MyClass:
 
         assert not result
 
-    def test_format_preserves_structure(self):
+    def test_format_preserves_structure(self) -> None:
         """Test that docstring formatting preserves basic structure."""
         source = '''
 class MyClass:
@@ -400,7 +401,7 @@ class MyClass:
         assert "Args:" in joined
         assert "Returns:" in joined
 
-    def test_format_empty_string_docstring(self):
+    def test_format_empty_string_docstring(self) -> None:
         """Test formatting when docstring is an empty string."""
         # Create a ClassDef node with empty docstring manually
         # This is an edge case that's hard to create via parsing
@@ -420,7 +421,7 @@ class MyClass:
 class TestGetFunctionNames:
     """Tests for get_function_names function."""
 
-    def test_get_simple_methods(self):
+    def test_get_simple_methods(self) -> None:
         """Test extracting method names from a simple class."""
         source = """
 class MyClass:
@@ -438,7 +439,7 @@ class MyClass:
         assert "method2" in result
         assert len(result) == 2
 
-    def test_get_no_methods(self):
+    def test_get_no_methods(self) -> None:
         """Test class with no methods."""
         source = """
 class MyClass:
@@ -450,7 +451,7 @@ class MyClass:
 
         assert not result
 
-    def test_get_special_methods(self):
+    def test_get_special_methods(self) -> None:
         """Test extracting special methods like __init__."""
         source = """
 class MyClass:
@@ -471,7 +472,7 @@ class MyClass:
         assert "__str__" in result
         assert "regular_method" in result
 
-    def test_get_static_and_class_methods(self):
+    def test_get_static_and_class_methods(self) -> None:
         """Test extracting static and class methods."""
         source = """
 class MyClass:
@@ -494,7 +495,7 @@ class MyClass:
         assert "class_method" in result
         assert "instance_method" in result
 
-    def test_ignores_nested_functions(self):
+    def test_ignores_nested_functions(self) -> None:
         """Test that nested functions are not included."""
         source = """
 class MyClass:
