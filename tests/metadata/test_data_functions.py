@@ -111,7 +111,9 @@ ALL_HARMONIC_BINS = list(
         for elem in it.combinations(ALL_HARMONIC_BINS, ncomb)
     ],
 )
-def fixture_harmonic_filter_collection(request) -> TwoPointBinFilterCollection:
+def fixture_harmonic_filter_collection(
+    request: pytest.FixtureRequest,
+) -> TwoPointBinFilterCollection:
     """Create a TwoPointBinFilterCollection with harmonic filters."""
     bin_filters = [
         TwoPointBinFilter.from_args(name_a, m_a, name_b, m_b, 20, 60)
@@ -137,7 +139,9 @@ ALL_REAL_BINS = list(
         for elem in it.combinations(ALL_REAL_BINS, ncomb)
     ],
 )
-def fixture_real_filter_collection(request) -> TwoPointBinFilterCollection:
+def fixture_real_filter_collection(
+    request: pytest.FixtureRequest,
+) -> TwoPointBinFilterCollection:
     """Create a TwoPointBinFilterCollection with real filters."""
     bin_filters = [
         TwoPointBinFilter.from_args(name_a, m_a, name_b, m_b, 0.1, 0.5)
@@ -147,7 +151,7 @@ def fixture_real_filter_collection(request) -> TwoPointBinFilterCollection:
     return TwoPointBinFilterCollection(filters=bin_filters)
 
 
-def test_two_point_bin_filter_construct():
+def test_two_point_bin_filter_construct() -> None:
     bin_spec = [
         TwoPointTracerSpec(name="bin_1", measurement=Galaxies.COUNTS),
         TwoPointTracerSpec(name="bin_2", measurement=Galaxies.SHEAR_E),
@@ -164,7 +168,7 @@ def test_two_point_bin_filter_construct():
     assert bin_filter_from_args.interval == (0.1, 0.5)
 
 
-def test_two_point_bin_filter_construct_auto():
+def test_two_point_bin_filter_construct_auto() -> None:
     bin_spec = [TwoPointTracerSpec(name="bin_1", measurement=Galaxies.COUNTS)]
     bin_filter = TwoPointBinFilter(spec=bin_spec, interval=(0.1, 0.5))
     assert bin_filter.spec == bin_spec
@@ -178,7 +182,7 @@ def test_two_point_bin_filter_construct_auto():
     assert bin_filter_from_args.interval == (0.1, 0.5)
 
 
-def test_two_point_bin_filter_construct_invalid_range():
+def test_two_point_bin_filter_construct_invalid_range() -> None:
     bin_spec = [
         TwoPointTracerSpec(name="bin_1", measurement=Galaxies.COUNTS),
         TwoPointTracerSpec(name="bin_2", measurement=Galaxies.SHEAR_E),
@@ -189,14 +193,14 @@ def test_two_point_bin_filter_construct_invalid_range():
         TwoPointBinFilter(spec=bin_spec, interval=(0.5, 0.1))
 
 
-def test_two_point_bin_filter_construct_empty_spec():
+def test_two_point_bin_filter_construct_empty_spec() -> None:
     with pytest.raises(
         ValueError, match="The bin_spec must contain one or two elements."
     ):
         TwoPointBinFilter(spec=[], interval=(0.1, 0.5))
 
 
-def test_two_point_bin_filter_construct_too_many_spec():
+def test_two_point_bin_filter_construct_too_many_spec() -> None:
     bin_spec = [
         TwoPointTracerSpec(name="bin_1", measurement=Galaxies.COUNTS),
         TwoPointTracerSpec(name="bin_2", measurement=Galaxies.SHEAR_E),
@@ -208,7 +212,7 @@ def test_two_point_bin_filter_construct_too_many_spec():
         TwoPointBinFilter(spec=bin_spec, interval=(0.1, 0.5))
 
 
-def test_two_point_bin_filter_collection_construct():
+def test_two_point_bin_filter_collection_construct() -> None:
     bin_spec = (
         TwoPointTracerSpec(name="bin_1", measurement=Galaxies.COUNTS),
         TwoPointTracerSpec(name="bin_2", measurement=Galaxies.SHEAR_E),
@@ -656,7 +660,7 @@ def test_bin_filter_methods(
     assert bin_col.apply_filter_single(harmonic_window_bins[7])
 
 
-def test_raise_with_two_bins_same_name():
+def test_raise_with_two_bins_same_name() -> None:
     # Here we test if make_all_photoz_bin_combinations raises an error when
     # there are two bins with the same name and measurement.
     bin1 = TomographicBin(

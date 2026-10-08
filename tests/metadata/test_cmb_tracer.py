@@ -13,7 +13,7 @@ def make_tomobin() -> TomographicBin:
     )
 
 
-def test_cmblensing_basic():
+def test_cmblensing_basic() -> None:
     cmb = CMBLensing(bin_name="cmb0", z_lss=1090.0)
     assert cmb.bin_name == "cmb0"
     assert cmb.z_lss == 1090.0
@@ -21,7 +21,7 @@ def test_cmblensing_basic():
     assert cmb.measurement_list == [CMB.CONVERGENCE]
 
 
-def test_cmblensing_validation():
+def test_cmblensing_validation() -> None:
     with pytest.raises(ValueError, match="bin_name should not be empty"):
         CMBLensing(bin_name="", z_lss=1090.0)
 
@@ -37,7 +37,7 @@ def test_cmblensing_validation():
         CMBLensing(bin_name="cmb0", z_lss=1100.0, measurements={Galaxies.COUNTS})
 
 
-def test_tomographicbin_equality_and_cmb_mismatch():
+def test_tomographicbin_equality_and_cmb_mismatch() -> None:
     tb1 = make_tomobin()
     tb2 = TomographicBin(
         bin_name="src0",
@@ -58,7 +58,7 @@ def test_tomographicbin_equality_and_cmb_mismatch():
     assert (cmb == object()) is False
 
 
-def test_cmblensing_equality():
+def test_cmblensing_equality() -> None:
     c1 = CMBLensing(bin_name="cmb0", z_lss=1090.0)
     c2 = CMBLensing(bin_name="cmb0", z_lss=1090.0)
     assert c1 == c2

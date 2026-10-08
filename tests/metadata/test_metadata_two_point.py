@@ -5,6 +5,7 @@ Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 import dataclasses
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 import sacc
 from numpy.testing import assert_array_equal
@@ -47,7 +48,7 @@ from firecrown.metadata_types._sacc_type_string import (
 )
 
 
-def test_inferred_galaxy_z_dist():
+def test_inferred_galaxy_z_dist() -> None:
     z_dist = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -62,7 +63,7 @@ def test_inferred_galaxy_z_dist():
     assert z_dist.measurements == {Galaxies.COUNTS}
 
 
-def test_inferred_galaxy_z_dist_bad_shape():
+def test_inferred_galaxy_z_dist_bad_shape() -> None:
     with pytest.raises(
         ValueError, match="The z and dndz arrays should have the same shape."
     ):
@@ -74,7 +75,7 @@ def test_inferred_galaxy_z_dist_bad_shape():
         )
 
 
-def test_inferred_galaxy_z_dist_bad_type():
+def test_inferred_galaxy_z_dist_bad_type() -> None:
     with pytest.raises(
         ValueError, match="The measurement should be a Galaxies Measurement."
     ):
@@ -86,7 +87,7 @@ def test_inferred_galaxy_z_dist_bad_type():
         )
 
 
-def test_inferred_galaxy_z_dist_bad_name():
+def test_inferred_galaxy_z_dist_bad_name() -> None:
     with pytest.raises(ValueError, match="The bin_name should not be empty."):
         TomographicBin(
             bin_name="",
@@ -96,7 +97,7 @@ def test_inferred_galaxy_z_dist_bad_name():
         )
 
 
-def test_two_point_xy_gal_gal():
+def test_two_point_xy_gal_gal() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -118,7 +119,7 @@ def test_two_point_xy_gal_gal():
     assert xy.y_measurement == Galaxies.COUNTS
 
 
-def test_two_point_xy_gal_gal_invalid_x_measurement():
+def test_two_point_xy_gal_gal_invalid_x_measurement() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -140,7 +141,7 @@ def test_two_point_xy_gal_gal_invalid_x_measurement():
         )
 
 
-def test_two_point_xy_gal_gal_invalid_y_measurement():
+def test_two_point_xy_gal_gal_invalid_y_measurement() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -162,7 +163,7 @@ def test_two_point_xy_gal_gal_invalid_y_measurement():
         )
 
 
-def test_two_point_xy_cmb_gal():
+def test_two_point_xy_cmb_gal() -> None:
     x = CMBLensing(
         bin_name="b_name1",
         z_lss=1100.0,
@@ -183,7 +184,7 @@ def test_two_point_xy_cmb_gal():
     assert xy.y_measurement == Galaxies.COUNTS
 
 
-def test_two_point_xy_invalid():
+def test_two_point_xy_invalid() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -205,11 +206,11 @@ def test_two_point_xy_invalid():
         )
 
 
-def test_two_point_xy_neq_other_type(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_xy_neq_other_type(harmonic_two_point_xy: TwoPointXY) -> None:
     assert harmonic_two_point_xy != object()
 
 
-def test_two_point_harmonic():
+def test_two_point_harmonic() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -234,7 +235,7 @@ def test_two_point_harmonic():
     assert cells.n_observations() == 100
 
 
-def test_two_point_harmonic_invalid_ells():
+def test_two_point_harmonic_invalid_ells() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -258,7 +259,7 @@ def test_two_point_harmonic_invalid_ells():
         TwoPointHarmonic(ells=ells, XY=xy)
 
 
-def test_two_point_harmonic_invalid_type():
+def test_two_point_harmonic_invalid_type() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -282,7 +283,7 @@ def test_two_point_harmonic_invalid_type():
         TwoPointHarmonic(ells=ells, XY=xy)
 
 
-def test_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_cwindow(harmonic_two_point_xy: TwoPointXY) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
     window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
@@ -303,7 +304,7 @@ def test_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
 
 def test_two_point_cwindow_wrong_data_shape(
     harmonic_two_point_xy: TwoPointXY,
-):
+) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
     window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
@@ -329,7 +330,7 @@ def test_two_point_cwindow_wrong_data_shape(
         )
 
 
-def test_two_point_measurement_invalid_metadata():
+def test_two_point_measurement_invalid_metadata() -> None:
     data = (np.zeros(100) + 1.1).astype(np.float64)
     indices = np.arange(100)
     covariance_name = "cov"
@@ -345,7 +346,7 @@ def test_two_point_measurement_invalid_metadata():
         )
 
 
-def test_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
     window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
@@ -359,7 +360,7 @@ def test_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
     )
 
 
-def test_two_point_cwindow_invalid():
+def test_two_point_cwindow_invalid() -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
     window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
@@ -387,7 +388,7 @@ def test_two_point_cwindow_invalid():
         TwoPointHarmonic(XY=xy, ells=ells, window=weights, window_ells=window_ells)
 
 
-def test_two_point_cwindow_invalid_window():
+def test_two_point_cwindow_invalid_window() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -412,7 +413,7 @@ def test_two_point_cwindow_invalid_window():
         )
 
 
-def test_two_point_cwindow_invalid_window_shape():
+def test_two_point_cwindow_invalid_window_shape() -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400, dtype=np.float64)
 
@@ -438,7 +439,7 @@ def test_two_point_cwindow_invalid_window_shape():
         TwoPointHarmonic(XY=xy, ells=ells, window=weights)
 
 
-def test_two_point_cwindow_window_ell_not_match():
+def test_two_point_cwindow_window_ell_not_match() -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -464,7 +465,7 @@ def test_two_point_cwindow_window_ell_not_match():
         TwoPointHarmonic(XY=xy, ells=ells[:10], window=weights)
 
 
-def test_two_point_cwindow_missing_window_ells():
+def test_two_point_cwindow_missing_window_ells() -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -490,7 +491,7 @@ def test_two_point_cwindow_missing_window_ells():
         TwoPointHarmonic(XY=xy, ells=ells, window=weights)
 
 
-def test_two_point_cwindow_window_ells_wrong_shape():
+def test_two_point_cwindow_window_ells_wrong_shape() -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -522,7 +523,7 @@ def test_two_point_cwindow_window_ells_wrong_shape():
         )
 
 
-def test_two_point_cwindow_window_ells_wrong_len():
+def test_two_point_cwindow_window_ells_wrong_len() -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -554,7 +555,7 @@ def test_two_point_cwindow_window_ells_wrong_len():
         )
 
 
-def test_two_point_cwindow_no_window_with_window_ells():
+def test_two_point_cwindow_no_window_with_window_ells() -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
 
     x = TomographicBin(
@@ -580,7 +581,7 @@ def test_two_point_cwindow_no_window_with_window_ells():
         TwoPointHarmonic(XY=xy, ells=ells, window_ells=np.linspace(0, 1, 9))
 
 
-def test_two_point_real():
+def test_two_point_real() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -605,7 +606,7 @@ def test_two_point_real():
     assert two_point.n_observations() == 100
 
 
-def test_two_point_real_invalid():
+def test_two_point_real_invalid() -> None:
     x = TomographicBin(
         bin_name="b_name1",
         z=np.linspace(0, 1, 100),
@@ -629,35 +630,35 @@ def test_two_point_real_invalid():
         TwoPointReal(XY=xy, thetas=theta)
 
 
-def test_harmonic_type_string_invalid():
+def test_harmonic_type_string_invalid() -> None:
     with pytest.raises(
         ValueError, match="Harmonic-space correlation not supported for shear T."
     ):
         harmonic(Galaxies.SHEAR_T, Galaxies.COUNTS)
 
 
-def test_real_type_string_invalid():
+def test_real_type_string_invalid() -> None:
     with pytest.raises(
         ValueError, match="Real-space correlation not supported for shear E."
     ):
         real(Galaxies.SHEAR_E, Galaxies.COUNTS)
 
 
-def test_tracer_names_serialization():
+def test_tracer_names_serialization() -> None:
     tn = TracerNames("x", "y")
     s = tn.to_yaml()
     recovered = TracerNames.from_yaml(s)
     assert tn == recovered
 
 
-def test_measurement_serialization():
+def test_measurement_serialization() -> None:
     for t in ALL_MEASUREMENTS:
         s = t.to_yaml()
         recovered = type(t).from_yaml(s)
         assert t == recovered
 
 
-def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: TomographicBin):
+def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: TomographicBin) -> None:
     s = harmonic_bin_1.to_yaml()
     # Take a look at how hideous the generated string
     # is.
@@ -665,13 +666,13 @@ def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: TomographicBin):
     assert harmonic_bin_1 == recovered
 
 
-def test_two_point_xy_str(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_xy_str(harmonic_two_point_xy: TwoPointXY) -> None:
     assert str(harmonic_two_point_xy) == (
         f"({harmonic_two_point_xy.x.bin_name}, " f"{harmonic_two_point_xy.y.bin_name})"
     )
 
 
-def test_two_point_xy_serialization(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_xy_serialization(harmonic_two_point_xy: TwoPointXY) -> None:
     s = harmonic_two_point_xy.to_yaml()
     # Take a look at how hideous the generated string
     # is.
@@ -680,13 +681,13 @@ def test_two_point_xy_serialization(harmonic_two_point_xy: TwoPointXY):
     assert str(harmonic_two_point_xy) == str(recovered)
 
 
-def test_two_point_harmonic_str(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_harmonic_str(harmonic_two_point_xy: TwoPointXY) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     assert str(cells) == f"{str(harmonic_two_point_xy)}[{cells.get_sacc_name()}]"
 
 
-def test_two_point_harmonic_serialization(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_harmonic_serialization(harmonic_two_point_xy: TwoPointXY) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     s = cells.to_yaml()
@@ -696,7 +697,7 @@ def test_two_point_harmonic_serialization(harmonic_two_point_xy: TwoPointXY):
     assert str(cells) == str(recovered)
 
 
-def test_two_point_harmonic_cmp_invalid(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_harmonic_cmp_invalid(harmonic_two_point_xy: TwoPointXY) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     with pytest.raises(
@@ -706,7 +707,7 @@ def test_two_point_harmonic_cmp_invalid(harmonic_two_point_xy: TwoPointXY):
         _ = cells == "Im not a TwoPointHarmonic"
 
 
-def test_two_point_harmonic_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_harmonic_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY) -> None:
     ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
     with pytest.raises(
         ValueError,
@@ -717,13 +718,13 @@ def test_two_point_harmonic_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
 
 def test_two_point_harmonic_with_window_serialization(
     optimized_two_point_cwindow: TwoPointHarmonic,
-):
+) -> None:
     s = optimized_two_point_cwindow.to_yaml()
     recovered = TwoPointHarmonic.from_yaml(s)
     assert optimized_two_point_cwindow == recovered
 
 
-def test_two_point_real_serialization(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_real_serialization(optimized_real_two_point_xy: TwoPointXY) -> None:
     theta = np.array(np.linspace(0, 10, 10))
     xi_theta = TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
     s = xi_theta.to_yaml()
@@ -733,7 +734,7 @@ def test_two_point_real_serialization(optimized_real_two_point_xy: TwoPointXY):
     assert str(xi_theta) == str(recovered)
 
 
-def test_two_point_real_cmp_invalid(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_real_cmp_invalid(optimized_real_two_point_xy: TwoPointXY) -> None:
     theta = np.array(np.linspace(0, 10, 10))
     xi_theta = TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
     with pytest.raises(
@@ -743,7 +744,7 @@ def test_two_point_real_cmp_invalid(optimized_real_two_point_xy: TwoPointXY):
         _ = xi_theta == "Im not a TwoPointReal"
 
 
-def test_two_point_real_wrong_shape(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_real_wrong_shape(optimized_real_two_point_xy: TwoPointXY) -> None:
     theta = np.array(np.linspace(0, 10), dtype=np.float64).reshape(-1, 10)
     with pytest.raises(
         ValueError,
@@ -752,7 +753,9 @@ def test_two_point_real_wrong_shape(optimized_real_two_point_xy: TwoPointXY):
         TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
 
 
-def test_two_point_from_metadata_cells(harmonic_two_point_xy, tp_factory):
+def test_two_point_from_metadata_cells(
+    harmonic_two_point_xy: TwoPointXY, tp_factory: TwoPointFactory
+) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     two_point = TwoPoint.from_metadata([cells], tp_factory).pop()
@@ -763,6 +766,8 @@ def test_two_point_from_metadata_cells(harmonic_two_point_xy, tp_factory):
 
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
+    assert isinstance(harmonic_two_point_xy.x, TomographicBin)
+    assert isinstance(harmonic_two_point_xy.y, TomographicBin)
 
     assert_array_equal(two_point.source0.tracer_args.z, harmonic_two_point_xy.x.z)
     assert_array_equal(two_point.source1.tracer_args.z, harmonic_two_point_xy.y.z)
@@ -771,7 +776,9 @@ def test_two_point_from_metadata_cells(harmonic_two_point_xy, tp_factory):
     assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_two_point_xy.y.dndz)
 
 
-def test_two_point_from_metadata_cwindow(two_point_cwindow, tp_factory):
+def test_two_point_from_metadata_cwindow(
+    two_point_cwindow: TwoPointHarmonic, tp_factory: TwoPointFactory
+) -> None:
     two_point = TwoPoint.from_metadata([two_point_cwindow], tp_factory).pop()
 
     assert two_point is not None
@@ -780,6 +787,8 @@ def test_two_point_from_metadata_cwindow(two_point_cwindow, tp_factory):
 
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
+    assert isinstance(two_point_cwindow.XY.x, TomographicBin)
+    assert isinstance(two_point_cwindow.XY.y, TomographicBin)
 
     assert_array_equal(two_point.source0.tracer_args.z, two_point_cwindow.XY.x.z)
     assert_array_equal(two_point.source1.tracer_args.z, two_point_cwindow.XY.y.z)
@@ -788,7 +797,9 @@ def test_two_point_from_metadata_cwindow(two_point_cwindow, tp_factory):
     assert_array_equal(two_point.source1.tracer_args.dndz, two_point_cwindow.XY.y.dndz)
 
 
-def test_two_point_from_metadata_xi_theta(optimized_real_two_point_xy, tp_factory):
+def test_two_point_from_metadata_xi_theta(
+    optimized_real_two_point_xy: TwoPointXY, tp_factory: TwoPointFactory
+) -> None:
     theta = np.array(np.linspace(0, 100, 100))
     xi_theta = TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
     if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
@@ -801,6 +812,8 @@ def test_two_point_from_metadata_xi_theta(optimized_real_two_point_xy, tp_factor
 
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
+    assert isinstance(optimized_real_two_point_xy.x, TomographicBin)
+    assert isinstance(optimized_real_two_point_xy.y, TomographicBin)
 
     assert_array_equal(two_point.source0.tracer_args.z, optimized_real_two_point_xy.x.z)
     assert_array_equal(two_point.source1.tracer_args.z, optimized_real_two_point_xy.y.z)
@@ -813,7 +826,9 @@ def test_two_point_from_metadata_xi_theta(optimized_real_two_point_xy, tp_factor
     )
 
 
-def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
+def test_two_point_from_metadata_cells_unsupported_type(
+    tp_factory: TwoPointFactory,
+) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
 
     @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -851,7 +866,7 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
 
 
 @pytest.fixture(name="tp_factory_with_cmb")
-def fixture_tp_factory_with_cmb():
+def fixture_tp_factory_with_cmb() -> TwoPointFactory:
     return TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
         weak_lensing_factories=[WeakLensingFactory()],
@@ -860,7 +875,9 @@ def fixture_tp_factory_with_cmb():
     )
 
 
-def test_two_point_from_metadata_cmb_supported(tp_factory_with_cmb):
+def test_two_point_from_metadata_cmb_supported(
+    tp_factory_with_cmb: TwoPointFactory,
+) -> None:
     """Test that CMB measurements work when CMB factory is provided."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     x = CMBLensing(
@@ -889,7 +906,7 @@ def test_two_point_from_metadata_cmb_supported(tp_factory_with_cmb):
     assert two_point.sacc_data_type == cells.get_sacc_name()
 
 
-def test_make_two_point_xy_valid_galaxies():
+def test_make_two_point_xy_valid_galaxies() -> None:
     """Test make_two_point_xy with valid galaxy measurements."""
     x = TomographicBin(
         bin_name="shear_bin_0",
@@ -915,7 +932,7 @@ def test_make_two_point_xy_valid_galaxies():
     assert xy.y_measurement == Galaxies.SHEAR_E
 
 
-def test_make_two_point_xy_valid_cmb_galaxy():
+def test_make_two_point_xy_valid_cmb_galaxy() -> None:
     """Test make_two_point_xy with CMB-galaxy measurements."""
     cmb = CMBLensing(
         bin_name="cmb_convergence",
@@ -943,7 +960,7 @@ def test_make_two_point_xy_valid_cmb_galaxy():
     assert xy.y_measurement == Galaxies.COUNTS
 
 
-def test_make_two_point_xy_valid_cmb_galaxy_needs_swap():
+def test_make_two_point_xy_valid_cmb_galaxy_needs_swap() -> None:
     """Test make_two_point_xy with CMB-galaxy measurements."""
     cmb = CMBLensing(
         bin_name="cmb_convergence",
@@ -973,7 +990,7 @@ def test_make_two_point_xy_valid_cmb_galaxy_needs_swap():
     assert xy.y_measurement == Galaxies.COUNTS
 
 
-def test_make_two_point_xy_missing_tracer_zdist():
+def test_make_two_point_xy_missing_tracer_zdist() -> None:
     """Test make_two_point_xy raises exception when tracer zdist not found.
 
     Verifies that make_two_point_xy raises a ValueError with informative message
@@ -1000,7 +1017,7 @@ def test_make_two_point_xy_missing_tracer_zdist():
     assert "not found in inferred galaxy z distributions" in error_msg
 
 
-def test_make_two_point_xy_missing_x_measurement():
+def test_make_two_point_xy_missing_x_measurement() -> None:
     """Test make_two_point_xy when first tracer lacks required measurement."""
     x = TomographicBin(
         bin_name="shear_bin_0",
@@ -1031,7 +1048,7 @@ def test_make_two_point_xy_missing_x_measurement():
     assert "shear_bin_1" in error_msg
 
 
-def test_make_two_point_xy_missing_y_measurement():
+def test_make_two_point_xy_missing_y_measurement() -> None:
     """Test make_two_point_xy when second tracer lacks required measurement."""
     x = TomographicBin(
         bin_name="shear_bin_0",
@@ -1061,7 +1078,7 @@ def test_make_two_point_xy_missing_y_measurement():
     assert "shear_bin_1" in error_msg
 
 
-def test_make_two_point_xy_both_measurements_missing():
+def test_make_two_point_xy_both_measurements_missing() -> None:
     """Test make_two_point_xy when both tracers lack required measurements."""
     x = TomographicBin(
         bin_name="counts_bin_0",
@@ -1089,7 +1106,7 @@ def test_make_two_point_xy_both_measurements_missing():
     )
 
 
-def test_make_two_point_xy_sacc_convention_explanation():
+def test_make_two_point_xy_sacc_convention_explanation() -> None:
     """Test that error message includes SACC convention explanation."""
     x = CMBLensing(
         bin_name="cmb_bin",
@@ -1118,8 +1135,13 @@ def test_make_two_point_xy_sacc_convention_explanation():
 
 
 def test_extract_all_real_metadata_indices_no_swap(
-    sacc_galaxy_xis_src0_lens0: tuple[object, ...],
-):
+    sacc_galaxy_xis_src0_lens0: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     """Test extract_all_real_metadata_indices with no tracer swap needed.
 
     This test verifies that when tracers are in the correct order according to
@@ -1147,7 +1169,7 @@ def test_extract_all_real_metadata_indices_no_swap(
         assert b == Galaxies.COUNTS
 
 
-def test_extract_all_real_metadata_indices_with_swap():
+def test_extract_all_real_metadata_indices_with_swap() -> None:
     """Test extract_all_real_metadata_indices when tracer swap is necessary.
 
     This test creates a SACC file where tracers are in reversed order compared
@@ -1205,7 +1227,7 @@ def test_extract_all_real_metadata_indices_with_swap():
         assert b == Galaxies.SHEAR_T
 
 
-def test_extract_all_real_metadata_indices_density_only():
+def test_extract_all_real_metadata_indices_density_only() -> None:
     """Test extract_all_real_metadata_indices with density-only measurement."""
     sacc_data = sacc.Sacc()
 
@@ -1238,7 +1260,7 @@ def test_extract_all_real_metadata_indices_density_only():
             assert b == Galaxies.COUNTS
 
 
-def test_extract_all_real_metadata_indices_shear_only():
+def test_extract_all_real_metadata_indices_shear_only() -> None:
     """Test extract_all_real_metadata_indices with shear-density measurement."""
     sacc_data = sacc.Sacc()
 
@@ -1271,7 +1293,7 @@ def test_extract_all_real_metadata_indices_shear_only():
             assert b == Galaxies.COUNTS
 
 
-def test_extract_all_real_metadata_indices_multiple_combinations():
+def test_extract_all_real_metadata_indices_multiple_combinations() -> None:
     """Test extract_all_real_metadata_indices with multiple tracer combinations."""
     sacc_data = sacc.Sacc()
 
@@ -1318,8 +1340,13 @@ def test_extract_all_real_metadata_indices_multiple_combinations():
 
 
 def test_extract_all_harmonic_metadata_indices_no_swap(
-    sacc_galaxy_cells_src0_lens0: tuple[object, ...],
-):
+    sacc_galaxy_cells_src0_lens0: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     """Test extract_all_harmonic_metadata_indices with no tracer swap needed.
 
     This test verifies that when tracers are in the correct order according to
@@ -1346,7 +1373,7 @@ def test_extract_all_harmonic_metadata_indices_no_swap(
         assert b == Galaxies.COUNTS
 
 
-def test_extract_all_harmonic_metadata_indices_with_swap():
+def test_extract_all_harmonic_metadata_indices_with_swap() -> None:
     """Test extract_all_harmonic_metadata_indices when tracer swap is necessary.
 
     This test creates a SACC file where tracers are in reversed order compared
@@ -1402,7 +1429,7 @@ def test_extract_all_harmonic_metadata_indices_with_swap():
         assert b == Galaxies.SHEAR_E
 
 
-def test_extract_all_harmonic_metadata_indices_density_only():
+def test_extract_all_harmonic_metadata_indices_density_only() -> None:
     """Test extract_all_harmonic_metadata_indices with density-only measurement."""
     sacc_data = sacc.Sacc()
 
@@ -1435,7 +1462,7 @@ def test_extract_all_harmonic_metadata_indices_density_only():
             assert b == Galaxies.COUNTS
 
 
-def test_extract_all_harmonic_metadata_indices_shear_only():
+def test_extract_all_harmonic_metadata_indices_shear_only() -> None:
     """Test extract_all_harmonic_metadata_indices with shear-only measurement."""
     sacc_data = sacc.Sacc()
 
@@ -1468,7 +1495,7 @@ def test_extract_all_harmonic_metadata_indices_shear_only():
             assert b == Galaxies.SHEAR_E
 
 
-def test_extract_all_harmonic_metadata_indices_multiple_combinations():
+def test_extract_all_harmonic_metadata_indices_multiple_combinations() -> None:
     """Test extract_all_harmonic_metadata_indices with multiple tracer combinations."""
     sacc_data = sacc.Sacc()
 
