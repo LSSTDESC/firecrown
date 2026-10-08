@@ -9,7 +9,7 @@ from tests.updatable.updatable_test_support import (
 )
 
 
-def test_updatable_reports():
+def test_updatable_reports() -> None:
     su = SimpleUpdatable("bob")
     mu = MinimalUpdatable("larry")
     su.mu = mu  # pylint: disable=attribute-defined-outside-init
@@ -27,7 +27,7 @@ def test_updatable_reports():
     assert "Sampler parameters used:  ['a']" in after_use
 
 
-def test_updatable_record_single():
+def test_updatable_record_single() -> None:
     """Test record creation for a single Updatable without nesting."""
     obj = SimpleUpdatable("test")
     params = ParamsMap({"test_x": 1.0, "test_y": 2.0})
@@ -44,7 +44,7 @@ def test_updatable_record_single():
     assert len(record.child_records) == 0
 
 
-def test_updatable_record_with_internal_params():
+def test_updatable_record_with_internal_params() -> None:
     """Test record creation with both sampler and internal parameters."""
     obj = SimpleUpdatable("test")
     obj.set_internal_parameter(
@@ -67,7 +67,7 @@ def test_updatable_record_with_internal_params():
     assert sorted(record.internal_params) == ["internal1", "internal2"]
 
 
-def test_updatable_record_nested():
+def test_updatable_record_nested() -> None:
     """Test record creation for nested Updatable objects."""
     parent = SimpleUpdatable("parent")
     child = MinimalUpdatable("child")
@@ -91,7 +91,7 @@ def test_updatable_record_nested():
     assert child_record.sampler_params == ["a"]
 
 
-def test_updatable_record_complex_hierarchy():
+def test_updatable_record_complex_hierarchy() -> None:
     """Test record creation for a complex hierarchy of nested objects."""
     root = SimpleUpdatable("root")
     branch1 = MinimalUpdatable("branch1")
@@ -142,7 +142,7 @@ def test_updatable_record_complex_hierarchy():
     assert leaf2_record.cls == "UpdatableWithDerived"
 
 
-def test_updatable_record_empty_params():
+def test_updatable_record_empty_params() -> None:
     """Test record creation for an object with no parameters."""
 
     class EmptyUpdatable(Updatable):
@@ -160,7 +160,7 @@ def test_updatable_record_empty_params():
     assert len(record.internal_params) == 0
 
 
-def test_updatable_usage_record_empty_and_print_empty():
+def test_updatable_usage_record_empty_and_print_empty() -> None:
     rec = UpdatableUsageRecord(
         cls="EmptyUpdatable",
         prefix="pfx",
@@ -181,7 +181,7 @@ def test_updatable_usage_record_empty_and_print_empty():
     assert lines == ["EmptyUpdatable(pfx): "]
 
 
-def test_updatable_usage_record_parent_collapses_and_printing():
+def test_updatable_usage_record_parent_collapses_and_printing() -> None:
     child = UpdatableUsageRecord(
         cls="Child",
         prefix="c",
@@ -208,7 +208,7 @@ def test_updatable_usage_record_parent_collapses_and_printing():
     ]
 
 
-def test_updatable_usage_record_indent_and_child_recursion():
+def test_updatable_usage_record_indent_and_child_recursion() -> None:
     child = UpdatableUsageRecord(
         cls="Child",
         prefix="c",
@@ -239,7 +239,7 @@ def test_updatable_usage_record_indent_and_child_recursion():
     assert lines == expected
 
 
-def test_updatable_usage_record_empty_child_and_print_empty_options():
+def test_updatable_usage_record_empty_child_and_print_empty_options() -> None:
     # child is empty
     child = UpdatableUsageRecord(
         cls="Child",
@@ -266,7 +266,7 @@ def test_updatable_usage_record_empty_child_and_print_empty_options():
     assert lines == ["Parent(p) => Child(c): "]
 
 
-def test_updatable_usage_record_already_updated_flag():
+def test_updatable_usage_record_already_updated_flag() -> None:
     """If an UpdatableUsageRecord indicates it was already updated, the
     get_log_lines should return a single line noting it was already updated.
     """
@@ -284,7 +284,7 @@ def test_updatable_usage_record_already_updated_flag():
     assert lines == ["Already: (already updated)"]
 
 
-def test_updatable_usage_record_internal_params_only():
+def test_updatable_usage_record_internal_params_only() -> None:
     """If sampler_params is empty but internal_params is non-empty,
     is_empty should be False and get_log_lines should show the internal
     parameters line (this covers the second early-return branch).
