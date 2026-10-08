@@ -9,7 +9,7 @@ from firecrown.models.cluster import (
 )
 
 
-def test_create_abundance_data():
+def test_create_abundance_data() -> None:
     s = sacc.Sacc()
     ad = AbundanceData(s)
 
@@ -21,7 +21,9 @@ def test_create_abundance_data():
     assert ad._survey_index == 0
 
 
-def test_get_survey_tracer_missing_survey_name(cluster_sacc_data: sacc.Sacc):
+def test_get_survey_tracer_missing_survey_name(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     ad = AbundanceData(cluster_sacc_data)
     with pytest.raises(
         ValueError,
@@ -30,7 +32,9 @@ def test_get_survey_tracer_missing_survey_name(cluster_sacc_data: sacc.Sacc):
         ad.get_survey_tracer("the_black_lodge")
 
 
-def test_get_survey_tracer_wrong_tracer_type(cluster_sacc_data: sacc.Sacc):
+def test_get_survey_tracer_wrong_tracer_type(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     ad = AbundanceData(cluster_sacc_data)
     with pytest.raises(
         ValueError,
@@ -39,26 +43,28 @@ def test_get_survey_tracer_wrong_tracer_type(cluster_sacc_data: sacc.Sacc):
         ad.get_survey_tracer("z_bin_tracer_1")
 
 
-def test_get_survey_tracer_returns_survey_tracer(cluster_sacc_data: sacc.Sacc):
+def test_get_survey_tracer_returns_survey_tracer(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     ad = AbundanceData(cluster_sacc_data)
     survey = ad.get_survey_tracer("my_survey")
     assert survey is not None
     assert isinstance(survey, sacc.tracers.SurveyTracer)
 
 
-def test_get_bin_edges_cluster_counts(cluster_sacc_data: sacc.Sacc):
+def test_get_bin_edges_cluster_counts(cluster_sacc_data: sacc.Sacc) -> None:
     ad = AbundanceData(cluster_sacc_data)
     bins = ad.get_bin_edges("my_survey", ClusterProperty.COUNTS)
     assert len(bins) == 2
 
 
-def test_get_bin_edges_cluster_mass(cluster_sacc_data: sacc.Sacc):
+def test_get_bin_edges_cluster_mass(cluster_sacc_data: sacc.Sacc) -> None:
     ad = AbundanceData(cluster_sacc_data)
     bins = ad.get_bin_edges("my_survey", ClusterProperty.MASS)
     assert len(bins) == 2
 
 
-def test_get_bin_edges_counts_and_mass(cluster_sacc_data: sacc.Sacc):
+def test_get_bin_edges_counts_and_mass(cluster_sacc_data: sacc.Sacc) -> None:
     ad = AbundanceData(cluster_sacc_data)
     bins = ad.get_bin_edges(
         "my_survey", (ClusterProperty.MASS | ClusterProperty.COUNTS)
@@ -66,7 +72,9 @@ def test_get_bin_edges_counts_and_mass(cluster_sacc_data: sacc.Sacc):
     assert len(bins) == 2
 
 
-def test_get_bin_edges_counts_and_mass_and_shear(cluster_sacc_data: sacc.Sacc):
+def test_get_bin_edges_counts_and_mass_and_shear(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     ad = AbundanceData(cluster_sacc_data)
     bins = ad.get_bin_edges(
         "my_survey",
@@ -77,7 +85,7 @@ def test_get_bin_edges_counts_and_mass_and_shear(cluster_sacc_data: sacc.Sacc):
 
 def test_observed_data_and_indices_by_survey_cluster_counts(
     cluster_sacc_data: sacc.Sacc,
-):
+) -> None:
     ad = AbundanceData(cluster_sacc_data)
     data, indices = ad.get_observed_data_and_indices_by_survey(
         "my_survey", ClusterProperty.COUNTS
@@ -88,7 +96,7 @@ def test_observed_data_and_indices_by_survey_cluster_counts(
 
 def test_observed_data_and_indices_by_survey_cluster_mass(
     cluster_sacc_data: sacc.Sacc,
-):
+) -> None:
     ad = AbundanceData(cluster_sacc_data)
     data, indices = ad.get_observed_data_and_indices_by_survey(
         "my_survey", ClusterProperty.MASS
@@ -99,7 +107,7 @@ def test_observed_data_and_indices_by_survey_cluster_mass(
 
 def test_observed_data_and_indices_by_survey_cluster_counts_and_mass(
     cluster_sacc_data: sacc.Sacc,
-):
+) -> None:
     ad = AbundanceData(cluster_sacc_data)
     data, indices = ad.get_observed_data_and_indices_by_survey(
         "my_survey", ClusterProperty.MASS | ClusterProperty.COUNTS
@@ -108,7 +116,7 @@ def test_observed_data_and_indices_by_survey_cluster_counts_and_mass(
     assert len(indices) == 4
 
 
-def test_observed_data_and_indices_no_data_throws():
+def test_observed_data_and_indices_no_data_throws() -> None:
     # pylint: disable=no-member
     cc = sacc.standard_types.cluster_counts
 
@@ -138,7 +146,9 @@ def test_observed_data_and_indices_no_data_throws():
         ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.MASS)
 
 
-def test_observed_data_and_indices_redshift_property(cluster_sacc_data: sacc.Sacc):
+def test_observed_data_and_indices_redshift_property(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     """Test that REDSHIFT property is handled correctly (not COUNTS or MASS)."""
     ad = AbundanceData(cluster_sacc_data)
     # REDSHIFT is valid but not handled in get_observed_data_and_indices_by_survey
