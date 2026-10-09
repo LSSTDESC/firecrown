@@ -178,9 +178,7 @@ class TestPrintMeasurementsBySpace:
         assert match_wrapped(captured.out, str(len(real_measurements)))
         assert match_wrapped(captured.out, str(len(harmonic_measurements)))
 
-    def test_prints_details_verbose(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_prints_details_verbose(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test printing measurement details in verbose mode."""
         console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
@@ -239,9 +237,7 @@ class TestPrintCompatiblePairs:
             # Should show measurement names
             assert "+" in captured.out
 
-    def test_handles_empty_pairs(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_handles_empty_pairs(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test handling empty pairs list."""
         console = Console()
         print_compatible_pairs(console, "test-space", [], False)
@@ -253,9 +249,7 @@ class TestPrintCompatiblePairs:
 class TestPrintEfficiencyGains:
     """Tests for print_efficiency_gains function."""
 
-    def test_prints_efficiency_stats(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_prints_efficiency_stats(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test printing efficiency statistics."""
         console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
