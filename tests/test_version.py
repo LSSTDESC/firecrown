@@ -11,7 +11,7 @@ import firecrown
 SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:a\d+)?$")
 
 
-def test_version_format():
+def test_version_format() -> None:
     """Test that version follows semantic versioning format.
 
     This test validates the version format rather than a specific value,
