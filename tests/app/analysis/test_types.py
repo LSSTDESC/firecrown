@@ -3,6 +3,8 @@
 Tests type definitions, enums, and data models for framework configuration.
 """
 
+from pathlib import Path
+
 import pyccl
 import pytest
 from pydantic import ValidationError
@@ -827,7 +829,7 @@ class TestToCCLCosmology:
 class TestConfigGeneratorMethods:
     """Tests for ConfigGenerator methods."""
 
-    def test_config_generator_add_sacc(self, tmp_path) -> None:
+    def test_config_generator_add_sacc(self, tmp_path: Path) -> None:
         """Test add_sacc method."""
         gen = CobayaConfigGenerator(
             output_path=tmp_path,
@@ -841,7 +843,7 @@ class TestConfigGeneratorMethods:
         gen.add_sacc(sacc_path)
         assert gen.sacc_path == sacc_path
 
-    def test_config_generator_add_factory(self, tmp_path) -> None:
+    def test_config_generator_add_factory(self, tmp_path: Path) -> None:
         """Test add_factory method."""
         gen = CobayaConfigGenerator(
             output_path=tmp_path,
@@ -855,7 +857,7 @@ class TestConfigGeneratorMethods:
         gen.add_factory(factory_path)
         assert gen.factory_source == factory_path
 
-    def test_config_generator_add_build_parameters(self, tmp_path) -> None:
+    def test_config_generator_add_build_parameters(self, tmp_path: Path) -> None:
         """Test add_build_parameters method."""
         gen = CobayaConfigGenerator(
             output_path=tmp_path,
@@ -869,7 +871,7 @@ class TestConfigGeneratorMethods:
         gen.add_build_parameters(params)
         assert gen.build_parameters == params
 
-    def test_config_generator_add_models(self, tmp_path) -> None:
+    def test_config_generator_add_models(self, tmp_path: Path) -> None:
         """Test add_models method."""
         gen = CobayaConfigGenerator(
             output_path=tmp_path,
@@ -908,14 +910,14 @@ class TestGetPathStr:
         result = get_path_str("my_string_path", use_absolute=False)
         assert result == "my_string_path"
 
-    def test_get_path_str_with_path_absolute(self, tmp_path) -> None:
+    def test_get_path_str_with_path_absolute(self, tmp_path: Path) -> None:
         """Test get_path_str with Path object and absolute flag."""
         test_path = tmp_path / "subdir" / "file.txt"
 
         result = get_path_str(test_path, use_absolute=True)
         assert result == test_path.absolute().as_posix()
 
-    def test_get_path_str_with_path_relative(self, tmp_path) -> None:
+    def test_get_path_str_with_path_relative(self, tmp_path: Path) -> None:
         """Test get_path_str with Path object and relative flag."""
         test_path = tmp_path / "subdir" / "file.txt"
 
