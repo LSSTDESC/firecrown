@@ -3,22 +3,28 @@
 import pytest
 from numcosmo_py import GObject, Nc, Ncm
 
+from firecrown.connector.mapping import Mapping
 from firecrown.connector.numcosmo import (
     MappingNumCosmo,
     NumCosmoData,
     NumCosmoFactory,
     NumCosmoGaussCov,
+    create_params_map,
 )
 from firecrown.likelihood._likelihood import (
     Likelihood,
     NamedParameters,
 )
+from firecrown.modeling_tools import CCLCreationMode
+from firecrown.updatable import ParamsMap
 
-Ncm.cfg_init()
+# Pylint mistakes NumCosmo's introspected static functions for instance methods.
+# Keep no-value-for-parameter suppressions local to the affected calls below.
+Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 
 
 @pytest.fixture(name="factory_plain")
-def fixture_factory_plain():
+def fixture_factory_plain() -> NumCosmoFactory:
     """Create a NumCosmoFactory instance."""
     map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     build_parameters = NamedParameters()
@@ -31,7 +37,7 @@ def fixture_factory_plain():
 
 
 @pytest.fixture(name="factory_const_gauss")
-def fixture_factory_const_gauss():
+def fixture_factory_const_gauss() -> NumCosmoFactory:
     """Create a NumCosmoFactory instance."""
     map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     build_parameters = NamedParameters()
@@ -43,12 +49,18 @@ def fixture_factory_const_gauss():
     )
 
 
-def test_wrong_use_of_power_spectra_with_ccl_not_in_default_mode():
+def test_wrong_use_of_power_spectra_with_ccl_not_in_default_mode() -> None:
     map_cosmo = MappingNumCosmo(
         dist=Nc.Distance.new(6.0),
-        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
+        p_ml=Nc.PowspecMLTransfer.new(
+            Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+        ),
         p_mnl=Nc.PowspecMNLHaloFit.new(
-            Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()), 3.0, 1.0e-4
+            Nc.PowspecMLTransfer.new(
+                Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+            ),
+            3.0,
+            1.0e-4,
         ),
     )
     build_parameters = NamedParameters({"projection": "harmonic"})
@@ -61,21 +73,23 @@ def test_wrong_use_of_power_spectra_with_ccl_not_in_default_mode():
         )
 
 
-def test_numcosmo_connector_plain(factory_plain):
+def test_numcosmo_connector_plain(factory_plain: NumCosmoFactory) -> None:
     """Test the NumCosmo connector."""
 
     assert factory_plain.get_data() is not None
     assert factory_plain.get_mapping() is not None
 
 
-def test_numcosmo_connector_const_gauss(factory_const_gauss):
+def test_numcosmo_connector_const_gauss(factory_const_gauss: NumCosmoFactory) -> None:
     """Test the NumCosmo connector."""
 
     assert factory_const_gauss.get_data() is not None
     assert factory_const_gauss.get_mapping() is not None
 
 
-def test_numcosmo_factory_plain_get_firecrown_likelihood(factory_plain):
+def test_numcosmo_factory_plain_get_firecrown_likelihood(
+    factory_plain: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     assert factory_plain.get_data() is not None
@@ -86,7 +100,9 @@ def test_numcosmo_factory_plain_get_firecrown_likelihood(factory_plain):
     assert isinstance(fc_likelihood, Likelihood)
 
 
-def test_numcosmo_factory_const_gauss_get_firecrown_likelihood(factory_const_gauss):
+def test_numcosmo_factory_const_gauss_get_firecrown_likelihood(
+    factory_const_gauss: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     assert factory_const_gauss.get_data() is not None
@@ -97,7 +113,7 @@ def test_numcosmo_factory_const_gauss_get_firecrown_likelihood(factory_const_gau
     assert isinstance(fc_likelihood, Likelihood)
 
 
-def test_numcosmo_factory_plain_get_properties(factory_plain):
+def test_numcosmo_factory_plain_get_properties(factory_plain: NumCosmoFactory) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_plain.get_data()
@@ -110,7 +126,9 @@ def test_numcosmo_factory_plain_get_properties(factory_plain):
     assert isinstance(nc_data.likelihood_build_parameters, Ncm.VarDict)
 
 
-def test_numcosmo_factory_const_gauss_get_properties(factory_const_gauss):
+def test_numcosmo_factory_const_gauss_get_properties(
+    factory_const_gauss: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_const_gauss.get_data()
@@ -126,7 +144,9 @@ def test_numcosmo_factory_const_gauss_get_properties(factory_const_gauss):
     assert isinstance(nc_data.likelihood_build_parameters, Ncm.VarDict)
 
 
-def test_numcosmo_factory_plain_set_properties_order1(factory_plain):
+def test_numcosmo_factory_plain_set_properties_order1(
+    factory_plain: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_plain.get_data()
@@ -140,7 +160,9 @@ def test_numcosmo_factory_plain_set_properties_order1(factory_plain):
     assert isinstance(old_fc_likelihood, Likelihood)
 
     nc_data.likelihood_source = "tests/likelihood/lkdir/lkscript.py"
-    nc_data.likelihood_build_parameters = Ncm.VarDict.new()
+    nc_data.likelihood_build_parameters = (
+        Ncm.VarDict.new()  # pylint: disable=no-value-for-parameter
+    )
 
     fc_likelihood = nc_data.likelihood
     assert fc_likelihood is not None
@@ -148,7 +170,9 @@ def test_numcosmo_factory_plain_set_properties_order1(factory_plain):
     assert fc_likelihood != old_fc_likelihood
 
 
-def test_numcosmo_factory_plain_set_properties_order2(factory_plain):
+def test_numcosmo_factory_plain_set_properties_order2(
+    factory_plain: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_plain.get_data()
@@ -161,7 +185,9 @@ def test_numcosmo_factory_plain_set_properties_order2(factory_plain):
     assert old_fc_likelihood is not None
     assert isinstance(old_fc_likelihood, Likelihood)
 
-    nc_data.likelihood_build_parameters = Ncm.VarDict.new()
+    nc_data.likelihood_build_parameters = (
+        Ncm.VarDict.new()  # pylint: disable=no-value-for-parameter
+    )
     nc_data.likelihood_source = "tests/likelihood/lkdir/lkscript.py"
 
     fc_likelihood = nc_data.likelihood
@@ -170,7 +196,9 @@ def test_numcosmo_factory_plain_set_properties_order2(factory_plain):
     assert fc_likelihood != old_fc_likelihood
 
 
-def test_numcosmo_factory_plain_set_properties_empty_build_parameters(factory_plain):
+def test_numcosmo_factory_plain_set_properties_empty_build_parameters(
+    factory_plain: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_plain.get_data()
@@ -192,7 +220,9 @@ def test_numcosmo_factory_plain_set_properties_empty_build_parameters(factory_pl
     assert fc_likelihood != old_fc_likelihood
 
 
-def test_numcosmo_factory_const_gauss_set_properties_order1(factory_const_gauss):
+def test_numcosmo_factory_const_gauss_set_properties_order1(
+    factory_const_gauss: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_const_gauss.get_data()
@@ -208,7 +238,9 @@ def test_numcosmo_factory_const_gauss_set_properties_order1(factory_const_gauss)
     nc_data.likelihood_source = (
         "tests/likelihood/gauss_family/lkscript_const_gaussian.py"
     )
-    nc_data.likelihood_build_parameters = Ncm.VarDict.new()
+    nc_data.likelihood_build_parameters = (
+        Ncm.VarDict.new()  # pylint: disable=no-value-for-parameter
+    )
 
     fc_likelihood = nc_data.likelihood
     assert fc_likelihood is not None
@@ -216,7 +248,9 @@ def test_numcosmo_factory_const_gauss_set_properties_order1(factory_const_gauss)
     assert fc_likelihood != old_fc_likelihood
 
 
-def test_numcosmo_factory_const_gauss_set_properties_order2(factory_const_gauss):
+def test_numcosmo_factory_const_gauss_set_properties_order2(
+    factory_const_gauss: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_const_gauss.get_data()
@@ -229,7 +263,9 @@ def test_numcosmo_factory_const_gauss_set_properties_order2(factory_const_gauss)
     assert old_fc_likelihood is not None
     assert isinstance(old_fc_likelihood, Likelihood)
 
-    nc_data.likelihood_build_parameters = Ncm.VarDict.new()
+    nc_data.likelihood_build_parameters = (
+        Ncm.VarDict.new()  # pylint: disable=no-value-for-parameter
+    )
     nc_data.likelihood_source = (
         "tests/likelihood/gauss_family/lkscript_const_gaussian.py"
     )
@@ -241,8 +277,8 @@ def test_numcosmo_factory_const_gauss_set_properties_order2(factory_const_gauss)
 
 
 def test_numcosmo_factory_const_gauss_set_properties_empty_build_parameters(
-    factory_const_gauss,
-):
+    factory_const_gauss: NumCosmoFactory,
+) -> None:
     """Test the NumCosmo connector."""
 
     nc_data = factory_const_gauss.get_data()
@@ -266,7 +302,7 @@ def test_numcosmo_factory_const_gauss_set_properties_empty_build_parameters(
     assert fc_likelihood != old_fc_likelihood
 
 
-def test_empty_plain_data():
+def test_empty_plain_data() -> None:
     """Test the NumCosmo connector."""
 
     nc_data = NumCosmoData()
@@ -274,7 +310,7 @@ def test_empty_plain_data():
     assert nc_data.likelihood_build_parameters is None
 
 
-def test_empty_gauss_cov_data():
+def test_empty_gauss_cov_data() -> None:
     """Test the NumCosmo connector."""
 
     nc_data = NumCosmoGaussCov()
@@ -282,12 +318,8 @@ def test_empty_gauss_cov_data():
     assert nc_data.likelihood_build_parameters is None
 
 
-def test_create_params_map_with_mapping():
+def test_create_params_map_with_mapping() -> None:
     """Test create_params_map function when mapping is provided."""
-    from firecrown.connector.mapping import Mapping
-    from firecrown.connector.numcosmo import create_params_map
-    from firecrown.updatable import ParamsMap
-
     # Create a simple mock model and mset
     model_name = "test_model"
     model_builder = Ncm.ModelBuilder.new(
@@ -347,11 +379,8 @@ def test_create_params_map_with_mapping():
     assert params_map["h"] == 0.7
 
 
-def test_create_params_map_without_mapping():
+def test_create_params_map_without_mapping() -> None:
     """Test create_params_map function when mapping is None."""
-    from firecrown.connector.numcosmo import create_params_map
-    from firecrown.updatable import ParamsMap
-
     # Create a simple mock model and mset
     model_name = "test_model2"
     model_builder = Ncm.ModelBuilder.new(
@@ -393,7 +422,7 @@ def test_create_params_map_without_mapping():
     assert "h" not in params_map
 
 
-def test_numcosmo_data_pure_ccl_mode():
+def test_numcosmo_data_pure_ccl_mode() -> None:
     """Test NumCosmoData.do_prepare with PURE_CCL_MODE (non-DEFAULT creation mode)."""
     # This test covers lines 574-577 (the 'else' branch in do_prepare)
     build_parameters = NamedParameters()
@@ -408,8 +437,6 @@ def test_numcosmo_data_pure_ccl_mode():
     assert isinstance(nc_data, NumCosmoData)
 
     # Verify that the CCL factory is in PURE_CCL_MODE
-    from firecrown.modeling_tools import CCLCreationMode
-
     assert nc_data.tools.ccl_factory.creation_mode == CCLCreationMode.PURE_CCL_MODE
 
     # Create a simple model for testing
@@ -455,7 +482,10 @@ def test_numcosmo_data_pure_ccl_mode():
     model.params_set_default_ftype()
 
     # Create a basic cosmology model as well
-    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(
+        prim=Nc.HIPrimPowerLaw.new(),  # pylint: disable=no-value-for-parameter
+        reion=Nc.HIReionCamb.new(),  # pylint: disable=no-value-for-parameter
+    )
 
     mset = Ncm.MSet()
     mset.set(cosmo)
@@ -470,7 +500,7 @@ def test_numcosmo_data_pure_ccl_mode():
     assert nc_data.dof == nc_data.len - mset.fparams_len()
 
 
-def test_numcosmo_gauss_cov_none_mapping():
+def test_numcosmo_gauss_cov_none_mapping() -> None:
     """Test NumCosmoGaussCov._will_calculate_power_spectra with None mapping."""
     # This test covers line 677 where _nc_mapping is None and returns False
     build_parameters = NamedParameters()
@@ -484,20 +514,21 @@ def test_numcosmo_gauss_cov_none_mapping():
     nc_data = factory.get_data()
     assert isinstance(nc_data, NumCosmoGaussCov)
 
-    # Verify that _nc_mapping is None
-    assert nc_data._nc_mapping is None
+    # These assertions intentionally exercise the internal no-mapping path.
+    assert nc_data._nc_mapping is None  # pylint: disable=protected-access
 
-    # Test _will_calculate_power_spectra method indirectly
-    # When _nc_mapping is None, _will_calculate_power_spectra should return False
-    # This is tested through the _configure_object method which calls it
-    assert nc_data._will_calculate_power_spectra() is False
+    # With no mapping, this internal method must not request power spectra.
+    assert (
+        nc_data._will_calculate_power_spectra()  # pylint: disable=protected-access
+        is False
+    )
 
     # Verify the object was configured correctly
     assert nc_data.len > 0
     assert nc_data.dof > 0
 
 
-def test_numcosmo_gauss_cov_pure_ccl_mode():
+def test_numcosmo_gauss_cov_pure_ccl_mode() -> None:
     """Test do_prepare with PURE_CCL_MODE (non-DEFAULT creation mode)."""
     # This test covers lines 887-891 (the 'else' branch in do_prepare)
     build_parameters = NamedParameters({"projection": "harmonic"})
@@ -512,13 +543,11 @@ def test_numcosmo_gauss_cov_pure_ccl_mode():
     assert isinstance(nc_data, NumCosmoGaussCov)
 
     # Verify that the CCL factory is in PURE_CCL_MODE
-    from firecrown.modeling_tools import CCLCreationMode
-
     assert nc_data.tools.ccl_factory.creation_mode == CCLCreationMode.PURE_CCL_MODE
 
     # Verify that _nc_mapping is None (this triggers assert _nc_mapping is None
     # in line 888)
-    assert nc_data._nc_mapping is None
+    assert nc_data._nc_mapping is None  # pylint: disable=protected-access
 
     # Create a simple model for testing
     model_name = "test_model_gauss_pure_ccl"
@@ -567,7 +596,10 @@ def test_numcosmo_gauss_cov_pure_ccl_mode():
     model.params_set_default_ftype()
 
     # Create a basic cosmology model as well
-    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(
+        prim=Nc.HIPrimPowerLaw.new(),  # pylint: disable=no-value-for-parameter
+        reion=Nc.HIReionCamb.new(),  # pylint: disable=no-value-for-parameter
+    )
 
     mset = Ncm.MSet()
     mset.set(cosmo)
