@@ -1208,20 +1208,22 @@ def fixture_sacc_galaxy_cells_src0_src0_no_data() -> tuple[sacc.Sacc, Tomographi
     return sacc_data, expected_bin
 
 
-@pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_no_data")
-def fixture_sacc_galaxy_xis_lens0_lens0_no_data() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
+@pytest.fixture(name="sacc_galaxy_lens0_no_two_point_data")
+def fixture_sacc_galaxy_lens0_no_two_point_data() -> sacc.Sacc:
+    """Provide lens0 redshift information without measured two-point data.
+
+    No angular separations or correlation measurements are stored.
+
+    :returns: A SACC object containing only the lens0 redshift tracer.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz)
 
-    return sacc_data, z, thetas
+    return sacc_data
 
 
 # Two-point related SACC data fixtures with window functions
