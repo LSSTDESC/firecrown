@@ -10,7 +10,7 @@ from firecrown.app.examples import ExampleCMBCross
 
 
 @pytest.fixture(name="target_framework", params=Frameworks)
-def fixture_target_framework(request) -> Frameworks:
+def fixture_target_framework(request: pytest.FixtureRequest) -> Frameworks:
     """Generate a target framework for all frameworks."""
     return request.param
 
@@ -33,7 +33,7 @@ def fixture_cmb_cross_example(
 
 
 @pytest.mark.example
-def test_cmb_cross_run(cmb_cross_example):
+def test_cmb_cross_run(cmb_cross_example: tuple[Path, Frameworks]) -> None:
     """Run each framework's generated configuration end-to-end.
 
     This is what actually exercises the background/distance splines out to

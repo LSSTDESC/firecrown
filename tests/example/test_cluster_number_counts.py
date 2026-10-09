@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.mark.example
-def test_cluster_number_counts_cosmosis():
+def test_cluster_number_counts_cosmosis() -> None:
     result = subprocess.run(
         [
             "bash",
@@ -33,7 +33,7 @@ def test_cluster_number_counts_cosmosis():
 
 
 @pytest.mark.example
-def test_cluster_number_counts_sdss_cosmosis():
+def test_cluster_number_counts_sdss_cosmosis() -> None:
     result = subprocess.run(
         [
             "bash",
@@ -55,7 +55,7 @@ def test_cluster_number_counts_sdss_cosmosis():
 
 
 @pytest.mark.example
-def test_cluster_number_counts_numcosmo():
+def test_cluster_number_counts_numcosmo() -> None:
     result = subprocess.run(
         [
             "bash",
