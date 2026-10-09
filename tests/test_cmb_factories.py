@@ -59,9 +59,9 @@ def test_cmb_convergence_read_systematics():
     cmb_conv.read_systematics(mock_sacc)
 
 
-def test_cmb_convergence_read(sacc_galaxy_cells_src0_src0):
+def test_cmb_convergence_read() -> None:
     """Test CMBConvergence _read method."""
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc.Sacc()
 
     cmb_conv = CMBConvergence.create_ready(sacc_tracer="cmb", scale=1.0)
 

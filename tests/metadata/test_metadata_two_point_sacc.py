@@ -197,19 +197,17 @@ def test_extract_all_tracers_xis(
 
 
 def test_extract_all_tracers_cells_src0_src0(
-    sacc_galaxy_cells_src0_src0: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
-    sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
+    sacc_data, expected_bin = sacc_galaxy_cells_src0_src0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
-        assert_array_equal(tracer.dndz, dndz)
+        assert_array_equal(tracer.z, expected_bin.z)
+        assert_array_equal(tracer.dndz, expected_bin.dndz)
         assert tracer.bin_name == "src0"
         assert tracer.measurements == {Galaxies.SHEAR_E}
 
@@ -238,19 +236,17 @@ def test_extract_all_tracers_cells_src0_src1(
 
 
 def test_extract_all_tracers_cells_lens0_lens0(
-    sacc_galaxy_cells_lens0_lens0: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
-    sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
+    sacc_data, expected_bin = sacc_galaxy_cells_lens0_lens0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
-        assert_array_equal(tracer.dndz, dndz)
+        assert_array_equal(tracer.z, expected_bin.z)
+        assert_array_equal(tracer.dndz, expected_bin.dndz)
         assert tracer.bin_name == "lens0"
         assert tracer.measurements == {Galaxies.COUNTS}
 
@@ -279,19 +275,17 @@ def test_extract_all_tracers_cells_lens0_lens1(
 
 
 def test_extract_all_tracers_xis_lens0_lens0(
-    sacc_galaxy_xis_lens0_lens0: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
-    sacc_data, z, dndz = sacc_galaxy_xis_lens0_lens0
+    sacc_data, expected_bin = sacc_galaxy_xis_lens0_lens0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
-        assert_array_equal(tracer.dndz, dndz)
+        assert_array_equal(tracer.z, expected_bin.z)
+        assert_array_equal(tracer.dndz, expected_bin.dndz)
         assert tracer.bin_name == "lens0"
         assert tracer.measurements == {Galaxies.COUNTS}
 
@@ -644,11 +638,9 @@ def test_extract_all_metadata_index_reals_by_type(
 
 
 def test_extract_no_window(
-    sacc_galaxy_cells_src0_src0: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
     indices = np.array([0, 1, 2], dtype=np.int64)
 
     with warnings.catch_warnings():

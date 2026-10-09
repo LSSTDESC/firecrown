@@ -586,9 +586,7 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0", scope="module")
-def fixture_sacc_galaxy_cells_src0_src0() -> (
-    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
-):
+def fixture_sacc_galaxy_cells_src0_src0() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -604,7 +602,13 @@ def fixture_sacc_galaxy_cells_src0_src0() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src1", scope="module")
@@ -637,9 +641,7 @@ def fixture_sacc_galaxy_cells_src0_src1() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens0", scope="module")
-def fixture_sacc_galaxy_cells_lens0_lens0() -> (
-    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
-):
+def fixture_sacc_galaxy_cells_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -655,7 +657,13 @@ def fixture_sacc_galaxy_cells_lens0_lens0() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="lens0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.COUNTS},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens1")
@@ -686,9 +694,7 @@ def fixture_sacc_galaxy_cells_lens0_lens1() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0")
-def fixture_sacc_galaxy_xis_lens0_lens0() -> (
-    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
-):
+def fixture_sacc_galaxy_xis_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -704,7 +710,13 @@ def fixture_sacc_galaxy_xis_lens0_lens0() -> (
     cov = np.diag(np.ones_like(xis) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="lens0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.COUNTS},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens1")
@@ -1178,9 +1190,7 @@ def fixture_sacc_galaxy_cells_order_convention() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_data")
-def fixture_sacc_galaxy_cells_src0_src0_no_data() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
+def fixture_sacc_galaxy_cells_src0_src0_no_data() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -1189,7 +1199,13 @@ def fixture_sacc_galaxy_cells_src0_src0_no_data() -> (
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_no_data")
@@ -1212,9 +1228,7 @@ def fixture_sacc_galaxy_xis_lens0_lens0_no_data() -> (
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_window")
-def fixture_sacc_galaxy_cells_src0_src0_window() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
+def fixture_sacc_galaxy_cells_src0_src0_window() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data with a window function."""
     sacc_data = sacc.Sacc()
 
@@ -1235,13 +1249,17 @@ def fixture_sacc_galaxy_cells_src0_src0_window() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_window")
-def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
+def fixture_sacc_galaxy_cells_src0_src0_no_window() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without a window function."""
     sacc_data = sacc.Sacc()
 
@@ -1257,7 +1275,13 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_real")
