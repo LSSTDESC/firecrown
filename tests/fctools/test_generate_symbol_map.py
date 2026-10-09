@@ -291,9 +291,7 @@ def test_get_all_symbols_with_mock_package() -> None:
 
     original_walk = pkgutil.walk_packages
 
-    def mock_walk(
-        *_args: object, **_kwargs: object
-    ) -> list[tuple[object, str, bool]]:
+    def mock_walk(*_args: object, **_kwargs: object) -> list[tuple[object, str, bool]]:
         return []
 
     setattr(pkgutil, "walk_packages", mock_walk)
