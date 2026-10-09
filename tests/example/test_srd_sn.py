@@ -10,13 +10,13 @@ from firecrown.app.examples import ExampleSupernovaSRD
 
 
 @pytest.fixture(name="target_framework", params=Frameworks)
-def fixture_target_framework(request) -> Frameworks:
+def fixture_target_framework(request: pytest.FixtureRequest) -> Frameworks:
     """Generate a target framework for all frameworks."""
     return request.param
 
 
 @pytest.fixture(name="use_absolute_path", params=[True, False])
-def fixture_use_absolute_path(request) -> bool:
+def fixture_use_absolute_path(request: pytest.FixtureRequest) -> bool:
     """Generate a use_absolute_path for all path types."""
     return request.param
 
@@ -37,7 +37,7 @@ def fixture_sn_srd_example(
 
 
 @pytest.mark.example
-def test_srd_sn_run(sn_srd_example):
+def test_srd_sn_run(sn_srd_example: tuple[Path, Frameworks]) -> None:
     output_path, framework = sn_srd_example
     match framework:
         case Frameworks.COSMOSIS:
