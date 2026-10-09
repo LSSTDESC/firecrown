@@ -3,9 +3,14 @@
 Tests the coverage analysis and reporting functionality.
 """
 
+# pylint: disable=too-many-lines
+
 import json
+from pathlib import Path
+from typing import Any
 
 import pytest
+from pytest import CaptureFixture
 from rich.console import Console
 from typer.testing import CliRunner
 
@@ -29,7 +34,7 @@ from . import match_wrapped
 
 
 @pytest.fixture
-def console():
+def console() -> Console:
     """Return a rich console object for testing."""
     return Console()
 
@@ -37,7 +42,7 @@ def console():
 class TestCoverageSummary:
     """Tests for CoverageSummary dataclass."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that CoverageSummary has correct default values."""
         summary = CoverageSummary()
 
@@ -54,7 +59,7 @@ class TestCoverageSummary:
         assert summary.total_branches == 0
         assert summary.total_missing_branches == 0
 
-    def test_custom_values(self):
+    def test_custom_values(self) -> None:
         """Test creating CoverageSummary with custom values."""
         summary = CoverageSummary(
             total_files=10,
@@ -70,7 +75,7 @@ class TestCoverageSummary:
 class TestFileIssue:
     """Tests for FileIssue dataclass."""
 
-    def test_file_issue_creation(self):
+    def test_file_issue_creation(self) -> None:
         """Test creating a FileIssue object."""
         issue = FileIssue(
             file_path="test.py",
@@ -97,7 +102,7 @@ class TestFileIssue:
 class TestCalculateBranchCoverageSummary:
     """Tests for _calculate_branch_coverage_summary function."""
 
-    def test_with_branches(self):
+    def test_with_branches(self) -> None:
         """Test branch coverage calculation with branches present."""
         totals = {"num_branches": 100, "missing_branches": 20}
 
@@ -107,7 +112,7 @@ class TestCalculateBranchCoverageSummary:
         assert missing == 20
         assert coverage == 80.0
 
-    def test_with_no_branches(self):
+    def test_with_no_branches(self) -> None:
         """Test branch coverage when no branches exist."""
         totals = {"num_branches": 0, "missing_branches": 0}
 
@@ -117,7 +122,7 @@ class TestCalculateBranchCoverageSummary:
         assert missing == 0
         assert coverage == 100.0
 
-    def test_missing_keys(self):
+    def test_missing_keys(self) -> None:
         """Test with missing dictionary keys."""
         totals: dict[str, int] = {}
 
@@ -127,7 +132,7 @@ class TestCalculateBranchCoverageSummary:
         assert missing == 0
         assert coverage == 100.0
 
-    def test_perfect_branch_coverage(self):
+    def test_perfect_branch_coverage(self) -> None:
         """Test with 100% branch coverage."""
         totals = {"num_branches": 50, "missing_branches": 0}
 
@@ -141,7 +146,7 @@ class TestCalculateBranchCoverageSummary:
 class TestCalculateFileBranchCoverage:
     """Tests for _calculate_file_branch_coverage function."""
 
-    def test_with_branches(self):
+    def test_with_branches(self) -> None:
         """Test file branch coverage with branches present."""
         file_summary = {"num_branches": 10, "covered_branches": 8}
 
@@ -149,7 +154,7 @@ class TestCalculateFileBranchCoverage:
 
         assert coverage == 80.0
 
-    def test_no_branches_with_statements(self):
+    def test_no_branches_with_statements(self) -> None:
         """Test file with no branches but has statements."""
         file_summary = {"num_branches": 0}
 
@@ -157,7 +162,7 @@ class TestCalculateFileBranchCoverage:
 
         assert coverage == 100.0
 
-    def test_no_branches_no_statements(self):
+    def test_no_branches_no_statements(self) -> None:
         """Test file with no branches and no statements."""
         file_summary = {"num_branches": 0}
 
@@ -165,7 +170,7 @@ class TestCalculateFileBranchCoverage:
 
         assert coverage == 0.0
 
-    def test_perfect_branch_coverage(self):
+    def test_perfect_branch_coverage(self) -> None:
         """Test file with 100% branch coverage."""
         file_summary = {"num_branches": 20, "covered_branches": 20}
 
@@ -173,7 +178,7 @@ class TestCalculateFileBranchCoverage:
 
         assert coverage == 100.0
 
-    def test_missing_keys(self):
+    def test_missing_keys(self) -> None:
         """Test with missing dictionary keys."""
         file_summary: dict[str, int] = {}
 
@@ -185,7 +190,7 @@ class TestCalculateFileBranchCoverage:
 class TestCreateFileIssue:
     """Tests for _create_file_issue function."""
 
-    def test_create_file_issue(self):
+    def test_create_file_issue(self) -> None:
         """Test creating a FileIssue from coverage data."""
         file_summary = {"num_statements": 100, "num_branches": 20}
         missing_lines = [10, 20, 30]
@@ -218,7 +223,7 @@ class TestCreateFileIssue:
 class TestAnalyzeSingleFile:
     """Tests for _analyze_single_file function."""
 
-    def test_perfect_coverage_file(self):
+    def test_perfect_coverage_file(self) -> None:
         """Test analyzing a file with perfect coverage."""
         summary = CoverageSummary()
         file_data = {
@@ -242,7 +247,7 @@ class TestAnalyzeSingleFile:
         assert summary.files_with_missing_branches == 0
         assert summary.files_with_excluded_lines == 0
 
-    def test_file_with_missing_lines(self):
+    def test_file_with_missing_lines(self) -> None:
         """Test analyzing a file with missing lines."""
         summary = CoverageSummary()
         file_data = {
@@ -265,7 +270,7 @@ class TestAnalyzeSingleFile:
         assert summary.files_with_perfect_coverage == 0
         assert summary.files_with_missing_lines == 1
 
-    def test_file_with_missing_branches(self):
+    def test_file_with_missing_branches(self) -> None:
         """Test analyzing a file with missing branches."""
         summary = CoverageSummary()
         file_data = {
@@ -286,7 +291,7 @@ class TestAnalyzeSingleFile:
         assert result.missing_branches_count == 2
         assert summary.files_with_missing_branches == 1
 
-    def test_file_with_excluded_lines_only(self):
+    def test_file_with_excluded_lines_only(self) -> None:
         """Test analyzing a file with only excluded lines (no missing coverage)."""
         summary = CoverageSummary()
         file_data = {
@@ -307,7 +312,7 @@ class TestAnalyzeSingleFile:
         assert summary.files_with_excluded_lines == 1
         assert summary.files_with_perfect_coverage == 1  # Still perfect coverage
 
-    def test_file_with_all_issues(self):
+    def test_file_with_all_issues(self) -> None:
         """Test file with missing lines, branches, and excluded lines."""
         summary = CoverageSummary()
         file_data = {
@@ -334,7 +339,7 @@ class TestAnalyzeSingleFile:
 class TestAnalyzeCoverageJson:
     """Tests for analyze_coverage_json function."""
 
-    def test_analyze_simple_coverage(self, tmp_path, console):
+    def test_analyze_simple_coverage(self, tmp_path: Path, console: Console) -> None:
         """Test analyzing a simple coverage JSON file."""
         coverage_data = {
             "files": {
@@ -382,7 +387,9 @@ class TestAnalyzeCoverageJson:
         assert len(file_issues) == 1
         assert file_issues[0].file_path == "file1.py"
 
-    def test_file_issues_sorted_by_coverage(self, tmp_path, console):
+    def test_file_issues_sorted_by_coverage(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test that file issues are sorted by coverage (worst first)."""
         coverage_data = {
             "files": {
@@ -437,7 +444,7 @@ class TestAnalyzeCoverageJson:
         assert file_issues[1].file_path == "file3.py"  # Middle: 75%
         assert file_issues[2].file_path == "file1.py"  # Best: 90%
 
-    def test_empty_coverage_file(self, tmp_path, console):
+    def test_empty_coverage_file(self, tmp_path: Path, console: Console) -> None:
         """Test analyzing an empty coverage file."""
         coverage_data: dict[str, dict[str, object]] = {"files": {}, "totals": {}}
 
@@ -453,7 +460,7 @@ class TestAnalyzeCoverageJson:
 class TestPrintCoverageSummary:
     """Tests for print_coverage_summary function."""
 
-    def test_print_summary(self, capsys, console):
+    def test_print_summary(self, capsys: CaptureFixture[str], console: Console) -> None:
         """Test printing coverage summary."""
         summary = CoverageSummary(
             total_files=10,
@@ -485,7 +492,9 @@ class TestPrintCoverageSummary:
 class TestPrintSourceCodeForMissingLines:
     """Tests for _print_source_code_for_missing_lines function."""
 
-    def test_print_source_existing_file(self, tmp_path, capsys, console):
+    def test_print_source_existing_file(
+        self, tmp_path: Path, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing source code for existing file."""
         source_file = tmp_path / "test.py"
         source_file.write_text("line 1\nline 2\nline 3\nline 4\nline 5\n")
@@ -511,7 +520,9 @@ class TestPrintSourceCodeForMissingLines:
         assert "2: line 2" in captured.out
         assert "4: line 4" in captured.out
 
-    def test_print_source_nonexistent_file(self, capsys, console):
+    def test_print_source_nonexistent_file(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test handling of nonexistent source file."""
         issue = FileIssue(
             file_path="/nonexistent/file.py",
@@ -532,7 +543,9 @@ class TestPrintSourceCodeForMissingLines:
         captured = capsys.readouterr()
         assert "(Source file not found for line details)" in captured.out
 
-    def test_print_source_with_unicode_error(self, tmp_path, capsys, console):
+    def test_print_source_with_unicode_error(
+        self, tmp_path: Path, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test handling of files with encoding errors."""
         source_file = tmp_path / "test.py"
         # Write binary data that's not valid UTF-8
@@ -557,7 +570,9 @@ class TestPrintSourceCodeForMissingLines:
         captured = capsys.readouterr()
         assert "(Error reading source file:" in captured.out
 
-    def test_print_source_line_out_of_range(self, tmp_path, capsys, console):
+    def test_print_source_line_out_of_range(
+        self, tmp_path: Path, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test handling of line numbers outside file range."""
         source_file = tmp_path / "test.py"
         source_file.write_text("line 1\nline 2\n")
@@ -586,7 +601,9 @@ class TestPrintSourceCodeForMissingLines:
 class TestPrintFileIssueDetails:
     """Tests for _print_file_issue_details function."""
 
-    def test_print_with_missing_lines_and_branches(self, tmp_path, capsys, console):
+    def test_print_with_missing_lines_and_branches(
+        self, tmp_path: Path, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing file issue with missing lines and branches."""
         source_file = tmp_path / "test.py"
         source_file.write_text("line 1\nline 2\nline 3\n")
@@ -616,7 +633,9 @@ class TestPrintFileIssueDetails:
         assert "Missing Branches (1):" in captured.out
         assert "[10, 11]" in captured.out
 
-    def test_print_without_showing_source(self, capsys, console):
+    def test_print_without_showing_source(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing without showing source code."""
         issue = FileIssue(
             file_path="test.py",
@@ -639,7 +658,9 @@ class TestPrintFileIssueDetails:
         assert "Missing Lines (1):" in captured.out
         assert "Source code for missing lines:" not in captured.out
 
-    def test_print_with_no_branches(self, capsys, console):
+    def test_print_with_no_branches(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing for file with no branches."""
         issue = FileIssue(
             file_path="test.py",
@@ -662,7 +683,9 @@ class TestPrintFileIssueDetails:
         assert "Branch Coverage:" not in captured.out  # Should not show for 0 branches
         assert "Excluded Lines (1):" in captured.out
 
-    def test_print_with_excluded_lines(self, capsys, console):
+    def test_print_with_excluded_lines(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing with excluded lines."""
         issue = FileIssue(
             file_path="test.py",
@@ -688,14 +711,18 @@ class TestPrintFileIssueDetails:
 class TestPrintFileIssues:
     """Tests for print_file_issues function."""
 
-    def test_print_no_issues(self, capsys, console):
+    def test_print_no_issues(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing when no issues exist."""
         print_file_issues(console, [])
 
         captured = capsys.readouterr()
         assert "ALL FILES HAVE PERFECT COVERAGE!" in captured.out
 
-    def test_print_multiple_issues(self, capsys, console):
+    def test_print_multiple_issues(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing multiple file issues."""
         issues = [
             FileIssue(
@@ -737,7 +764,9 @@ class TestPrintFileIssues:
 class TestPrintPerfectCoverageFiles:
     """Tests for print_perfect_coverage_files function."""
 
-    def test_print_perfect_files(self, capsys, console):
+    def test_print_perfect_files(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test printing files with perfect coverage."""
         file_issues = [
             FileIssue(
@@ -764,7 +793,9 @@ class TestPrintPerfectCoverageFiles:
         assert "✅ good2.py" in captured.out
         assert "bad.py" not in captured.out
 
-    def test_no_perfect_files(self, capsys, console):
+    def test_no_perfect_files(
+        self, capsys: CaptureFixture[str], console: Console
+    ) -> None:
         """Test when no files have perfect coverage."""
         file_issues = [
             FileIssue(
@@ -793,7 +824,7 @@ class TestPrintPerfectCoverageFiles:
 class TestMainFunction:  # pylint: disable=import-outside-toplevel
     """Tests for main CLI function."""
 
-    def test_main_basic_usage(self, tmp_path):
+    def test_main_basic_usage(self, tmp_path: Path) -> None:
         """Test main function with basic coverage file."""
         coverage_data = {
             "files": {
@@ -829,7 +860,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         assert match_wrapped(result.stdout, "COVERAGE ANALYSIS SUMMARY")
         assert match_wrapped(result.stdout, "Total files analyzed: 1")
 
-    def test_main_with_show_source(self, tmp_path):
+    def test_main_with_show_source(self, tmp_path: Path) -> None:
         """Test main function with --show-source flag."""
         source_file = tmp_path / "test.py"
         source_file.write_text("line 1\nline 2\n")
@@ -867,7 +898,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
 
         assert match_wrapped(result.stdout, "Source code for missing lines:")
 
-    def test_main_with_show_perfect(self, tmp_path):
+    def test_main_with_show_perfect(self, tmp_path: Path) -> None:
         """Test main function with --show-perfect flag."""
         coverage_data = {
             "files": {
@@ -913,20 +944,24 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         assert match_wrapped(result.stdout, "FILES WITH PERFECT COVERAGE:")
         assert match_wrapped(result.stdout, "perfect.py")
 
-    def test_main_with_nonexistent_file(self, tmp_path):
+    def test_main_with_nonexistent_file(self, tmp_path: Path) -> None:
         """Test main function with nonexistent coverage file."""
         runner = CliRunner()
         result = runner.invoke(app, [str(tmp_path / "nonexistent.json")])
 
         assert result.exit_code != 0
 
-    def test_main_with_os_error(self, tmp_path, monkeypatch):
+    def test_main_with_os_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test main function handling of OSError."""
         coverage_file = tmp_path / "coverage.json"
         coverage_file.write_text('{"files": {}, "totals": {}}')
 
         # Mock load_json_file to raise OSError
-        def mock_load_json_file(*args, **kwargs):
+        def mock_load_json_file(
+            console: Console, file_path: Path, error_context: str = "reading file"
+        ) -> dict[str, Any]:
             raise OSError("Simulated OS error")
 
         from firecrown.fctools import coverage_summary
@@ -940,7 +975,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
 
         assert match_wrapped(result.stdout, "Error analyzing coverage file:")
 
-    def test_main_block_with_subprocess(self, tmp_path):
+    def test_main_block_with_subprocess(self, tmp_path: Path) -> None:
         """Test that the script can be executed directly via subprocess.
 
         This test verifies that the __main__ block and ImportError fallback
