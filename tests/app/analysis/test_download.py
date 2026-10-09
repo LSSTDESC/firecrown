@@ -72,7 +72,7 @@ class TestDownloadFromUrl:
 
     @patch("urllib.request.urlretrieve")
     def test_download_from_url_uses_cache_when_available(
-        self, mock_retrieve, tmp_path: Path
+        self, mock_retrieve: MagicMock, tmp_path: Path
     ) -> None:
         """Test that cached files are used instead of downloading."""
         output_file = tmp_path / "test.txt"
@@ -99,7 +99,7 @@ class TestDownloadFromUrl:
 
     @patch("urllib.request.urlretrieve")
     def test_download_from_url_downloads_when_not_cached(
-        self, mock_retrieve, tmp_path: Path
+        self, mock_retrieve: MagicMock, tmp_path: Path
     ) -> None:
         """Test that file is downloaded when not in cache."""
         output_file = tmp_path / "test_new.txt"
@@ -113,7 +113,7 @@ class TestDownloadFromUrl:
 
         try:
             # Mock the download to create the cached file
-            def mock_download(url, path):
+            def mock_download(url: str, path: Path) -> None:
                 assert url is not None
                 Path(path).write_text("downloaded content", encoding="utf-8")
 
@@ -135,7 +135,7 @@ class TestDownloadFromUrl:
 
     @patch("urllib.request.urlretrieve")
     def test_download_from_url_with_description(
-        self, mock_retrieve, tmp_path: Path
+        self, mock_retrieve: MagicMock, tmp_path: Path
     ) -> None:
         """Test download with custom description."""
         output_file = tmp_path / "test_desc.txt"
@@ -149,7 +149,7 @@ class TestDownloadFromUrl:
 
         try:
             # Mock the download
-            def mock_download(url, path):
+            def mock_download(url: str, path: Path) -> None:
                 assert url is not None
                 Path(path).write_text("content", encoding="utf-8")
 
@@ -193,7 +193,7 @@ class TestDownloadFromUrl:
 
     @patch("urllib.request.urlretrieve")
     def test_download_from_url_console_parameter(
-        self, mock_retrieve, tmp_path: Path
+        self, mock_retrieve: MagicMock, tmp_path: Path
     ) -> None:
         """Test that console parameter is required."""
         output_file = tmp_path / "test_console.txt"
@@ -207,7 +207,7 @@ class TestDownloadFromUrl:
 
         try:
             # Mock the download
-            def mock_download(_, path):
+            def mock_download(_: str, path: Path) -> None:
                 Path(path).write_text("content", encoding="utf-8")
 
             mock_retrieve.side_effect = mock_download
