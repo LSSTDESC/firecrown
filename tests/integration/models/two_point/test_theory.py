@@ -1,8 +1,10 @@
 """Integration tests for the TwoPointTheory class using real Source instances."""
 
 import pytest
+import sacc
 
-from firecrown.likelihood import Source
+from firecrown.likelihood import Source, Tracer
+from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import TwoPointTheory
 from firecrown.updatable import ParamsMap
 
@@ -10,24 +12,24 @@ from firecrown.updatable import ParamsMap
 class FakeSource(Source):
     """A minimal concrete Source implementation for testing."""
 
-    def read_systematics(self, sacc_data) -> None:
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
         pass
 
-    def _read(self, sacc_data) -> None:
+    def _read(self, sacc_data: sacc.Sacc) -> None:
         pass
 
-    def _update_source(self, params) -> None:
+    def _update_source(self, params: ParamsMap) -> None:
         pass
 
     def get_scale(self) -> float:
         return 1.0
 
-    def create_tracers(self, tools):
-        return []
+    def create_tracers(self, tools: ModelingTools) -> tuple[list[Tracer], object]:
+        raise NotImplementedError("FakeSource only supports update and reset tests.")
 
 
 @pytest.mark.integration
-def test_two_point_theory_update_integration():
+def test_two_point_theory_update_integration() -> None:
     """Integration test: update method updates real sources."""
     source1 = FakeSource("tracer_1")
     source2 = FakeSource("tracer_2")
@@ -46,7 +48,7 @@ def test_two_point_theory_update_integration():
 
 
 @pytest.mark.integration
-def test_two_point_theory_reset_integration():
+def test_two_point_theory_reset_integration() -> None:
     """Integration test: reset method resets real sources."""
     source1 = FakeSource("tracer_1")
     source2 = FakeSource("tracer_2")
