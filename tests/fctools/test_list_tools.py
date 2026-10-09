@@ -6,7 +6,9 @@ Tests the tool discovery and listing functionality.
 import subprocess
 import sys
 from pathlib import Path
+from typing import NoReturn
 
+import pytest
 from typer.testing import CliRunner
 
 from firecrown.fctools.list_tools import (
@@ -22,7 +24,7 @@ from . import match_wrapped
 class TestExtractDescriptionFromDocstring:
     """Tests for _extract_description_from_docstring function."""
 
-    def test_extract_from_simple_docstring(self):
+    def test_extract_from_simple_docstring(self) -> None:
         """Test extracting description from a simple docstring."""
         docstring = "This is a simple tool."
 
@@ -30,7 +32,7 @@ class TestExtractDescriptionFromDocstring:
 
         assert result == "This is a simple tool."
 
-    def test_extract_from_multiline_docstring(self):
+    def test_extract_from_multiline_docstring(self) -> None:
         """Test extracting first line from multiline docstring."""
         docstring = """This is the first line.
 
@@ -41,7 +43,7 @@ class TestExtractDescriptionFromDocstring:
 
         assert result == "This is the first line."
 
-    def test_extract_with_triple_quotes(self):
+    def test_extract_with_triple_quotes(self) -> None:
         """Test handling docstring with triple quotes in text.
 
         The function filters out lines that start with triple quotes,
@@ -54,7 +56,7 @@ class TestExtractDescriptionFromDocstring:
         # Lines starting with """ are filtered out
         assert result == "Tool description not available"
 
-    def test_extract_from_empty_docstring(self):
+    def test_extract_from_empty_docstring(self) -> None:
         """Test handling empty docstring."""
         docstring = ""
 
@@ -62,7 +64,7 @@ class TestExtractDescriptionFromDocstring:
 
         assert result == "Tool description not available"
 
-    def test_extract_from_whitespace_only(self):
+    def test_extract_from_whitespace_only(self) -> None:
         """Test handling whitespace-only docstring."""
         docstring = "   \n   \n   "
 
@@ -70,7 +72,7 @@ class TestExtractDescriptionFromDocstring:
 
         assert result == "Tool description not available"
 
-    def test_extract_skips_empty_lines(self):
+    def test_extract_skips_empty_lines(self) -> None:
         """Test that empty lines are skipped."""
         docstring = """
 
@@ -81,7 +83,7 @@ class TestExtractDescriptionFromDocstring:
 
         assert result == "This is the description."
 
-    def test_extract_with_single_quotes(self):
+    def test_extract_with_single_quotes(self) -> None:
         """Test handling docstring with single triple quotes in text.
 
         The function filters out lines that start with triple quotes,
@@ -98,7 +100,7 @@ class TestExtractDescriptionFromDocstring:
 class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
     """Tests for _extract_description_from_file function."""
 
-    def test_extract_from_valid_python_file(self, tmp_path):
+    def test_extract_from_valid_python_file(self, tmp_path: Path) -> None:
         """Test extracting description from a valid Python file."""
         test_file = tmp_path / "test_tool.py"
         test_file.write_text(
@@ -109,7 +111,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
 
         assert "test tool" in result.lower()
 
-    def test_extract_from_file_with_multiline_docstring(self, tmp_path):
+    def test_extract_from_file_with_multiline_docstring(self, tmp_path: Path) -> None:
         """Test extracting from file with multiline docstring."""
         test_file = tmp_path / "tool.py"
         test_file.write_text(
@@ -120,7 +122,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
 
         assert "First line is important" in result
 
-    def test_extract_from_file_without_docstring(self, tmp_path):
+    def test_extract_from_file_without_docstring(self, tmp_path: Path) -> None:
         """Test handling file without module docstring."""
         test_file = tmp_path / "no_doc.py"
         test_file.write_text("def main():\n    pass\n")
@@ -129,7 +131,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
 
         assert result == "Tool description not available"
 
-    def test_extract_from_nonexistent_file(self, tmp_path):
+    def test_extract_from_nonexistent_file(self, tmp_path: Path) -> None:
         """Test handling nonexistent file."""
         fake_file = tmp_path / "nonexistent_tool.py"
         # Don't create the file, just use the path
@@ -138,7 +140,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
 
         assert result == "Tool description not available"
 
-    def test_extract_from_file_with_syntax_error(self, tmp_path):
+    def test_extract_from_file_with_syntax_error(self, tmp_path: Path) -> None:
         """Test handling file with syntax errors.
 
         AST parsing will fail on syntax errors, falling back to the
@@ -152,7 +154,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
         # Syntax error in the code causes AST parsing to fail
         assert result == "Tool description not available"
 
-    def test_extract_from_file_with_invalid_unicode(self, tmp_path):
+    def test_extract_from_file_with_invalid_unicode(self, tmp_path: Path) -> None:
         """Test handling file with encoding errors."""
         test_file = tmp_path / "bad_encoding.py"
         test_file.write_bytes(b"\xff\xfe\x00\x00")
@@ -161,7 +163,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
 
         assert result == "Tool description not available"
 
-    def test_extract_with_long_docstring(self, tmp_path):
+    def test_extract_with_long_docstring(self, tmp_path: Path) -> None:
         """Test that long docstrings are truncated."""
         long_desc = "A" * 200  # Longer than 80 chars
         test_file = tmp_path / "long_doc.py"
@@ -172,14 +174,16 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
         # Should be truncated to around 80 chars
         assert len(result) <= 85  # Allow some margin for ellipsis
 
-    def test_extract_fallback_to_import(self, tmp_path, monkeypatch):
+    def test_extract_fallback_to_import(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test fallback to importlib when AST fails."""
         # Create a file with a valid docstring
         test_file = tmp_path / "import_test.py"
         test_file.write_text('"""Fallback test tool."""\nx = 1\n')
 
         # Mock get_module_docstring to raise OSError to trigger fallback
-        def mock_get_module_docstring(path):
+        def mock_get_module_docstring(path: Path) -> NoReturn:
             raise OSError("Simulated error")
 
         import firecrown.fctools.list_tools as list_tools_module
@@ -193,14 +197,16 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
         # Should get description via importlib fallback
         assert "Fallback test tool" in result
 
-    def test_extract_fallback_with_no_spec_loader(self, tmp_path, monkeypatch):
+    def test_extract_fallback_with_no_spec_loader(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test fallback when spec.loader is None."""
         test_file = tmp_path / "no_loader.py"
         test_file.write_text('"""Test."""\n')
 
         # Mock to return a spec without loader
         # pylint: disable=unused-argument
-        def mock_spec_from_file_location(name, location):
+        def mock_spec_from_file_location(name: str, location: str) -> object:
             class FakeSpec:
                 """Mock spec without loader."""
 
@@ -215,7 +221,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
         )
 
         # Also mock get_module_docstring to fail
-        def mock_get_module_docstring(path):
+        def mock_get_module_docstring(path: Path) -> NoReturn:
             raise OSError("Simulated error")
 
         import firecrown.fctools.list_tools as list_tools_module
@@ -229,14 +235,16 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
         # Should return fallback since spec.loader is None
         assert result == "Tool description not available"
 
-    def test_extract_fallback_with_empty_docstring(self, tmp_path, monkeypatch):
+    def test_extract_fallback_with_empty_docstring(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test fallback when module has no docstring."""
         # Create a file without a docstring
         test_file = tmp_path / "no_doc_fallback.py"
         test_file.write_text("x = 1\n")
 
         # Mock get_module_docstring to raise OSError to trigger fallback
-        def mock_get_module_docstring(path):
+        def mock_get_module_docstring(path: Path) -> NoReturn:
             raise OSError("Simulated error")
 
         import firecrown.fctools.list_tools as list_tools_module
@@ -254,7 +262,7 @@ class TestExtractDescriptionFromFile:  # pylint: disable=import-outside-toplevel
 class TestDiscoverTools:  # pylint: disable=import-outside-toplevel
     """Tests for _discover_tools function."""
 
-    def test_discover_finds_tools(self):
+    def test_discover_finds_tools(self) -> None:
         """Test that tool discovery finds real fctools."""
         tools = _discover_tools()
 
@@ -265,19 +273,21 @@ class TestDiscoverTools:  # pylint: disable=import-outside-toplevel
         assert all(isinstance(k, str) for k in tools)
         assert all(isinstance(v, str) for v in tools.values())
 
-    def test_discover_excludes_init(self):
+    def test_discover_excludes_init(self) -> None:
         """Test that __init__.py is excluded from tools."""
         tools = _discover_tools()
 
         assert "__init__.py" not in tools
 
-    def test_discover_excludes_list_tools(self):
+    def test_discover_excludes_list_tools(self) -> None:
         """Test that list_tools.py excludes itself."""
         tools = _discover_tools()
 
         assert "list_tools.py" not in tools
 
-    def test_discover_excludes_private_files(self, tmp_path, monkeypatch):
+    def test_discover_excludes_private_files(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that files starting with _ are excluded."""
         # First check the real discover_tools
         tools = _discover_tools()
@@ -314,7 +324,7 @@ class TestDiscoverTools:  # pylint: disable=import-outside-toplevel
             # Restore original
             monkeypatch.setattr(list_tools_module, "__file__", original_file)
 
-    def test_discover_returns_descriptions(self):
+    def test_discover_returns_descriptions(self) -> None:
         """Test that discovered tools have descriptions."""
         tools = _discover_tools()
 
@@ -323,7 +333,7 @@ class TestDiscoverTools:  # pylint: disable=import-outside-toplevel
             assert description
             assert len(description) > 0
 
-    def test_discover_finds_specific_tools(self):
+    def test_discover_finds_specific_tools(self) -> None:
         """Test that known tools are discovered."""
         tools = _discover_tools()
 
@@ -337,7 +347,7 @@ class TestDiscoverTools:  # pylint: disable=import-outside-toplevel
 class TestMainFunction:  # pylint: disable=import-outside-toplevel
     """Tests for main CLI function."""
 
-    def test_main_basic_output(self):
+    def test_main_basic_output(self) -> None:
         """Test main function produces output."""
         runner = CliRunner()
         result = runner.invoke(app, [])
@@ -345,7 +355,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         assert result.exit_code == 0
         assert match_wrapped(result.stdout, "Available fctools:")
 
-    def test_main_lists_tools(self):
+    def test_main_lists_tools(self) -> None:
         """Test that main lists actual tools."""
         runner = CliRunner()
         result = runner.invoke(app, [])
@@ -355,7 +365,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         assert match_wrapped(result.stdout, "common.py")
         assert match_wrapped(result.stdout, "ast_utils.py")
 
-    def test_main_verbose_flag(self):
+    def test_main_verbose_flag(self) -> None:
         """Test main with --verbose flag."""
         runner = CliRunner()
         result = runner.invoke(app, ["--verbose"])
@@ -364,7 +374,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         assert match_wrapped(result.stdout, "Available fctools:")
         assert match_wrapped(result.stdout, "Usage: python -m firecrown.fctools.")
 
-    def test_main_short_verbose_flag(self):
+    def test_main_short_verbose_flag(self) -> None:
         """Test main with -v flag."""
         runner = CliRunner()
         result = runner.invoke(app, ["-v"])
@@ -372,7 +382,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         assert result.exit_code == 0
         assert match_wrapped(result.stdout, "Usage: python -m firecrown.fctools.")
 
-    def test_main_non_verbose_has_help_text(self):
+    def test_main_non_verbose_has_help_text(self) -> None:
         """Test that non-verbose mode shows help text."""
         runner = CliRunner()
         result = runner.invoke(app, [])
@@ -383,7 +393,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
             result.stdout, "Use 'python -m firecrown.fctools.TOOL --help'"
         )
 
-    def test_main_verbose_shows_tool_details(self):
+    def test_main_verbose_shows_tool_details(self) -> None:
         """Test that verbose mode shows more details."""
         runner = CliRunner()
         result = runner.invoke(app, ["--verbose"])
@@ -395,7 +405,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         has_usage_line = any("Usage: python -m" in line for line in lines)
         assert has_usage_line
 
-    def test_main_tools_are_sorted(self):
+    def test_main_tools_are_sorted(self) -> None:
         """Test that tools are listed in alphabetical order."""
         runner = CliRunner()
         result = runner.invoke(app, [])
@@ -419,7 +429,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         if len(tool_names) > 1:
             assert tool_names == sorted(tool_names)
 
-    def test_main_with_subprocess(self):
+    def test_main_with_subprocess(self) -> None:
         """Test that the script can be executed directly via subprocess.
 
         This test verifies that the __main__ block and ImportError fallback
@@ -438,7 +448,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         assert match_wrapped(result.stdout, "Available fctools:")
         assert "common.py" in result.stdout
 
-    def test_main_subprocess_with_verbose(self):
+    def test_main_subprocess_with_verbose(self) -> None:
         """Test script execution with verbose flag via subprocess."""
         script_path = "firecrown/fctools/list_tools.py"
         result = subprocess.run(
@@ -456,7 +466,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
 class TestIntegration:  # pylint: disable=import-outside-toplevel
     """Integration tests for list_tools functionality."""
 
-    def test_full_workflow(self):
+    def test_full_workflow(self) -> None:
         """Test the complete workflow of discovering and listing tools."""
         # Discover tools
         tools = _discover_tools()
@@ -475,7 +485,7 @@ class TestIntegration:  # pylint: disable=import-outside-toplevel
                 tool_path.suffix == ".py"
             ), f"Tool {tool_name} should be a Python file"
 
-    def test_all_tools_have_valid_descriptions(self):
+    def test_all_tools_have_valid_descriptions(self) -> None:
         """Test that all discovered tools have meaningful descriptions."""
         tools = _discover_tools()
 
@@ -485,7 +495,7 @@ class TestIntegration:  # pylint: disable=import-outside-toplevel
             assert isinstance(description, str)
             assert len(description) > 0
 
-    def test_cli_output_matches_discovery(self):
+    def test_cli_output_matches_discovery(self) -> None:
         """Test that CLI output matches tool discovery results."""
         tools = _discover_tools()
 
