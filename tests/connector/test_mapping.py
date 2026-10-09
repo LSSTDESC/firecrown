@@ -20,7 +20,7 @@ from firecrown.updatable import ParamsMap
 
 
 # TODO: Refactor these test functions to use a sensible fixture.
-def test_conversion_from_cosmosis_camb_as():
+def test_conversion_from_cosmosis_camb_as() -> None:
     cosmosis_params = {
         "a_s": 2.1e-09,
         "baryon_fraction": 0.13333333333333333,
@@ -65,7 +65,7 @@ def test_conversion_from_cosmosis_camb_as():
     assert p.T_CMB == 2.7255  # currently hard-wired
 
 
-def test_conversion_from_cosmosis_camb_sigma8():
+def test_conversion_from_cosmosis_camb_sigma8() -> None:
     cosmosis_params = {
         "a_s": 2.1e-09,
         "baryon_fraction": 0.13333333333333333,
@@ -111,7 +111,7 @@ def test_conversion_from_cosmosis_camb_sigma8():
     assert p.T_CMB == 2.7255  # currently hard-wired
 
 
-def test_conversion_from_cosmosis_camb_using_delta_neff():
+def test_conversion_from_cosmosis_camb_using_delta_neff() -> None:
     cosmosis_params = {
         "a_s": 2.1e-09,
         "baryon_fraction": 0.13333333333333333,
@@ -147,7 +147,7 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
     assert p.Neff == pytest.approx(3.171)
 
 
-def test_get_params_names():
+def test_get_params_names() -> None:
     fc_map = Mapping()
 
     with pytest.deprecated_call():
@@ -155,7 +155,7 @@ def test_get_params_names():
         assert not params_names
 
 
-def test_transform_k_h_to_k():
+def test_transform_k_h_to_k() -> None:
     fc_map = Mapping()
 
     with pytest.deprecated_call():
@@ -163,7 +163,7 @@ def test_transform_k_h_to_k():
             fc_map.transform_k_h_to_k(np.array([], dtype=np.float64))
 
 
-def test_transform_p_k_h3_to_p_k():
+def test_transform_p_k_h3_to_p_k() -> None:
     fc_map = Mapping()
 
     with pytest.deprecated_call():
@@ -171,7 +171,7 @@ def test_transform_p_k_h3_to_p_k():
             fc_map.transform_p_k_h3_to_p_k(np.array([], dtype=np.float64))
 
 
-def test_transform_h_to_h_over_h0():
+def test_transform_h_to_h_over_h0() -> None:
     fc_map = Mapping()
 
     with pytest.deprecated_call():
@@ -179,7 +179,7 @@ def test_transform_h_to_h_over_h0():
             fc_map.transform_h_to_h_over_h0(np.array([], dtype=np.float64))
 
 
-def test_sigma8_and_A_s():
+def test_sigma8_and_A_s() -> None:
     fc_map = Mapping()
 
     params_dict: dict[str, Any] = {
@@ -210,14 +210,14 @@ def test_sigma8_and_A_s():
         fc_map.set_params(**params_dict)
 
 
-def test_mappping_builder():
+def test_mappping_builder() -> None:
     with pytest.raises(
         ValueError, match="input_style must be .* not invalid_input_style"
     ):
         mapping_builder(input_style="invalid_input_style")
 
 
-def test_mapping_cosmosis():
+def test_mapping_cosmosis() -> None:
     mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
     assert isinstance(mapping_cosmosis, Mapping)
 
@@ -268,21 +268,21 @@ def test_mapping_cosmosis():
     assert d["m_nu"] == 0.0
 
 
-def test_mapping_cosmosis_k_h_to_h(mapping_cosmosis):
+def test_mapping_cosmosis_k_h_to_h(mapping_cosmosis: MappingCosmoSIS) -> None:
     k_h_array = np.geomspace(0.1, 10.0, 10)
     k_array = mapping_cosmosis.transform_k_h_to_k(k_h_array)
 
     assert np.allclose(k_h_array * mapping_cosmosis.h, k_array)
 
 
-def test_mapping_cosmosis_p_k_h3_to_p_k(mapping_cosmosis):
+def test_mapping_cosmosis_p_k_h3_to_p_k(mapping_cosmosis: MappingCosmoSIS) -> None:
     p_k_h3_array = np.geomspace(0.1, 10.0, 10)
     p_k_array = mapping_cosmosis.transform_p_k_h3_to_p_k(p_k_h3_array)
 
     assert np.allclose(p_k_h3_array / mapping_cosmosis.h**3, p_k_array)
 
 
-def test_mapping_camb():
+def test_mapping_camb() -> None:
     mapping_camb = mapping_builder(input_style="CAMB")
     assert isinstance(mapping_camb, MappingCAMB)
 
@@ -333,7 +333,7 @@ def test_mapping_camb():
     assert d["m_nu"] == 0.0
 
 
-def test_mapping_camb_setting_both_A_s_and_sigma8():
+def test_mapping_camb_setting_both_A_s_and_sigma8() -> None:
     mapping_camb = mapping_builder(input_style="CAMB")
     assert isinstance(mapping_camb, MappingCAMB)
     with pytest.raises(
@@ -358,7 +358,7 @@ def test_mapping_camb_setting_both_A_s_and_sigma8():
         )
 
 
-def test_mapping_camb_setting_neither_A_s_and_sigma8():
+def test_mapping_camb_setting_neither_A_s_and_sigma8() -> None:
     mapping_camb = mapping_builder(input_style="CAMB")
     assert isinstance(mapping_camb, MappingCAMB)
     with pytest.raises(
@@ -381,7 +381,7 @@ def test_mapping_camb_setting_neither_A_s_and_sigma8():
         )
 
 
-def test_mapping_camb_setting_A_s():
+def test_mapping_camb_setting_A_s() -> None:
     mapping_camb = mapping_builder(input_style="CAMB")
     assert isinstance(mapping_camb, MappingCAMB)
     mapping_camb.set_params_from_camb(
@@ -403,7 +403,7 @@ def test_mapping_camb_setting_A_s():
     assert mapping_camb.A_s == 2.1e-9
 
 
-def test_mapping_camb_setting_sigma8():
+def test_mapping_camb_setting_sigma8() -> None:
     mapping_camb = mapping_builder(input_style="CAMB")
     assert isinstance(mapping_camb, MappingCAMB)
     mapping_camb.set_params_from_camb(
@@ -425,7 +425,7 @@ def test_mapping_camb_setting_sigma8():
     assert mapping_camb.sigma8 == 0.8
 
 
-def test_mapping_m_nu_list_asdict():
+def test_mapping_m_nu_list_asdict() -> None:
     mapping0 = Mapping()
     mapping0.Omega_c = 0.26
     mapping0.Omega_b = 0.04
