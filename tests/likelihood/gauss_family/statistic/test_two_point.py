@@ -153,15 +153,15 @@ def test_tracer_names() -> None:
 
 def test_two_point_src0_src0_window_parameterized(
     window_fixture: str,
-    sacc_galaxy_cells_src0_src0_window,
-    sacc_galaxy_cells_src0_src0_no_window,
+    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_no_window: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
     """Test TwoPoint theory calculations are repeatable for both window scenarios."""
     if window_fixture == "with_window":
-        sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+        sacc_data, _ = sacc_galaxy_cells_src0_src0_window
         expected_window = True
     else:  # no_window
-        sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
+        sacc_data, _ = sacc_galaxy_cells_src0_src0_no_window
         expected_window = False
 
     src0 = WeakLensing(sacc_tracer="src0")
@@ -212,10 +212,11 @@ def test_two_point_generate_ell_or_theta() -> None:
 
 
 def test_two_point_src0_src0_no_data_binning(
-    sacc_galaxy_cells_src0_src0_no_data, binning_type: str
+    sacc_galaxy_cells_src0_src0_no_data: tuple[sacc.Sacc, TomographicBin],
+    binning_type: str,
 ) -> None:
     """Test TwoPoint with different binning types when no data is present."""
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -331,8 +332,10 @@ def test_two_point_theory_construction() -> None:
     assert theory.source1 is src0
 
 
-def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0
+def test_two_point_lens0_lens0_config(
+    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_xis_lens0_lens0
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
@@ -363,8 +366,10 @@ def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
     statistic.compute_theory_vector(tools)
 
 
-def test_two_point_src0_src0_no_data_error(sacc_galaxy_cells_src0_src0_no_data) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
+def test_two_point_src0_src0_no_data_error(
+    sacc_galaxy_cells_src0_src0_no_data: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -400,9 +405,9 @@ def test_two_point_lens0_lens0_no_data_error(
 
 
 def test_two_point_src0_src0_data_and_conf_warn(
-    sacc_galaxy_cells_src0_src0_window,
+    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_window
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -424,8 +429,10 @@ def test_two_point_src0_src0_data_and_conf_warn(
         statistic.read(sacc_data)
 
 
-def test_two_point_lens0_lens0_data_and_conf_warn(sacc_galaxy_xis_lens0_lens0) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0
+def test_two_point_lens0_lens0_data_and_conf_warn(
+    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_xis_lens0_lens0
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
@@ -704,12 +711,12 @@ def test_apply_interp_when_serialization_error():
 
 
 def test_two_point_src0_src0_window_aiw(
-    sacc_galaxy_cells_src0_src0_window: tuple[object, ...],
+    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
     """This test also makes sure that TwoPoint theory calculations are
     repeatable."""
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_window
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -738,10 +745,10 @@ def test_two_point_src0_src0_window_aiw(
 
 
 def test_two_point_src0_src0_no_window_aiw(
-    sacc_galaxy_cells_src0_src0_no_window: tuple[object, ...],
+    sacc_galaxy_cells_src0_src0_no_window: tuple[sacc.Sacc, TomographicBin],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_window
 
     src0 = WeakLensing(sacc_tracer="src0")
 

@@ -34,6 +34,7 @@ from firecrown.metadata_types import (
     Clusters,
     Galaxies,
     Measurement,
+    TomographicBin,
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
@@ -763,16 +764,14 @@ def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
 
 
 def test_extract_all_measured_mixed_types_galaxy_only(
-    sacc_galaxy_cells_src0_src0: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
     """Test extract_all_measured_types with allow_mixed_types=True on single type.
 
     This test verifies that tracers with only one measurement type work
     correctly with allow_mixed_types=True.
     """
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
 
     result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
@@ -781,16 +780,14 @@ def test_extract_all_measured_mixed_types_galaxy_only(
 
 
 def test_extract_all_measured_mixed_types_density_only(
-    sacc_galaxy_cells_lens0_lens0: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
     """Test extract_all_measured_types with allow_mixed_types=True on density.
 
     Verifies that galaxy density (COUNTS) measurements work correctly
     with allow_mixed_types=True.
     """
-    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
 
     result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
