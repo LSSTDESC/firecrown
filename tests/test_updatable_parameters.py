@@ -24,14 +24,14 @@ from firecrown.updatable import (
 )
 
 
-def test_register_new_updatable_parameter_with_no_arg():
+def test_register_new_updatable_parameter_with_no_arg() -> None:
     """Calling parameters.create() with no argument should return an
     SamplerParameter"""
     a_parameter = register_new_updatable_parameter(default_value=1.0)
     assert isinstance(a_parameter, SamplerParameter)
 
 
-def test_register_new_updatable_parameter_with_float_arg():
+def test_register_new_updatable_parameter_with_float_arg() -> None:
     """Calling parameters.create() with a float argument should return a
     InternalParameter ."""
     a_parameter = register_new_updatable_parameter(value=1.5, default_value=1.0)
@@ -39,7 +39,7 @@ def test_register_new_updatable_parameter_with_float_arg():
     assert a_parameter.get_value() == 1.5
 
 
-def test_register_new_updatable_parameter_with_wrong_arg():
+def test_register_new_updatable_parameter_with_wrong_arg() -> None:
     """Calling parameters.create() with an org that is neither float nor None should
     raise a TypeError."""
     with pytest.raises(TypeError):
@@ -48,7 +48,7 @@ def test_register_new_updatable_parameter_with_wrong_arg():
         )
 
 
-def test_register_new_updatable_parameter_with_shared_true():
+def test_register_new_updatable_parameter_with_shared_true() -> None:
     """Calling parameters.create() with shared=True should return a SamplerParameter
     with shared=True, meaning the parameter is shared across instances."""
     a_parameter = register_new_updatable_parameter(default_value=1.0, shared=True)
@@ -56,7 +56,7 @@ def test_register_new_updatable_parameter_with_shared_true():
     assert a_parameter.shared is True
 
 
-def test_register_new_updatable_parameter_with_shared_false():
+def test_register_new_updatable_parameter_with_shared_false() -> None:
     """Calling parameters.create() with shared=False (default) should return a
     SamplerParameter with shared=False, meaning each instance has its own parameter."""
     a_parameter = register_new_updatable_parameter(default_value=1.0, shared=False)
@@ -68,7 +68,7 @@ def test_register_new_updatable_parameter_with_shared_false():
     assert a_parameter_default.shared is False
 
 
-def test_sampler_parameter_shared_ignores_prefix():
+def test_sampler_parameter_shared_ignores_prefix() -> None:
     """When shared=True, the SamplerParameter should ignore the prefix in
     set_fullname, making it shared across all instances."""
     sp = SamplerParameter(default_value=1.0, shared=True)
@@ -80,7 +80,7 @@ def test_sampler_parameter_shared_ignores_prefix():
     assert sp.fullname == "my_name"
 
 
-def test_sampler_parameter_not_shared_uses_prefix():
+def test_sampler_parameter_not_shared_uses_prefix() -> None:
     """When shared=False (default), the SamplerParameter should use the prefix
     in set_fullname, making each instance have its own parameter."""
     sp = SamplerParameter(default_value=1.0, shared=False)
@@ -92,7 +92,7 @@ def test_sampler_parameter_not_shared_uses_prefix():
     assert sp.fullname == "my_prefix_my_name"
 
 
-def test_sampler_parameter_equality_with_shared():
+def test_sampler_parameter_equality_with_shared() -> None:
     """Test that SamplerParameter equality considers the shared attribute."""
     sp1 = SamplerParameter(default_value=1.0, name="a", shared=True)
     sp2 = SamplerParameter(default_value=1.0, name="a", shared=True)
@@ -102,7 +102,7 @@ def test_sampler_parameter_equality_with_shared():
     assert sp1 != sp3
 
 
-def test_shared_parameter_across_updatable_instances():
+def test_shared_parameter_across_updatable_instances() -> None:
     """Test that shared=True parameters are consistent across multiple
     instances of the same Updatable class.
 
@@ -161,7 +161,7 @@ def test_shared_parameter_across_updatable_instances():
     assert instance2.local_param == 20.0
 
 
-def test_get_default_params_with_shared_parameters():
+def test_get_default_params_with_shared_parameters() -> None:
     """Test that get_default_params and get_default_params_map work correctly
     when two instances of the same Updatable class share a parameter.
 
@@ -218,7 +218,7 @@ def test_get_default_params_with_shared_parameters():
     assert instance2.global_param == 1.0
 
 
-def test_required_parameters_length():
+def test_required_parameters_length() -> None:
     empty = RequiredParameters([])
     assert len(empty) == 0
     a = RequiredParameters([SamplerParameter(name="a", default_value=3.14)])
@@ -232,7 +232,7 @@ def test_required_parameters_length():
     assert len(b) == 2
 
 
-def test_required_parameters_equality_testing():
+def test_required_parameters_equality_testing() -> None:
     a1 = RequiredParameters([SamplerParameter(name="a", default_value=2)])
     a2 = RequiredParameters([SamplerParameter(name="a", default_value=2)])
     assert a1 == a2
@@ -245,7 +245,7 @@ def test_required_parameters_equality_testing():
         _ = a1 == 10
 
 
-def test_get_params_names_does_not_allow_mutation():
+def test_get_params_names_does_not_allow_mutation() -> None:
     """The caller of RequiredParameters.get_params_names should not be able to modify
     the state of the object on which the call was made."""
     orig = RequiredParameters(
@@ -261,7 +261,7 @@ def test_get_params_names_does_not_allow_mutation():
     assert set(orig.get_params_names()) == {"a", "b"}
 
 
-def test_params_map():
+def test_params_map() -> None:
     my_params = ParamsMap({"a": 1.0})
     x = my_params.get_from_prefix_param(None, "a")
     assert x == 1
@@ -271,7 +271,7 @@ def test_params_map():
         _ = my_params.get_from_prefix_param(None, "no_such_name")
 
 
-def test_params_map_getitem():
+def test_params_map_getitem() -> None:
     a = ParamsMap({"a": 1.0})
     assert a.get_unused_keys() == {"a"}
     assert a["a"] == 1
@@ -281,7 +281,7 @@ def test_params_map_getitem():
         _ = a["b"]
 
 
-def test_get_uses_params():
+def test_get_uses_params() -> None:
     a = ParamsMap({"a": 1.0})
     assert a.used_keys == set()
     v = a.get("no_such_key", -1)
@@ -292,7 +292,7 @@ def test_get_uses_params():
     assert a.used_keys == {"a"}
 
 
-def test_params_map_wrong_type():
+def test_params_map_wrong_type() -> None:
     with pytest.raises(
         TypeError, match="Value for parameter a is not a float or a list of floats.*"
     ):
@@ -301,7 +301,7 @@ def test_params_map_wrong_type():
         )
 
 
-def test_params_map_wrong_type_list():
+def test_params_map_wrong_type_list() -> None:
     with pytest.raises(
         TypeError, match="Value for parameter a is not a float or a list of floats.*"
     ):
@@ -310,26 +310,26 @@ def test_params_map_wrong_type_list():
         )
 
 
-def test_parameter_get_full_name_reject_empty_name():
+def test_parameter_get_full_name_reject_empty_name() -> None:
     with pytest.raises(ValueError):
         _ = parameter_get_full_name(None, "")
     with pytest.raises(ValueError):
         _ = parameter_get_full_name("cow", "")
 
 
-def test_parameter_get_full_name_with_prefix():
+def test_parameter_get_full_name_with_prefix() -> None:
     full_name = parameter_get_full_name("my_prefix", "my_name")
     # TODO: do we really want to allow underscores in parameter names, when we
     # are using the underscore as our separator?
     assert full_name == "my_prefix_my_name"
 
 
-def test_parameter_get_full_name_without_prefix():
+def test_parameter_get_full_name_without_prefix() -> None:
     full_name = parameter_get_full_name(None, "nomen_foo")
     assert full_name == "nomen_foo"
 
 
-def test_derived_parameter_scalar():
+def test_derived_parameter_scalar() -> None:
     derived_param = DerivedParameter("sec1", "name1", 3.14)
 
     assert isinstance(derived_param.get_val(), float)
@@ -337,7 +337,7 @@ def test_derived_parameter_scalar():
     assert derived_param.get_full_name() == "sec1--name1"
 
 
-def test_derived_parameter_wrong_type():
+def test_derived_parameter_wrong_type() -> None:
     """Try instantiating DerivedParameter objects with wrong types."""
 
     with pytest.raises(TypeError):
@@ -354,7 +354,7 @@ def test_derived_parameter_wrong_type():
         )
 
 
-def test_derived_parameters_collection():
+def test_derived_parameters_collection() -> None:
     olist = [
         DerivedParameter("sec1", "name1", 3.14),
         DerivedParameter("sec2", "name2", 2.72),
@@ -365,7 +365,7 @@ def test_derived_parameters_collection():
     assert orig.get_derived_list() == olist
 
 
-def test_derived_parameters_collection_rejects_bad_list():
+def test_derived_parameters_collection_rejects_bad_list() -> None:
     badlist = [1, 3, 5]
     with pytest.raises(TypeError):
         # We have to tell mypy to ignore the type error on the
@@ -374,7 +374,7 @@ def test_derived_parameters_collection_rejects_bad_list():
         _ = DerivedParameterCollection(badlist)  # type: ignore
 
 
-def test_derived_parameters_collection_add():
+def test_derived_parameters_collection_add() -> None:
     olist = [
         DerivedParameter("sec1", "name1", 3.14),
         DerivedParameter("sec2", "name2", 2.72),
@@ -391,7 +391,7 @@ def test_derived_parameters_collection_add():
         assert val == derived_parameter.get_val()
 
 
-def test_derived_parameters_collection_add_iter():
+def test_derived_parameters_collection_add_iter() -> None:
     olist1 = [
         DerivedParameter("sec1", "name1", 3.14),
         DerivedParameter("sec2", "name2", 2.72),
@@ -415,14 +415,14 @@ def test_derived_parameters_collection_add_iter():
         assert val == derived_parameter.get_val()
 
 
-def test_derived_parameter_eq():
+def test_derived_parameter_eq() -> None:
     dv1 = DerivedParameter("sec1", "name1", 3.14)
     dv2 = DerivedParameter("sec1", "name1", 3.14)
 
     assert dv1 == dv2
 
 
-def test_derived_parameter_eq_invalid():
+def test_derived_parameter_eq_invalid() -> None:
     dv1 = DerivedParameter("sec1", "name1", 3.14)
 
     with pytest.raises(
@@ -433,7 +433,7 @@ def test_derived_parameter_eq_invalid():
         _ = dv1 == 1.0
 
 
-def test_derived_parameters_collection_eq():
+def test_derived_parameters_collection_eq() -> None:
     olist1 = [
         DerivedParameter("sec1", "name1", 3.14),
         DerivedParameter("sec2", "name2", 2.72),
@@ -451,7 +451,7 @@ def test_derived_parameters_collection_eq():
     assert dpc1 == dpc2
 
 
-def test_derived_parameters_collection_eq_invalid():
+def test_derived_parameters_collection_eq_invalid() -> None:
     olist1 = [
         DerivedParameter("sec1", "name1", 3.14),
         DerivedParameter("sec2", "name2", 2.72),
@@ -467,47 +467,47 @@ def test_derived_parameters_collection_eq_invalid():
         _ = dpc1 == 1.0
 
 
-def test_sampler_parameter_no_prefix():
+def test_sampler_parameter_no_prefix() -> None:
     sp = SamplerParameter(name="name1", default_value=1)
     assert sp.name == "name1"
     assert sp.fullname == "name1"
 
 
-def test_sampler_parameter_with_prefix():
+def test_sampler_parameter_with_prefix() -> None:
     sp = SamplerParameter(name="name1", prefix="prefix1", default_value=1)
     assert sp.name == "name1"
     assert sp.fullname == "prefix1_name1"
 
 
-def test_sampler_parameter_with_value():
+def test_sampler_parameter_with_value() -> None:
     sp = SamplerParameter(name="name1", default_value=2)
     assert sp is not None
 
 
-def test_sampler_parameter_with_value_and_prefix():
+def test_sampler_parameter_with_value_and_prefix() -> None:
     sp = SamplerParameter(name="name1", prefix="prefix1", default_value=2)
     assert sp is not None
 
 
-def test_sampler_parameter_with_value_and_prefix_and_fullname():
+def test_sampler_parameter_with_value_and_prefix_and_fullname() -> None:
     sp = SamplerParameter(name="name1", prefix="prefix1", default_value=2)
     assert sp.fullname == "prefix1_name1"
 
 
-def test_sample_parameter_hash():
+def test_sample_parameter_hash() -> None:
     sp1 = SamplerParameter(name="name1", default_value=3.14)
     sp2 = SamplerParameter(name="name1", default_value=3.14)
     assert hash(sp1) == hash(sp2)
 
 
-def test_sampler_parameter_eq():
+def test_sampler_parameter_eq() -> None:
     sp1 = SamplerParameter(name="name1", default_value=3.14)
     sp2 = SamplerParameter(name="name1", default_value=3.14)
 
     assert sp1 == sp2
 
 
-def test_sampler_parameter_eq_invalid():
+def test_sampler_parameter_eq_invalid() -> None:
     sp1 = SamplerParameter(name="name1", default_value=3.14)
     with pytest.raises(
         NotImplementedError,
@@ -519,25 +519,25 @@ def test_sampler_parameter_eq_invalid():
         _ = sp1 == 1.0
 
 
-def test_sampler_parameter_ne():
+def test_sampler_parameter_ne() -> None:
     sp1 = SamplerParameter(name="name1", default_value=3.14)
     sp2 = SamplerParameter(name="name2", default_value=3.14)
 
     assert sp1 != sp2
 
 
-def test_sampler_parameter_default_value():
+def test_sampler_parameter_default_value() -> None:
     sp = SamplerParameter(name="name1", default_value=3.14)
     assert sp.get_default_value() == 3.14
 
 
-def test_sampler_parameter_default_value_no_name():
+def test_sampler_parameter_default_value_no_name() -> None:
     sp = SamplerParameter(default_value=2.72)
     with pytest.raises(ValueError, match="Parameter name is not set"):
         _ = sp.name
 
 
-def test_required_parameters_get_names():
+def test_required_parameters_get_names() -> None:
     rp = RequiredParameters(
         [
             SamplerParameter(name="name1", default_value=3.14),
@@ -547,7 +547,7 @@ def test_required_parameters_get_names():
     assert set(rp.get_params_names()) == {"name1", "name2"}
 
 
-def test_required_parameters_get_default_values():
+def test_required_parameters_get_default_values() -> None:
     rp = RequiredParameters(
         [
             SamplerParameter(name="name1", default_value=3.14),
@@ -558,7 +558,7 @@ def test_required_parameters_get_default_values():
     assert rp.get_default_values() == {"name1": 3.14, "name2": 2.72, "name3": 2.3}
 
 
-def test_add_required_parameter():
+def test_add_required_parameter() -> None:
     coll = DerivedParameterCollection([])
     coll.add_required_parameter(
         DerivedParameter(section="barnyard", name="cow", val=1.0)
@@ -574,14 +574,14 @@ def test_add_required_parameter():
         )
 
 
-def test_setting_internal_parameter():
+def test_setting_internal_parameter() -> None:
     a_parameter = register_new_updatable_parameter(value=1.0, default_value=2.0)
     assert a_parameter.value == 1.0
     a_parameter.set_value(2.0)
     assert a_parameter.value == 2.0
 
 
-def test_used_and_unused_params():
+def test_used_and_unused_params() -> None:
     """Test that get_unused_keys works as expected."""
     params = ParamsMap({"a": 1.0, "b": 2.0, "c": 3.0})
 
@@ -608,7 +608,7 @@ def test_used_and_unused_params():
     assert unused == set()
 
 
-def test_handle_unused_params():
+def test_handle_unused_params() -> None:
     """Test that handle_unused_params works as expected."""
     params = ParamsMap({"a": 1.0, "b": 2.0, "c": 3.0})
 
@@ -645,7 +645,7 @@ def test_handle_unused_params():
         handle_unused_params(params=params, updated_records=[], raise_on_unused=True)
 
 
-def test_handle_unused_params_includes_updated_records_in_message():
+def test_handle_unused_params_includes_updated_records_in_message() -> None:
     params = ParamsMap({"x": 1.0})
 
     # Create a simple UpdatableUsageRecord structure
@@ -690,7 +690,7 @@ def test_handle_unused_params_includes_updated_records_in_message():
     assert "Parent(p) => Child(c):" in err_msg or "Parent(p):" in err_msg
 
 
-def test_params_map_union():
+def test_params_map_union() -> None:
     p1 = ParamsMap({"a": 1.0})
     p2 = ParamsMap({"b": 2.0})
     p3 = p1.union(p2)
@@ -717,7 +717,7 @@ def test_params_map_union():
         p1.union(p2)
 
 
-def test_params_get():
+def test_params_get() -> None:
     params = ParamsMap({"a": 1.0})
     assert params.get("a") == 1.0
     assert params.get("b", 2.0) == 2.0
@@ -725,13 +725,13 @@ def test_params_get():
         params.get("b")
 
 
-def test_params_map_items():
+def test_params_map_items() -> None:
     d = {"a": 1.0, "b": 2.0}
     params = ParamsMap(d)
     assert params.items() == d.items()
 
 
-def test_params_map_lower_case_lookup():
+def test_params_map_lower_case_lookup() -> None:
     """Ensure get_from_full_name respects the lower-case fallback when enabled."""
     p = ParamsMap({"my_key": 4.2})
     # lookup with different case should fail until we enable lower-case handling
@@ -744,14 +744,14 @@ def test_params_map_lower_case_lookup():
     assert val == 4.2
 
 
-def test_params_map_list_with_ints_raises_typeerror():
+def test_params_map_list_with_ints_raises_typeerror() -> None:
     """A list value containing ints (not floats) should trigger the list
     element type check and raise TypeError."""
     with pytest.raises(TypeError, match="Value for parameter a is not a float"):
         _ = ParamsMap({"a": [1, 2.0]})  # type: ignore[arg-type]
 
 
-def test_params_map_setitem():
+def test_params_map_setitem() -> None:
     """Test ParamsMap.__setitem__() method for setting values."""
     params = ParamsMap({"a": 1.0})
     params["b"] = 2.0
@@ -760,7 +760,7 @@ def test_params_map_setitem():
     assert params["a"] == 3.0
 
 
-def test_params_map_contains():
+def test_params_map_contains() -> None:
     """Test ParamsMap.__contains__() method with in operator."""
     params = ParamsMap({"a": 1.0, "b": 2.0})
     assert "a" in params
@@ -769,7 +769,7 @@ def test_params_map_contains():
     assert "nonexistent" not in params
 
 
-def test_params_map_copy():
+def test_params_map_copy() -> None:
     """Test ParamsMap.copy() creates an independent copy."""
     original = ParamsMap({"a": 1.0, "b": 2.0})
     _ = original["a"]  # Mark 'a' as used
@@ -795,7 +795,7 @@ def test_params_map_copy():
     assert original.lower_case is False
 
 
-def test_params_map_update_duplicate_key():
+def test_params_map_update_duplicate_key() -> None:
     """Test ParamsMap.update() raises error for duplicate keys."""
     params = ParamsMap({"a": 1.0})
 
@@ -808,7 +808,7 @@ def test_params_map_update_duplicate_key():
         params.update({"a": 3.0})
 
 
-def test_params_map_keys():
+def test_params_map_keys() -> None:
     """Test ParamsMap.keys() returns correct set of keys."""
     params = ParamsMap({"a": 1.0, "b": 2.0, "c": 3.0})
     keys = params.keys()
@@ -821,7 +821,7 @@ def test_params_map_keys():
     assert params.keys() == {"a", "b", "c"}
 
 
-def test_required_parameters_subtraction():
+def test_required_parameters_subtraction() -> None:
     """Test RequiredParameters.__sub__() subtraction operator."""
     param_a = SamplerParameter(name="a", default_value=1.0)
     param_b = SamplerParameter(name="b", default_value=2.0)
@@ -843,7 +843,7 @@ def test_required_parameters_subtraction():
     assert set(params2.get_params_names()) == {"b", "d"}
 
 
-def test_required_parameters_addition():
+def test_required_parameters_addition() -> None:
     """Test RequiredParameters.__add__() addition operator."""
     param_a = SamplerParameter(name="a", default_value=1.0)
     param_b = SamplerParameter(name="b", default_value=2.0)
@@ -864,7 +864,7 @@ def test_required_parameters_addition():
     assert set(params2.get_params_names()) == {"c"}
 
 
-def test_sampler_parameter_set_fullname():
+def test_sampler_parameter_set_fullname() -> None:
     """Test SamplerParameter.set_fullname() method."""
     sp = SamplerParameter(default_value=1.0)
 
@@ -885,7 +885,7 @@ def test_sampler_parameter_set_fullname():
     assert sp.fullname == "another_name"
 
 
-def test_params_map_union_no_common_keys():
+def test_params_map_union_no_common_keys() -> None:
     """Test ParamsMap.union() when there are no common keys.
 
     This covers the branch where the for loop over common keys is not entered.
@@ -902,7 +902,7 @@ def test_params_map_union_no_common_keys():
     assert p3.get_from_full_name("d") == 4.0
 
 
-def test_params_map_union_common_keys_same_values():
+def test_params_map_union_common_keys_same_values() -> None:
     """Test ParamsMap.union() when common keys have the same values.
 
     This covers the branch where common keys exist but don't trigger
@@ -919,7 +919,7 @@ def test_params_map_union_common_keys_same_values():
     assert p3.get_from_full_name("c") == 3.0
 
 
-def test_params_map_lower_case_key_not_found():
+def test_params_map_lower_case_key_not_found() -> None:
     """Test ParamsMap with lower_case enabled but key still not found.
 
     This covers the branch where lower_case is True but the lowercased
@@ -933,7 +933,7 @@ def test_params_map_lower_case_key_not_found():
         _ = p.get_from_full_name("NONEXISTENT")
 
 
-def test_handle_unused_params_all_used():
+def test_handle_unused_params_all_used() -> None:
     """Test handle_unused_params when all parameters are used.
 
     This covers the early return branch when there are no unused keys.
@@ -949,7 +949,7 @@ def test_handle_unused_params_all_used():
     handle_unused_params(params=params, updated_records=[], raise_on_unused=True)
 
 
-def test_params_map_with_list_of_floats():
+def test_params_map_with_list_of_floats() -> None:
     """Test ParamsMap accepts a list of floats as a valid value.
 
     This covers the branch in validate_params_map_value where
