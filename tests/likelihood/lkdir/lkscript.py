@@ -2,6 +2,7 @@
 Provides a trivial likelihood factory function for testing purposes.
 """
 
+from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.modeling_tools import (
     CCLFactory,
     ModelingTools,
@@ -16,7 +17,9 @@ except ImportError:
     import lkmodule  # type: ignore
 
 
-def build_likelihood(_):
+def build_likelihood(
+    _: NamedParameters,
+) -> tuple[lkmodule.EmptyLikelihood, ModelingTools]:
     """Return an EmptyLikelihood object."""
     tools = ModelingTools(
         ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)

@@ -5,9 +5,11 @@ It should raise an exception because the factory function does not return
 a Likelihood object.
 """
 
+from firecrown.likelihood._likelihood import NamedParameters
+
 from . import lkmodule
 
 
-def build_likelihood(_):
+def build_likelihood(_: NamedParameters) -> tuple[lkmodule.EmptyLikelihood, str]:
     """Return an EmptyLikelihood object."""
     return lkmodule.empty_likelihood(), "Not a ModelingTools"
