@@ -43,6 +43,11 @@ from firecrown.metadata_types import (
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap, get_default_params_map
 from firecrown.utils import upper_triangle_indices
+from tests._types import (
+    RedshiftDistribution,
+    SaccGalaxyWindowedFixture,
+    WindowedAngularPowerSpectrum,
+)
 
 # Helper function for creating AST ClassDef nodes across Python versions
 if sys.version_info >= (3, 12):
@@ -880,14 +885,7 @@ def fixture_sacc_galaxy_cells() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_cwindows", scope="module")
-def fixture_sacc_galaxy_cwindows() -> tuple[
-    sacc.Sacc,
-    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-    dict[
-        tuple[TracerNames, str],
-        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-    ],
-]:
+def fixture_sacc_galaxy_cwindows() -> SaccGalaxyWindowedFixture:
     """Fixture for a SACC data with window functions.
 
     Module-scoped because SACC objects are expensive to create and are
@@ -902,11 +900,8 @@ def fixture_sacc_galaxy_cwindows() -> tuple[
     src_bins_centers = np.linspace(0.25, 0.75, 5)
     lens_bins_centers = np.linspace(0.1, 0.6, 5)
 
-    tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
-    tracer_pairs: dict[
-        tuple[TracerNames, str],
-        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-    ] = {}
+    tracers: dict[str, RedshiftDistribution] = {}
+    tracer_pairs: dict[tuple[TracerNames, str], WindowedAngularPowerSpectrum] = {}
 
     for i, mn in enumerate(src_bins_centers):
         dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)

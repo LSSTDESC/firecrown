@@ -58,6 +58,7 @@ from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real,
 )
 from firecrown.updatable import ParamsMap
+from tests._types import SaccGalaxyWindowedFixture
 
 # pylint: disable=too-many-lines
 
@@ -843,14 +844,7 @@ def test_extract_all_harmonic_data(
 
 @pytest.mark.slow
 def test_extract_all_harmonic_with_window_data(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
@@ -961,14 +955,7 @@ def test_constructor_harmonic_data(
 
 
 def test_constructor_harmonic_with_window_metadata(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        object,
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
@@ -993,18 +980,7 @@ def test_constructor_harmonic_with_window_metadata(
 
 
 def test_extract_all_harmonic_metadata_normalize_true(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[
-                npt.NDArray[np.int64],
-                npt.NDArray[np.float64],
-                sacc.BandpowerWindow,
-            ],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
     """Test that normalize=True normalizes windows in extract_all_harmonic_metadata."""
     sacc_data, _, _ = sacc_galaxy_cwindows
@@ -1021,18 +997,7 @@ def test_extract_all_harmonic_metadata_normalize_true(
 
 
 def test_extract_all_harmonic_metadata_normalize_false(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[
-                npt.NDArray[np.int64],
-                npt.NDArray[np.float64],
-                sacc.BandpowerWindow,
-            ],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
     """Test that normalize=False keeps windows unnormalized."""
     sacc_data, _, _ = sacc_galaxy_cwindows
@@ -1053,18 +1018,7 @@ def test_extract_all_harmonic_metadata_normalize_false(
 
 
 def test_extract_all_harmonic_metadata_default_normalizes(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[
-                npt.NDArray[np.int64],
-                npt.NDArray[np.float64],
-                sacc.BandpowerWindow,
-            ],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
     """Test that the default behavior (no normalize parameter) normalizes windows."""
     sacc_data, _, _ = sacc_galaxy_cwindows
@@ -1213,14 +1167,7 @@ def test_extract_all_harmonic_metadata_raises_on_zero_weight() -> None:
 
 @pytest.mark.slow
 def test_constructor_harmonic_with_window_data(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        object,
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
@@ -1359,18 +1306,7 @@ def test_compare_constructors_harmonic(
 
 
 def test_compare_constructors_harmonic_with_window(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[
-                npt.NDArray[np.int64],
-                npt.NDArray[np.float64],
-                sacc.BandpowerWindow,
-            ],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
     tools_with_vanilla_cosmology: ModelingTools,
 ) -> None:
