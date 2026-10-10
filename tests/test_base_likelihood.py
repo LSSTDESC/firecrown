@@ -3,6 +3,7 @@ Tests for the module firecrown.likelihood.likelihood
 """
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 import sacc
 
@@ -19,7 +20,7 @@ class MinimalLikelihood(lk.Likelihood):
     def read(self, _: sacc.Sacc) -> None:
         pass
 
-    def make_realization_vector(self):
+    def make_realization_vector(self) -> npt.NDArray[np.float64]:
         return np.zeros(0)
 
 
