@@ -6,7 +6,7 @@ import pytest
 from firecrown.likelihood._likelihood import NamedParameters
 
 
-def test_named_parameters_sanity():
+def test_named_parameters_sanity() -> None:
     params = NamedParameters({"a": True})
     assert params.get_bool("a") is True
 
@@ -29,7 +29,7 @@ def test_named_parameters_sanity():
     assert params.to_set() == {"a"}
 
 
-def test_named_parameters_default():
+def test_named_parameters_default() -> None:
     params = NamedParameters({})
 
     assert params.get_bool("a", True) is True
@@ -45,7 +45,7 @@ def test_named_parameters_default():
     assert params.get_float("d", 1.0) == 2.2
 
 
-def test_named_parameters_wrong_type_bool():
+def test_named_parameters_wrong_type_bool() -> None:
     params = NamedParameters({"a": True})
     with pytest.raises(AssertionError):
         params.get_string("a")
@@ -64,7 +64,7 @@ def test_named_parameters_wrong_type_bool():
         params.get_float_array("a")
 
 
-def test_named_parameters_wrong_type_string():
+def test_named_parameters_wrong_type_string() -> None:
     params = NamedParameters({"a": "Im a string"})
     with pytest.raises(AssertionError):
         params.get_bool("a")
@@ -82,7 +82,7 @@ def test_named_parameters_wrong_type_string():
         params.get_float_array("a")
 
 
-def test_named_parameters_wrong_type_int():
+def test_named_parameters_wrong_type_int() -> None:
     params = NamedParameters({"a": 1})
     with pytest.raises(AssertionError):
         params.get_bool("a")
@@ -100,7 +100,7 @@ def test_named_parameters_wrong_type_int():
         params.get_float_array("a")
 
 
-def test_named_parameters_wrong_type_float():
+def test_named_parameters_wrong_type_float() -> None:
     params = NamedParameters({"a": 1.0})
     with pytest.raises(AssertionError):
         params.get_bool("a")
@@ -118,7 +118,7 @@ def test_named_parameters_wrong_type_float():
         params.get_float_array("a")
 
 
-def test_named_parameters_wrong_type_int_array():
+def test_named_parameters_wrong_type_int_array() -> None:
     params = NamedParameters({"a": np.array([1, 2, 3])})
     with pytest.raises(AssertionError):
         params.get_bool("a")
@@ -137,7 +137,7 @@ def test_named_parameters_wrong_type_int_array():
     #    params.get_float_array("a")
 
 
-def test_named_parameters_wrong_type_float_array():
+def test_named_parameters_wrong_type_float_array() -> None:
     params = NamedParameters({"a": np.array([1.0, 2.0, 3.0])})
     with pytest.raises(AssertionError):
         params.get_bool("a")
@@ -156,7 +156,7 @@ def test_named_parameters_wrong_type_float_array():
     #    params.get_int_array("a")
 
 
-def test_named_parameters_set_from_basic_dict_string():
+def test_named_parameters_set_from_basic_dict_string() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": "Im a string"})
     assert params.get_string("a") == "Im a string"
@@ -166,7 +166,7 @@ def test_named_parameters_set_from_basic_dict_string():
     assert params.get_string("b") == "Im another string"
 
 
-def test_named_parameters_set_from_basic_dict_int():
+def test_named_parameters_set_from_basic_dict_int() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": 1})
     assert params.get_int("a") == 1
@@ -176,7 +176,7 @@ def test_named_parameters_set_from_basic_dict_int():
     assert params.get_int("b") == 2
 
 
-def test_named_parameters_set_from_basic_dict_float():
+def test_named_parameters_set_from_basic_dict_float() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": 1.0})
     assert params.get_float("a") == 1.0
@@ -186,7 +186,7 @@ def test_named_parameters_set_from_basic_dict_float():
     assert params.get_float("b") == 2.0
 
 
-def test_named_parameters_set_from_basic_dict_bool():
+def test_named_parameters_set_from_basic_dict_bool() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": True})
     assert params.get_bool("a") is True
@@ -196,7 +196,7 @@ def test_named_parameters_set_from_basic_dict_bool():
     assert params.get_bool("b") is False
 
 
-def test_named_parameters_set_from_basic_dict_int_array():
+def test_named_parameters_set_from_basic_dict_int_array() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": [1, 2, 3]})
     assert params.get_int_array("a").tolist() == [1, 2, 3]
@@ -206,7 +206,7 @@ def test_named_parameters_set_from_basic_dict_int_array():
     assert params.get_int_array("b").tolist() == [4, 5, 6]
 
 
-def test_named_parameters_set_from_basic_dict_float_array():
+def test_named_parameters_set_from_basic_dict_float_array() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": [1.0, 2.0, 3.0]})
     assert params.get_float_array("a").tolist() == [1.0, 2.0, 3.0]
@@ -216,7 +216,7 @@ def test_named_parameters_set_from_basic_dict_float_array():
     assert params.get_float_array("b").tolist() == [4.0, 5.0, 6.0]
 
 
-def test_named_parameters_set_from_basic_dict_bool_array():
+def test_named_parameters_set_from_basic_dict_bool_array() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": [True, False, True]})
     assert params.get_int_array("a").tolist() == [True, False, True]
@@ -226,7 +226,7 @@ def test_named_parameters_set_from_basic_dict_bool_array():
     assert params.get_int_array("b").tolist() == [False, True, False]
 
 
-def test_named_parameters_set_from_basic_dict_mixed():
+def test_named_parameters_set_from_basic_dict_mixed() -> None:
     params = NamedParameters()
     params.set_from_basic_dict(
         {
@@ -246,7 +246,7 @@ def test_named_parameters_set_from_basic_dict_mixed():
     assert params.get_bool("f") is True
 
 
-def test_named_parameters_convert_to_basic_dict_string():
+def test_named_parameters_convert_to_basic_dict_string() -> None:
     params = NamedParameters({"a": "Im a string"})
     assert params.convert_to_basic_dict() == {"a": "Im a string"}
 
@@ -257,7 +257,7 @@ def test_named_parameters_convert_to_basic_dict_string():
     }
 
 
-def test_named_parameters_convert_to_basic_dict_int():
+def test_named_parameters_convert_to_basic_dict_int() -> None:
     params = NamedParameters({"a": 1})
     assert params.convert_to_basic_dict() == {"a": 1}
 
@@ -265,7 +265,7 @@ def test_named_parameters_convert_to_basic_dict_int():
     assert params.convert_to_basic_dict() == {"a": 1, "b": 2}
 
 
-def test_named_parameters_convert_to_basic_dict_float():
+def test_named_parameters_convert_to_basic_dict_float() -> None:
     params = NamedParameters({"a": 1.0})
     assert params.convert_to_basic_dict() == {"a": 1.0}
 
@@ -273,7 +273,7 @@ def test_named_parameters_convert_to_basic_dict_float():
     assert params.convert_to_basic_dict() == {"a": 1.0, "b": 2.0}
 
 
-def test_named_parameters_convert_to_basic_dict_bool():
+def test_named_parameters_convert_to_basic_dict_bool() -> None:
     params = NamedParameters({"a": True})
     assert params.convert_to_basic_dict() == {"a": True}
 
@@ -281,7 +281,7 @@ def test_named_parameters_convert_to_basic_dict_bool():
     assert params.convert_to_basic_dict() == {"a": True, "b": False}
 
 
-def test_named_parameters_convert_to_basic_dict_int_array():
+def test_named_parameters_convert_to_basic_dict_int_array() -> None:
     params = NamedParameters({"a": np.array([1, 2, 3])})
     assert params.convert_to_basic_dict() == {"a": [1, 2, 3]}
 
@@ -292,7 +292,7 @@ def test_named_parameters_convert_to_basic_dict_int_array():
     }
 
 
-def test_named_parameters_convert_to_basic_dict_float_array():
+def test_named_parameters_convert_to_basic_dict_float_array() -> None:
     params = NamedParameters({"a": np.array([1.0, 2.0, 3.0])})
     assert params.convert_to_basic_dict() == {"a": [1.0, 2.0, 3.0]}
 
@@ -305,7 +305,7 @@ def test_named_parameters_convert_to_basic_dict_float_array():
     }
 
 
-def test_named_parameters_convert_to_basic_dict_mixed():
+def test_named_parameters_convert_to_basic_dict_mixed() -> None:
     params = NamedParameters(
         {
             "a": np.array([1, 2, 3]),
@@ -326,7 +326,7 @@ def test_named_parameters_convert_to_basic_dict_mixed():
     }
 
 
-def test_named_parameters_to_set():
+def test_named_parameters_to_set() -> None:
     params = NamedParameters({"a": True})
     assert params.to_set() == {"a"}
 
@@ -337,38 +337,38 @@ def test_named_parameters_to_set():
     assert params.to_set() == {"a", "b", "c"}
 
 
-def test_named_parameters_to_float_dict():
+def test_named_parameters_to_float_dict() -> None:
     params = NamedParameters({"a": 1.0, "b": 2.0})
 
     assert params.to_float_dict() == {"a": 1.0, "b": 2.0}
 
 
-def test_named_parameters_to_float_dict_wrong_type():
+def test_named_parameters_to_float_dict_wrong_type() -> None:
     params = NamedParameters({"a": 1})
 
     with pytest.raises(TypeError, match="only float values"):
         params.to_float_dict()
 
 
-def test_invalid_set_from_basic_dict():
+def test_invalid_set_from_basic_dict() -> None:
     params = NamedParameters()
     with pytest.raises(ValueError):
         params.set_from_basic_dict({"a": {"b": "c"}})  # type: ignore
 
 
-def test_invalid_set_from_basic_dict_sequence():
+def test_invalid_set_from_basic_dict_sequence() -> None:
     params = NamedParameters()
     with pytest.raises(ValueError):
         params.set_from_basic_dict({"a": ["a", "b", "c"]})  # type: ignore
 
 
-def test_invalid_convert_to_basic_dict():
+def test_invalid_convert_to_basic_dict() -> None:
     params = NamedParameters({"a": {"b": "c"}})  # type: ignore
     with pytest.raises(ValueError):
         params.convert_to_basic_dict()
 
 
-def test_invalid_convert_to_basic_dict_sequence():
+def test_invalid_convert_to_basic_dict_sequence() -> None:
     params = NamedParameters({"a": np.array(["a", "b", "c"])})
     with pytest.raises(ValueError):
         params.convert_to_basic_dict()

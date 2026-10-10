@@ -4,6 +4,8 @@ import pyccl
 import pytest
 import sacc
 from crow import ClusterAbundance, ClusterShearProfile, kernel, mass_proxy
+from crow.cluster_modules.completeness_models import Completeness
+from crow.cluster_modules.purity_models import Purity
 from crow.properties import ClusterProperty
 from crow.recipes.binned_exact import ExactBinnedClusterRecipe
 from crow.recipes.binned_grid import GridBinnedClusterRecipe
@@ -17,7 +19,9 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import get_default_params_map
 
 
-def get_base_binned_exact(completeness, purity) -> ExactBinnedClusterRecipe:
+def get_base_binned_exact(
+    completeness: Completeness | None, purity: Purity | None
+) -> ExactBinnedClusterRecipe:
     pivot_mass, pivot_redshift = 14.625862906, 0.6
     cluster_recipe = ExactBinnedClusterRecipe(
         cluster_theory=ClusterAbundance(
@@ -41,7 +45,7 @@ def get_base_binned_exact(completeness, purity) -> ExactBinnedClusterRecipe:
 
 
 def get_base_binned_grid(
-    completeness, purity, is_delta_sigma
+    completeness: Completeness | None, purity: Purity | None, is_delta_sigma: bool
 ) -> GridBinnedClusterRecipe:
     pivot_mass, pivot_redshift = 14.625862906, 0.6
     cluster_recipe = GridBinnedClusterRecipe(
