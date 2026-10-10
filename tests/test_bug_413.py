@@ -2,6 +2,8 @@
 
 from typing import Tuple
 
+import numpy as np
+import numpy.typing as npt
 import pyccl
 import sacc
 
@@ -76,7 +78,14 @@ def make_twopoint_with_optional_systematics(
     return a, b, statistic, tools
 
 
-def test_calculate_pk(sacc_galaxy_xis_lens0_lens1):
+def test_calculate_pk(
+    sacc_galaxy_xis_lens0_lens1: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     # Set up a TwoPoint object in which the first source has a PT systematic
     # and the second source doe not have a PT systematic.
 

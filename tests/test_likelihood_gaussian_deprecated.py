@@ -14,7 +14,7 @@ import sys
 import pytest
 
 
-def test_gaussian_deprecation_warning():
+def test_gaussian_deprecation_warning() -> None:
     """Importing firecrown.likelihood.gaussian emits a DeprecationWarning.
 
     This must be the first test that imports the module, as subsequent imports
@@ -31,7 +31,7 @@ def test_gaussian_deprecation_warning():
         import firecrown.likelihood.gaussian  # noqa: F401
 
 
-def test_const_gaussian_importable():
+def test_const_gaussian_importable() -> None:
     """Verify ConstGaussian is importable from the deprecated module."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood.gaussian import ConstGaussian
@@ -39,7 +39,7 @@ def test_const_gaussian_importable():
     assert ConstGaussian is not None
 
 
-def test_const_gaussian_identical_to_new_location():
+def test_const_gaussian_identical_to_new_location() -> None:
     """Verify ConstGaussian from deprecated module is the same as from _gaussian."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood._gaussian import ConstGaussian
@@ -48,7 +48,7 @@ def test_const_gaussian_identical_to_new_location():
     assert OldConstGaussian is ConstGaussian
 
 
-def test_const_gaussian_in_all():
+def test_const_gaussian_in_all() -> None:
     """Verify ConstGaussian is listed in __all__ of the deprecated module."""
     # pylint: disable=import-outside-toplevel
     import firecrown.likelihood.gaussian as gaussian_module

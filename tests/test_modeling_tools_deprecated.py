@@ -13,7 +13,7 @@ import pytest
 from firecrown.modeling_tools import ModelingTools
 
 
-def test_no_deprecated_args_no_warning():
+def test_no_deprecated_args_no_warning() -> None:
     """Verify no DeprecationWarning is emitted without deprecated args."""
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
@@ -22,7 +22,7 @@ def test_no_deprecated_args_no_warning():
     assert len(deprecations) == 0
 
 
-def test_cluster_abundance_none_warns():
+def test_cluster_abundance_none_warns() -> None:
     """Passing cluster_abundance=None emits a DeprecationWarning."""
     with pytest.warns(
         DeprecationWarning,
@@ -31,7 +31,7 @@ def test_cluster_abundance_none_warns():
         ModelingTools(cluster_abundance=None)
 
 
-def test_cluster_deltasigma_none_warns():
+def test_cluster_deltasigma_none_warns() -> None:
     """Passing cluster_deltasigma=None emits a DeprecationWarning."""
     with pytest.warns(
         DeprecationWarning,
@@ -40,7 +40,7 @@ def test_cluster_deltasigma_none_warns():
         ModelingTools(cluster_deltasigma=None)
 
 
-def test_both_deprecated_args_warn():
+def test_both_deprecated_args_warn() -> None:
     """Passing both deprecated args emits two DeprecationWarnings."""
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
@@ -52,7 +52,7 @@ def test_both_deprecated_args_warn():
     assert any("cluster_deltasigma" in m for m in messages)
 
 
-def test_modeling_tools_still_functional_with_deprecated_args():
+def test_modeling_tools_still_functional_with_deprecated_args() -> None:
     """Verify ModelingTools is functional when constructed with deprecated args."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)

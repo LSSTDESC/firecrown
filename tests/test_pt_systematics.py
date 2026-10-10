@@ -56,7 +56,11 @@ def fixture_sacc_data() -> sacc.Sacc:
     return sacc.Sacc.load_fits(saccfile)
 
 
-def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
+def test_pt_systematics(
+    weak_lensing_source: wl.WeakLensing,
+    number_counts_source: nc.NumberCounts,
+    sacc_data: sacc.Sacc,
+) -> None:
     # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
     # generally not a good practice. In this case, the warnings are indicating that this
     # test is too complicated.
@@ -253,7 +257,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     assert np.allclose(cl_gg_theory, cells_gg_total, atol=0, rtol=1e-7)
 
 
-def test_pt_mixed_systematics(sacc_data):
+def test_pt_mixed_systematics(sacc_data: sacc.Sacc) -> None:
     # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
     # generally not a good practice. In this case, the warnings are indicating that this
     # test is too complicated.
@@ -385,7 +389,7 @@ def test_pt_mixed_systematics(sacc_data):
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
 
 
-def test_pt_mixed_systematics_zdep(sacc_data):
+def test_pt_mixed_systematics_zdep(sacc_data: sacc.Sacc) -> None:
     # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
     # generally not a good practice. In this case, the warnings are indicating that this
     # test is too complicated.
@@ -525,7 +529,11 @@ def test_pt_mixed_systematics_zdep(sacc_data):
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
 
 
-def test_pt_systematics_zdep(weak_lensing_source, number_counts_source, sacc_data):
+def test_pt_systematics_zdep(
+    weak_lensing_source: wl.WeakLensing,
+    number_counts_source: nc.NumberCounts,
+    sacc_data: sacc.Sacc,
+) -> None:
     # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
     # generally not a good practice. In this case, the warnings are indicating that this
     # test is too complicated.
@@ -730,7 +738,9 @@ def test_pt_systematics_zdep(weak_lensing_source, number_counts_source, sacc_dat
     assert np.allclose(cl_gg_theory, cells_gg_total, atol=0, rtol=1e-7)
 
 
-def test_linear_bias_systematic(tools_with_vanilla_cosmology: ModelingTools):
+def test_linear_bias_systematic(
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
     a = nc_sys.LinearBiasSystematic("xxx")
     assert isinstance(a, nc_sys.LinearBiasSystematic)
     assert a.parameter_prefix == "xxx"

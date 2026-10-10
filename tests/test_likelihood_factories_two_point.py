@@ -7,7 +7,7 @@ the one available from firecrown.likelihood.
 """
 
 
-def test_two_point_factory_importable():
+def test_two_point_factory_importable() -> None:
     """Verify TwoPointFactory is importable from firecrown.likelihood.factories."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood.factories import TwoPointFactory
@@ -15,7 +15,7 @@ def test_two_point_factory_importable():
     assert TwoPointFactory is not None
 
 
-def test_two_point_factory_identical_to_likelihood():
+def test_two_point_factory_identical_to_likelihood() -> None:
     """Verify TwoPointFactory from factories is identical to firecrown.likelihood."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood import TwoPointFactory
@@ -24,7 +24,7 @@ def test_two_point_factory_identical_to_likelihood():
     assert FactoriesTWPF is TwoPointFactory
 
 
-def test_two_point_factory_in_all():
+def test_two_point_factory_in_all() -> None:
     """Verify TwoPointFactory is listed in __all__ of firecrown.likelihood.factories."""
     # pylint: disable=import-outside-toplevel
     import firecrown.likelihood.factories as factories_module
@@ -32,7 +32,7 @@ def test_two_point_factory_in_all():
     assert "TwoPointFactory" in factories_module.__all__
 
 
-def test_two_point_factory_is_pydantic_model():
+def test_two_point_factory_is_pydantic_model() -> None:
     """Verify TwoPointFactory is a Pydantic BaseModel subclass."""
     # pylint: disable=import-outside-toplevel
     from pydantic import BaseModel
@@ -42,7 +42,7 @@ def test_two_point_factory_is_pydantic_model():
     assert issubclass(TwoPointFactory, BaseModel)
 
 
-def test_two_point_factory_has_correlation_space_field():
+def test_two_point_factory_has_correlation_space_field() -> None:
     """Verify TwoPointFactory exposes the correlation_space field."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood.factories import TwoPointFactory
