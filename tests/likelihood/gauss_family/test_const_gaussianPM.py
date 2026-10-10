@@ -39,6 +39,7 @@ from firecrown.updatable import (
     RequiredParameters,
     SamplerParameter,
 )
+from tests._types import SaccGalaxyWindowedFixture
 
 # Tests that are inherited from ConstGaussian:
 
@@ -579,7 +580,7 @@ def test_access_required_parameters(
 
 
 def test_create_ready(
-    sacc_galaxy_cwindows: tuple[sacc.Sacc, object, dict[object, object]],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_cwindows
@@ -594,7 +595,7 @@ def test_create_ready(
 
 
 def test_create_ready_wrong_size(
-    sacc_galaxy_cwindows: tuple[sacc.Sacc, object, dict[object, object]],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_cwindows

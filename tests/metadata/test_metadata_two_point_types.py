@@ -62,6 +62,7 @@ from firecrown.metadata_types._sacc_type_string import (
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
+from tests._types import SaccGalaxyWindowedFixture
 
 
 def test_order_enums() -> None:
@@ -219,18 +220,7 @@ def test_extract_all_tracers_types_cells(
 
 
 def test_extract_all_tracers_types_cwindows(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[
-                npt.NDArray[np.int64],
-                npt.NDArray[np.float64],
-                sacc.BandpowerWindow,
-            ],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -315,14 +305,7 @@ def test_extract_all_tracers_types_cells_include_maybe(
 
 
 def test_extract_all_tracers_types_cwindows_include_maybe(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_cwindows
 
