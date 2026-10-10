@@ -3,7 +3,7 @@
 from . import match_wrapped
 
 
-def test_match_wrapped():
+def test_match_wrapped() -> None:
     text = (
         "Reading coverage data from \n"
         "/tmp/pytest-of-runner/pytest-0/popen-gw0/"

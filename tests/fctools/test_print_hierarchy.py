@@ -9,6 +9,8 @@ Tests the class hierarchy printing tool.
 import subprocess
 import sys
 
+import pytest
+
 from firecrown.fctools.print_hierarchy import (
     full_type_name,
     get_defined_methods,
@@ -22,13 +24,13 @@ from . import match_wrapped
 # Tests for full_type_name()
 
 
-def test_builtin_type():
+def test_builtin_type() -> None:
     """Test getting full name for built-in type."""
     result = full_type_name(int)
     assert result == "builtins.int"
 
 
-def test_standard_library_type():
+def test_standard_library_type() -> None:
     """Test getting full name for standard library type."""
     from collections import OrderedDict  # pylint: disable=import-outside-toplevel
 
@@ -36,7 +38,7 @@ def test_standard_library_type():
     assert result == "collections.OrderedDict"
 
 
-def test_custom_class():
+def test_custom_class() -> None:
     """Test getting full name for a custom class."""
 
     class MyClass:
@@ -50,7 +52,7 @@ def test_custom_class():
 # Tests for get_defined_methods()
 
 
-def test_class_with_no_methods():
+def test_class_with_no_methods() -> None:
     """Test getting methods from a class with no methods."""
 
     class EmptyClass:
@@ -61,28 +63,28 @@ def test_class_with_no_methods():
     assert len(methods) == 0
 
 
-def test_class_with_simple_method():
+def test_class_with_simple_method() -> None:
     """Test getting methods from a class with one method."""
 
     class SimpleClass:
-        def my_method(self):
+        def my_method(self) -> None:
             pass
 
     methods = get_defined_methods(SimpleClass)
     assert "my_method" in methods
 
 
-def test_class_with_multiple_methods():
+def test_class_with_multiple_methods() -> None:
     """Test getting methods from a class with multiple methods."""
 
     class MultiMethodClass:
-        def method_one(self):
+        def method_one(self) -> None:
             pass
 
-        def method_two(self):
+        def method_two(self) -> None:
             pass
 
-        def method_three(self):
+        def method_three(self) -> None:
             pass
 
     methods = get_defined_methods(MultiMethodClass)
@@ -92,15 +94,15 @@ def test_class_with_multiple_methods():
     assert "method_three" in methods
 
 
-def test_inherited_method_not_included():
+def test_inherited_method_not_included() -> None:
     """Test that inherited methods are not included."""
 
     class BaseClass:
-        def base_method(self):
+        def base_method(self) -> None:
             pass
 
     class DerivedClass(BaseClass):
-        def derived_method(self):
+        def derived_method(self) -> None:
             pass
 
     methods = get_defined_methods(DerivedClass)
@@ -108,29 +110,29 @@ def test_inherited_method_not_included():
     assert "base_method" not in methods
 
 
-def test_overridden_method_included():
+def test_overridden_method_included() -> None:
     """Test that overridden methods are included."""
 
     class BaseClass:
-        def my_method(self):
+        def my_method(self) -> str:
             return "base"
 
     class DerivedClass(BaseClass):
-        def my_method(self):
+        def my_method(self) -> str:
             return "derived"
 
     methods = get_defined_methods(DerivedClass)
     assert "my_method" in methods
 
 
-def test_special_methods_included():
+def test_special_methods_included() -> None:
     """Test that special methods are included."""
 
     class WithInit:
-        def __init__(self):
+        def __init__(self) -> None:
             pass
 
-        def __str__(self):
+        def __str__(self) -> str:
             return "test"
 
     methods = get_defined_methods(WithInit)
@@ -138,19 +140,19 @@ def test_special_methods_included():
     assert "__str__" in methods
 
 
-def test_class_with_static_and_class_methods():
+def test_class_with_static_and_class_methods() -> None:
     """Test that static and class methods are not included."""
 
     class WithSpecialMethods:
-        def regular_method(self):
+        def regular_method(self) -> None:
             pass
 
         @staticmethod
-        def static_method():
+        def static_method() -> None:
             pass
 
         @classmethod
-        def class_method(cls):
+        def class_method(cls) -> None:
             pass
 
     methods = get_defined_methods(WithSpecialMethods)
@@ -163,11 +165,11 @@ def test_class_with_static_and_class_methods():
 # Tests for print_one_type()
 
 
-def test_prints_type_info(capsys):
+def test_prints_type_info(capsys: pytest.CaptureFixture[str]) -> None:
     """Test printing basic type information."""
 
     class SimpleClass:
-        def my_method(self):
+        def my_method(self) -> None:
             pass
 
     print_one_type(0, SimpleClass)
@@ -179,14 +181,14 @@ def test_prints_type_info(capsys):
     assert "my_method" in captured.out
 
 
-def test_prints_multiple_methods(capsys):
+def test_prints_multiple_methods(capsys: pytest.CaptureFixture[str]) -> None:
     """Test printing type with multiple methods."""
 
     class MultiMethodClass:
-        def method_a(self):
+        def method_a(self) -> None:
             pass
 
-        def method_b(self):
+        def method_b(self) -> None:
             pass
 
     print_one_type(1, MultiMethodClass)
@@ -198,7 +200,7 @@ def test_prints_multiple_methods(capsys):
     assert "method_b" in captured.out
 
 
-def test_prints_with_different_indices(capsys):
+def test_prints_with_different_indices(capsys: pytest.CaptureFixture[str]) -> None:
     """Test printing with different index values."""
 
     class TestClass:
@@ -214,7 +216,7 @@ def test_prints_with_different_indices(capsys):
 # Tests for print_type_hierarchy()
 
 
-def test_prints_simple_class(capsys):
+def test_prints_simple_class(capsys: pytest.CaptureFixture[str]) -> None:
     """Test printing hierarchy for a simple class."""
 
     class SimpleClass:
@@ -229,19 +231,19 @@ def test_prints_simple_class(capsys):
     assert "builtins.object" in captured.out
 
 
-def test_prints_inheritance_chain(capsys):
+def test_prints_inheritance_chain(capsys: pytest.CaptureFixture[str]) -> None:
     """Test printing hierarchy with inheritance."""
 
     class Base:
-        def base_method(self):
+        def base_method(self) -> None:
             pass
 
     class Middle(Base):
-        def middle_method(self):
+        def middle_method(self) -> None:
             pass
 
     class Derived(Middle):
-        def derived_method(self):
+        def derived_method(self) -> None:
             pass
 
     print_type_hierarchy(Derived)
@@ -259,7 +261,9 @@ def test_prints_inheritance_chain(capsys):
     assert "base_method" in captured.out
 
 
-def test_prints_builtin_type_hierarchy(capsys):
+def test_prints_builtin_type_hierarchy(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test printing hierarchy for built-in types."""
     from collections import OrderedDict  # pylint: disable=import-outside-toplevel
 
@@ -275,7 +279,7 @@ def test_prints_builtin_type_hierarchy(capsys):
 # Tests for main()
 
 
-def test_main_direct_single_typename(capsys):
+def test_main_direct_single_typename(capsys: pytest.CaptureFixture[str]) -> None:
     """Test main function directly with single typename for coverage.
 
     This test calls the main() function directly (not via subprocess)
@@ -291,7 +295,7 @@ def test_main_direct_single_typename(capsys):
     assert "=" not in captured.out or captured.out.count("=") < 10
 
 
-def test_main_direct_multiple_typenames(capsys):
+def test_main_direct_multiple_typenames(capsys: pytest.CaptureFixture[str]) -> None:
     """Test main function directly with multiple typenames for coverage.
 
     This test calls the main() function directly (not via subprocess)
@@ -311,7 +315,7 @@ def test_main_direct_multiple_typenames(capsys):
     assert "=" * 60 in captured.out
 
 
-def test_main_with_single_typename():
+def test_main_with_single_typename() -> None:
     """Test main with a single type name."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -326,7 +330,7 @@ def test_main_with_single_typename():
     assert match_wrapped(result.stdout, "OrderedDict")
 
 
-def test_main_with_multiple_typenames():
+def test_main_with_multiple_typenames() -> None:
     """Test main with multiple type names."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -343,7 +347,7 @@ def test_main_with_multiple_typenames():
     assert "=" in result.stdout
 
 
-def test_main_with_no_arguments():
+def test_main_with_no_arguments() -> None:
     """Test main with no arguments (should fail)."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -357,7 +361,7 @@ def test_main_with_no_arguments():
     # Should show error about missing argument
 
 
-def test_main_with_invalid_typename():
+def test_main_with_invalid_typename() -> None:
     """Test main with invalid type name."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -373,7 +377,7 @@ def test_main_with_invalid_typename():
     assert "nonexistent" in result.stderr
 
 
-def test_main_with_mixed_valid_invalid():
+def test_main_with_mixed_valid_invalid() -> None:
     """Test main with mix of valid and invalid type names."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -397,7 +401,7 @@ def test_main_with_mixed_valid_invalid():
     assert "Could not import module" in result.stderr
 
 
-def test_main_with_builtin_type():
+def test_main_with_builtin_type() -> None:
     """Test main with built-in type."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -411,7 +415,7 @@ def test_main_with_builtin_type():
     assert "int" in result.stdout
 
 
-def test_main_with_subprocess():
+def test_main_with_subprocess() -> None:
     """Test that the script can be executed directly via subprocess.
 
     This test verifies that the __main__ block works correctly.
@@ -429,7 +433,7 @@ def test_main_with_subprocess():
     assert "Path" in result.stdout
 
 
-def test_main_subprocess_with_multiple_types():
+def test_main_subprocess_with_multiple_types() -> None:
     """Test script execution with multiple type arguments."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -445,7 +449,7 @@ def test_main_subprocess_with_multiple_types():
     assert match_wrapped(result.stdout, "=")
 
 
-def test_main_subprocess_with_invalid_type():
+def test_main_subprocess_with_invalid_type() -> None:
     """Test script execution with invalid type name."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     result = subprocess.run(
@@ -465,7 +469,9 @@ def test_main_subprocess_with_invalid_type():
 # Integration tests
 
 
-def test_full_workflow_with_standard_type(capsys):
+def test_full_workflow_with_standard_type(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test complete workflow with a standard library type."""
     from collections import OrderedDict  # pylint: disable=import-outside-toplevel
 
@@ -484,19 +490,21 @@ def test_full_workflow_with_standard_type(capsys):
     assert "dict" in captured.out
 
 
-def test_full_workflow_with_custom_hierarchy(capsys):
+def test_full_workflow_with_custom_hierarchy(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test complete workflow with custom class hierarchy."""
 
     class GrandParent:
-        def grandparent_method(self):
+        def grandparent_method(self) -> None:
             pass
 
     class Parent(GrandParent):
-        def parent_method(self):
+        def parent_method(self) -> None:
             pass
 
     class Child(Parent):
-        def child_method(self):
+        def child_method(self) -> None:
             pass
 
     # Test each function
@@ -515,7 +523,7 @@ def test_full_workflow_with_custom_hierarchy(capsys):
     assert "grandparent_method" in captured.out
 
 
-def test_cli_produces_consistent_output():
+def test_cli_produces_consistent_output() -> None:
     """Test that CLI produces consistent output across runs."""
     script_path = "firecrown/fctools/print_hierarchy.py"
 
@@ -539,7 +547,7 @@ def test_cli_produces_consistent_output():
     assert result1.stdout == result2.stdout
 
 
-def test_handles_complex_inheritance():
+def test_handles_complex_inheritance() -> None:
     """Test handling complex inheritance patterns."""
     script_path = "firecrown/fctools/print_hierarchy.py"
     # OrderedDict has complex MRO
@@ -558,21 +566,21 @@ def test_handles_complex_inheritance():
     assert len(hierarchy_lines) > 2  # At least OrderedDict, dict, object
 
 
-def test_method_detection_accuracy():
+def test_method_detection_accuracy() -> None:
     """Test that method detection is accurate."""
 
     class Base:
-        def base_only(self):
+        def base_only(self) -> None:
             pass
 
-        def to_override(self):
+        def to_override(self) -> None:
             pass
 
     class Derived(Base):
-        def derived_only(self):
+        def derived_only(self) -> None:
             pass
 
-        def to_override(self):
+        def to_override(self) -> None:
             pass  # Override
 
     base_methods = get_defined_methods(Base)
