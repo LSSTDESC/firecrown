@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 import pyccl as ccl
 import pytest
 import sacc
@@ -23,7 +24,9 @@ from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 
 
 @pytest.fixture(name="window_function_data", scope="module")
-def fixture_window_function():
+def fixture_window_function() -> (
+    tuple[npt.NDArray[np.float64], npt.NDArray[np.int64], npt.NDArray[np.float64]]
+):
     """Generate window function data."""
     n_ell_bin = 5
     ell_bin_edges = np.geomspace(10, 500, n_ell_bin + 1)
@@ -43,7 +46,23 @@ def fixture_window_function():
 
 
 @pytest.fixture(name="minimal_3x2pt_sacc", scope="module")
-def fixture_minimal_3x2pt_sacc(window_function_data):
+def fixture_minimal_3x2pt_sacc(
+    window_function_data: tuple[
+        npt.NDArray[np.float64], npt.NDArray[np.int64], npt.NDArray[np.float64]
+    ],
+) -> tuple[
+    sacc.Sacc,
+    dict[
+        str,
+        tuple[
+            npt.NDArray[np.float64],
+            npt.NDArray[np.float64],
+            npt.NDArray[np.int64],
+            npt.NDArray[np.float64],
+        ],
+    ],
+    ccl.Cosmology,
+]:
     """Generate SACC data with window functions.
     At the moment, this only adds cosmic shear data."""
     sacc_data = sacc.Sacc()
@@ -104,7 +123,7 @@ def fixture_minimal_3x2pt_sacc(window_function_data):
         ("src1", "src1", 200),
     ],
 )
-def fixture_cut(request):
+def fixture_cut(request: pytest.FixtureRequest) -> tuple[str, str, int]:
     return request.param
 
 
@@ -118,8 +137,22 @@ weak_lensing_factories:
 
 
 def test_scale_cuts_with_bandpower_window_label(
-    minimal_3x2pt_sacc, cut, tmp_path: Path
-):
+    minimal_3x2pt_sacc: tuple[
+        sacc.Sacc,
+        dict[
+            str,
+            tuple[
+                npt.NDArray[np.float64],
+                npt.NDArray[np.float64],
+                npt.NDArray[np.int64],
+                npt.NDArray[np.float64],
+            ],
+        ],
+        ccl.Cosmology,
+    ],
+    cut: tuple[str, str, int],
+    tmp_path: Path,
+) -> None:
     """Test that the scale cuts with bandpower windows work correctly."""
     sacc_data, ccl_cell, cosmo = minimal_3x2pt_sacc
 
@@ -190,8 +223,23 @@ def test_scale_cuts_with_bandpower_window_label(
     ],
 )
 def test_scale_cuts_with_bandpower_window_support(
-    minimal_3x2pt_sacc, cut, method, tmp_path: Path
-):
+    minimal_3x2pt_sacc: tuple[
+        sacc.Sacc,
+        dict[
+            str,
+            tuple[
+                npt.NDArray[np.float64],
+                npt.NDArray[np.float64],
+                npt.NDArray[np.int64],
+                npt.NDArray[np.float64],
+            ],
+        ],
+        ccl.Cosmology,
+    ],
+    cut: tuple[str, str, int],
+    method: tuple[TwoPointFilterMethod, float],
+    tmp_path: Path,
+) -> None:
     """Test that the scale cuts with bandpower windows work correctly."""
     sacc_data, ccl_cell, cosmo = minimal_3x2pt_sacc
 

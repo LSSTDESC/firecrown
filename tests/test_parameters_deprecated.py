@@ -10,7 +10,7 @@ import warnings
 import pytest
 
 
-def test_parameters_module_emits_deprecation_warning():
+def test_parameters_module_emits_deprecation_warning() -> None:
     """Importing firecrown.parameters should emit a DeprecationWarning."""
     # Remove the module from sys.modules if it's already imported
     # so we can import it fresh and catch the warning
@@ -34,7 +34,7 @@ def test_parameters_module_emits_deprecation_warning():
         assert "firecrown.updatable" in str(w[0].message)
 
 
-def test_parameters_exports_all_names():
+def test_parameters_exports_all_names() -> None:
     """All expected names should be available from firecrown.parameters."""
     # pylint: disable=import-outside-toplevel
     import firecrown.parameters as params
@@ -55,7 +55,7 @@ def test_parameters_exports_all_names():
         assert hasattr(params, name), f"Missing export: {name}"
 
 
-def test_parameters_exports_are_same_as_updatable():
+def test_parameters_exports_are_same_as_updatable() -> None:
     """Exported names should be the same objects as in firecrown.updatable."""
     # pylint: disable=import-outside-toplevel
     import firecrown.parameters as params
@@ -81,7 +81,7 @@ def test_parameters_exports_are_same_as_updatable():
         ), f"{name} from parameters is not the same object as from updatable"
 
 
-def test_params_map_from_deprecated_module():
+def test_params_map_from_deprecated_module() -> None:
     """Ensure ParamsMap imported from deprecated module works correctly."""
     # pylint: disable=import-outside-toplevel
     from firecrown.parameters import ParamsMap
@@ -94,7 +94,7 @@ def test_params_map_from_deprecated_module():
 @pytest.mark.filterwarnings(
     r"ignore:.*firecrown\.parameters module is deprecated.*:DeprecationWarning"
 )
-def test_required_parameters_from_deprecated_module():
+def test_required_parameters_from_deprecated_module() -> None:
     """Ensure RequiredParameters imported from deprecated module works correctly."""
     # pylint: disable=import-outside-toplevel
     from firecrown.parameters import RequiredParameters, SamplerParameter
@@ -109,7 +109,7 @@ def test_required_parameters_from_deprecated_module():
     assert "param2" in req_params.get_params_names()
 
 
-def test_derived_parameter_from_deprecated_module():
+def test_derived_parameter_from_deprecated_module() -> None:
     """Ensure DerivedParameter imported from deprecated module works correctly."""
     # pylint: disable=import-outside-toplevel
     from firecrown.parameters import DerivedParameter

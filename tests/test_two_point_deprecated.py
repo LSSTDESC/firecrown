@@ -14,7 +14,7 @@ import sys
 import pytest
 
 
-def test_two_point_deprecation_warning():
+def test_two_point_deprecation_warning() -> None:
     """Test that importing two_point emits DeprecationWarning.
 
     This must be the first test that imports the module, as subsequent imports
@@ -32,7 +32,7 @@ def test_two_point_deprecation_warning():
         import firecrown.likelihood.two_point  # noqa: F401
 
 
-def test_two_point_deprecation_warning_content():
+def test_two_point_deprecation_warning_content() -> None:
     """Test the deprecation warning mentions firecrown.likelihood.
 
     This test relies on module caching, so it won't see the warning.
@@ -44,7 +44,7 @@ def test_two_point_deprecation_warning_content():
     # If we get here without error, the import worked
 
 
-def test_all_items_importable():
+def test_all_items_importable() -> None:
     """Test that all __all__ items can be imported from deprecated module."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood.two_point import (
@@ -67,7 +67,7 @@ def test_all_items_importable():
     assert use_source_factory_metadata_index is not None
 
 
-def test_items_identical_to_new_location():
+def test_items_identical_to_new_location() -> None:
     """Test that imported items are the same objects as in _two_point."""
     # pylint: disable=import-outside-toplevel
     from firecrown.likelihood._two_point import (
@@ -111,7 +111,7 @@ def test_items_identical_to_new_location():
     assert old_use_source_factory_metadata_index is use_source_factory_metadata_index
 
 
-def test_module_import_as_alias():
+def test_module_import_as_alias() -> None:
     """Test importing the module with an alias."""
     # pylint: disable=import-outside-toplevel
     import firecrown.likelihood.two_point as tp
@@ -122,7 +122,7 @@ def test_module_import_as_alias():
     assert hasattr(tp, "calculate_angular_cl")
 
 
-def test_two_point_all_list():
+def test_two_point_all_list() -> None:
     """Test that __all__ is preserved in deprecated module."""
     # pylint: disable=import-outside-toplevel
     import firecrown.likelihood.two_point

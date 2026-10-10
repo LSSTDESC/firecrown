@@ -15,7 +15,7 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap
 
 
-def test_cmb_convergence_args():
+def test_cmb_convergence_args() -> None:
     """Test CMBConvergenceArgs creation and properties."""
     args = CMBConvergenceArgs(scale=2.0, field="delta_matter", z_source=1090.0)
 
@@ -24,7 +24,7 @@ def test_cmb_convergence_args():
     assert args.z_source == 1090.0
 
 
-def test_cmb_convergence_init():
+def test_cmb_convergence_init() -> None:
     """Test CMBConvergence initialization."""
     cmb_conv = CMBConvergence(sacc_tracer="cmb", scale=1.5, z_source=1090.0)
 
@@ -34,7 +34,7 @@ def test_cmb_convergence_init():
     assert cmb_conv.current_tracer_args is None
 
 
-def test_cmb_convergence_create_ready():
+def test_cmb_convergence_create_ready() -> None:
     """Test CMBConvergence.create_ready method."""
     cmb_conv = CMBConvergence.create_ready(
         sacc_tracer="cmb", scale=2.0, z_source=1090.0
@@ -48,7 +48,7 @@ def test_cmb_convergence_create_ready():
     assert cmb_conv.tracer_args.z_source == 1090.0
 
 
-def test_cmb_convergence_read_systematics():
+def test_cmb_convergence_read_systematics() -> None:
     """Test that read_systematics does nothing for CMB sources."""
     cmb_conv = CMBConvergence(sacc_tracer="cmb")
 
@@ -72,7 +72,7 @@ def test_cmb_convergence_read() -> None:
     assert cmb_conv.tracer_args.field == "delta_matter"
 
 
-def test_cmb_convergence_read_missing_tracer_args():
+def test_cmb_convergence_read_missing_tracer_args() -> None:
     """Test that _read properly initializes tracer_args."""
     cmb_conv = CMBConvergence(sacc_tracer="cmb", scale=2.0, z_source=1090.0)
 
@@ -92,7 +92,9 @@ def test_cmb_convergence_read_missing_tracer_args():
     assert cmb_conv.tracer_args.field == "delta_matter"
 
 
-def test_cmb_convergence_create_tracers(tools_with_vanilla_cosmology: ModelingTools):
+def test_cmb_convergence_create_tracers(
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
     """Test CMBConvergence create_tracers method."""
     cmb_conv = CMBConvergence.create_ready(
         sacc_tracer="cmb", scale=1.0, z_source=1100.0
@@ -108,7 +110,7 @@ def test_cmb_convergence_create_tracers(tools_with_vanilla_cosmology: ModelingTo
     assert cmb_conv.current_tracer_args == tracer_args
 
 
-def test_cmb_convergence_get_scale():
+def test_cmb_convergence_get_scale() -> None:
     """Test CMBConvergence get_scale method."""
     cmb_conv = CMBConvergence.create_ready(sacc_tracer="cmb", scale=2.5)
 
@@ -122,7 +124,7 @@ def test_cmb_convergence_get_scale():
     assert cmb_conv.get_scale() == 2.5
 
 
-def test_cmb_convergence_factory_init():
+def test_cmb_convergence_factory_init() -> None:
     """Test CMBConvergenceFactory initialization."""
     factory = CMBConvergenceFactory(z_source=1090.0, scale=2.0)
 
@@ -131,7 +133,7 @@ def test_cmb_convergence_factory_init():
     assert not factory._cache  # pylint: disable=protected-access
 
 
-def test_cmb_convergence_factory_create():
+def test_cmb_convergence_factory_create() -> None:
     """Test CMBConvergenceFactory create method."""
     factory = CMBConvergenceFactory(z_source=1090.0, scale=1.5)
 
@@ -149,7 +151,7 @@ def test_cmb_convergence_factory_create():
     assert cmb_conv.z_source == 1090.0
 
 
-def test_cmb_convergence_factory_create_caching():
+def test_cmb_convergence_factory_create_caching() -> None:
     """Test that CMBConvergenceFactory caches created objects."""
     factory = CMBConvergenceFactory()
 
@@ -166,7 +168,7 @@ def test_cmb_convergence_factory_create_caching():
     assert cmb_conv1 is cmb_conv2
 
 
-def test_cmb_convergence_factory_create_from_metadata_only():
+def test_cmb_convergence_factory_create_from_metadata_only() -> None:
     """Test CMBConvergenceFactory create_from_metadata_only method."""
     factory = CMBConvergenceFactory(z_source=1100.0, scale=1.0)
 
@@ -177,7 +179,7 @@ def test_cmb_convergence_factory_create_from_metadata_only():
     assert cmb_conv.z_source == 1100.0
 
 
-def test_cmb_convergence_factory_create_from_metadata_caching():
+def test_cmb_convergence_factory_create_from_metadata_caching() -> None:
     """Test that create_from_metadata_only also uses caching."""
     factory = CMBConvergenceFactory()
 
@@ -188,7 +190,7 @@ def test_cmb_convergence_factory_create_from_metadata_caching():
     assert cmb_conv1 is cmb_conv2
 
 
-def test_cmb_convergence_no_systematics():
+def test_cmb_convergence_no_systematics() -> None:
     """Test that CMB sources have no systematics."""
     cmb_conv = CMBConvergence(sacc_tracer="cmb")
 
@@ -196,7 +198,7 @@ def test_cmb_convergence_no_systematics():
     assert not hasattr(cmb_conv, "systematics")
 
 
-def test_cmb_convergence_update_params():
+def test_cmb_convergence_update_params() -> None:
     """Test that CMBConvergence can handle parameter updates."""
     cmb_conv = CMBConvergence.create_ready(sacc_tracer="cmb")
 
@@ -206,7 +208,7 @@ def test_cmb_convergence_update_params():
     cmb_conv.update(params)
 
 
-def test_cmb_convergence_args_immutable():
+def test_cmb_convergence_args_immutable() -> None:
     """Test that CMBConvergenceArgs is immutable."""
     args = CMBConvergenceArgs(scale=1.0)
 
@@ -215,7 +217,7 @@ def test_cmb_convergence_args_immutable():
         args.scale = 2.0  # type: ignore[misc]
 
 
-def test_cmb_convergence_factory_different_params():
+def test_cmb_convergence_factory_different_params() -> None:
     """Test factory with different parameters creates different objects."""
     factory1 = CMBConvergenceFactory(z_source=1090.0, scale=1.0)
     factory2 = CMBConvergenceFactory(z_source=1100.0, scale=2.0)
@@ -238,7 +240,7 @@ def test_cmb_convergence_factory_different_params():
 @pytest.mark.parametrize("z_source", [1090.0, 1100.0, 1110.0])
 def test_cmb_convergence_different_z_source(
     z_source: float, tools_with_vanilla_cosmology: ModelingTools
-):
+) -> None:
     """Test CMBConvergence with different z_source values."""
     cmb_conv = CMBConvergence.create_ready(sacc_tracer="cmb", z_source=z_source)
 
@@ -249,7 +251,7 @@ def test_cmb_convergence_different_z_source(
 
 
 @pytest.mark.parametrize("scale", [0.5, 1.0, 1.5, 2.0])
-def test_cmb_convergence_different_scales(scale: float):
+def test_cmb_convergence_different_scales(scale: float) -> None:
     """Test CMBConvergence with different scale values."""
     cmb_conv = CMBConvergence.create_ready(sacc_tracer="cmb", scale=scale)
 
