@@ -23,7 +23,7 @@ from firecrown.fctools.common import (
 
 
 @pytest.fixture
-def console():
+def console() -> Console:
     """Return a rich console object for testing."""
     return Console()
 
@@ -31,7 +31,7 @@ def console():
 class TestLoadJsonFile:
     """Tests for load_json_file function."""
 
-    def test_load_valid_json(self, tmp_path, console):
+    def test_load_valid_json(self, tmp_path: Path, console: Console) -> None:
         """Test loading a valid JSON file."""
         json_file = tmp_path / "test.json"
         test_data = {"key": "value", "number": 42, "list": [1, 2, 3]}
@@ -41,7 +41,9 @@ class TestLoadJsonFile:
 
         assert result == test_data
 
-    def test_load_json_with_custom_context(self, tmp_path, console):
+    def test_load_json_with_custom_context(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test that custom error context is used in error messages."""
         json_file = tmp_path / "test.json"
         json_file.write_text("{invalid json}")
@@ -51,7 +53,7 @@ class TestLoadJsonFile:
 
         assert exc_info.value.code == 1
 
-    def test_load_nonexistent_file(self, tmp_path, console):
+    def test_load_nonexistent_file(self, tmp_path: Path, console: Console) -> None:
         """Test loading a file that doesn't exist."""
         json_file = tmp_path / "nonexistent.json"
 
@@ -60,7 +62,7 @@ class TestLoadJsonFile:
 
         assert exc_info.value.code == 1
 
-    def test_load_invalid_json(self, tmp_path, console):
+    def test_load_invalid_json(self, tmp_path: Path, console: Console) -> None:
         """Test loading a file with invalid JSON."""
         json_file = tmp_path / "invalid.json"
         json_file.write_text("{this is not valid JSON}")
@@ -70,7 +72,7 @@ class TestLoadJsonFile:
 
         assert exc_info.value.code == 1
 
-    def test_load_empty_file(self, tmp_path, console):
+    def test_load_empty_file(self, tmp_path: Path, console: Console) -> None:
         """Test loading an empty file."""
         json_file = tmp_path / "empty.json"
         json_file.write_text("")
@@ -80,7 +82,7 @@ class TestLoadJsonFile:
 
         assert exc_info.value.code == 1
 
-    def test_load_complex_json(self, tmp_path, console):
+    def test_load_complex_json(self, tmp_path: Path, console: Console) -> None:
         """Test loading JSON with nested structures."""
         json_file = tmp_path / "complex.json"
         test_data = {
@@ -98,14 +100,14 @@ class TestLoadJsonFile:
 class TestImportClassFromPath:
     """Tests for import_class_from_path function."""
 
-    def test_import_builtin_class(self, console):
+    def test_import_builtin_class(self, console: Console) -> None:
         """Test importing a built-in Python class."""
         result = import_class_from_path(console, "pathlib.Path")
 
         assert result == Path
         assert isinstance(Path(), result)
 
-    def test_import_nested_class(self, console):
+    def test_import_nested_class(self, console: Console) -> None:
         """Test importing a class from a nested module."""
         result = import_class_from_path(console, "collections.abc.Mapping")
 
@@ -113,28 +115,28 @@ class TestImportClassFromPath:
 
         assert result == Mapping
 
-    def test_import_invalid_module(self, console):
+    def test_import_invalid_module(self, console: Console) -> None:
         """Test importing from a nonexistent module."""
         with pytest.raises(SystemExit) as exc_info:
             import_class_from_path(console, "nonexistent.module.Class")
 
         assert exc_info.value.code == 1
 
-    def test_import_invalid_class(self, console):
+    def test_import_invalid_class(self, console: Console) -> None:
         """Test importing a nonexistent class from a valid module."""
         with pytest.raises(SystemExit) as exc_info:
             import_class_from_path(console, "pathlib.NonexistentClass")
 
         assert exc_info.value.code == 1
 
-    def test_import_invalid_path_format(self, console):
+    def test_import_invalid_path_format(self, console: Console) -> None:
         """Test importing with an invalid path format (no dots)."""
         with pytest.raises(SystemExit) as exc_info:
             import_class_from_path(console, "InvalidPath")
 
         assert exc_info.value.code == 1
 
-    def test_import_firecrown_class(self, console):
+    def test_import_firecrown_class(self, console: Console) -> None:
         """Test importing a class from firecrown."""
         result = import_class_from_path(console, "firecrown.updatable.Updatable")
 
@@ -147,7 +149,7 @@ class TestImportClassFromPath:
 class TestImportModuleFromFile:
     """Tests for import_module_from_file function."""
 
-    def test_import_valid_module(self, tmp_path, console):
+    def test_import_valid_module(self, tmp_path: Path, console: Console) -> None:
         """Test importing a valid Python module from a file."""
         module_file = tmp_path / "test_module.py"
         module_file.write_text("""
@@ -163,7 +165,9 @@ TEST_CONSTANT = "hello"
         assert module.test_function() == 42
         assert module.TEST_CONSTANT == "hello"
 
-    def test_import_module_with_custom_name(self, tmp_path, console):
+    def test_import_module_with_custom_name(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test importing a module with a custom name."""
         module_file = tmp_path / "custom.py"
         module_file.write_text("VALUE = 123")
@@ -172,7 +176,7 @@ TEST_CONSTANT = "hello"
 
         assert module.VALUE == 123
 
-    def test_import_nonexistent_file(self, tmp_path, console):
+    def test_import_nonexistent_file(self, tmp_path: Path, console: Console) -> None:
         """Test importing from a nonexistent file."""
         module_file = tmp_path / "nonexistent.py"
 
@@ -181,7 +185,9 @@ TEST_CONSTANT = "hello"
 
         assert exc_info.value.code == 1
 
-    def test_import_file_with_syntax_error(self, tmp_path, console):
+    def test_import_file_with_syntax_error(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test importing a file with syntax errors."""
         module_file = tmp_path / "syntax_error.py"
         module_file.write_text("def broken_function(\n    # missing closing paren")
@@ -191,7 +197,9 @@ TEST_CONSTANT = "hello"
 
         assert exc_info.value.code == 1
 
-    def test_import_file_with_import_error(self, tmp_path, console):
+    def test_import_file_with_import_error(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test importing a file that imports a nonexistent module."""
         module_file = tmp_path / "import_error.py"
         module_file.write_text("import nonexistent_module")
@@ -201,7 +209,7 @@ TEST_CONSTANT = "hello"
 
         assert exc_info.value.code == 1
 
-    def test_import_module_none_spec(self, tmp_path, console):
+    def test_import_module_none_spec(self, tmp_path: Path, console: Console) -> None:
         """Test case where spec_from_file_location returns None."""
         # This is extremely rare, but can happen with certain file paths or conditions
         # Testing with a directory instead of a file might trigger this
@@ -217,21 +225,23 @@ TEST_CONSTANT = "hello"
 class TestCliError:
     """Tests for cli_error function."""
 
-    def test_cli_error_exits(self, console):
+    def test_cli_error_exits(self, console: Console) -> None:
         """Test that cli_error exits the program."""
         with pytest.raises(SystemExit) as exc_info:
             cli_error(console, "Test error message")
 
         assert exc_info.value.code == 1
 
-    def test_cli_error_custom_exit_code(self, console):
+    def test_cli_error_custom_exit_code(self, console: Console) -> None:
         """Test cli_error with a custom exit code."""
         with pytest.raises(SystemExit) as exc_info:
             cli_error(console, "Test error message", exit_code=2)
 
         assert exc_info.value.code == 2
 
-    def test_cli_error_adds_prefix(self, capsys, console):
+    def test_cli_error_adds_prefix(
+        self, capsys: pytest.CaptureFixture[str], console: Console
+    ) -> None:
         """Test that ERROR: prefix is added if not present."""
         with pytest.raises(SystemExit):
             cli_error(console, "Test message")
@@ -239,7 +249,9 @@ class TestCliError:
         captured = capsys.readouterr()
         assert "ERROR: Test message" in captured.err
 
-    def test_cli_error_preserves_prefix(self, capsys, console):
+    def test_cli_error_preserves_prefix(
+        self, capsys: pytest.CaptureFixture[str], console: Console
+    ) -> None:
         """Test that existing ERROR: prefix is not duplicated."""
         with pytest.raises(SystemExit):
             cli_error(console, "ERROR: Already has prefix")
@@ -252,19 +264,23 @@ class TestCliError:
 class TestCliWarning:
     """Tests for cli_warning function."""
 
-    def test_cli_warning_does_not_exit(self, console):
+    def test_cli_warning_does_not_exit(self, console: Console) -> None:
         """Test that cli_warning does not exit the program."""
         # Should not raise SystemExit
         cli_warning(console, "Test warning message")
 
-    def test_cli_warning_adds_prefix(self, capsys, console):
+    def test_cli_warning_adds_prefix(
+        self, capsys: pytest.CaptureFixture[str], console: Console
+    ) -> None:
         """Test that Warning: prefix is added if not present."""
         cli_warning(console, "Test message")
 
         captured = capsys.readouterr()
         assert "Warning: Test message" in captured.err
 
-    def test_cli_warning_preserves_prefix(self, capsys, console):
+    def test_cli_warning_preserves_prefix(
+        self, capsys: pytest.CaptureFixture[str], console: Console
+    ) -> None:
         """Test that existing Warning: prefix is not duplicated."""
         cli_warning(console, "Warning: Already has prefix")
 
@@ -272,7 +288,9 @@ class TestCliWarning:
         assert "Warning: Warning:" not in captured.err
         assert "Warning: Already has prefix" in captured.err
 
-    def test_multiple_warnings(self, capsys, console):
+    def test_multiple_warnings(
+        self, capsys: pytest.CaptureFixture[str], console: Console
+    ) -> None:
         """Test that multiple warnings can be issued."""
         cli_warning(console, "First warning")
         cli_warning(console, "Second warning")
@@ -285,7 +303,7 @@ class TestCliWarning:
 class TestValidateInputFile:
     """Tests for validate_input_file function."""
 
-    def test_validate_existing_file(self, tmp_path, console):
+    def test_validate_existing_file(self, tmp_path: Path, console: Console) -> None:
         """Test validating an existing readable file."""
         test_file = tmp_path / "test.txt"
         test_file.write_text("content")
@@ -293,7 +311,7 @@ class TestValidateInputFile:
         # Should not raise
         validate_input_file(console, test_file)
 
-    def test_validate_nonexistent_file(self, tmp_path, console):
+    def test_validate_nonexistent_file(self, tmp_path: Path, console: Console) -> None:
         """Test validating a nonexistent file."""
         test_file = tmp_path / "nonexistent.txt"
 
@@ -302,14 +320,18 @@ class TestValidateInputFile:
 
         assert exc_info.value.code == 1
 
-    def test_validate_directory_not_file(self, tmp_path, console):
+    def test_validate_directory_not_file(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test validating a directory instead of a file."""
         with pytest.raises(SystemExit) as exc_info:
             validate_input_file(console, tmp_path)
 
         assert exc_info.value.code == 1
 
-    def test_validate_custom_description(self, tmp_path, console):
+    def test_validate_custom_description(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test validate_input_file with custom file description."""
         test_file = tmp_path / "nonexistent.txt"
 
@@ -320,7 +342,7 @@ class TestValidateInputFile:
 
         # Error message should contain custom description
 
-    def test_validate_unreadable_file(self, tmp_path, console):
+    def test_validate_unreadable_file(self, tmp_path: Path, console: Console) -> None:
         """Test validating a file without read permissions."""
         if sys.platform == "win32":
             pytest.skip("File permission tests unreliable on Windows")
@@ -344,14 +366,16 @@ class TestValidateInputFile:
 class TestValidateOutputPath:
     """Tests for validate_output_path function."""
 
-    def test_validate_new_output_path(self, tmp_path, console):
+    def test_validate_new_output_path(self, tmp_path: Path, console: Console) -> None:
         """Test validating a new output path (file doesn't exist)."""
         output_file = tmp_path / "output.txt"
 
         # Should not raise
         validate_output_path(console, output_file, overwrite=False)
 
-    def test_validate_existing_path_without_overwrite(self, tmp_path, console):
+    def test_validate_existing_path_without_overwrite(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test validating existing file without overwrite permission."""
         output_file = tmp_path / "existing.txt"
         output_file.write_text("existing content")
@@ -361,7 +385,9 @@ class TestValidateOutputPath:
 
         assert exc_info.value.code == 1
 
-    def test_validate_existing_path_with_overwrite(self, tmp_path, console):
+    def test_validate_existing_path_with_overwrite(
+        self, tmp_path: Path, console: Console
+    ) -> None:
         """Test validating existing file with overwrite permission."""
         output_file = tmp_path / "existing.txt"
         output_file.write_text("existing content")
@@ -373,37 +399,37 @@ class TestValidateOutputPath:
 class TestFormatLineRanges:
     """Tests for format_line_ranges function."""
 
-    def test_format_empty_list(self):
+    def test_format_empty_list(self) -> None:
         """Test formatting an empty list."""
         result = format_line_ranges([])
 
         assert not result
 
-    def test_format_single_line(self):
+    def test_format_single_line(self) -> None:
         """Test formatting a single line number."""
         result = format_line_ranges([42])
 
         assert result == ["42"]
 
-    def test_format_consecutive_lines(self):
+    def test_format_consecutive_lines(self) -> None:
         """Test formatting consecutive line numbers."""
         result = format_line_ranges([1, 2, 3, 4, 5])
 
         assert result == ["1-5"]
 
-    def test_format_mixed_ranges(self):
+    def test_format_mixed_ranges(self) -> None:
         """Test formatting mixed consecutive and individual lines."""
         result = format_line_ranges([1, 2, 3, 5, 6, 8, 10, 11, 12])
 
         assert result == ["1-3", "5-6", "8", "10-12"]
 
-    def test_format_unsorted_lines(self):
+    def test_format_unsorted_lines(self) -> None:
         """Test formatting unsorted line numbers."""
         result = format_line_ranges([5, 1, 3, 2, 8])
 
         assert result == ["1-3", "5", "8"]
 
-    def test_format_duplicate_lines(self):
+    def test_format_duplicate_lines(self) -> None:
         """Test formatting with duplicate line numbers."""
         result = format_line_ranges([1, 2, 2, 3, 5, 5, 6])
 
@@ -411,19 +437,19 @@ class TestFormatLineRanges:
         assert len(result) == 4  # ['1-2', '2-3', '5', '5-6']
         assert "1-2" in result or "2-3" in result
 
-    def test_format_large_range(self):
+    def test_format_large_range(self) -> None:
         """Test formatting a large range of consecutive lines."""
         result = format_line_ranges(list(range(100, 200)))
 
         assert result == ["100-199"]
 
-    def test_format_all_individual_lines(self):
+    def test_format_all_individual_lines(self) -> None:
         """Test formatting non-consecutive lines."""
         result = format_line_ranges([1, 5, 10, 15, 20])
 
         assert result == ["1", "5", "10", "15", "20"]
 
-    def test_format_two_consecutive_lines(self):
+    def test_format_two_consecutive_lines(self) -> None:
         """Test formatting exactly two consecutive lines."""
         result = format_line_ranges([5, 6])
 

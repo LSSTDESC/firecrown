@@ -13,7 +13,7 @@ from pathlib import Path
 from . import match_wrapped
 
 
-def test_main_basic(tmp_path):
+def test_main_basic(tmp_path: Path) -> None:
     coverage_file = tmp_path / "coverage.json"
     output_file = tmp_path / "output.tsv"
 
@@ -70,7 +70,7 @@ def test_main_basic(tmp_path):
     assert "src/example.py" in lines[1]
 
 
-def test_main_with_timing(tmp_path):
+def test_main_with_timing(tmp_path: Path) -> None:
     coverage_file = tmp_path / "coverage.json"
     timing_file = tmp_path / "timing.json"
     output_file = tmp_path / "output.tsv"
@@ -132,7 +132,7 @@ def test_main_with_timing(tmp_path):
     assert match_wrapped(result.stdout, "Records with timing data:")
 
 
-def test_main_default_output_filename(tmp_path):
+def test_main_default_output_filename(tmp_path: Path) -> None:
     coverage_file = tmp_path / "coverage.json"
 
     coverage_data = {
@@ -183,7 +183,7 @@ def test_main_default_output_filename(tmp_path):
     assert default_output.exists()
 
 
-def test_main_nonexistent_input(tmp_path):
+def test_main_nonexistent_input(tmp_path: Path) -> None:
     nonexistent_file = tmp_path / "does_not_exist.json"
     output_file = tmp_path / "output.tsv"
 
@@ -203,7 +203,7 @@ def test_main_nonexistent_input(tmp_path):
     assert match_wrapped(result.stderr.lower(), "does not exist")
 
 
-def test_main_invalid_json(tmp_path):
+def test_main_invalid_json(tmp_path: Path) -> None:
     coverage_file = tmp_path / "invalid.json"
     output_file = tmp_path / "output.tsv"
 
@@ -225,7 +225,7 @@ def test_main_invalid_json(tmp_path):
     assert "json" in result.stderr.lower()
 
 
-def test_main_missing_expected_key(tmp_path):
+def test_main_missing_expected_key(tmp_path: Path) -> None:
     coverage_file = tmp_path / "missing_key.json"
     output_file = tmp_path / "output.tsv"
 
@@ -257,7 +257,7 @@ def test_main_missing_expected_key(tmp_path):
     assert len(lines) == 1
 
 
-def test_main_write_error(tmp_path):
+def test_main_write_error(tmp_path: Path) -> None:
     coverage_file = tmp_path / "coverage.json"
 
     coverage_data = {
@@ -310,7 +310,7 @@ def test_main_write_error(tmp_path):
     assert match_wrapped(result.stdout, "Error: File operation failed")
 
 
-def test_main_timing_file_not_found(tmp_path):
+def test_main_timing_file_not_found(tmp_path: Path) -> None:
     coverage_file = tmp_path / "coverage.json"
     output_file = tmp_path / "output.tsv"
     nonexistent_timing = tmp_path / "timing_does_not_exist.txt"
