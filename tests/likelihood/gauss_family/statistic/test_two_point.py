@@ -800,6 +800,16 @@ def test_two_point_src0_src0_real_aiw(
     ],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
+    """Check a real-space lens0-lens0 TwoPoint computes a finite theory vector.
+
+    Reads the SACC data from the real-space fixture and computes the theory
+    vector. The cell count matches ``ells_for_xi`` only when the REAL
+    interpolation flag is set. The redshift and angular arrays are unused.
+
+    :param sacc_galaxy_xis_lens0_lens0_real: Tuple of SACC data, redshift
+        coordinates, and angular coordinates from the fixture.
+    :param apply_interp_when: When to apply interpolation.
+    """
     sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_real
 
     lens0 = WeakLensing(sacc_tracer="lens0")
