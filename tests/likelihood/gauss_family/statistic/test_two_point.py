@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
+import numpy.typing as npt
 import pyccl
 import pytest
 import sacc
@@ -794,7 +795,9 @@ def test_two_point_src0_src0_no_window_aiw(
 
 
 def test_two_point_src0_src0_real_aiw(
-    sacc_galaxy_xis_lens0_lens0_real: tuple[object, ...],
+    sacc_galaxy_xis_lens0_lens0_real: tuple[
+        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_real
