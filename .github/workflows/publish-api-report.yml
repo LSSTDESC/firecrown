@@ -1,0 +1,65 @@
+name: Publish PR public API report
+
+on:
+  workflow_run:
+    workflows: [firecrown-api-changes]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  resolve:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - name: Check out trusted publisher
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: tools/publish_api_report.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Resolve trusted PR identity
+        id: resolve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          API_REPORT_RESOLVE_ONLY: 'true'
+        run: python tools/publish_api_report.py
+
+  publish:
+    needs: resolve
+    if: needs.resolve.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    # Resolve first because fork workflow_run payloads may omit pull_requests.
+    concurrency:
+      group: public-api-report-${{ github.repository }}-${{ needs.resolve.outputs.pr_number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Check out trusted publisher
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: tools/publish_api_report.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Create or update API report comment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          API_REPORT_PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
+        run: python tools/publish_api_report.py

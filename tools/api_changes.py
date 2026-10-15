@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -275,6 +277,42 @@ def markdown(report: Report, old: str, new: str) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def write_metadata(
+    mode: str, path: str | None, verdict: str = "", baseline: str = ""
+) -> None:
+    """Write attempt identity and completion state for the untrusted CI artifact.
+
+    :param mode: Comparison mode; metadata is available only for PR comparisons.
+    :param path: Optional destination metadata file.
+    :param verdict: Completed policy verdict, or empty before comparison succeeds.
+    :param baseline: Compared baseline commit, or empty before completion.
+    """
+    if not path:
+        return
+    if mode != "pr":
+        raise ValueError("--metadata requires pr mode")
+    event = json.loads(
+        Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8")
+    )
+    pr = event["pull_request"]
+    metadata = {
+        "schema": 1,
+        "repository": os.environ["GITHUB_REPOSITORY"],
+        "run_id": int(os.environ["GITHUB_RUN_ID"]),
+        "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+        "pr_number": pr["number"],
+        "head_sha": pr["head"]["sha"],
+        "base_sha": pr["base"]["sha"],
+        "target": pr["base"]["ref"],
+        "status": "completed" if verdict else "failed",
+        "verdict": verdict,
+        "baseline": baseline,
+    }
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(metadata) + "\n", encoding="utf-8")
+
+
 def main() -> int:  # noqa: C901  # pylint: disable=inconsistent-return-statements
     """Select a comparison baseline and write the resulting report."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -290,8 +328,10 @@ def main() -> int:  # noqa: C901  # pylint: disable=inconsistent-return-statemen
     parser.add_argument(
         "--github-actions", action="store_true", help="Emit GitHub workflow annotations"
     )
+    parser.add_argument("--metadata", help="Write PR CI artifact metadata to this path")
     args = parser.parse_args()
     try:
+        write_metadata(args.mode, args.metadata)
         tags = git("tag", "--list", "v*").splitlines()
         if args.mode == "support":
             branch = git("branch", "--show-current")
@@ -335,6 +375,7 @@ def main() -> int:  # noqa: C901  # pylint: disable=inconsistent-return-statemen
             output.write_text(text, encoding="utf-8")
         else:
             sys.stdout.write(text)
+        write_metadata(args.mode, args.metadata, verdict, old)
         if args.github_actions and args.mode == "pr":
             message = "\n".join([verdict, *report.breaks])
             github_annotation(level, message)
@@ -342,6 +383,7 @@ def main() -> int:  # noqa: C901  # pylint: disable=inconsistent-return-statemen
     except (
         OSError,
         ValueError,
+        KeyError,
         subprocess.CalledProcessError,
         griffe.GriffeError,
     ) as exc:

@@ -16,46 +16,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  api-changes:
-    name: PR public API changes
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-      - name: Fetch PR target branch
-        env:
-          BASE_BRANCH: ${{ github.base_ref }}
-        run: |
-          git check-ref-format "refs/heads/$BASE_BRANCH"
-          git fetch origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - name: Install Griffe
-        run: python -m pip install griffe==2.3.0
-      - name: Report PR API changes
-        env:
-          BASE_BRANCH: ${{ github.base_ref }}
-        run: |
-          set +e
-          python tools/api_changes.py pr --base "refs/remotes/origin/$BASE_BRANCH" --target "$BASE_BRANCH" --output "$RUNNER_TEMP/api-changes.md" --github-actions
-          result=$?
-          if [[ -f "$RUNNER_TEMP/api-changes.md" ]]; then
-            cat "$RUNNER_TEMP/api-changes.md"
-            if ! cat "$RUNNER_TEMP/api-changes.md" >> "$GITHUB_STEP_SUMMARY"; then
-              echo '::error title=Public API reporting failed::Could not publish the API report to the workflow summary. See the step log.'
-              result=2
-            fi
-          else
-            echo '::error title=Public API reporting failed::No API report was generated. Compatibility was not assessed; see job logs.'
-            echo 'API comparison failed; compatibility was not assessed. See job logs.' >> "$GITHUB_STEP_SUMMARY"
-            result=2
-          fi
-          exit "$result"
-
   ci:
     uses: ./.github/workflows/ci-reusable.yml
     secrets: inherit

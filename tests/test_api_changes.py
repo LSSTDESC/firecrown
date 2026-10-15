@@ -1,6 +1,7 @@
 """Behavioral tests for the public API change report."""
 
 from collections import Counter
+import json
 import os
 from pathlib import Path
 import shlex
@@ -504,7 +505,7 @@ def test_pr_workflow_publishes_verdict_and_reports_publication_failure(
     :param publish: Whether the summary destination is writable as a file.
     """
     root = Path(__file__).resolve().parents[1]
-    workflow = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
+    workflow = yaml.safe_load((root / ".github/workflows/api-changes.yml").read_text())
     step = next(
         step
         for step in workflow["jobs"]["api-changes"]["steps"]
@@ -521,6 +522,18 @@ def test_pr_workflow_publishes_verdict_and_reports_publication_failure(
     )
     (api_repo / "firecrown" / "__init__.py").write_text("", encoding="utf-8")
     summary = api_repo / "summary.md" if publish else api_repo
+    event = api_repo / "event.json"
+    event.write_text(
+        json.dumps(
+            {
+                "pull_request": {
+                    "number": 12,
+                    "head": {"sha": "a" * 40},
+                    "base": {"sha": "b" * 40, "ref": "master"},
+                }
+            }
+        )
+    )
     result = subprocess.run(
         ["bash", "-e", "-c", command],
         cwd=api_repo,
@@ -529,6 +542,10 @@ def test_pr_workflow_publishes_verdict_and_reports_publication_failure(
             "BASE_BRANCH": "master",
             "RUNNER_TEMP": str(api_repo),
             "GITHUB_STEP_SUMMARY": str(summary),
+            "GITHUB_EVENT_PATH": str(event),
+            "GITHUB_REPOSITORY": "LSSTDESC/firecrown",
+            "GITHUB_RUN_ID": "123",
+            "GITHUB_RUN_ATTEMPT": "2",
         },
         capture_output=True,
         text=True,
@@ -539,12 +556,117 @@ def test_pr_workflow_publishes_verdict_and_reports_publication_failure(
         in (result.stdout)
     )
     assert "`firecrown.public`: Public object removed" in result.stdout
+    metadata = json.loads((api_repo / "metadata.json").read_text())
+    assert metadata["status"] == "completed"
+    assert metadata["run_id"] == 123
+    assert metadata["run_attempt"] == 2
+    assert metadata["pr_number"] == 12
+    assert metadata["verdict"] in result.stdout
+    assert f"Baseline: `{metadata['baseline']}`" in result.stdout
     if publish:
         assert result.returncode == 0, result.stderr
         assert "**Breaking API changes detected" in summary.read_text()
     else:
         assert result.returncode == 2
         assert "::error title=Public API reporting failed::" in result.stdout
+
+
+def test_api_publisher_workflow_trust_boundary() -> None:
+    """Keep privileged publication automatic and separate from PR execution."""
+    root = Path(__file__).resolve().parents[1]
+    analysis = yaml.safe_load((root / ".github/workflows/api-changes.yml").read_text())
+    full_ci = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
+    publisher = yaml.safe_load(
+        (root / ".github/workflows/publish-api-report.yml").read_text()
+    )
+    # PyYAML's YAML 1.1 parser reads the Actions 'on' key as True.
+    assert publisher[True] == {
+        "workflow_run": {
+            "workflows": ["firecrown-api-changes"],
+            "types": ["completed"],
+        }
+    }
+    assert analysis["name"] == "firecrown-api-changes"
+    assert analysis[True] == {"pull_request": None}
+    assert "api-changes" not in full_ci["jobs"]
+    assert "pull_request_target" not in analysis[True]
+    job = analysis["jobs"]["api-changes"]
+    assert job["permissions"] == {"contents": "read"}
+    artifact = next(
+        step for step in job["steps"] if "upload-artifact" in step.get("uses", "")
+    )
+    assert artifact["if"] == "${{ always() }}"
+    assert "github.run_attempt" in artifact["with"]["name"]
+    assert publisher["permissions"] == {}
+    job = publisher["jobs"]["publish"]
+    assert job["permissions"] == {
+        "contents": "read",
+        "actions": "read",
+        "pull-requests": "write",
+    }
+    resolve = publisher["jobs"]["resolve"]
+    assert "conclusion" not in resolve["if"]
+    assert resolve["permissions"]["pull-requests"] == "read"
+    assert resolve["steps"][-1]["env"]["API_REPORT_RESOLVE_ONLY"] == "true"
+    assert job["concurrency"]["cancel-in-progress"] is False
+    assert "needs.resolve.outputs.pr_number" in job["concurrency"]["group"]
+    assert job["needs"] == "resolve"
+    checkout = job["steps"][0]
+    assert checkout["with"]["ref"] == "${{ github.event.repository.default_branch }}"
+    assert checkout["with"]["persist-credentials"] is False
+    assert checkout["with"]["sparse-checkout"] == "tools/publish_api_report.py"
+    assert resolve["steps"][0] == checkout
+    assert job["steps"][-1]["run"] == "python tools/publish_api_report.py"
+
+
+@pytest.mark.parametrize("base", ["missing", "main"])
+def test_pr_metadata_records_analysis_failure(api_repo: Path, base: str) -> None:
+    """Preserve failed comparison identity without inventing a policy verdict.
+
+    :param api_repo: Repository containing a committed baseline API.
+    :param base: Missing baseline or valid baseline with invalid Python source.
+    """
+    if base == "main":
+        (api_repo / "firecrown/__init__.py").write_text("def invalid(\n")
+    event = api_repo / "event.json"
+    event.write_text(
+        json.dumps(
+            {
+                "pull_request": {
+                    "number": 12,
+                    "head": {"sha": "a" * 40},
+                    "base": {"sha": "b" * 40, "ref": "master"},
+                }
+            }
+        )
+    )
+    metadata = api_repo / "metadata.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "tools/api_changes.py"),
+            "pr",
+            "--base",
+            base,
+            "--metadata",
+            str(metadata),
+        ],
+        cwd=api_repo,
+        env=os.environ
+        | {
+            "GITHUB_EVENT_PATH": str(event),
+            "GITHUB_REPOSITORY": "LSSTDESC/firecrown",
+            "GITHUB_RUN_ID": "123",
+            "GITHUB_RUN_ATTEMPT": "1",
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 2
+    data = json.loads(metadata.read_text())
+    assert data["status"] == "failed"
+    assert data["verdict"] == data["baseline"] == ""
 
 
 def test_pr_github_annotation_reports_analysis_failure(api_repo: Path) -> None:
