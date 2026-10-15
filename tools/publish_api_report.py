@@ -372,9 +372,48 @@ def resolve(api: GitHub, event: Json, repository: str) -> tuple[Json, Json]:
     return run, pr
 
 
-# The publication transaction stays cohesive across validation and the final write.
-# pylint: disable=too-many-locals,too-many-branches,too-many-statements
-def publish(  # noqa: C901
+def resolve_in_run(
+    api: GitHub, event: Json, repository: str, run_id: str, run_attempt: str
+) -> tuple[Json, Json]:
+    """Establish run and PR identity inside the still-running analysis workflow.
+
+    Only a same-repository PR is accepted, because this mode executes publisher
+    code from the PR branch with a token that can write comments.
+
+    :param api: Trusted REST client, with an injected transport in tests.
+    :param event: Trusted pull_request webhook payload.
+    :param repository: Trusted GITHUB_REPOSITORY identity.
+    :param run_id: Trusted GITHUB_RUN_ID of this running workflow.
+    :param run_attempt: Trusted GITHUB_RUN_ATTEMPT of this running workflow.
+    :returns: The validated current run and its unique current open PR.
+    """
+    if not re.fullmatch(r"[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+", repository):
+        raise PublicationError("Invalid GITHUB_REPOSITORY")
+    repo = _repository(event.get("repository"))
+    if repo[1] != repository:
+        raise PublicationError("Event repository does not match GITHUB_REPOSITORY")
+    root = f"/repos/{repository}"
+    run = api.get(f"{root}/actions/runs/{int(run_id)}")
+    _validate_run(run, repo)
+    if run["run_attempt"] != int(run_attempt) or run.get("status") == "completed":
+        raise StaleRun("The running attempt is not the current in-progress attempt")
+    number = _integer(_object(event.get("pull_request")).get("number"))
+    pr = api.get(f"{root}/pulls/{number}")
+    snapshot = _snapshot(pr)
+    if snapshot[1] != repo or snapshot[4] != repo:
+        raise PublicationError("In-run publication requires a same-repository PR")
+    if (
+        snapshot[0] != run["head_sha"]
+        or snapshot[1] != _repository(run["head_repository"])
+        or snapshot[2] != run["head_branch"]
+        or pr.get("state") != "open"
+        or _integer(pr.get("number")) != number
+    ):
+        raise StaleRun("PR no longer matches the running analysis")
+    return run, pr
+
+
+def publish(
     api: GitHub, event: Json, repository: str, pr_number: str | None = None
 ) -> str:
     """Create or refresh the bot comment, rejecting stale and unsafe provenance.
@@ -388,6 +427,22 @@ def publish(  # noqa: C901
     run, pr = resolve(api, event, repository)
     if pr_number is not None and pr_number != str(pr["number"]):
         raise PublicationError("PR identity changed after concurrency resolution")
+    return publish_resolved(api, repository, run, pr)
+
+
+# The publication transaction stays cohesive across validation and the final write.
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements
+def publish_resolved(  # noqa: C901
+    api: GitHub, repository: str, run: Json, pr: Json
+) -> str:
+    """Write the bot comment for an already validated run and PR identity.
+
+    :param api: Trusted REST client, with an injected transport in tests.
+    :param repository: Trusted GITHUB_REPOSITORY identity.
+    :param run: Validated analysis run.
+    :param pr: Validated current open PR.
+    :returns: A brief successful publication summary.
+    """
     root = f"/repos/{repository}"
     run_path = f"{root}/actions/runs/{run['id']}"
     snapshot = _snapshot(pr)
@@ -519,6 +574,15 @@ def main(
             with Path(env["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
                 output.write(f"pr_number={_integer(pr['number'])}\n")
             summary = f"Resolved trusted PR #{pr['number']} for public API publication."
+        elif env.get("API_REPORT_IN_RUN") == "true":
+            run, pr = resolve_in_run(
+                api,
+                event,
+                env["GITHUB_REPOSITORY"],
+                env["GITHUB_RUN_ID"],
+                env["GITHUB_RUN_ATTEMPT"],
+            )
+            summary = publish_resolved(api, env["GITHUB_REPOSITORY"], run, pr)
         else:
             summary = publish(
                 api, event, env["GITHUB_REPOSITORY"], env.get("API_REPORT_PR_NUMBER")

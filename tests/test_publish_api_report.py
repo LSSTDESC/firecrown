@@ -753,3 +753,229 @@ def test_ambiguous_owned_comments_never_writes() -> None:
     with pytest.raises(PublicationError, match="Multiple publisher-owned"):
         fake.publish()
     assert not fake.writes
+
+
+def _in_run_fake() -> FakeGitHub:
+    """Model a same-repository PR whose analysis run is still in progress.
+
+    :returns: A fixture whose publisher is the job inside the analysis run.
+    """
+    fake = FakeGitHub()
+    fake.pr["head"] = {"sha": HEAD, "ref": "feature", "repo": REPO}
+    fake.run.update(status="in_progress", head_repository=REPO)
+    fake.event = {
+        "action": "synchronize",
+        "number": 7,
+        "repository": REPO,
+        "pull_request": {
+            "number": 7,
+            "head": {"sha": HEAD, "ref": "feature", "repo": REPO},
+            "base": {"sha": BASE, "ref": "master", "repo": REPO},
+        },
+    }
+    return fake
+
+
+def _run_in_run(tmp_path: Path, fake: FakeGitHub, run_attempt: str = "1") -> int:
+    """Invoke the in-run publisher entry point and return its exit status.
+
+    :param tmp_path: Isolated event and summary files.
+    :param fake: Fixture GitHub transport and pull request event.
+    :param run_attempt: Trusted attempt number from the running workflow.
+    :returns: Publisher process status.
+    """
+    event = tmp_path / "event.json"
+    event.write_text(json.dumps(fake.event), encoding="utf-8")
+    return main(
+        {
+            "GITHUB_EVENT_PATH": str(event),
+            "GITHUB_REPOSITORY": REPOSITORY,
+            "GITHUB_TOKEN": "test-token",
+            "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
+            "GITHUB_RUN_ID": "100",
+            "GITHUB_RUN_ATTEMPT": run_attempt,
+            "API_REPORT_IN_RUN": "true",
+        },
+        fake.transport,
+    )
+
+
+def test_in_run_publisher_comments_on_same_repository_pr(tmp_path: Path) -> None:
+    """Publish the report from inside the PR's own still-running analysis workflow.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    assert _run_in_run(tmp_path, fake) == 0
+    method, path, payload = fake.writes[0]
+    assert (method, path) == ("POST", ROOT + "/issues/7/comments")
+    assert VERDICT in str(payload["body"])
+    assert MARKER in str(payload["body"])
+
+
+def test_in_run_publisher_updates_owned_comment(tmp_path: Path) -> None:
+    """Refresh the single owned comment instead of adding a second one.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    fake.comments = [_comment()]
+    assert _run_in_run(tmp_path, fake) == 0
+    assert [(m, p) for m, p, _ in fake.writes] == [
+        ("PATCH", ROOT + "/issues/comments/42")
+    ]
+
+
+def test_in_run_publisher_refuses_fork_pr(tmp_path: Path) -> None:
+    """Never run the write path for a fork PR, whatever the workflow condition says.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    fake.pr["head"] = {"sha": HEAD, "ref": "feature", "repo": FORK}
+    fake.run["head_repository"] = FORK
+    assert _run_in_run(tmp_path, fake) == 1
+    assert not fake.writes
+    assert "same-repository" in (tmp_path / "summary.md").read_text()
+
+
+@pytest.mark.parametrize("change", ["closed", "head", "attempt", "completed"])
+def test_in_run_publisher_skips_stale_state(tmp_path: Path, change: str) -> None:
+    """Skip, without writing, when the run or PR is no longer current.
+
+    :param tmp_path: Isolated event and summary files.
+    :param change: Closed PR, moved head, newer attempt, or already-completed run.
+    """
+    fake = _in_run_fake()
+    if change == "closed":
+        fake.pr["state"] = "closed"
+    elif change == "head":
+        cast(Json, fake.pr["head"])["sha"] = "d" * 40
+    elif change == "attempt":
+        fake.latest_attempt = 2
+    else:
+        fake.run["status"] = "completed"
+    assert _run_in_run(tmp_path, fake) == 0
+    assert not fake.writes
+    assert "Skipped stale" in (tmp_path / "summary.md").read_text()
+
+
+def test_in_run_publisher_rejects_foreign_event_repository(tmp_path: Path) -> None:
+    """Refuse an event whose repository differs from the trusted workflow identity.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    fake.event["repository"] = FORK
+    assert _run_in_run(tmp_path, fake) == 1
+    assert not fake.writes
+
+
+def test_in_run_publisher_reports_failed_analysis_visibly(tmp_path: Path) -> None:
+    """Replace any verdict with "not assessed" and fail the job when analysis failed.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    fake.metadata.update(status="failed", verdict="", baseline="")
+    fake.comments = [_comment()]
+    assert _run_in_run(tmp_path, fake) == 1
+    body = str(fake.writes[0][2]["body"])
+    assert "Compatibility was not assessed" in body
+    assert VERDICT not in body
+
+
+def test_in_run_publisher_never_overwrites_newer_comment(tmp_path: Path) -> None:
+    """Honor the shared state marker so an older run cannot replace a newer one.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    fake.comments = [_comment(MARKER + "\n<!-- firecrown-api-run:999:1 -->\nNewer")]
+    assert _run_in_run(tmp_path, fake) == 0
+    assert not fake.writes
+
+
+def test_in_run_publisher_requires_trusted_run_environment(tmp_path: Path) -> None:
+    """Fail visibly instead of guessing when the trusted run identity is absent.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    event = tmp_path / "event.json"
+    event.write_text(json.dumps(fake.event), encoding="utf-8")
+    status = main(
+        {
+            "GITHUB_EVENT_PATH": str(event),
+            "GITHUB_REPOSITORY": REPOSITORY,
+            "GITHUB_TOKEN": "test-token",
+            "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),
+            "API_REPORT_IN_RUN": "true",
+        },
+        fake.transport,
+    )
+    assert status == 1
+    assert not fake.writes
+
+
+def test_default_branch_publisher_refreshes_in_run_comment_idempotently(
+    tmp_path: Path,
+) -> None:
+    """Let the workflow_run publisher update, not duplicate, the in-run comment.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    in_run = _in_run_fake()
+    assert _run_in_run(tmp_path, in_run) == 0
+    written = str(in_run.writes[0][2]["body"])
+    later = FakeGitHub()
+    later.comments = [_comment(written)]
+    later.publish()
+    assert [(m, p) for m, p, _ in later.writes] == [
+        ("PATCH", ROOT + "/issues/comments/42")
+    ]
+    assert str(later.writes[0][2]["body"]).startswith(MARKER + "\n")
+
+
+@pytest.mark.parametrize("field", ["target", "base_sha"])
+def test_in_run_publisher_skips_retargeted_artifact(tmp_path: Path, field: str) -> None:
+    """Skip a report whose target or base no longer matches the current PR.
+
+    :param tmp_path: Isolated event and summary files.
+    :param field: Stale artifact target or base field.
+    """
+    fake = _in_run_fake()
+    fake.metadata[field] = "v1_16_support" if field == "target" else "d" * 40
+    fake.comments = [_comment()]
+    assert _run_in_run(tmp_path, fake) == 0
+    assert not fake.writes
+    assert "Skipped stale" in (tmp_path / "summary.md").read_text()
+
+
+def test_in_run_publisher_rejects_tampered_artifact(tmp_path: Path) -> None:
+    """Fail visibly and show "not assessed" for an artifact with an extra member.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("api-changes.md", "report")
+        archive.writestr("metadata.json", json.dumps(fake.metadata))
+        archive.writestr("../escape.sh", "boom")
+    fake.archive = buffer.getvalue()
+    assert _run_in_run(tmp_path, fake) == 1
+    body = str(fake.writes[0][2]["body"])
+    assert "Compatibility was not assessed" in body
+    assert VERDICT not in body
+
+
+def test_in_run_publisher_leaves_non_owned_comments_alone(tmp_path: Path) -> None:
+    """Create its own comment rather than editing a human's marker lookalike.
+
+    :param tmp_path: Isolated event and summary files.
+    """
+    fake = _in_run_fake()
+    fake.comments = [_comment(MARKER + "\nOld", login="human", kind="User")]
+    assert _run_in_run(tmp_path, fake) == 0
+    assert [m for m, _, _ in fake.writes] == ["POST"]

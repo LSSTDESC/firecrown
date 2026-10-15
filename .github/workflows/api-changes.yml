@@ -2,8 +2,11 @@
 # =======================================
 # Runs the public API comparison independently of the full CI suite so that
 # the trusted publisher (publish-api-report.yml) can comment as soon as this
-# workflow completes, without waiting for the remaining CI jobs.  This workflow
-# executes untrusted PR code and therefore has read-only permissions.
+# workflow completes, without waiting for the remaining CI jobs.  The analysis
+# job executes untrusted PR code and therefore has read-only permissions.  A
+# second job publishes the comment directly for same-repository PRs, whose
+# pull_request token may write comments; fork PRs never get that token and rely
+# on the trusted publisher.
 
 name: firecrown-api-changes
 on:
@@ -60,3 +63,37 @@ jobs:
             ${{ runner.temp }}/metadata.json
           if-no-files-found: error
           retention-days: 14
+
+  # Same-repository PRs can request a write token on pull_request, so they publish
+  # from their own run and need no merge to the default branch.  Fork PRs cannot,
+  # and continue to rely on the trusted publish-api-report.yml workflow.  This job
+  # runs publisher code from the PR branch, so the head-repository condition is a
+  # security boundary; the publisher also refuses fork PRs.
+  publish-same-repository:
+    name: Publish PR public API report
+    needs: api-changes
+    if: ${{ always() && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    # Share one writer per PR with the default-branch publisher.
+    concurrency:
+      group: public-api-report-${{ github.repository }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          sparse-checkout: tools/publish_api_report.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Create or update API report comment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          API_REPORT_IN_RUN: 'true'
+        run: python tools/publish_api_report.py

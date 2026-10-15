@@ -619,6 +619,48 @@ def test_api_publisher_workflow_trust_boundary() -> None:
     assert job["steps"][-1]["run"] == "python tools/publish_api_report.py"
 
 
+def test_same_repository_pr_publishes_from_its_own_workflow() -> None:
+    """Publish for same-repository PRs in-run while keeping analysis read-only."""
+    root = Path(__file__).resolve().parents[1]
+    workflow = yaml.safe_load((root / ".github/workflows/api-changes.yml").read_text())
+    publisher = yaml.safe_load(
+        (root / ".github/workflows/publish-api-report.yml").read_text()
+    )
+    analysis = workflow["jobs"]["api-changes"]
+    job = workflow["jobs"]["publish-same-repository"]
+    assert analysis["permissions"] == {"contents": "read"}
+    assert job["needs"] == "api-changes"
+    assert "always()" in job["if"]
+    assert (
+        "github.event.pull_request.head.repo.full_name == github.repository"
+        in job["if"]
+    )
+    # Dependabot's pull_request token is read-only; the default-branch publisher
+    # covers those PRs instead of this job failing with a permission error.
+    assert "github.actor != 'dependabot[bot]'" in job["if"]
+    assert job["permissions"] == {
+        "contents": "read",
+        "actions": "read",
+        "pull-requests": "write",
+    }
+    # One writer per PR across the in-run and default-branch publishers.
+    assert job["concurrency"]["cancel-in-progress"] is False
+    assert (
+        job["concurrency"]["group"] == "public-api-report-${{ github.repository }}-"
+        "${{ github.event.pull_request.number }}"
+    )
+    assert (
+        publisher["jobs"]["publish"]["concurrency"]["group"]
+        == "public-api-report-${{ github.repository }}-"
+        "${{ needs.resolve.outputs.pr_number }}"
+    )
+    last = job["steps"][-1]
+    assert last["run"] == "python tools/publish_api_report.py"
+    assert last["env"]["API_REPORT_IN_RUN"] == "true"
+    assert last["env"]["GITHUB_TOKEN"] == "${{ github.token }}"
+    assert job["steps"][0]["with"]["persist-credentials"] is False
+
+
 @pytest.mark.parametrize("base", ["missing", "main"])
 def test_pr_metadata_records_analysis_failure(api_repo: Path, base: str) -> None:
     """Preserve failed comparison identity without inventing a policy verdict.
