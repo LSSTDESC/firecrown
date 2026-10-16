@@ -12,7 +12,7 @@ from firecrown.updatable import (
 from tests.updatable.updatable_test_support import SimpleUpdatable
 
 
-def test_warn_override():
+def test_warn_override() -> None:
     BadUpdatable = type(
         "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
     )
@@ -22,7 +22,7 @@ def test_warn_override():
     assert any("update" in str(r.message) for r in record)
 
 
-def test_raise_override():
+def test_raise_override() -> None:
     BadUpdatable = type(
         "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
     )
@@ -31,7 +31,7 @@ def test_raise_override():
         assert_updatable_interface(obj, raise_on_override=True)
 
 
-def test_collection_items():
+def test_collection_items() -> None:
     BadUpdatable = type(
         "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
     )
@@ -40,7 +40,7 @@ def test_collection_items():
         assert_updatable_interface(coll)
 
 
-def test_collection_override():
+def test_collection_override() -> None:
     """Ensure overriding UpdatableCollection methods is detected."""
     # create a subclass of UpdatableCollection that overrides 'update'
     BadCollection = type(
@@ -52,7 +52,7 @@ def test_collection_override():
         assert_updatable_interface(coll)
 
 
-def test_recurses_attributes():
+def test_recurses_attributes() -> None:
     BadUpdatable = type(
         "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
     )
@@ -63,7 +63,7 @@ def test_recurses_attributes():
         assert_updatable_interface(parent)
 
 
-def test_exact_single_method_override():
+def test_exact_single_method_override() -> None:
     """Assert the warning lists the single overridden method exactly."""
     BadUpdatable = type("BadUpdatable", (Updatable,), {"reset": lambda self: None})
     obj = BadUpdatable()
@@ -73,7 +73,7 @@ def test_exact_single_method_override():
     assert "['reset']" in str(record[0].message)
 
 
-def test_exact_multiple_method_override():
+def test_exact_multiple_method_override() -> None:
     """Assert the warning lists multiple overridden methods in the defined order."""
     impl = {
         "update": (lambda self, params: None),
@@ -87,7 +87,7 @@ def test_exact_multiple_method_override():
     assert "['update', 'required_parameters']" in str(record[0].message)
 
 
-def test_collection_exact_methods():
+def test_collection_exact_methods() -> None:
     """Ensure UpdatableCollection overrides are reported with exact methods."""
     impl = {"reset": (lambda self: None), "get_derived_parameters": (lambda self: None)}
     BadCollection = type("BadCollection", (UpdatableCollection,), impl)
@@ -97,7 +97,7 @@ def test_collection_exact_methods():
     assert "['reset', 'get_derived_parameters']" in str(record[0].message)
 
 
-def test_recursive_flag_prevents_recursion():
+def test_recursive_flag_prevents_recursion() -> None:
     """If recursive=False, child updatables should not be checked."""
     BadUpdatable = type(
         "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
@@ -113,7 +113,7 @@ def test_recursive_flag_prevents_recursion():
         assert len(w) == 0
 
 
-def test_collection_recursive_flag_prevents_recursion():
+def test_collection_recursive_flag_prevents_recursion() -> None:
     """If recursive=False, items inside an UpdatableCollection should not be checked."""
     BadUpdatable = type(
         "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
@@ -127,7 +127,7 @@ def test_collection_recursive_flag_prevents_recursion():
         assert len(w) == 0
 
 
-def test_collection_recursive_raise_on_override():
+def test_collection_recursive_raise_on_override() -> None:
     BadUpdatable = type(
         "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
     )
@@ -137,7 +137,7 @@ def test_collection_recursive_raise_on_override():
         assert_updatable_interface(coll, recursive=True, raise_on_override=True)
 
 
-def test_non_updatable_input_raises_typeerror():
+def test_non_updatable_input_raises_typeerror() -> None:
     """Passing a non-Updatable and non-UpdatableCollection should raise TypeError."""
     with pytest.raises(TypeError):
         assert_updatable_interface(42)  # type: ignore

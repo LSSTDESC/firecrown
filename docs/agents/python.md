@@ -6,12 +6,10 @@ remains configured for editor feedback.
 
 ## Required checks
 
-- **Tool environment:** Run Python checks in this worktree's `.conda-env`:
-  `conda run --prefix .conda-env make typecheck` and
-  `conda run --prefix .conda-env make lint`. If the environment is activated
-  instead, verify that `python`, `mypy`, and `black` all resolve inside the
-  same environment before running the Make targets. A `python` path inside
-  `.conda-env` alone does not establish which tools Make will invoke.
+- **Tool environment:** Run Python checks from within an active, isolated project
+  environment (e.g., `conda`, `venv`, or an agent sandbox). Verify that `python`,
+  `mypy`, and `black` all resolve to this same environment before running the Make
+  targets.
 - **Types:** Annotate functions and methods. Avoid `Any` in signatures. Use
   `make typecheck` for type checking; it runs the project's mypy target.
 - **Format and lint:** Format modified Python files with `black` from the
@@ -27,15 +25,15 @@ remains configured for editor feedback.
 
 ## Testing
 
-- **Test environment:** Run pytest and Make test targets through `.conda-env`.
-  NumCosmo tests write FFTW wisdom under `~/.numcosmo`, and download tests use
-  `~/.firecrown`; ensure these directories are writable before running those
-  tests in a sandbox. Treat a denied cache write as a sandbox failure, then
+- **Test environment:** Run `pytest` and Make test targets within your active
+  environment. NumCosmo tests write FFTW wisdom under `~/.numcosmo`, and download
+  tests use `~/.firecrown`; ensure these directories are writable before running
+  those tests in a sandbox. Treat a denied cache write as a sandbox failure, then
   rerun with scoped access before judging the test result.
-- **Avoid monkeypatching**: Prefer use of fixtures, parameterized tests, and
+- **Avoid monkeypatching:** Prefer use of fixtures, parameterized tests, and
   dependency injection to the use of monkeypatching. Use monkeypatching only
-  when other techniques would lead to more complicated code.  Any use of
-  monkeypatching must contain a comment explaining why monkeypatching it the
+  when other techniques would lead to more complicated code. Any use of
+  monkeypatching must contain a comment explaining why monkeypatching is the
   best choice for that test.
 
 ## Review guidance

@@ -18,7 +18,7 @@ class HasUOF:
 
     x = TypeFloat(allow_none=True)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a HasUOF object with default value `self.x=None`."""
         self.x = None
 
@@ -28,7 +28,7 @@ class HasCOF:
 
     x = TypeFloat(1.0, 3.0, allow_none=True)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a HasCOF object with default value of `self.x=None`."""
         self.x = None
 
@@ -38,7 +38,7 @@ class HasURF:
 
     x = TypeFloat()
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a HasURF object with default value `self.x=0.0`."""
         self.x = 0.0
 
@@ -48,7 +48,7 @@ class HasCRF:
 
     x = TypeFloat(1.0, 3.0)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a HasCRF with the default value `self.x=2.0`."""
         self.x = 2.0
 
@@ -58,7 +58,7 @@ class HasLowerBound:
 
     x = TypeFloat(minvalue=0.0)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a HasLowerBound object with the default value
         `self.x=0.0`."""
         self.x = 0.0
@@ -69,7 +69,7 @@ class HasUpperBound:
 
     x = TypeFloat(maxvalue=1.0)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a HasUpperBound object with the default value
         `self.x=1.0`."""
         self.x = 1.0
@@ -78,7 +78,8 @@ class HasUpperBound:
 class NotStringy:
     """A class that can not be turned into a string."""
 
-    def __str__(self):
+    # This negative-test double deliberately violates object.__str__'s str contract.
+    def __str__(self) -> None:  # type: ignore[override]
         """Does not return a string"""
 
 
@@ -112,7 +113,7 @@ class StartsWithCow:
     x = TypeString(predicate=lambda s: s.startswith("cow"))
 
 
-def test_unconstrained_optional_float():
+def test_unconstrained_optional_float() -> None:
     d = HasUOF()
     with pytest.raises(TypeError):
         d.x = 3  # not a literal float
@@ -128,7 +129,7 @@ def test_unconstrained_optional_float():
     assert d.x == math.inf
 
 
-def test_constrained_optional_float():
+def test_constrained_optional_float() -> None:
     d = HasCOF()
     with pytest.raises(TypeError):
         d.x = 3  # not a literal float
@@ -149,7 +150,7 @@ def test_constrained_optional_float():
     assert d.x == 3.0
 
 
-def test_unconstrained_required_float():
+def test_unconstrained_required_float() -> None:
     d = HasURF()
     with pytest.raises(TypeError):
         d.x = 3  # not a literal float
@@ -163,7 +164,7 @@ def test_unconstrained_required_float():
     assert d.x == math.inf
 
 
-def test_constrained_required_float():
+def test_constrained_required_float() -> None:
     d = HasCRF()
     with pytest.raises(TypeError):
         d.x = 3  # not a literal float
@@ -184,7 +185,7 @@ def test_constrained_required_float():
     assert d.x == 3.0
 
 
-def test_lower_bound_float():
+def test_lower_bound_float() -> None:
     d = HasLowerBound()
     assert d.x == 0.0
 
@@ -203,7 +204,7 @@ def test_lower_bound_float():
     assert d.x == math.inf
 
 
-def test_upper_bound_float():
+def test_upper_bound_float() -> None:
     d = HasUpperBound()
     assert d.x == 1.0
 
@@ -218,14 +219,14 @@ def test_upper_bound_float():
     assert d.x == -math.inf
 
 
-def test_reading_string():
+def test_reading_string() -> None:
     d = HasString()
     d.x = "cow"
 
     assert d.x == "cow"
 
 
-def test_string_conversion_failure():
+def test_string_conversion_failure() -> None:
     d = HasString()
     with pytest.raises(TypeError):
         # We ignore type checking on this line because we are testing the error
@@ -233,21 +234,21 @@ def test_string_conversion_failure():
         d.x = NotStringy()  # type: ignore
 
 
-def test_string_too_short():
+def test_string_too_short() -> None:
     d = HasShortBound()
     d.x = "walrus"
     with pytest.raises(ValueError):
         d.x = "cow"
 
 
-def test_string_too_long():
+def test_string_too_long() -> None:
     d = HasLongBound()
     d.x = "ou"
     with pytest.raises(ValueError):
         d.x = "cow"
 
 
-def test_string_predicate():
+def test_string_predicate() -> None:
     d = StartsWithCow()
     d.x = "cowabunga"
     with pytest.raises(ValueError):
@@ -255,7 +256,7 @@ def test_string_predicate():
 
 
 # Tests for _base module
-def test_base_module_exports_math():
+def test_base_module_exports_math() -> None:
     """Test that _base module exports math."""
     # Import the module to ensure coverage
     # pylint: disable=import-outside-toplevel
@@ -267,7 +268,7 @@ def test_base_module_exports_math():
     assert "math" in base_module.__all__
 
 
-def test_base_module_exports_callable():
+def test_base_module_exports_callable() -> None:
     """Test that _base module exports Callable."""
     # Import the module to ensure coverage
     # pylint: disable=import-outside-toplevel

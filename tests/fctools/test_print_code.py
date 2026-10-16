@@ -27,7 +27,7 @@ _SUPPORTS_TYPE_PARAMS = sys.version_info >= (3, 12)
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 
-def _get_subprocess_env():
+def _get_subprocess_env() -> dict[str, str]:
     """Get environment with PYTHONPATH set to include the current directory."""
     env = os.environ.copy()
     # Add current directory to PYTHONPATH so subprocess can import tests module
@@ -70,7 +70,7 @@ class ClassNoDocstring:
 # Tests for _render_attributes
 
 
-def test_render_attributes_simple():
+def test_render_attributes_simple() -> None:
     """Test _render_attributes with simple attributes."""
     # Create a simple ClassDef with attributes
     class_def = _make_class_def(
@@ -98,7 +98,7 @@ def test_render_attributes_simple():
     assert any("attr2: str = 'default'" in line for line in result)
 
 
-def test_render_attributes_empty():
+def test_render_attributes_empty() -> None:
     """Test _render_attributes with empty class body."""
     class_def = _make_class_def(
         name="EmptyClass",
@@ -111,7 +111,7 @@ def test_render_attributes_empty():
     assert not result
 
 
-def test_render_attributes_no_annotation():
+def test_render_attributes_no_annotation() -> None:
     """Test _render_attributes with attribute without annotation."""
     assign_node = ast.Assign(
         targets=[ast.Name(id="attr")], value=ast.Constant(value=42)
@@ -129,7 +129,7 @@ def test_render_attributes_no_annotation():
     assert any("attr = 42" in line for line in result)
 
 
-def test_render_attributes_complex_value():
+def test_render_attributes_complex_value() -> None:
     """Test _render_attributes with complex attribute value."""
     class_def = _make_class_def(
         name="TestClass",
@@ -152,7 +152,7 @@ def test_render_attributes_complex_value():
 # Tests for _build_class_code
 
 
-def test_build_class_code_simple_class():
+def test_build_class_code_simple_class() -> None:
     """Test _build_class_code with a simple class."""
     code = _build_class_code(SimpleClass)
     assert "class SimpleClass():" in code
@@ -161,7 +161,7 @@ def test_build_class_code_simple_class():
     assert "attr2: str = 'default'" in code
 
 
-def test_build_class_code_decorated_class():
+def test_build_class_code_decorated_class() -> None:
     """Test _build_class_code with a decorated class."""
     code = _build_class_code(DecoratedClass)
     assert "@dataclass" in code
@@ -169,7 +169,7 @@ def test_build_class_code_decorated_class():
     assert "value: int" in code
 
 
-def test_build_class_code_class_with_bases():
+def test_build_class_code_class_with_bases() -> None:
     """Test _build_class_code with a class that has base classes."""
     code = _build_class_code(ClassWithBases)
     # This should include the base class - exact format depends on AST
@@ -177,21 +177,21 @@ def test_build_class_code_class_with_bases():
     assert "attr3: float = 1.0" in code
 
 
-def test_build_class_code_no_docstring():
+def test_build_class_code_no_docstring() -> None:
     """Test _build_class_code with a class without docstring."""
     code = _build_class_code(ClassNoDocstring)
     assert "class ClassNoDocstring():" in code
     assert "attr: int" in code
 
 
-def test_build_class_code_builtin_class():
+def test_build_class_code_builtin_class() -> None:
     """Test _build_class_code with a built-in class."""
     # Built-in classes should raise TypeError (no source file)
     with pytest.raises(TypeError):
         _build_class_code(int)
 
 
-def test_build_class_code_no_attributes():
+def test_build_class_code_no_attributes() -> None:
     """Test _build_class_code with a class that has no attributes."""
     # Use a class defined at module level to avoid indentation issues
     code = _build_class_code(ClassNoDocstring)
@@ -202,7 +202,7 @@ def test_build_class_code_no_attributes():
 # Tests for display_class_attributes
 
 
-def test_display_class_attributes_simple(capsys):
+def test_display_class_attributes_simple(capsys: pytest.CaptureFixture[str]) -> None:
     """Test display_class_attributes with a simple class."""
     display_class_attributes(SimpleClass)
     captured = capsys.readouterr()
@@ -212,14 +212,14 @@ def test_display_class_attributes_simple(capsys):
     assert "```" in captured.out
 
 
-def test_display_class_attributes_builtin_class():
+def test_display_class_attributes_builtin_class() -> None:
     """Test display_class_attributes with a built-in class."""
     # Built-in classes raise TypeError, not OSError, so it will propagate
     with pytest.raises(TypeError, match="built-in class"):
         display_class_attributes(int)
 
 
-def test_display_class_attributes_decorated(capsys):
+def test_display_class_attributes_decorated(capsys: pytest.CaptureFixture[str]) -> None:
     """Test display_class_attributes with a decorated class."""
     display_class_attributes(DecoratedClass)
     captured = capsys.readouterr()
@@ -227,7 +227,9 @@ def test_display_class_attributes_decorated(capsys):
     assert "class DecoratedClass():" in captured.out
 
 
-def test_display_class_attributes_no_markdown_simple(capsys):
+def test_display_class_attributes_no_markdown_simple(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test display_class_attributes with markdown disabled."""
     # This should just call display_class_without_markdown
     display_class_attributes(SimpleClass)
@@ -238,7 +240,9 @@ def test_display_class_attributes_no_markdown_simple(capsys):
 # Tests for display_class_without_markdown
 
 
-def test_display_class_without_markdown_simple(capsys):
+def test_display_class_without_markdown_simple(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test display_class_without_markdown with a simple class."""
     display_class_without_markdown(SimpleClass)
     captured = capsys.readouterr()
@@ -249,14 +253,16 @@ def test_display_class_without_markdown_simple(capsys):
     assert "```" not in captured.out
 
 
-def test_display_class_without_markdown_builtin_class():
+def test_display_class_without_markdown_builtin_class() -> None:
     """Test display_class_without_markdown with a built-in class."""
     # Built-in classes raise TypeError, not OSError, so it will propagate
     with pytest.raises(TypeError, match="built-in class"):
         display_class_without_markdown(int)
 
 
-def test_display_class_without_markdown_decorated(capsys):
+def test_display_class_without_markdown_decorated(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test display_class_without_markdown with a decorated class."""
     display_class_without_markdown(DecoratedClass)
     captured = capsys.readouterr()
@@ -267,7 +273,7 @@ def test_display_class_without_markdown_decorated(capsys):
 # Tests for main CLI
 
 
-def test_main_simple_class():
+def test_main_simple_class() -> None:
     """Test main CLI with a simple class path."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -282,7 +288,7 @@ def test_main_simple_class():
     assert match_wrapped(result.stdout, "attr1: int")
 
 
-def test_main_no_markdown():
+def test_main_no_markdown() -> None:
     """Test main CLI with --no-markdown flag."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -302,7 +308,7 @@ def test_main_no_markdown():
     assert "```python" not in result.stdout
 
 
-def test_main_decorated_class():
+def test_main_decorated_class() -> None:
     """Test main CLI with a decorated class."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -317,7 +323,7 @@ def test_main_decorated_class():
     assert match_wrapped(result.stdout, "class DecoratedClass():")
 
 
-def test_main_class_with_bases():
+def test_main_class_with_bases() -> None:
     """Test main CLI with a class that has base classes."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -332,7 +338,7 @@ def test_main_class_with_bases():
     assert "attr3: float = 1.0" in result.stdout
 
 
-def test_main_invalid_class_path():
+def test_main_invalid_class_path() -> None:
     """Test main CLI with invalid class path."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -345,7 +351,7 @@ def test_main_invalid_class_path():
     assert result.returncode != 0
 
 
-def test_main_builtin_class():
+def test_main_builtin_class() -> None:
     """Test main CLI with built-in class."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -358,7 +364,7 @@ def test_main_builtin_class():
     assert result.returncode != 0
 
 
-def test_main_missing_argument():
+def test_main_missing_argument() -> None:
     """Test main CLI with missing argument."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -371,7 +377,7 @@ def test_main_missing_argument():
     assert "Missing argument" in result.stderr
 
 
-def test_main_help():
+def test_main_help() -> None:
     """Test main CLI with --help flag."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -386,7 +392,7 @@ def test_main_help():
     assert match_wrapped(strip_rich_markup(result.stdout), "--no-markdown")
 
 
-def test_main_multiple_classes():
+def test_main_multiple_classes() -> None:
     """Test main CLI with multiple class names."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -415,7 +421,7 @@ def test_main_multiple_classes():
     assert "class DecoratedClass()" in result.stdout
 
 
-def test_main_multiple_classes_with_invalid():
+def test_main_multiple_classes_with_invalid() -> None:
     """Test main CLI with multiple classes where one is invalid."""
     script_path = "firecrown/fctools/print_code.py"
     # Test with invalid module
@@ -440,7 +446,7 @@ def test_main_multiple_classes_with_invalid():
     )
 
 
-def test_build_class_code_with_none_class_def():
+def test_build_class_code_with_none_class_def() -> None:
     """Test _build_class_code when get_class_definition returns None."""
     # This tests the error path when class definition can't be found
     # The ValueError is raised when class_def is None
@@ -461,7 +467,7 @@ def test_build_class_code_with_none_class_def():
 # Integration tests
 
 
-def test_integration_full_workflow():
+def test_integration_full_workflow() -> None:
     """Test full workflow from CLI to output."""
     script_path = "firecrown/fctools/print_code.py"
     result = subprocess.run(
@@ -479,7 +485,7 @@ def test_integration_full_workflow():
     assert "attr2: str = 'default'" in result.stdout
 
 
-def test_integration_multiple_runs():
+def test_integration_multiple_runs() -> None:
     """Test that multiple runs work correctly."""
     script_path = "firecrown/fctools/print_code.py"
     # Run twice with same class
@@ -502,7 +508,7 @@ def test_integration_multiple_runs():
     assert result1.stdout == result2.stdout
 
 
-def test_integration_error_handling():
+def test_integration_error_handling() -> None:
     """Test error handling in full workflow."""
     script_path = "firecrown/fctools/print_code.py"
     # Test with invalid path
@@ -518,7 +524,7 @@ def test_integration_error_handling():
 # Direct main() function tests for coverage
 
 
-def test_main_function_single_class(capsys):
+def test_main_function_single_class(capsys: pytest.CaptureFixture[str]) -> None:
     """Test main function directly with single class."""
     # Call main with a single class
     main(class_names=["tests.fctools.test_print_code.SimpleClass"], no_markdown=False)
@@ -529,7 +535,9 @@ def test_main_function_single_class(capsys):
     assert "A simple test class." in captured.out
 
 
-def test_main_function_no_markdown_flag(capsys):
+def test_main_function_no_markdown_flag(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test main function with no_markdown=True."""
     # Call main with no_markdown flag
     main(class_names=["tests.fctools.test_print_code.SimpleClass"], no_markdown=True)
@@ -540,7 +548,7 @@ def test_main_function_no_markdown_flag(capsys):
     assert "```python" not in captured.out
 
 
-def test_main_function_multiple_classes(capsys):
+def test_main_function_multiple_classes(capsys: pytest.CaptureFixture[str]) -> None:
     """Test main function with multiple classes."""
     # Call main with multiple classes
     main(
@@ -561,7 +569,9 @@ def test_main_function_multiple_classes(capsys):
     assert "Class: tests.fctools.test_print_code.DecoratedClass" in captured.out
 
 
-def test_main_function_multiple_classes_no_markdown(capsys):
+def test_main_function_multiple_classes_no_markdown(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test main function with multiple classes and no_markdown=True."""
     # Call main with multiple classes and no_markdown
     main(

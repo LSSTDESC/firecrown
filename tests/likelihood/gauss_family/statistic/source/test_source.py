@@ -5,7 +5,7 @@ Tests for the module firecrown.likelihood.statistic.source.
 # pylint: disable=too-many-locals
 
 import itertools as it
-from typing import Callable, List
+from typing import Callable, List, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -30,6 +30,7 @@ from firecrown.likelihood._source import (
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood.weak_lensing import WeakLensingArgs
 from firecrown.metadata_functions import extract_all_tracers_tomographic_bins
+from firecrown.metadata_types import TomographicBin
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap, get_default_params
 
@@ -53,7 +54,9 @@ from firecrown.updatable import ParamsMap, get_default_params
         "ConstantMagnificationBiasSystematicFactory",
     ],
 )
-def fixture_nc_sys_factory(request) -> nc_factories.NumberCountsSystematicFactory:
+def fixture_nc_sys_factory(
+    request: pytest.FixtureRequest,
+) -> nc_factories.NumberCountsSystematicFactory:
     """Fixture for the NumberCountsSystematicFactory class."""
     return request.param
 
@@ -77,7 +80,9 @@ def fixture_nc_sys_factory(request) -> nc_factories.NumberCountsSystematicFactor
         "PhotoZShiftandStretchFactory",
     ],
 )
-def fixture_wl_sys_factory(request):
+def fixture_wl_sys_factory(
+    request: pytest.FixtureRequest,
+) -> wl.WeakLensingSystematicFactory:
     """Fixture for the WeakLensingSystematicFactory class."""
     return request.param
 
@@ -89,16 +94,16 @@ class TrivialSourceGalaxyArgs(SourceGalaxyArgs):
 class TrivialSourceGalaxy(SourceGalaxy[TrivialSourceGalaxyArgs]):
     """This is the most trivial possible subclass of SourceGalaxy."""
 
-    def create_tracers(self, tools: ModelingTools):
-        return Tracer(pyccl.Tracer()), TrivialSourceGalaxyArgs(
-            z=np.array([]), dndz=np.array([])
+    def create_tracers(self, tools: ModelingTools) -> tuple[Sequence[Tracer], object]:
+        raise NotImplementedError(
+            "TrivialSourceGalaxy only supports source argument tests."
         )
 
     def get_scale(self) -> float:
         return 1.0
 
 
-def test_trivial_tracer_construction(empty_pyccl_tracer):
+def test_trivial_tracer_construction(empty_pyccl_tracer: pyccl.Tracer) -> None:
     trivial = Tracer(empty_pyccl_tracer)
     assert trivial.ccl_tracer is empty_pyccl_tracer
     # If we have not assigned a name through the initializer, the name of the resulting
@@ -112,7 +117,7 @@ def test_trivial_tracer_construction(empty_pyccl_tracer):
     assert not trivial.has_pt
 
 
-def test_tracer_construction_with_name(empty_pyccl_tracer):
+def test_tracer_construction_with_name(empty_pyccl_tracer: pyccl.Tracer) -> None:
     named = Tracer(empty_pyccl_tracer, tracer_name="Fred")
     assert named.ccl_tracer is empty_pyccl_tracer
     assert named.tracer_name == "Fred"
@@ -121,7 +126,7 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
     assert not named.has_pt
 
 
-def test_nc_linear_bias_systematic():
+def test_nc_linear_bias_systematic() -> None:
     a = nc_sys.LinearBiasSystematic("xxx")
     assert isinstance(a, nc_sys.LinearBiasSystematic)
     assert a.parameter_prefix == "xxx"
@@ -146,7 +151,7 @@ def test_nc_linear_bias_systematic():
 
 def test_nc_nonlinear_bias_systematic_tracer_args_missing(
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     a = nc_sys.LinearBiasSystematic("xxx")
     # The values in the ParamsMap and the tracer_args are set to allow easy verification
     # that a tracer_args of None is handled correctly.
@@ -157,7 +162,7 @@ def test_nc_nonlinear_bias_systematic_tracer_args_missing(
     assert np.allclose(new_tracer_args.bias, np.array([1.0]))
 
 
-def test_trivial_source_galaxy_construction():
+def test_trivial_source_galaxy_construction() -> None:
     trivial = TrivialSourceGalaxy(sacc_tracer="no-sacc-tracer")
 
     with pytest.raises(
@@ -167,7 +172,7 @@ def test_trivial_source_galaxy_construction():
         trivial.read(sacc.Sacc())
 
 
-def test_trivial_source_select_field():
+def test_trivial_source_select_field() -> None:
     tools = ModelingTools()
     trivial = TrivialSourceGalaxy(sacc_tracer="no-sacc-tracer")
     select_field: SourceGalaxySelectField[SourceGalaxyArgs] = SourceGalaxySelectField(
@@ -183,15 +188,16 @@ def test_trivial_source_select_field():
 
 
 def test_weak_lensing_source_init(
-    sacc_galaxy_cells_src0_src0, tools_with_vanilla_cosmology: ModelingTools
-):
-    sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
+    sacc_data, expected_bin = sacc_galaxy_cells_src0_src0
 
     source = wl.WeakLensing(sacc_tracer="src0")
     source.read(sacc_data)
 
-    assert_allclose(source.tracer_args.z, z)
-    assert_allclose(source.tracer_args.dndz, dndz)
+    assert_allclose(source.tracer_args.z, expected_bin.z)
+    assert_allclose(source.tracer_args.dndz, expected_bin.dndz)
     source.update(ParamsMap())
     ts = source.get_tracers(tools_with_vanilla_cosmology)
     assert len(ts) == 1
@@ -200,8 +206,10 @@ def test_weak_lensing_source_init(
     assert len(dp) == 0
 
 
-def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+def test_weak_lensing_source_create_ready(
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -216,8 +224,10 @@ def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
     assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
 
 
-def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+def test_weak_lensing_source_factory(
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -233,8 +243,10 @@ def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
     assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
 
 
-def test_weak_lensing_source_factory_cache(sacc_galaxy_cells_src0_src0):
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+def test_weak_lensing_source_factory_cache(
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -248,9 +260,10 @@ def test_weak_lensing_source_factory_cache(sacc_galaxy_cells_src0_src0):
 
 @pytest.mark.parametrize("include_z_dependence", [True, False])
 def test_weak_lensing_source_factory_global_systematics(
-    sacc_galaxy_cells_src0_src0, include_z_dependence
-):
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    include_z_dependence: bool,
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -279,8 +292,10 @@ def test_weak_lensing_source_factory_global_systematics(
     assert source_ready.systematics == source_read.systematics
 
 
-def test_weak_lensing_source_init_wrong_name(sacc_galaxy_cells_src0_src0):
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+def test_weak_lensing_source_init_wrong_name(
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
 
     source = wl.WeakLensing(sacc_tracer="src10")
     with pytest.raises(KeyError, match="src10"):
@@ -288,16 +303,17 @@ def test_weak_lensing_source_init_wrong_name(sacc_galaxy_cells_src0_src0):
 
 
 def test_number_counts_source_init(
-    sacc_galaxy_cells_lens0_lens0, tools_with_vanilla_cosmology: ModelingTools
-):
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
 
-    sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
+    sacc_data, expected_bin = sacc_galaxy_cells_lens0_lens0
 
     source = nc.NumberCounts(sacc_tracer="lens0")
     source.read(sacc_data)
 
-    assert_allclose(source.tracer_args.z, z)
-    assert_allclose(source.tracer_args.dndz, dndz)
+    assert_allclose(source.tracer_args.z, expected_bin.z)
+    assert_allclose(source.tracer_args.dndz, expected_bin.dndz)
     source.update(ParamsMap(lens0_bias=1.1))
     dp = source.get_derived_parameters()
     assert dp is not None
@@ -306,8 +322,10 @@ def test_number_counts_source_init(
     assert len(ts) == 1
 
 
-def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):
-    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+def test_number_counts_source_create_ready(
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -322,8 +340,10 @@ def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):
     assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
 
 
-def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
-    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+def test_number_counts_source_factory(
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -339,8 +359,10 @@ def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
     assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
 
 
-def test_number_counts_source_factory_cache(sacc_galaxy_cells_lens0_lens0):
-    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+def test_number_counts_source_factory_cache(
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -352,8 +374,10 @@ def test_number_counts_source_factory_cache(sacc_galaxy_cells_lens0_lens0):
     assert source_ready is nc_factory.create(tomographic_bin=lens0)
 
 
-def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0_lens0):
-    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+def test_number_counts_source_factory_global_systematics(
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -378,8 +402,10 @@ def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0
     assert source_ready.systematics == source_read.systematics
 
 
-def test_number_counts_source_init_wrong_name(sacc_galaxy_cells_lens0_lens0):
-    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+def test_number_counts_source_init_wrong_name(
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
 
     source = nc.NumberCounts(sacc_tracer="lens10")
     with pytest.raises(KeyError, match="lens10"):
@@ -388,48 +414,48 @@ def test_number_counts_source_init_wrong_name(sacc_galaxy_cells_lens0_lens0):
 
 def test_number_counts_systematic_factory(
     nc_sys_factory: nc_factories.NumberCountsSystematicFactory,
-):
+) -> None:
     sys_pz_shift = nc_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"
 
 
-def test_wl_photozshiftfactory_no_globals():
+def test_wl_photozshiftfactory_no_globals() -> None:
     factory = wl.PhotoZShiftFactory()
     with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
         _ = factory.create_global()
 
 
-def test_wl_photozshiftandstretchfactory_no_globals():
+def test_wl_photozshiftandstretchfactory_no_globals() -> None:
     factory = wl.PhotoZShiftandStretchFactory()
     with pytest.raises(ValueError, match="PhotoZShiftandStretch cannot be global"):
         _ = factory.create_global()
 
 
-def test_wl_multiplicativeshearbiasfactory_no_globals():
+def test_wl_multiplicativeshearbiasfactory_no_globals() -> None:
     factory = wl.MultiplicativeShearBiasFactory()
     with pytest.raises(ValueError, match="MultiplicativeShearBias cannot be global"):
         _ = factory.create_global()
 
 
-def test_nc_photozshiftfactory_no_globals():
+def test_nc_photozshiftfactory_no_globals() -> None:
     factory = nc_factories.PhotoZShiftFactory()
     with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
         _ = factory.create_global()
 
 
-def test_nc_photozshiftandstretchfactory_no_globals():
+def test_nc_photozshiftandstretchfactory_no_globals() -> None:
     factory = nc_factories.PhotoZShiftandStretchFactory()
     with pytest.raises(ValueError, match="PhotoZShiftandStretch cannot be global"):
         _ = factory.create_global()
 
 
-def test_nc_linearbiassystematicfactory_no_globals():
+def test_nc_linearbiassystematicfactory_no_globals() -> None:
     factory = nc_factories.LinearBiasSystematicFactory()
     with pytest.raises(ValueError, match="LinearBiasSystematic cannot be global"):
         _ = factory.create_global()
 
 
-def test_nc_magnificationbiassystematicfactory_no_globals():
+def test_nc_magnificationbiassystematicfactory_no_globals() -> None:
     factory = nc_factories.MagnificationBiasSystematicFactory()
     with pytest.raises(
         ValueError, match="MagnificationBiasSystematic cannot be global"
@@ -437,7 +463,7 @@ def test_nc_magnificationbiassystematicfactory_no_globals():
         _ = factory.create_global()
 
 
-def test_nc_constantmagnificationbiassystematicfactory_no_globals():
+def test_nc_constantmagnificationbiassystematicfactory_no_globals() -> None:
     factory = nc_factories.ConstantMagnificationBiasSystematicFactory()
     with pytest.raises(
         ValueError, match="ConstantMagnificationBiasSystematic cannot be global"
@@ -447,14 +473,14 @@ def test_nc_constantmagnificationbiassystematicfactory_no_globals():
 
 def test_weak_lensing_systematic_factory(
     wl_sys_factory: wl.WeakLensingSystematicFactory,
-):
+) -> None:
     sys_pz_shift = wl_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"
 
 
 def test_wl_photozshiftandstretch_systematic(
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     a = wl.PhotoZShiftandStretch("xxx")
     assert isinstance(a, wl.PhotoZShiftandStretch)
     assert a.parameter_prefix == "xxx"
@@ -489,7 +515,7 @@ def test_wl_photozshiftandstretch_systematic(
 
 def test_nc_photozshiftandstretch_systematic(
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     a = nc_sys.PhotoZShiftandStretch("xxx")
     assert isinstance(a, nc_sys.PhotoZShiftandStretch)
     assert a.parameter_prefix == "xxx"
@@ -537,7 +563,7 @@ def test_dndz_shift_active(
         [npt.NDArray[np.float64], npt.NDArray[np.float64], float, float],
         tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
     ],
-):
+) -> None:
     sigma = 0.05
     mu = 0.5
     shift = 0.1
@@ -563,7 +589,7 @@ def test_dndz_shift_active(
     assert_allclose(dndz_interp_vals, dndz_shifted_stretched, rtol=1.0e-6, atol=1.0e-6)
 
 
-def test_dndz_shift_and_stretch_active_negative_sigma():
+def test_dndz_shift_and_stretch_active_negative_sigma() -> None:
     with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
         dndz_shift_and_stretch_active(
             z=np.array([0.0, 0.1]),
@@ -573,7 +599,7 @@ def test_dndz_shift_and_stretch_active_negative_sigma():
         )
 
 
-def test_dndz_shift_and_stretch_passive_negative_sigma():
+def test_dndz_shift_and_stretch_passive_negative_sigma() -> None:
     with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
         dndz_shift_and_stretch_passive(
             z=np.array([0.0, 0.1]),
@@ -586,7 +612,7 @@ def test_dndz_shift_and_stretch_passive_negative_sigma():
 @pytest.mark.parametrize("shift,active", it.product([0.0, 0.1, -0.1], [True, False]))
 def test_photoz_shift(
     tools_with_vanilla_cosmology: ModelingTools, shift: float, active: bool
-):
+) -> None:
     photoz_shift = nc_sys.PhotoZShift("John", active=active)
     photoz_shift.update(ParamsMap({"John_delta_z": shift}))
     sigma = 0.05
@@ -618,7 +644,7 @@ def test_photoz_shift_stretch(
     shift: float,
     stretch: float,
     active: bool,
-):
+) -> None:
     photoz_shift_stretch = nc_sys.PhotoZShiftandStretch("John", active=active)
     photoz_shift_stretch.update(
         ParamsMap({"John_delta_z": shift, "John_sigma_z": stretch})
@@ -650,7 +676,7 @@ def test_photoz_shift_stretch(
 
 def _check_tatt_alignment_systematic_zdep(
     sys: wl.TattAlignmentSystematic, include_z_dependence: bool
-):
+) -> None:
     """Check that the TattAlignmentSystematic has the expected z-dependence
     parameters.
     """
@@ -672,7 +698,7 @@ def _check_tatt_alignment_systematic_zdep(
 
 
 @pytest.mark.parametrize("include_z_dependence", [True, False])
-def test_tatt_alignment_systematics(include_z_dependence):
+def test_tatt_alignment_systematics(include_z_dependence: bool) -> None:
     sys = wl.TattAlignmentSystematic(include_z_dependence=include_z_dependence)
     assert isinstance(sys, wl.TattAlignmentSystematic)
     _check_tatt_alignment_systematic_zdep(
@@ -681,7 +707,7 @@ def test_tatt_alignment_systematics(include_z_dependence):
 
 
 @pytest.mark.parametrize("include_z_dependence", [True, False])
-def test_tatt_alignment_systematic_factory(include_z_dependence):
+def test_tatt_alignment_systematic_factory(include_z_dependence: bool) -> None:
     factory = wl.TattAlignmentSystematicFactory(
         include_z_dependence=include_z_dependence
     )

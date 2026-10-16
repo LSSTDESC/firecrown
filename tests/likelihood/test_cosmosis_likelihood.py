@@ -14,13 +14,13 @@ def make_config() -> DataBlock:
     return db
 
 
-def test_module_cleanup(config: DataBlock):
+def test_module_cleanup(config: DataBlock) -> None:
     """The module's cleanup function just returns zero."""
     m = like.setup(config)
     status = like.cleanup(m)
     assert status == 0
 
 
-def test_module_init(config: DataBlock):
+def test_module_init(config: DataBlock) -> None:
     module = like.setup(config)
     assert isinstance(module, like.FirecrownLikelihood)

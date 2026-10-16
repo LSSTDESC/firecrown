@@ -151,7 +151,7 @@ def test_modeling_tools_get_cM_relation_with_setting() -> None:
 class DummyPowerspectrumModifier(PowerspectrumModifier):
     """Dummy power spectrum modifier for testing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.name = "dummy:dummy"
 

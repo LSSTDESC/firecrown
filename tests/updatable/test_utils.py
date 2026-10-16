@@ -4,7 +4,7 @@ from firecrown.updatable import ParamsMap, get_default_params, get_default_param
 from tests.updatable.updatable_test_support import MinimalUpdatable, SimpleUpdatable
 
 
-def test_get_default_params_empty_args():
+def test_get_default_params_empty_args() -> None:
     """Test get_default_params() with no arguments.
 
     Should return an empty dictionary (lines 19-23 in _utils.py).
@@ -14,7 +14,7 @@ def test_get_default_params_empty_args():
     assert isinstance(result, dict)
 
 
-def test_get_default_params_map_empty_args():
+def test_get_default_params_map_empty_args() -> None:
     """Test get_default_params_map() with no arguments.
 
     Should return an empty ParamsMap (lines 32-33 in _utils.py).
@@ -24,7 +24,7 @@ def test_get_default_params_map_empty_args():
     assert len(result.keys()) == 0
 
 
-def test_get_default_params_with_multiple_updatables():
+def test_get_default_params_with_multiple_updatables() -> None:
     """Test get_default_params() with multiple updatables.
 
     Verifies that all default values are collected correctly.

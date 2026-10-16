@@ -3,7 +3,6 @@
 import copy
 import re
 from itertools import pairwise, product
-from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -14,6 +13,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from scipy.integrate import simpson
 
 from firecrown.generators._inferred_galaxy_zdist import (
+    BinsType,
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
     LSST_Y10_LENS_HARMONIC_BIN_COLLECTION,
@@ -60,7 +60,7 @@ from firecrown.utils import base_model_from_yaml, base_model_to_yaml
         )
     ],
 )
-def fixture_zdist_y1(request):
+def fixture_zdist_y1(request: pytest.FixtureRequest) -> ZDistLSSTSRD:
     """Fixture for the ZDistLSSTSRD class."""
     return request.param[0](
         use_autoknot=request.param[1], autoknots_reltol=request.param[2]
@@ -68,7 +68,7 @@ def fixture_zdist_y1(request):
 
 
 @pytest.fixture(name="z_array", params=[100, 600, 1000])
-def fixture_z_array(request):
+def fixture_z_array(request: pytest.FixtureRequest) -> npt.NDArray[np.float64]:
     """Fixture for the z array."""
     return np.linspace(0, 3.0, request.param)
 
@@ -76,13 +76,13 @@ def fixture_z_array(request):
 @pytest.fixture(
     name="bins", params=[Y1_LENS_BINS, Y10_LENS_BINS, Y1_SOURCE_BINS, Y10_SOURCE_BINS]
 )
-def fixture_bins(request) -> dict[str, Any]:
+def fixture_bins(request: pytest.FixtureRequest) -> BinsType:
     """Fixture for the bins."""
     return request.param
 
 
 @pytest.fixture(name="reltol", params=[1e-4, 1e-5])
-def fixture_reltol(request):
+def fixture_reltol(request: pytest.FixtureRequest) -> float:
     """Fixture for the relative tolerance."""
     return request.param
 
@@ -109,7 +109,9 @@ BINS_LIST = [
     ),
     ids=[f"{b[0]}_autoknots_{b[1]}" for b in product(BINS_LIST, [True, False])],
 )
-def fixture_zdist_bins(request) -> list[ZDistLSSTSRDBin]:
+def fixture_zdist_bins(
+    request: pytest.FixtureRequest,
+) -> list[ZDistLSSTSRDBin]:
     """Fixture for the ZDistLSSTSRD class."""
     match request.param[0]:
         case "one_lens_y1":
@@ -140,7 +142,7 @@ def fixture_zdist_bins(request) -> list[ZDistLSSTSRDBin]:
     return bins
 
 
-def test_zdist(zdist: ZDistLSSTSRD, z_array: npt.NDArray[np.float64]):
+def test_zdist(zdist: ZDistLSSTSRD, z_array: npt.NDArray[np.float64]) -> None:
     """Test the ZDistLSSTSRD class."""
     Pz = zdist.distribution(z_array)
     assert Pz.shape == z_array.shape
@@ -149,8 +151,8 @@ def test_zdist(zdist: ZDistLSSTSRD, z_array: npt.NDArray[np.float64]):
 def test_compute_one_bin_dist(
     zdist: ZDistLSSTSRD,
     z_array: npt.NDArray[np.float64],
-    bins: dict[str, Any],
-):
+    bins: BinsType,
+) -> None:
     """Test the compute_binned_dist method."""
 
     Pz = zdist.binned_distribution(
@@ -170,8 +172,8 @@ def test_compute_one_bin_dist(
 def test_compute_all_bins_dist(
     zdist: ZDistLSSTSRD,
     z_array: npt.NDArray[np.float64],
-    bins: dict[str, Any],
-):
+    bins: BinsType,
+) -> None:
     """Test the compute_binned_dist method."""
 
     for zpl, zpu in pairwise(bins["edges"]):
@@ -188,7 +190,7 @@ def test_compute_all_bins_dist(
         assert_allclose(simpson(y=Pz.dndz, x=Pz.z), 1.0, atol=1e-3)
 
 
-def test_zdist_bin():
+def test_zdist_bin() -> None:
     """Test the ZDistLSSTSRDBin class."""
     zpl = 0.1
     zpu = 0.2
@@ -214,7 +216,7 @@ def test_zdist_bin():
     assert zbin.measurements == measurements
 
 
-def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
+def test_zdist_bin_generate(zdist: ZDistLSSTSRD) -> None:
     """Test the ZDistLSSTSRDBin generate method."""
     zpl = 0.1
     zpu = 0.2
@@ -240,7 +242,7 @@ def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
     assert Pz.measurements == measurements
 
 
-def test_zdist_bin_from_bad_yaml():
+def test_zdist_bin_from_bad_yaml() -> None:
     """Test that the right exception is thrown if the yaml is malformed."""
     bin_yaml = """
     zpl: 0.1
@@ -260,7 +262,7 @@ def test_zdist_bin_from_bad_yaml():
         _ = base_model_from_yaml(ZDistLSSTSRDBin, bin_yaml)
 
 
-def test_zdist_bin_from_yaml():
+def test_zdist_bin_from_yaml() -> None:
     """Test the ZDistLSSTSRDBin class from_json method."""
     zpl = 0.1
     zpu = 0.2
@@ -291,7 +293,7 @@ def test_zdist_bin_from_yaml():
     assert zbin.measurements == measurements
 
 
-def test_zdist_bin_to_yaml():
+def test_zdist_bin_to_yaml() -> None:
     """Test the ZDistLSSTSRDBin class to_yaml method."""
     zbin = ZDistLSSTSRDBin(
         zpl=0.1,
@@ -317,7 +319,7 @@ def test_zdist_bin_to_yaml():
     }
 
 
-def test_zdist_bin_collection(zdist_bins):
+def test_zdist_bin_collection(zdist_bins: list[ZDistLSSTSRDBin]) -> None:
     """Test the ZDistLSSTSRDBinCollection class."""
     alpha = 0.9
     beta = 2.0
@@ -333,7 +335,9 @@ def test_zdist_bin_collection(zdist_bins):
     assert zbin_collection.bins == zdist_bins
 
 
-def test_zdist_bin_collection_generate(zdist_bins):
+def test_zdist_bin_collection_generate(
+    zdist_bins: list[ZDistLSSTSRDBin],
+) -> None:
     """Test the ZDistLSSTSRDBinCollection generate method."""
     alpha = 0.9
     beta = 2.0
@@ -361,7 +365,9 @@ def test_zdist_bin_collection_generate(zdist_bins):
         assert Pz.measurements == zbin.measurements
 
 
-def test_zdist_bin_collection_to_yaml(zdist_bins):
+def test_zdist_bin_collection_to_yaml(
+    zdist_bins: list[ZDistLSSTSRDBin],
+) -> None:
     """Test the ZDistLSSTSRDBinCollection to_yaml method."""
     alpha = 0.9
     beta = 2.0
@@ -398,7 +404,9 @@ def test_zdist_bin_collection_to_yaml(zdist_bins):
     }
 
 
-def test_zdist_bin_collection_from_yaml(zdist_bins):
+def test_zdist_bin_collection_from_yaml(
+    zdist_bins: list[ZDistLSSTSRDBin],
+) -> None:
     """Test the ZDistLSSTSRDBinCollection from_yaml method."""
     alpha = 0.9
     beta = 2.0
@@ -437,7 +445,7 @@ def test_zdist_bin_collection_from_yaml(zdist_bins):
         assert zbin.measurements == zbin_from_yaml.measurements
 
 
-def test_make_measurement_from_measurement():
+def test_make_measurement_from_measurement() -> None:
     cluster_meas: set[Measurement] = {Clusters.COUNTS}
     galaxy_meas: set[Measurement] = {Galaxies.SHEAR_E}
     cmb_meas: set[Measurement] = {CMB.CONVERGENCE}
@@ -446,7 +454,7 @@ def test_make_measurement_from_measurement():
     assert make_measurements(cmb_meas) == cmb_meas
 
 
-def test_make_measurement_from_dictionary():
+def test_make_measurement_from_dictionary() -> None:
     cluster_info = [{"subject": "Clusters", "property": "COUNTS"}]
     galaxy_info = [{"subject": "Galaxies", "property": "SHEAR_E"}]
     cmb_info = [{"subject": "CMB", "property": "CONVERGENCE"}]
@@ -471,7 +479,7 @@ def test_make_measurement_from_dictionary():
         _ = make_measurements({3})  # type: ignore
 
 
-def test_distribution(zdist: ZDistLSSTSRD):
+def test_distribution(zdist: ZDistLSSTSRD) -> None:
     """Test the distribution method."""
 
     stats = zdist.compute_distribution(0.03)
@@ -484,7 +492,7 @@ def test_distribution(zdist: ZDistLSSTSRD):
     assert_allclose([0.0, middle_z, zdist.max_z], bins)
 
 
-def test_true_distribution(zdist: ZDistLSSTSRD):
+def test_true_distribution(zdist: ZDistLSSTSRD) -> None:
     """Test the true_distribution method."""
     stats = zdist.compute_true_distribution()
     assert isinstance(stats, Ncm.StatsDist1d)

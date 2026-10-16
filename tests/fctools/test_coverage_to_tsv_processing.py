@@ -5,6 +5,8 @@ Tests the test-to-function matching and coverage data extraction functions.
 
 # pylint: disable=missing-function-docstring
 
+from typing import Any
+
 import pytest
 
 from firecrown.fctools.coverage_to_tsv import (
@@ -15,7 +17,7 @@ from firecrown.fctools.coverage_to_tsv import (
 # Tests for match_test_to_function()
 
 
-def test_match_test_to_function_exact_name_match():
+def test_match_test_to_function_exact_name_match() -> None:
     test_name = "tests/test_module.py::test_my_function"
     function_name = "my_function"
     file_path = "src/module.py"
@@ -26,7 +28,7 @@ def test_match_test_to_function_exact_name_match():
     assert score >= 0.5
 
 
-def test_match_test_to_function_file_match():
+def test_match_test_to_function_file_match() -> None:
     test_name = "tests/test_example.py::test_something"
     function_name = "other_function"
     file_path = "src/example.py"
@@ -37,7 +39,7 @@ def test_match_test_to_function_file_match():
     assert score == pytest.approx(0.3)
 
 
-def test_match_test_to_function_full_match():
+def test_match_test_to_function_full_match() -> None:
     test_name = "tests/test_utils.py::test_format_string"
     function_name = "format_string"
     file_path = "src/utils.py"
@@ -51,7 +53,7 @@ def test_match_test_to_function_full_match():
     assert score == 1.0
 
 
-def test_match_test_to_function_no_match():
+def test_match_test_to_function_no_match() -> None:
     test_name = "tests/test_other.py::test_something"
     function_name = "unrelated_function"
     file_path = "src/different.py"
@@ -61,7 +63,7 @@ def test_match_test_to_function_no_match():
     assert score == 0.0
 
 
-def test_match_test_to_function_test_name_no_separator():
+def test_match_test_to_function_test_name_no_separator() -> None:
     test_name = "tests/test_module.py"
     function_name = "some_function"
     file_path = "src/module.py"
@@ -76,7 +78,7 @@ def test_match_test_to_function_test_name_no_separator():
     assert score >= 0.3
 
 
-def test_match_test_to_function_case_insensitive():
+def test_match_test_to_function_case_insensitive() -> None:
     test_name = "tests/test_module.py::test_MyFunction"
     function_name = "myfunction"
     file_path = "src/other.py"
@@ -90,8 +92,8 @@ def test_match_test_to_function_case_insensitive():
 # Tests for extract_coverage_data()
 
 
-def test_extract_coverage_data_basic():
-    coverage_data = {
+def test_extract_coverage_data_basic() -> None:
+    coverage_data: dict[str, Any] = {
         "files": {
             "src/example.py": {
                 "summary": {
@@ -141,8 +143,8 @@ def test_extract_coverage_data_basic():
     assert record.test_duration is None
 
 
-def test_extract_coverage_data_with_timing():
-    coverage_data = {
+def test_extract_coverage_data_with_timing() -> None:
+    coverage_data: dict[str, Any] = {
         "files": {
             "src/utils.py": {
                 "summary": {
@@ -183,8 +185,8 @@ def test_extract_coverage_data_with_timing():
     assert record.test_duration == 0.25
 
 
-def test_extract_coverage_data_timing_below_threshold():
-    coverage_data = {
+def test_extract_coverage_data_timing_below_threshold() -> None:
+    coverage_data: dict[str, Any] = {
         "files": {
             "src/module.py": {
                 "summary": {
@@ -224,8 +226,8 @@ def test_extract_coverage_data_timing_below_threshold():
     assert record.test_duration is None
 
 
-def test_extract_coverage_data_multiple_functions():
-    coverage_data = {
+def test_extract_coverage_data_multiple_functions() -> None:
+    coverage_data: dict[str, Any] = {
         "files": {
             "src/module.py": {
                 "summary": {
@@ -274,8 +276,8 @@ def test_extract_coverage_data_multiple_functions():
     assert func_names == {"func_a", "func_b"}
 
 
-def test_extract_coverage_data_no_functions():
-    coverage_data = {
+def test_extract_coverage_data_no_functions() -> None:
+    coverage_data: dict[str, Any] = {
         "files": {
             "src/empty.py": {
                 "summary": {
@@ -292,16 +294,16 @@ def test_extract_coverage_data_no_functions():
     assert len(result) == 0
 
 
-def test_extract_coverage_data_empty_files():
-    coverage_data: dict[str, dict[str, object]] = {"files": {}}
+def test_extract_coverage_data_empty_files() -> None:
+    coverage_data: dict[str, Any] = {"files": {}}
 
     result = extract_coverage_data(coverage_data)
 
     assert len(result) == 0
 
 
-def test_extract_coverage_data_missing_summary_fields():
-    coverage_data: dict[str, dict[str, object]] = {
+def test_extract_coverage_data_missing_summary_fields() -> None:
+    coverage_data: dict[str, Any] = {
         "files": {
             "src/partial.py": {
                 "summary": {},  # Missing all fields

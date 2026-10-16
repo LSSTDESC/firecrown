@@ -33,7 +33,7 @@ def create_temp_qmd_file(content: str) -> Path:
 # Tests for check_qmd_file()
 
 
-def test_check_qmd_file_no_code_blocks():
+def test_check_qmd_file_no_code_blocks() -> None:
     """Test with a QMD file containing no code blocks."""
     content = """# Tutorial Title
 
@@ -49,7 +49,7 @@ No code blocks here!
         qmd_file.unlink()
 
 
-def test_check_qmd_file_valid_python_block():
+def test_check_qmd_file_valid_python_block() -> None:
     """Test with valid Python code block."""
     content = """# Tutorial
 
@@ -71,7 +71,7 @@ Done!
         qmd_file.unlink()
 
 
-def test_check_qmd_file_invalid_python_block():
+def test_check_qmd_file_invalid_python_block() -> None:
     """Test with invalid Python code block."""
     content = """# Tutorial
 
@@ -93,7 +93,7 @@ print(y)
         qmd_file.unlink()
 
 
-def test_check_qmd_file_multiple_valid_blocks():
+def test_check_qmd_file_multiple_valid_blocks() -> None:
     """Test with multiple valid Python blocks."""
     content = """# Tutorial
 
@@ -125,7 +125,7 @@ def foo():
         qmd_file.unlink()
 
 
-def test_check_qmd_file_multiple_blocks_with_errors():
+def test_check_qmd_file_multiple_blocks_with_errors() -> None:
     """Test with multiple Python blocks where some have errors."""
     content = """# Tutorial
 
@@ -164,7 +164,7 @@ def foo(
         qmd_file.unlink()
 
 
-def test_check_qmd_file_non_python_code_blocks():
+def test_check_qmd_file_non_python_code_blocks() -> None:
     """Test that non-Python code blocks are ignored."""
     content = """# Tutorial
 
@@ -197,7 +197,7 @@ x = 42
         qmd_file.unlink()
 
 
-def test_check_qmd_file_python_block_with_options():
+def test_check_qmd_file_python_block_with_options() -> None:
     """Test Python block with execution options."""
     content = """# Tutorial
 
@@ -222,7 +222,7 @@ z = 100
         qmd_file.unlink()
 
 
-def test_check_qmd_file_empty_python_block():
+def test_check_qmd_file_empty_python_block() -> None:
     """Test with empty Python code block."""
     content = """# Tutorial
 
@@ -241,7 +241,7 @@ More text.
         qmd_file.unlink()
 
 
-def test_check_qmd_file_python_block_with_comments():
+def test_check_qmd_file_python_block_with_comments() -> None:
     """Test Python block with comments."""
     content = """# Tutorial
 
@@ -260,7 +260,7 @@ y = x + 1
         qmd_file.unlink()
 
 
-def test_check_qmd_file_display_only_python_block():
+def test_check_qmd_file_display_only_python_block() -> None:
     """Test display-only Python block with .python format."""
     content = """# Tutorial
 
@@ -279,7 +279,7 @@ y = x + 1
         qmd_file.unlink()
 
 
-def test_check_qmd_file_display_only_with_syntax_error():
+def test_check_qmd_file_display_only_with_syntax_error() -> None:
     """Test display-only Python block with syntax error."""
     content = """# Tutorial
 
@@ -301,7 +301,7 @@ if x > 10
         qmd_file.unlink()
 
 
-def test_check_qmd_file_mixed_executable_and_display():
+def test_check_qmd_file_mixed_executable_and_display() -> None:
     """Test mix of executable and display-only blocks."""
     content = """# Tutorial
 
@@ -332,7 +332,7 @@ z = 3 +
         qmd_file.unlink()
 
 
-def test_check_qmd_file_syntax_error_details():
+def test_check_qmd_file_syntax_error_details() -> None:
     """Test that syntax error details are captured correctly."""
     content = """# Tutorial
 
@@ -353,7 +353,7 @@ if x > 10
         qmd_file.unlink()
 
 
-def test_check_qmd_file_multiline_statements():
+def test_check_qmd_file_multiline_statements() -> None:
     """Test Python block with multiline statements."""
     content = """# Tutorial
 
@@ -382,7 +382,7 @@ def long_function(
 # Tests for main()
 
 
-def test_main_with_valid_directory():
+def test_main_with_valid_directory() -> None:
     """Test main function with a directory containing valid QMD files."""
     # Create temporary directory with valid QMD file
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -403,14 +403,14 @@ x = 42
         assert "No syntax errors" in result.stderr
 
 
-def test_main_with_invalid_directory():
+def test_main_with_invalid_directory() -> None:
     """Test main function with non-existent directory."""
     result = runner.invoke(app, ["/nonexistent/directory"])
 
     assert result.exit_code != 0
 
 
-def test_main_with_syntax_errors():
+def test_main_with_syntax_errors() -> None:
     """Test main function with QMD files containing syntax errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
         qmd_path = Path(temp_dir) / "test.qmd"
@@ -430,7 +430,7 @@ x = 42 +
         assert "Block 1" in result.stderr
 
 
-def test_main_with_multiple_files():
+def test_main_with_multiple_files() -> None:
     """Test main function with multiple QMD files."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Valid file
@@ -456,7 +456,7 @@ y = 1 +
         assert "Total syntax errors" in result.stderr
 
 
-def test_main_with_empty_directory():
+def test_main_with_empty_directory() -> None:
     """Test main function with empty directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
         result = runner.invoke(app, [temp_dir])
@@ -466,7 +466,7 @@ def test_main_with_empty_directory():
         assert "No syntax errors" in result.stderr
 
 
-def test_main_quiet_mode_no_errors():
+def test_main_quiet_mode_no_errors() -> None:
     """Test --quiet flag suppresses success messages."""
     with tempfile.TemporaryDirectory() as temp_dir:
         qmd_path = Path(temp_dir) / "valid.qmd"
@@ -484,7 +484,7 @@ x = 42
         assert result.stderr.strip() == ""
 
 
-def test_main_quiet_mode_with_errors():
+def test_main_quiet_mode_with_errors() -> None:
     """Test --quiet flag still reports errors."""
     with tempfile.TemporaryDirectory() as temp_dir:
         qmd_path = Path(temp_dir) / "error.qmd"

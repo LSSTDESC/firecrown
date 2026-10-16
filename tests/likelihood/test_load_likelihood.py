@@ -15,7 +15,7 @@ from firecrown.likelihood._likelihood import (
 )
 
 
-def test_load_likelihood_from_script_submodule():
+def test_load_likelihood_from_script_submodule() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     load_likelihood_from_script(
@@ -23,7 +23,7 @@ def test_load_likelihood_from_script_submodule():
     )
 
 
-def test_load_likelihood_from_script_submodule_invalid():
+def test_load_likelihood_from_script_submodule_invalid() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(ValueError, match="Unrecognized Firecrown initialization file"):
@@ -32,7 +32,7 @@ def test_load_likelihood_from_script_submodule_invalid():
         )
 
 
-def test_load_likelihood_from_script_submodule_no_build_likelihood():
+def test_load_likelihood_from_script_submodule_no_build_likelihood() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(
@@ -43,7 +43,7 @@ def test_load_likelihood_from_script_submodule_no_build_likelihood():
         )
 
 
-def test_load_likelihood_from_script_submodule_not_a_function():
+def test_load_likelihood_from_script_submodule_not_a_function() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(
@@ -55,7 +55,7 @@ def test_load_likelihood_from_script_submodule_not_a_function():
         )
 
 
-def test_load_likelihood_from_script_submodule_returns_wrong_type():
+def test_load_likelihood_from_script_submodule_returns_wrong_type() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(
@@ -68,7 +68,7 @@ def test_load_likelihood_from_script_submodule_returns_wrong_type():
         )
 
 
-def test_load_likelihood_from_script_submodule_returns_wrong_type_tools():
+def test_load_likelihood_from_script_submodule_returns_wrong_type_tools() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(
@@ -81,7 +81,7 @@ def test_load_likelihood_from_script_submodule_returns_wrong_type_tools():
         )
 
 
-def test_load_likelihood_from_script_submodule_old():
+def test_load_likelihood_from_script_submodule_old() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.deprecated_call():
@@ -91,7 +91,7 @@ def test_load_likelihood_from_script_submodule_old():
         )
 
 
-def test_load_likelihood_from_script_correct_tools():
+def test_load_likelihood_from_script_correct_tools() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     _, tools = load_likelihood_from_script(
@@ -101,7 +101,7 @@ def test_load_likelihood_from_script_correct_tools():
     assert tools.test_attribute == "test"  # type: ignore
 
 
-def test_load_likelihood():
+def test_load_likelihood() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     _, tools = load_likelihood(
@@ -111,7 +111,7 @@ def test_load_likelihood():
     assert tools.test_attribute == "test"  # type: ignore
 
 
-def test_load_likelihood_from_module():
+def test_load_likelihood_from_module() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     module_path = os.path.join(dir_path, "lkdir")
 
@@ -122,7 +122,7 @@ def test_load_likelihood_from_module():
     assert tools.test_attribute == "test"  # type: ignore
 
 
-def test_load_likelihood_from_module_not_in_path():
+def test_load_likelihood_from_module_not_in_path() -> None:
     with pytest.raises(
         ValueError,
         match="Unrecognized Firecrown initialization module 'lkscript_not_in_path'. "
@@ -132,7 +132,7 @@ def test_load_likelihood_from_module_not_in_path():
         _ = load_likelihood_from_module("lkscript_not_in_path", NamedParameters())
 
 
-def test_load_likelihood_not_in_path():
+def test_load_likelihood_not_in_path() -> None:
     with pytest.raises(
         ValueError,
         match="Unrecognized Firecrown initialization file or module "
@@ -141,7 +141,7 @@ def test_load_likelihood_not_in_path():
         _ = load_likelihood("lkscript_not_in_path", NamedParameters())
 
 
-def test_load_likelihood_from_module_function_missing_likelihood_config():
+def test_load_likelihood_from_module_function_missing_likelihood_config() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     module_path = os.path.join(dir_path, "lkdir")
 

@@ -10,19 +10,19 @@ from firecrown.app.examples import DESY1FactoryType, ExampleDESY13x2pt
 
 
 @pytest.fixture(name="target_framework", params=Frameworks)
-def fixture_target_framework(request) -> Frameworks:
+def fixture_target_framework(request: pytest.FixtureRequest) -> Frameworks:
     """Generate a target framework for all frameworks."""
     return request.param
 
 
 @pytest.fixture(name="use_absolute_path", params=[True, False])
-def fixture_use_absolute_path(request) -> bool:
+def fixture_use_absolute_path(request: pytest.FixtureRequest) -> bool:
     """Generate a use_absolute_path for all path types."""
     return request.param
 
 
 @pytest.fixture(name="factory_type", params=DESY1FactoryType)
-def fixture_factory_type(request) -> DESY1FactoryType:
+def fixture_factory_type(request: pytest.FixtureRequest) -> DESY1FactoryType:
     """Generate a factory type for all factory types."""
     return request.param
 
@@ -51,7 +51,7 @@ def fixture_des_y1_3x2pt_example(
 
 
 @pytest.mark.example
-def test_des_y1_3x2pt_run(des_y1_3x2pt_example):
+def test_des_y1_3x2pt_run(des_y1_3x2pt_example: tuple[Path, Frameworks]) -> None:
     output_path, framework = des_y1_3x2pt_example
     match framework:
         case Frameworks.COSMOSIS:

@@ -17,38 +17,44 @@ from firecrown.updatable import (
 
 
 @pytest.fixture(name="trivial_params_student_t")
-def fixture_trivial_params_student_t(trivial_params) -> ParamsMap:
+def fixture_trivial_params_student_t(trivial_params: ParamsMap) -> ParamsMap:
     """Return a ParamsMap with one parameter."""
     trivial_params["nu"] = 5.0
     return trivial_params
 
 
-def test_require_nonempty_statistics():
+def test_require_nonempty_statistics() -> None:
     with pytest.raises(ValueError):
         _ = StudentT(statistics=[])
 
 
-def test_update_fails_before_read(trivial_stats, trivial_params_student_t):
+def test_update_fails_before_read(
+    trivial_stats: list[Statistic], trivial_params_student_t: ParamsMap
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     with pytest.raises(AssertionError):
         likelihood.update(trivial_params_student_t)
 
 
-def test_get_cov_fails_before_read(trivial_stats):
+def test_get_cov_fails_before_read(trivial_stats: list[Statistic]) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     with pytest.raises(AssertionError):
         _ = likelihood.get_cov()
 
 
-def test_get_cov_works_after_read(trivial_stats, sacc_data_for_trivial_stat):
+def test_get_cov_works_after_read(
+    trivial_stats: list[Statistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     assert np.all(likelihood.get_cov() == np.diag([4.0, 9.0, 16.0]))
 
 
 def test_chisquared(
-    trivial_stats, sacc_data_for_trivial_stat, trivial_params_student_t
-):
+    trivial_stats: list[Statistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params_student_t: ParamsMap,
+) -> None:
     trivial_params_student_t["nu"] = 5.0
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
@@ -57,8 +63,10 @@ def test_chisquared(
 
 
 def test_required_parameters(
-    trivial_stats, sacc_data_for_trivial_stat, trivial_params_student_t
-):
+    trivial_stats: list[Statistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params_student_t: ParamsMap,
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params_student_t)
@@ -72,8 +80,10 @@ def test_required_parameters(
 
 
 def test_derived_parameters(
-    trivial_stats, sacc_data_for_trivial_stat, trivial_params_student_t
-):
+    trivial_stats: list[Statistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params_student_t: ParamsMap,
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params_student_t)
@@ -81,7 +91,11 @@ def test_derived_parameters(
     assert likelihood.get_derived_parameters() == expected_params
 
 
-def test_reset(trivial_stats, sacc_data_for_trivial_stat, trivial_params_student_t):
+def test_reset(
+    trivial_stats: list[Statistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params_student_t: ParamsMap,
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params_student_t)
@@ -92,7 +106,9 @@ def test_reset(trivial_stats, sacc_data_for_trivial_stat, trivial_params_student
     assert not trivial_stats[0].computed_theory_vector
 
 
-def test_missing_covariance(trivial_stats, sacc_with_data_points: sacc.Sacc):
+def test_missing_covariance(
+    trivial_stats: list[Statistic], sacc_with_data_points: sacc.Sacc
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     with pytest.raises(
         RuntimeError,
@@ -103,10 +119,10 @@ def test_missing_covariance(trivial_stats, sacc_with_data_points: sacc.Sacc):
 
 
 def test_using_good_sacc(
-    trivial_stats,
+    trivial_stats: list[Statistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.updatable.ParamsMap(mean=10.5, nu=5.0)
@@ -117,8 +133,8 @@ def test_using_good_sacc(
 
 
 def test_after_read_all_statistics_are_ready(
-    trivial_stats, sacc_data_for_trivial_stat: sacc.Sacc
-):
+    trivial_stats: list[Statistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     for gs in likelihood.statistics:

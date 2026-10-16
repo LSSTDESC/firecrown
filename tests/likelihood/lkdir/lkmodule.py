@@ -75,7 +75,7 @@ class DerivedParameterLikelihood(Likelihood):
     """A minimal likelihood for testing. This likelihood requires a parameter
     named 'sacc_filename'."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the DerivedParameterLikelihood where _get_derived_parameters
         creates a derived parameter called "derived_param0".
         """
@@ -95,16 +95,16 @@ class DerivedParameterLikelihood(Likelihood):
         return -3.14
 
 
-def parameterized_likelihood(params: NamedParameters):
+def parameterized_likelihood(params: NamedParameters) -> ParamaterizedLikelihood:
     """Return a ParameterizedLikelihood object."""
     return ParamaterizedLikelihood(params)
 
 
-def sampler_parameter_likelihood(params: NamedParameters):
+def sampler_parameter_likelihood(params: NamedParameters) -> SamplerParameterLikelihood:
     """Return a SamplerParameterLikelihood object."""
     return SamplerParameterLikelihood(params)
 
 
-def derived_parameter_likelihood():
+def derived_parameter_likelihood() -> DerivedParameterLikelihood:
     """Return a DerivedParameterLikelihood object."""
     return DerivedParameterLikelihood()

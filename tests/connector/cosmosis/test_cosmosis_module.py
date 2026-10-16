@@ -10,9 +10,10 @@ import yaml
 import pytest
 import numpy as np
 
-import pyccl
 from cosmosis.datablock import DataBlock, option_section, names as section_names
+import pyccl
 
+from firecrown.connector.mapping import MappingCosmoSIS
 from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import (
     FirecrownLikelihood,
@@ -111,7 +112,7 @@ def fixture_config_with_two_point_real() -> DataBlock:
 
 
 @pytest.fixture(name="ccl_mode", params=["default", "pure_ccl"])
-def fixture_ccl_mode(request) -> DataBlock:
+def fixture_ccl_mode(request: pytest.FixtureRequest) -> str:
     return request.param
 
 
@@ -285,7 +286,9 @@ def fixture_sample_without_M(minimal_sample: DataBlock) -> DataBlock:
     return minimal_sample
 
 
-def test_extract_section_gets_named_parameters(defective_module_config: DataBlock):
+def test_extract_section_gets_named_parameters(
+    defective_module_config: DataBlock,
+) -> None:
     params = extract_section(defective_module_config, "module_options")
     assert isinstance(params, NamedParameters)
     assert params.get_string("likelihood_source") == expandvars(
@@ -293,16 +296,18 @@ def test_extract_section_gets_named_parameters(defective_module_config: DataBloc
     )
 
 
-def test_extract_section_raises_on_missing_section(defective_module_config: DataBlock):
+def test_extract_section_raises_on_missing_section(
+    defective_module_config: DataBlock,
+) -> None:
     with pytest.raises(RuntimeError, match="Datablock section `xxx' does not exist"):
         _ = extract_section(defective_module_config, "xxx")
 
 
 @pytest.mark.parametrize("ccl_mode", ["pure_ccl"], indirect=True)
 def test_wrong_use_of_camb_module_with_ccl_not_in_default_mode(
-    config_with_two_point_harmonic,
+    config_with_two_point_harmonic: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     config_with_two_point_harmonic.put_string("camb", "cow", "moo")
     assert ccl_mode == "pure_ccl"
     with pytest.raises(
@@ -316,27 +321,27 @@ def test_wrong_use_of_camb_module_with_ccl_not_in_default_mode(
         _ = FirecrownLikelihood(config_with_two_point_harmonic)
 
 
-def test_parameterless_module_construction(minimal_module_config):
+def test_parameterless_module_construction(minimal_module_config: DataBlock) -> None:
     """Make sure we can create a CosmoSIS likelihood modules that does not
     introduce any new parameters."""
     module = FirecrownLikelihood(minimal_module_config)
     assert module.sampling_sections == []
 
 
-def test_missing_required_parameter(defective_module_config):
+def test_missing_required_parameter(defective_module_config: DataBlock) -> None:
     """Make sure that a missing required parameter entails the expected
     failure."""
     with pytest.raises(KeyError):
         _ = FirecrownLikelihood(defective_module_config)
 
 
-def test_initialize_minimal_module(minimal_firecrown_mod: FirecrownLikelihood):
+def test_initialize_minimal_module(minimal_firecrown_mod: FirecrownLikelihood) -> None:
     assert isinstance(minimal_firecrown_mod, FirecrownLikelihood)
 
 
 def test_execute_missing_cosmological_parameters(
     minimal_firecrown_mod: FirecrownLikelihood,
-):
+) -> None:
     no_cosmo_params = DataBlock()
     with pytest.raises(
         RuntimeError,
@@ -348,7 +353,7 @@ def test_execute_missing_cosmological_parameters(
 @pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_execute_with_cosmo(
     minimal_firecrown_mod: FirecrownLikelihood, minimal_sample: DataBlock, ccl_mode: str
-):
+) -> None:
     assert ccl_mode == "default"
     assert minimal_firecrown_mod.execute(minimal_sample) == 0
     assert minimal_sample[section_names.likelihoods, "firecrown_like"] == -3.0
@@ -359,7 +364,7 @@ def test_execute_with_derived_parameters(
     firecrown_mod_with_derived_parameters: FirecrownLikelihood,
     minimal_sample: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     assert firecrown_mod_with_derived_parameters.execute(minimal_sample) == 0
     assert minimal_sample.get_double("derived_section", "derived_param0") == 1.0
@@ -369,7 +374,7 @@ def test_execute_with_derived_parameters(
 def test_module_init_with_missing_sampling_sections(
     config_with_const_gaussian_missing_sampling_parameters_sections: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     with pytest.raises(RuntimeError, match=r"\['pantheon_M'\]"):
         s = config_with_const_gaussian_missing_sampling_parameters_sections.to_string()
@@ -401,7 +406,7 @@ def fixture_working_config_for_const_gaussian(
 
 def test_module_init_with_wrong_sampling_sections(
     config_with_wrong_sampling_sections: DataBlock,
-):
+) -> None:
     mod = FirecrownLikelihood(config_with_wrong_sampling_sections)
     assert isinstance(mod, FirecrownLikelihood)
 
@@ -411,7 +416,7 @@ def test_module_exec_with_wrong_sampling_sections(
     config_with_wrong_sampling_sections: DataBlock,
     sample_with_M: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     mod = FirecrownLikelihood(config_with_wrong_sampling_sections)
     with pytest.raises(
@@ -425,7 +430,7 @@ def test_module_exec_missing_parameter_in_sampling_sections(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood,
     sample_without_M: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     with pytest.raises(RuntimeError, match="`supernova_parameters`") as exc:
         _ = firecrown_mod_with_const_gaussian.execute(sample_without_M)
@@ -440,7 +445,7 @@ def test_module_exec_working(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood,
     sample_with_M: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
     assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
@@ -451,7 +456,7 @@ def test_execute_function(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood,
     sample_with_M: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     assert execute(sample_with_M, firecrown_mod_with_const_gaussian) == 0
     assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
@@ -462,7 +467,7 @@ def test_module_exec_with_two_point_real(
     firecrown_mod_with_two_point_real: FirecrownLikelihood,
     sample_with_lens0_bias: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     assert firecrown_mod_with_two_point_real.execute(sample_with_lens0_bias) == 0
 
@@ -518,7 +523,7 @@ def test_module_exec_with_two_point_real(
 def test_module_exec_with_two_point_harmonic(
     firecrown_mod_with_two_point_harmonic: FirecrownLikelihood,
     sample_with_lens0_bias: DataBlock,
-):
+) -> None:
     assert firecrown_mod_with_two_point_harmonic.execute(sample_with_lens0_bias) == 0
 
     # CosmoSIS always writes the output to the same section, so we can
@@ -570,7 +575,7 @@ def test_module_exec_with_two_point_harmonic(
     )
 
 
-def test_mapping_cosmosis_background(mapping_cosmosis):
+def test_mapping_cosmosis_background(mapping_cosmosis: MappingCosmoSIS) -> None:
     block = DataBlock()
 
     background_d_m = np.geomspace(0.1, 10.0, 100)
@@ -598,7 +603,7 @@ def test_mapping_cosmosis_background(mapping_cosmosis):
     assert "pk_nonlin" not in ccl_args
 
 
-def test_mapping_cosmosis_pk_linear(mapping_cosmosis):
+def test_mapping_cosmosis_pk_linear(mapping_cosmosis: MappingCosmoSIS) -> None:
     block = DataBlock()
 
     block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
@@ -635,7 +640,7 @@ def test_mapping_cosmosis_pk_linear(mapping_cosmosis):
     )
 
 
-def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis):
+def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis: MappingCosmoSIS) -> None:
     block = DataBlock()
 
     block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
@@ -673,7 +678,7 @@ def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis):
     )
 
 
-def test_form_error_message_with_sampling_sections():
+def test_form_error_message_with_sampling_sections() -> None:
     sampling_sections = ["section1", "section2"]
     exc = MissingSamplerParameterError("missing_param")
     expected_msg = (
@@ -685,7 +690,7 @@ def test_form_error_message_with_sampling_sections():
     assert form_error_message(sampling_sections, exc) == expected_msg
 
 
-def test_form_error_message_with_empty_sampling_sections():
+def test_form_error_message_with_empty_sampling_sections() -> None:
     sampling_sections: list[str] = []
     exc = MissingSamplerParameterError("missing_param")
     #  flake8: noqa
@@ -698,7 +703,7 @@ def test_form_error_message_with_empty_sampling_sections():
     assert form_error_message(sampling_sections, exc) == expected_msg
 
 
-def test_form_error_message_with_single_sampling_section():
+def test_form_error_message_with_single_sampling_section() -> None:
     sampling_sections = ["section1"]
     exc = MissingSamplerParameterError("missing_param")
     #  flake8: noqa
@@ -711,13 +716,15 @@ def test_form_error_message_with_single_sampling_section():
     assert form_error_message(sampling_sections, exc) == expected_msg
 
 
-def test_form_error_message_with_missing_sampler_parameter_error():
+def test_form_error_message_with_missing_sampler_parameter_error() -> None:
     sampling_sections = ["section1", "section2"]
     exc = MissingSamplerParameterError("missing_param")
     assert "missing_param" in form_error_message(sampling_sections, exc)
 
 
-def test_same_param_names_in_different_sections_failure(sample_with_M: DataBlock):
+def test_same_param_names_in_different_sections_failure(
+    sample_with_M: DataBlock,
+) -> None:
     sample_with_M.put_double("section1", "a", 1.0)
     sample_with_M.put_double("section2", "a", 10.0)
     with pytest.raises(
@@ -735,7 +742,7 @@ def test_resetting_after_exception_in_log_likelihood(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood,
     sample_with_M: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     msg = "Test exception in log-likelihood"
     warn_msg = (
@@ -765,7 +772,7 @@ def test_gaussfamily_special_case(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood,
     sample_with_M: DataBlock,
     ccl_mode: str,
-):
+) -> None:
     assert ccl_mode == "default"
     msg = "Error CCL_ERROR_SPLINE: fake_ccl_.c:119;"
     warn_msg = f"CCL error:.*\n.*{msg}"

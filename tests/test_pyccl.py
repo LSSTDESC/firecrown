@@ -11,30 +11,32 @@ import pytest
 
 
 @pytest.fixture(name="cosmo_params_1", scope="session")
-def fixture_cosmo_params_1():
+def fixture_cosmo_params_1() -> dict[str, float]:
     return {"Omega_c": 0.0, "Omega_b": 0.0, "h": 1.0, "A_s": 0.0, "n_s": 0.0}
 
 
 @pytest.fixture(name="cosmo_params_2", scope="session")
-def fixture_cosmo_params_2():
+def fixture_cosmo_params_2() -> dict[str, float]:
     return {"Omega_c": 0.0, "Omega_b": 0.0, "h": 1.0, "A_s": 0.0, "n_s": 0.25}
 
 
-def test_alias_of_cosmology_hashes_equal(cosmo_params_1):
+def test_alias_of_cosmology_hashes_equal(cosmo_params_1: dict[str, float]) -> None:
     x = pyccl.Cosmology(**cosmo_params_1)
     y = x
     assert x == y
     assert hash(x) == hash(y)
 
 
-def test_unequal_cosmologies_hash_unequal(cosmo_params_1, cosmo_params_2):
+def test_unequal_cosmologies_hash_unequal(
+    cosmo_params_1: dict[str, float], cosmo_params_2: dict[str, float]
+) -> None:
     x = pyccl.Cosmology(**cosmo_params_1)
     y = pyccl.Cosmology(**cosmo_params_2)
     assert x != y
     assert hash(x) != hash(y)
 
 
-def test_equal_cosmologies_hash_equal(cosmo_params_1):
+def test_equal_cosmologies_hash_equal(cosmo_params_1: dict[str, float]) -> None:
     # This test verifies expected (but not really desired) behavior. Two
     # Cosmology variables only have equal hashes when they are in fact they
     # are aliases for the same object. They also test as equal only if they

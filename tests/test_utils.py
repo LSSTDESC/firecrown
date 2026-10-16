@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
+import numpy.typing as npt
 import pyccl
 import pytest
 import sacc
@@ -28,19 +29,23 @@ from firecrown.utils import (
     save_to_sacc,
     upper_triangle_indices,
 )
+from firecrown.likelihood._statistic import TrivialStatistic
+from firecrown.modeling_tools import ModelingTools
 
 
-def test_upper_triangle_indices_nonzero():
+def test_upper_triangle_indices_nonzero() -> None:
     indices = list(upper_triangle_indices(3))
     assert indices == [(0, 0), (0, 1), (0, 2), (1, 1), (1, 2), (2, 2)]
 
 
-def test_upper_triangle_indices_zero():
+def test_upper_triangle_indices_zero() -> None:
     indices = list(upper_triangle_indices(0))
     assert not indices
 
 
-def test_save_to_sacc(trivial_stats, sacc_data_for_trivial_stat):
+def test_save_to_sacc(
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     stat = trivial_stats[0]
     stat.read(sacc_data_for_trivial_stat)
     idx = np.arange(stat.count)
@@ -55,7 +60,9 @@ def test_save_to_sacc(trivial_stats, sacc_data_for_trivial_stat):
     assert all(new_sacc.data[i].value == d for i, d in zip(idx, new_data_vector))
 
 
-def test_save_to_sacc_strict_fail(trivial_stats, sacc_data_for_trivial_stat):
+def test_save_to_sacc_strict_fail(
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     stat = trivial_stats[0]
     stat.read(sacc_data_for_trivial_stat)
     idx = np.arange(stat.count - 1)
@@ -70,7 +77,9 @@ def test_save_to_sacc_strict_fail(trivial_stats, sacc_data_for_trivial_stat):
         )
 
 
-def test_save_to_sacc_non_sttrict(trivial_stats, sacc_data_for_trivial_stat):
+def test_save_to_sacc_non_sttrict(
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     stat = trivial_stats[0]
     stat.read(sacc_data_for_trivial_stat)
     idx = np.arange(stat.count)
@@ -98,7 +107,7 @@ _AMBIGUOUS_SUFFIXES = [".sacc", ""]
 
 
 @pytest.mark.parametrize("suffix", [".fits", *_AMBIGUOUS_SUFFIXES])
-def test_load_sacc_data_loads_fits(tmp_path, suffix):
+def test_load_sacc_data_loads_fits(tmp_path: Path, suffix: str) -> None:
     """load_sacc_data reads FITS content, including from ambiguous extensions.
 
     When the extension does not announce a format (e.g. the ``.sacc`` files
@@ -115,7 +124,7 @@ def test_load_sacc_data_loads_fits(tmp_path, suffix):
 
 
 @pytest.mark.parametrize("suffix", [".hdf5", ".h5", *_AMBIGUOUS_SUFFIXES])
-def test_load_sacc_data_loads_hdf5(tmp_path, suffix):
+def test_load_sacc_data_loads_hdf5(tmp_path: Path, suffix: str) -> None:
     """load_sacc_data reads HDF5 content, including from ambiguous extensions.
 
     This is the case that regressed under SACC 2.2: an HDF5 file named with an
@@ -131,7 +140,7 @@ def test_load_sacc_data_loads_hdf5(tmp_path, suffix):
     assert len(loaded.tracers) == 1
 
 
-def test_load_sacc_data_accepts_string_path(tmp_path):
+def test_load_sacc_data_accepts_string_path(tmp_path: Path) -> None:
     """load_sacc_data accepts a string path as well as a Path object."""
     input_file = tmp_path / "data.sacc"
     _make_minimal_sacc().save_fits(str(input_file), overwrite=True)
@@ -141,13 +150,13 @@ def test_load_sacc_data_accepts_string_path(tmp_path):
     assert isinstance(loaded, sacc.Sacc)
 
 
-def test_load_sacc_data_missing_file_raises(tmp_path):
+def test_load_sacc_data_missing_file_raises(tmp_path: Path) -> None:
     """load_sacc_data raises FileNotFoundError for a non-existent file."""
     with pytest.raises(FileNotFoundError, match="SACC file not found"):
         load_sacc_data(tmp_path / "does_not_exist.sacc")
 
 
-def test_load_sacc_data_unrecognized_content_raises(tmp_path):
+def test_load_sacc_data_unrecognized_content_raises(tmp_path: Path) -> None:
     """load_sacc_data raises ValueError when content is neither FITS nor HDF5."""
     bad_file = tmp_path / "corrupted.sacc"
     bad_file.write_text("This is not a valid SACC file format")
@@ -164,16 +173,16 @@ def test_load_sacc_data_unrecognized_content_raises(tmp_path):
 
 
 @pytest.mark.parametrize("value", ["some/path.sacc", Path("some/path.sacc")])
-def test_ensure_path_returns_path(value):
+def test_ensure_path_returns_path(value: str | Path) -> None:
     """ensure_path returns a Path for both str and Path inputs."""
     result = ensure_path(value)
     assert isinstance(result, Path)
     assert result == Path("some/path.sacc")
 
 
-def test_compare_optional_arrays_():
-    x = np.array([1, 2, 3])
-    y = np.array([1, 2, 3])
+def test_compare_optional_arrays_() -> None:
+    x: npt.NDArray[np.int64] = np.array([1, 2, 3])
+    y: npt.NDArray[np.int64] = np.array([1, 2, 3])
     assert compare_optional_arrays(x, y)
 
     z = np.array([1, 2, 4])
@@ -194,7 +203,7 @@ def test_base_model_from_yaml_wrong() -> None:
         _ = base_model_from_yaml(cast(type[BaseModel], str), "wrong")
 
 
-def test_compare_optionals():
+def test_compare_optionals() -> None:
     x = "test"
     y = "test"
     assert compare_optionals(x, y)
@@ -216,7 +225,7 @@ def test_compare_optionals():
     name="limber_method",
     params=[ClLimberMethod.GSL_SPLINE, ClLimberMethod.GSL_QAG_QUAD],
 )
-def fixture_limber_method(request):
+def fixture_limber_method(request: pytest.FixtureRequest) -> ClLimberMethod:
     return request.param
 
 
@@ -224,17 +233,17 @@ def fixture_limber_method(request):
     name="limber_max_error",
     params=[None, 0.1, 0.2],
 )
-def fixture_limber_max_error(request):
+def fixture_limber_max_error(request: pytest.FixtureRequest) -> float | None:
     return request.param
 
 
 @pytest.fixture(name="fkem_chi_min", params=[None, 0.05, 0.082])
-def fixture_fkem_chi_min(request):
+def fixture_fkem_chi_min(request: pytest.FixtureRequest) -> float | None:
     return request.param
 
 
 @pytest.fixture(name="fkem_Nchi", params=[None, 10, 20])
-def fixture_fkem_Nchi(request):
+def fixture_fkem_Nchi(request: pytest.FixtureRequest) -> int | None:
     return request.param
 
 
@@ -242,11 +251,11 @@ def fixture_fkem_Nchi(request):
     name="l_limber",
     params=[40, 60],
 )
-def fixture_l_limber(request):
+def fixture_l_limber(request: pytest.FixtureRequest) -> int:
     return request.param
 
 
-def test_cl_integration_options_limber(limber_method: ClLimberMethod):
+def test_cl_integration_options_limber(limber_method: ClLimberMethod) -> None:
     int_options = ClIntegrationOptions(
         method=ClIntegrationMethod.LIMBER, limber_method=limber_method
     )
@@ -265,7 +274,7 @@ def test_cl_integration_options_limber(limber_method: ClLimberMethod):
     assert int_options == int_options2
 
 
-def test_cl_integration_options_limber_yaml(limber_method: ClLimberMethod):
+def test_cl_integration_options_limber_yaml(limber_method: ClLimberMethod) -> None:
     int_options_yaml = f"""
     method: LIMBER
     limber_method: {limber_method.lower()}
@@ -280,7 +289,7 @@ def test_cl_integration_options_fkem_auto(
     limber_max_error: float | None,
     fkem_chi_min: float | None,
     fkem_Nchi: int | None,
-):
+) -> None:
     int_options = ClIntegrationOptions(
         method=ClIntegrationMethod.FKEM_AUTO,
         limber_method=limber_method,
@@ -322,7 +331,7 @@ def test_cl_integration_options_fkem_auto_yaml(
     limber_max_error: float | None,
     fkem_chi_min: float | None,
     fkem_Nchi: int | None,
-):
+) -> None:
     int_options_yaml = f"""
     method: FKEM_AUTO
     limber_method: {limber_method.lower()}
@@ -343,7 +352,7 @@ def test_cl_integration_options_fkem_l_limber(
     fkem_chi_min: float | None,
     fkem_Nchi: int | None,
     l_limber: int,
-):
+) -> None:
     int_options = ClIntegrationOptions(
         method=ClIntegrationMethod.FKEM_L_LIMBER,
         limber_method=limber_method,
@@ -381,7 +390,7 @@ def test_cl_integration_options_fkem_l_limber_yaml(
     fkem_chi_min: float | None,
     fkem_Nchi: int | None,
     l_limber: int,
-):
+) -> None:
     int_options_yaml = f"""
     method: FKEM_L_LIMBER
     limber_method: {limber_method.lower()}
@@ -397,7 +406,7 @@ def test_cl_integration_options_fkem_l_limber_yaml(
     assert int_options.fkem_Nchi == fkem_Nchi
 
 
-def test_cl_integration_options_yaml_invalid():
+def test_cl_integration_options_yaml_invalid() -> None:
     int_options_yaml = """
     method: Im_not_a_valid_method
     limber_method: qag_quad
@@ -451,7 +460,7 @@ def test_cl_integration_options_yaml_invalid():
         base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
 
 
-def test_cl_integration_options_limber_invalid():
+def test_cl_integration_options_limber_invalid() -> None:
     with pytest.raises(
         ValueError, match="l_limber is incompatible with ClIntegrationMethod.LIMBER"
     ):
@@ -490,7 +499,7 @@ def test_cl_integration_options_limber_invalid():
         )
 
 
-def test_cl_integration_options_fkem_auto_invalid():
+def test_cl_integration_options_fkem_auto_invalid() -> None:
     with pytest.raises(
         ValueError,
         match="l_limber is incompatible with ClIntegrationMethod.FKEM_AUTO",
@@ -502,7 +511,7 @@ def test_cl_integration_options_fkem_auto_invalid():
         )
 
 
-def test_cl_integration_options_fkem_l_limber_invalid():
+def test_cl_integration_options_fkem_l_limber_invalid() -> None:
     with pytest.raises(
         ValueError,
         match="limber_max_error is incompatible with ClIntegrationMethod.FKEM_L_LIMBER",
@@ -524,7 +533,7 @@ def test_cl_integration_options_fkem_l_limber_invalid():
         )
 
 
-def test_cl_integration_test_cmparison():
+def test_cl_integration_test_cmparison() -> None:
     int_options = ClIntegrationOptions(
         method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_SPLINE
     )
@@ -536,7 +545,7 @@ def test_cl_integration_test_cmparison():
     )
 
 
-def test_make_log_interpolator_positive():
+def test_make_log_interpolator_positive() -> None:
     x = np.arange(1, 3000)
     y = np.exp(x / 1.0e3) * x**1.43
 
@@ -545,7 +554,7 @@ def test_make_log_interpolator_positive():
     assert_allclose(f(x), y, atol=0.0, rtol=1e-12)
 
 
-def test_make_log_interpolator_negative():
+def test_make_log_interpolator_negative() -> None:
     x = np.arange(1, 3000)
     y = np.exp(x / 1.0e3) * (x - 1000.5)
 
@@ -554,7 +563,7 @@ def test_make_log_interpolator_negative():
     assert_allclose(f(x), y, atol=0.0, rtol=1e-12)
 
 
-def test_cached_angular_cl(tools_with_vanilla_cosmology):
+def test_cached_angular_cl(tools_with_vanilla_cosmology: ModelingTools) -> None:
     tools = tools_with_vanilla_cosmology
     cosmo = tools.get_ccl_cosmology()
 
@@ -572,7 +581,9 @@ def test_cached_angular_cl(tools_with_vanilla_cosmology):
     assert np.all(np.isfinite(cl))
 
 
-def test_cached_angular_cl_with_options(tools_with_vanilla_cosmology):
+def test_cached_angular_cl_with_options(
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
     tools = tools_with_vanilla_cosmology
     cosmo = tools.get_ccl_cosmology()
 
@@ -605,11 +616,15 @@ def test_cached_angular_cl_with_options(tools_with_vanilla_cosmology):
         (ClIntegrationMethod.FKEM_L_LIMBER, "fkem_l_limber"),
     ],
 )
-def test_yaml_serializable_to_yaml(method, expected):
+def test_yaml_serializable_to_yaml(method: ClIntegrationMethod, expected: str) -> None:
     # Add test to verify all enum values are covered
     all_methods = set(ClIntegrationMethod)
+    # Pytest's store_mark adds pytestmark; callable annotations cannot express it.
     test_methods = {
-        param[0] for param in test_yaml_serializable_to_yaml.pytestmark[0].args[1]
+        param[0]
+        for param in (
+            test_yaml_serializable_to_yaml.pytestmark  # type: ignore[attr-defined]
+        )[0].args[1]
     }
     assert (
         all_methods == test_methods
@@ -627,11 +642,17 @@ def test_yaml_serializable_to_yaml(method, expected):
         ("fkem_l_limber", ClIntegrationMethod.FKEM_L_LIMBER),
     ],
 )
-def test_yaml_serializable_from_yaml(yaml_str, expected):
+def test_yaml_serializable_from_yaml(
+    yaml_str: str, expected: ClIntegrationMethod
+) -> None:
     # Add test to verify all enum values are covered
     all_methods = set(ClIntegrationMethod)
+    # Pytest's store_mark adds pytestmark; callable annotations cannot express it.
     test_methods = {
-        param[1] for param in test_yaml_serializable_from_yaml.pytestmark[0].args[1]
+        param[1]
+        for param in (
+            test_yaml_serializable_from_yaml.pytestmark  # type: ignore[attr-defined]
+        )[0].args[1]
     }
     assert (
         all_methods == test_methods

@@ -5,7 +5,9 @@ It should raise an exception because the factory function does not return
 a Likelihood object.
 """
 
+from firecrown.likelihood._likelihood import NamedParameters
 
-def build_likelihood(_):
+
+def build_likelihood(_: NamedParameters) -> str:
     """Return an EmptyLikelihood object."""
     return "Not a Likelihood"

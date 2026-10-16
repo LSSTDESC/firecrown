@@ -140,7 +140,9 @@ class TestLoadExperiment:
         with pytest.raises(Exception):
             Load(experiment_file=exp_file)
 
-    def test_load_experiment_prints_file_path(self, tmp_path: Path, capsys) -> None:
+    def test_load_experiment_prints_file_path(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test that load prints the file path to console."""
         exp_file = tmp_path / "exp.yaml"
         exp_data = {
@@ -201,7 +203,9 @@ class TestViewInitialization:
 class TestViewPrintFactories:
     """Tests for View._print_factories method."""
 
-    def test_print_factories_displays_data_source(self, tmp_path: Path, capsys) -> None:
+    def test_print_factories_displays_data_source(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test that _print_factories displays data source information."""
         exp_file = tmp_path / "exp.yaml"
         exp_data = {
@@ -230,7 +234,9 @@ class TestViewPrintFactories:
             assert "Data Source" in captured.out
             assert "data.sacc" in captured.out
 
-    def test_print_factories_displays_filters(self, tmp_path: Path, capsys) -> None:
+    def test_print_factories_displays_filters(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test that filters are displayed when present."""
         exp_file = tmp_path / "exp.yaml"
         exp_data = {
@@ -263,7 +269,7 @@ class TestViewPrintFactories:
             assert "scale_cuts.yaml" in captured.out
 
     def test_print_factories_displays_weak_lensing(
-        self, tmp_path: Path, capsys
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Test that weak lensing factories are displayed."""
         exp_file = tmp_path / "exp.yaml"
@@ -300,7 +306,7 @@ class TestViewPrintFactories:
             assert "src0" in captured.out
 
     def test_print_factories_displays_number_counts(
-        self, tmp_path: Path, capsys
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Test that number counts factories are displayed."""
         exp_file = tmp_path / "exp.yaml"
@@ -335,7 +341,9 @@ class TestViewPrintFactories:
             assert "NumberCounts" in captured.out
             assert "lens0" in captured.out
 
-    def test_print_factories_displays_cmb(self, tmp_path: Path, capsys) -> None:
+    def test_print_factories_displays_cmb(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test that CMB factories are displayed."""
         exp_file = tmp_path / "exp.yaml"
         exp_data = {
@@ -367,7 +375,9 @@ class TestViewPrintFactories:
             assert "CMBConvergence" in captured.out
             assert "cmb_convergence" in captured.out
 
-    def test_print_factories_displays_systematics(self, tmp_path: Path, capsys) -> None:
+    def test_print_factories_displays_systematics(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test that systematics are displayed."""
         exp_file = tmp_path / "exp.yaml"
         exp_data = {
@@ -404,7 +414,7 @@ class TestViewPrintFactories:
             assert "multiplicative_bias" in captured.out
 
     def test_print_factories_empty_systematics_shows_dash(
-        self, tmp_path: Path, capsys
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Test that empty systematics list displays a dash."""
         exp_file = tmp_path / "exp.yaml"
@@ -439,7 +449,9 @@ class TestViewPrintFactories:
             # The table should have dash for empty systematics
             assert "WeakLensing" in captured.out
 
-    def test_print_factories_multiple_factories(self, tmp_path: Path, capsys) -> None:
+    def test_print_factories_multiple_factories(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test displaying multiple factories of different types."""
         exp_file = tmp_path / "exp.yaml"
         exp_data = {
@@ -491,7 +503,9 @@ class TestViewPrintFactories:
 class TestFormatSysFunction:
     """Tests for the fmt_sys helper function within _print_factories."""
 
-    def test_fmt_sys_with_multiple_systematics(self, tmp_path: Path, capsys) -> None:
+    def test_fmt_sys_with_multiple_systematics(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test that multiple systematics are formatted correctly."""
         exp_file = tmp_path / "exp.yaml"
         exp_data = {

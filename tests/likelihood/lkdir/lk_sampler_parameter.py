@@ -14,7 +14,9 @@ from firecrown.modeling_tools import (
 from . import lkmodule
 
 
-def build_likelihood(params: NamedParameters):
+def build_likelihood(
+    params: NamedParameters,
+) -> tuple[lkmodule.SamplerParameterLikelihood, ModelingTools]:
     """Return a SamplerParameterLikelihood object."""
     tools = ModelingTools(
         ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)

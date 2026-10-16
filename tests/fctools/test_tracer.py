@@ -12,7 +12,7 @@ import sys
 import types
 from pathlib import Path
 from types import FrameType
-from typing import cast
+from typing import Generator, cast
 
 import pytest
 
@@ -47,7 +47,7 @@ def _make_frame(
 
 
 @pytest.fixture(autouse=True)
-def cleanup_tracing():
+def cleanup_tracing() -> Generator[None, None, None]:
     """Ensure sys.settrace is always cleaned up after each test.
 
     This fixture runs automatically for all tests and ensures that tracing
@@ -66,7 +66,7 @@ def cleanup_tracing():
 # Tests for TracerState.__init__()
 
 
-def test_tracer_state_init_creates_file(tmp_path):
+def test_tracer_state_init_creates_file(tmp_path: Path) -> None:
     """Test that TracerState creates a trace file."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -79,7 +79,7 @@ def test_tracer_state_init_creates_file(tmp_path):
         tracer.close()
 
 
-def test_tracer_state_init_writes_header(tmp_path):
+def test_tracer_state_init_writes_header(tmp_path: Path) -> None:
     """Test that TracerState writes header line."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -92,7 +92,9 @@ def test_tracer_state_init_writes_header(tmp_path):
         tracer.close()
 
 
-def test_tracer_state_default_filename(tmp_path, monkeypatch):
+def test_tracer_state_default_filename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that TracerState uses default filename."""
     monkeypatch.chdir(tmp_path)
     tracer = TracerState()
@@ -107,7 +109,7 @@ def test_tracer_state_default_filename(tmp_path, monkeypatch):
 # Tests for TracerState.trace_call() - call events
 
 
-def test_trace_call_event(tmp_path):
+def test_trace_call_event(tmp_path: Path) -> None:
     """Test tracing a function call event."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -130,13 +132,13 @@ def test_trace_call_event(tmp_path):
         tracer.close()
 
 
-def test_trace_call_with_self_argument(tmp_path):
+def test_trace_call_with_self_argument(tmp_path: Path) -> None:
     """Test tracing a method call with self argument."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
 
     class TestClass:
-        def method(self):
+        def method(self) -> None:
             pass
 
     obj = TestClass()
@@ -156,7 +158,7 @@ def test_trace_call_with_self_argument(tmp_path):
         tracer.close()
 
 
-def test_trace_call_no_arguments(tmp_path):
+def test_trace_call_no_arguments(tmp_path: Path) -> None:
     """Test tracing a function with no arguments."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -177,7 +179,7 @@ def test_trace_call_no_arguments(tmp_path):
 # Tests for TracerState.trace_call() - return events
 
 
-def test_trace_return_event(tmp_path):
+def test_trace_return_event(tmp_path: Path) -> None:
     """Test tracing a function return event."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -198,7 +200,7 @@ def test_trace_return_event(tmp_path):
         tracer.close()
 
 
-def test_trace_return_with_none(tmp_path):
+def test_trace_return_with_none(tmp_path: Path) -> None:
     """Test tracing a return with None value."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -218,14 +220,14 @@ def test_trace_return_with_none(tmp_path):
         tracer.close()
 
 
-def test_trace_return_with_unprintable_object(tmp_path):
+def test_trace_return_with_unprintable_object(tmp_path: Path) -> None:
     """Test tracing a return with object that can't be converted to str."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
     tracer.level = 1
 
     class UnprintableObject:
-        def __str__(self):
+        def __str__(self) -> str:
             raise AttributeError("Cannot convert to string")
 
     obj = UnprintableObject()
@@ -243,14 +245,14 @@ def test_trace_return_with_unprintable_object(tmp_path):
         tracer.close()
 
 
-def test_trace_return_with_recursion_error(tmp_path):
+def test_trace_return_with_recursion_error(tmp_path: Path) -> None:
     """Test tracing a return with object that causes RecursionError on str()."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
     tracer.level = 1
 
     class RecursiveObject:
-        def __str__(self):
+        def __str__(self) -> str:
             raise RecursionError("Maximum recursion depth exceeded")
 
     obj = RecursiveObject()
@@ -268,14 +270,14 @@ def test_trace_return_with_recursion_error(tmp_path):
         tracer.close()
 
 
-def test_trace_return_with_type_error(tmp_path):
+def test_trace_return_with_type_error(tmp_path: Path) -> None:
     """Test tracing a return with object that causes TypeError on str()."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
     tracer.level = 1
 
     class TypeErrorObject:
-        def __str__(self):
+        def __str__(self) -> str:
             raise TypeError("Cannot convert to string")
 
     obj = TypeErrorObject()
@@ -296,7 +298,7 @@ def test_trace_return_with_type_error(tmp_path):
 # Tests for TracerState.trace_call() - exception events
 
 
-def test_trace_exception_event(tmp_path):
+def test_trace_exception_event(tmp_path: Path) -> None:
     """Test tracing an exception event."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -316,7 +318,7 @@ def test_trace_exception_event(tmp_path):
         tracer.close()
 
 
-def test_trace_call_returns_itself(tmp_path):
+def test_trace_call_returns_itself(tmp_path: Path) -> None:
     """Test that trace_call returns itself for continued tracing."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -334,7 +336,7 @@ def test_trace_call_returns_itself(tmp_path):
 # Tests for TracerState.close()
 
 
-def test_tracer_state_close(tmp_path):
+def test_tracer_state_close(tmp_path: Path) -> None:
     """Test that close() closes the trace file."""
     trace_file = tmp_path / "test.tsv"
     tracer = TracerState(str(trace_file))
@@ -348,7 +350,7 @@ def test_tracer_state_close(tmp_path):
 # Tests for settrace()
 
 
-def test_settrace_creates_tracer(tmp_path):
+def test_settrace_creates_tracer(tmp_path: Path) -> None:
     """Test that settrace creates and returns a TracerState."""
     trace_file = tmp_path / "test.tsv"
     tracer = settrace(str(trace_file))
@@ -361,7 +363,7 @@ def test_settrace_creates_tracer(tmp_path):
         tracer.close()
 
 
-def test_settrace_enables_tracing(tmp_path):
+def test_settrace_enables_tracing(tmp_path: Path) -> None:
     """Test that settrace enables sys.settrace."""
     trace_file = tmp_path / "test.tsv"
     tracer = settrace(str(trace_file))
@@ -374,7 +376,9 @@ def test_settrace_enables_tracing(tmp_path):
         tracer.close()
 
 
-def test_settrace_default_filename(tmp_path, monkeypatch):
+def test_settrace_default_filename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that settrace uses default filename."""
     monkeypatch.chdir(tmp_path)
     tracer = settrace()
@@ -390,7 +394,7 @@ def test_settrace_default_filename(tmp_path, monkeypatch):
 # Tests for untrace()
 
 
-def test_untrace_disables_tracing(tmp_path):
+def test_untrace_disables_tracing(tmp_path: Path) -> None:
     """Test that untrace disables sys.settrace."""
     trace_file = tmp_path / "test.tsv"
     tracer = settrace(str(trace_file))
@@ -401,7 +405,7 @@ def test_untrace_disables_tracing(tmp_path):
     assert sys.gettrace() is None
 
 
-def test_untrace_closes_file(tmp_path):
+def test_untrace_closes_file(tmp_path: Path) -> None:
     """Test that untrace closes the trace file."""
     trace_file = tmp_path / "test.tsv"
     tracer = settrace(str(trace_file))
@@ -414,7 +418,7 @@ def test_untrace_closes_file(tmp_path):
 # Tests for main() - script execution
 
 
-def test_main_traces_script(tmp_path):
+def test_main_traces_script(tmp_path: Path) -> None:
     """Test main traces a Python script."""
     # Create a simple test script
     script_file = tmp_path / "test_script.py"
@@ -450,7 +454,7 @@ result = simple_function()
     assert "entry\tevent\tlevel\tfunction\tvalue\textra" in content
 
 
-def test_main_with_nonexistent_script(tmp_path):
+def test_main_with_nonexistent_script(tmp_path: Path) -> None:
     """Test the main CLI with a nonexistent script."""
     trace_file = tmp_path / "trace_output.txt"
 
@@ -472,7 +476,7 @@ def test_main_with_nonexistent_script(tmp_path):
     assert match_wrapped(result.stdout, "not found")
 
 
-def test_main_module_mode_with_cli_runner(tmp_path):
+def test_main_module_mode_with_cli_runner(tmp_path: Path) -> None:
     """Test the main CLI in module mode with subprocess."""
     trace_file = tmp_path / "trace_output.txt"
 
@@ -495,7 +499,7 @@ def test_main_module_mode_with_cli_runner(tmp_path):
     assert trace_file.stat().st_size > 0
 
 
-def test_main_module_tracing(tmp_path):
+def test_main_module_tracing(tmp_path: Path) -> None:
     """Test main with module tracing (all module-related scenarios).
 
     Uses subprocess to avoid Click CliRunner I/O conflicts with sys.settrace()
@@ -571,7 +575,9 @@ def test_main_module_tracing(tmp_path):
     assert trace_file3.exists()
 
 
-def test_main_default_output_filename(tmp_path, monkeypatch):
+def test_main_default_output_filename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test main uses default output filename."""
     monkeypatch.chdir(tmp_path)
 
@@ -593,7 +599,7 @@ def test_main_default_output_filename(tmp_path, monkeypatch):
     assert Path("trace.tsv").exists()
 
 
-def test_main_short_output_option(tmp_path):
+def test_main_short_output_option(tmp_path: Path) -> None:
     """Test main with -o short option."""
     script_file = tmp_path / "test_script.py"
     script_file.write_text("x = 1\n")
@@ -616,7 +622,7 @@ def test_main_short_output_option(tmp_path):
     assert trace_file.exists()
 
 
-def test_main_handles_script_with_system_exit(tmp_path):
+def test_main_handles_script_with_system_exit(tmp_path: Path) -> None:
     """Test main handles scripts that call sys.exit()."""
     script_file = tmp_path / "exit_script.py"
     script_file.write_text("import sys\nsys.exit(0)\n")
@@ -640,7 +646,7 @@ def test_main_handles_script_with_system_exit(tmp_path):
     assert trace_file.exists()
 
 
-def test_main_with_subprocess(tmp_path):
+def test_main_with_subprocess(tmp_path: Path) -> None:
     """Test that the script can be executed directly via subprocess.
 
     This test verifies that the __main__ block works correctly.
@@ -663,7 +669,7 @@ def test_main_with_subprocess(tmp_path):
     assert trace_file.exists()
 
 
-def test_main_with_oserror_in_script(tmp_path):
+def test_main_with_oserror_in_script(tmp_path: Path) -> None:
     """Test main handles OSError during script execution."""
     script_file = tmp_path / "error_script.py"
     script_file.write_text("raise OSError('Test error')\n")
@@ -687,7 +693,7 @@ def test_main_with_oserror_in_script(tmp_path):
     assert trace_file.exists()
 
 
-def test_main_with_runtime_error_in_script(tmp_path):
+def test_main_with_runtime_error_in_script(tmp_path: Path) -> None:
     """Test main handles RuntimeError during script execution."""
     script_file = tmp_path / "error_script.py"
     script_file.write_text("raise RuntimeError('Test error')\n")
@@ -711,7 +717,7 @@ def test_main_with_runtime_error_in_script(tmp_path):
     assert trace_file.exists()
 
 
-def test_main_with_value_error_in_script(tmp_path):
+def test_main_with_value_error_in_script(tmp_path: Path) -> None:
     """Test main handles ValueError during script execution."""
     script_file = tmp_path / "error_script.py"
     script_file.write_text("raise ValueError('Test error')\n")
@@ -738,7 +744,7 @@ def test_main_with_value_error_in_script(tmp_path):
 # Integration tests
 
 
-def test_full_tracing_workflow(tmp_path):
+def test_full_tracing_workflow(tmp_path: Path) -> None:
     """Test complete tracing workflow with actual function execution."""
     trace_file = tmp_path / "trace.tsv"
 
@@ -747,10 +753,10 @@ def test_full_tracing_workflow(tmp_path):
 
     try:
         # Execute some code to trace
-        def add(a, b):
+        def add(a: int, b: int) -> int:
             return a + b
 
-        def multiply(x, y):
+        def multiply(x: int, y: int) -> int:
             return x * y
 
         result1 = add(2, 3)
@@ -775,15 +781,15 @@ def test_full_tracing_workflow(tmp_path):
     assert len(lines) > 1  # Header + at least some trace entries
 
 
-def test_tracing_with_nested_calls(tmp_path):
+def test_tracing_with_nested_calls(tmp_path: Path) -> None:
     """Test tracing with nested function calls."""
     trace_file = tmp_path / "trace.tsv"
     tracer = settrace(str(trace_file))
 
     try:
 
-        def outer():
-            def inner():
+        def outer() -> str:
+            def inner() -> str:
                 return "inner"
 
             return inner()
@@ -800,7 +806,7 @@ def test_tracing_with_nested_calls(tmp_path):
     assert "outer" in content or "inner" in content
 
 
-def test_cli_produces_valid_tsv(tmp_path):
+def test_cli_produces_valid_tsv(tmp_path: Path) -> None:
     """Test that CLI produces valid TSV file."""
     script_file = tmp_path / "test_script.py"
     script_file.write_text("""
@@ -844,7 +850,9 @@ func()
 # Direct main() function tests for coverage
 
 
-def test_main_function_with_script(tmp_path, capsys):
+def test_main_function_with_script(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function directly with a script file."""
     from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
@@ -863,7 +871,9 @@ def test_main_function_with_script(tmp_path, capsys):
     assert "Trace complete" in captured.out
 
 
-def test_main_function_with_nonexistent_script(tmp_path, capsys):
+def test_main_function_with_nonexistent_script(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function with nonexistent script."""
     from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
@@ -880,7 +890,9 @@ def test_main_function_with_nonexistent_script(tmp_path, capsys):
     assert "not found" in captured.out
 
 
-def test_main_function_with_module(tmp_path, capsys):
+def test_main_function_with_module(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function in module mode."""
     from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
@@ -896,7 +908,9 @@ def test_main_function_with_module(tmp_path, capsys):
     assert "Trace complete" in captured.out
 
 
-def test_main_function_with_invalid_module(tmp_path, capsys):
+def test_main_function_with_invalid_module(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function with invalid module name."""
     from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
@@ -912,7 +926,9 @@ def test_main_function_with_invalid_module(tmp_path, capsys):
     assert trace_file.exists()
 
 
-def test_main_function_with_script_system_exit(tmp_path, capsys):
+def test_main_function_with_script_system_exit(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function with script that calls sys.exit()."""
     from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
@@ -928,7 +944,9 @@ def test_main_function_with_script_system_exit(tmp_path, capsys):
     assert trace_file.exists()
 
 
-def test_main_function_with_script_import_error(tmp_path, capsys):
+def test_main_function_with_script_import_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function with script that has import error."""
     from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 
@@ -945,7 +963,9 @@ def test_main_function_with_script_import_error(tmp_path, capsys):
     assert trace_file.exists()
 
 
-def test_main_function_with_script_value_error(tmp_path, capsys):
+def test_main_function_with_script_value_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function with script that raises ValueError."""
     from firecrown.fctools.tracer import main  # pylint: disable=import-outside-toplevel
 

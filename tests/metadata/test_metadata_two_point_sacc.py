@@ -23,6 +23,7 @@ from firecrown.likelihood._two_point import (
     TwoPointFactory,
     use_source_factory,
 )
+from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_functions import (
     extract_all_harmonic_metadata,
     extract_all_harmonic_metadata_indices,
@@ -57,13 +58,14 @@ from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real,
 )
 from firecrown.updatable import ParamsMap
+from tests._types import SaccGalaxyWindowedFixture
 
 # pylint: disable=too-many-lines
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
 def fixture_sacc_galaxy_src0_src0_invalid_data_type(
-    recwarn,
+    recwarn: pytest.WarningsRecorder,
 ) -> tuple[sacc.Sacc, np.ndarray, np.ndarray]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
@@ -155,7 +157,16 @@ def fixture_sacc_galaxy_cells_three_tracers() -> (
     return sacc_data, z, dndz0, dndz1, dndz2
 
 
-def test_extract_all_tracers_cells(sacc_galaxy_cells) -> None:
+def test_extract_all_tracers_cells(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, tracers, _ = sacc_galaxy_cells
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
@@ -166,7 +177,16 @@ def test_extract_all_tracers_cells(sacc_galaxy_cells) -> None:
         assert_array_equal(tracer.dndz, orig_tracer[1])
 
 
-def test_extract_all_tracers_xis(sacc_galaxy_xis):
+def test_extract_all_tracers_xis(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, tracers, _ = sacc_galaxy_xis
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
@@ -177,21 +197,30 @@ def test_extract_all_tracers_xis(sacc_galaxy_xis):
         assert_array_equal(tracer.dndz, orig_tracer[1])
 
 
-def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
-    sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
+def test_extract_all_tracers_cells_src0_src0(
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, expected_bin = sacc_galaxy_cells_src0_src0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
-        assert_array_equal(tracer.dndz, dndz)
+        assert_array_equal(tracer.z, expected_bin.z)
+        assert_array_equal(tracer.dndz, expected_bin.dndz)
         assert tracer.bin_name == "src0"
         assert tracer.measurements == {Galaxies.SHEAR_E}
 
 
-def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
+def test_extract_all_tracers_cells_src0_src1(
+    sacc_galaxy_cells_src0_src1: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_src1
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
@@ -207,21 +236,30 @@ def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
             assert_array_equal(tracer.dndz, dndz1)
 
 
-def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
-    sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
+def test_extract_all_tracers_cells_lens0_lens0(
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, expected_bin = sacc_galaxy_cells_lens0_lens0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
-        assert_array_equal(tracer.dndz, dndz)
+        assert_array_equal(tracer.z, expected_bin.z)
+        assert_array_equal(tracer.dndz, expected_bin.dndz)
         assert tracer.bin_name == "lens0"
         assert tracer.measurements == {Galaxies.COUNTS}
 
 
-def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
+def test_extract_all_tracers_cells_lens0_lens1(
+    sacc_galaxy_cells_lens0_lens1: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_lens0_lens1
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
@@ -237,21 +275,30 @@ def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
             assert_array_equal(tracer.dndz, dndz1)
 
 
-def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
-    sacc_data, z, dndz = sacc_galaxy_xis_lens0_lens0
+def test_extract_all_tracers_xis_lens0_lens0(
+    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, expected_bin = sacc_galaxy_xis_lens0_lens0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
-        assert_array_equal(tracer.dndz, dndz)
+        assert_array_equal(tracer.z, expected_bin.z)
+        assert_array_equal(tracer.dndz, expected_bin.dndz)
         assert tracer.bin_name == "lens0"
         assert tracer.measurements == {Galaxies.COUNTS}
 
 
-def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
+def test_extract_all_tracers_xis_lens0_lens1(
+    sacc_galaxy_xis_lens0_lens1: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_lens0_lens1
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
@@ -267,7 +314,14 @@ def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
             assert_array_equal(tracer.dndz, dndz1)
 
 
-def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
+def test_extract_all_trace_cells_src0_lens0(
+    sacc_galaxy_cells_src0_lens0: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_lens0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
@@ -285,7 +339,14 @@ def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
             assert tracer.measurements == {Galaxies.COUNTS}
 
 
-def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
+def test_extract_all_trace_xis_src0_lens0(
+    sacc_galaxy_xis_src0_lens0: tuple[
+        sacc.Sacc,
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+    ],
+) -> None:
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_src0_lens0
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
@@ -304,8 +365,8 @@ def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
 
 
 def test_extract_all_tracers_invalid_data_type(
-    sacc_galaxy_src0_src0_invalid_data_type,
-):
+    sacc_galaxy_src0_src0_invalid_data_type: tuple[sacc.Sacc, np.ndarray, np.ndarray],
+) -> None:
     sacc_data, _, _ = sacc_galaxy_src0_src0_invalid_data_type
     assert sacc_data is not None
     with pytest.raises(
@@ -493,7 +554,16 @@ def test_extract_all_tracers_projected_fields_map_tracer_without_data() -> None:
         _ = extract_all_tracers_projected_fields(sacc_data)
 
 
-def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
+def test_extract_all_metadata_index_harmonics(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     all_data = extract_all_harmonic_metadata_indices(sacc_data)
@@ -504,7 +574,16 @@ def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
         assert (tracer_names, two_point["data_type"]) in tracer_pairs
 
 
-def test_extract_all_metadata_index_harmonics_by_type(sacc_galaxy_cells):
+def test_extract_all_metadata_index_harmonics_by_type(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     all_data = extract_all_harmonic_metadata_indices(
@@ -517,7 +596,16 @@ def test_extract_all_metadata_index_harmonics_by_type(sacc_galaxy_cells):
         assert (tracer_names, "galaxy_shear_cl_ee") in tracer_pairs
 
 
-def test_extract_all_metadata_index_reals(sacc_galaxy_xis):
+def test_extract_all_metadata_index_reals(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     all_data = extract_all_real_metadata_indices(sacc_data)
@@ -551,11 +639,9 @@ def test_extract_all_metadata_index_reals_by_type(
 
 
 def test_extract_no_window(
-    sacc_galaxy_cells_src0_src0: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+    sacc_data, _ = sacc_galaxy_cells_src0_src0
     indices = np.array([0, 1, 2], dtype=np.int64)
 
     with warnings.catch_warnings():
@@ -570,10 +656,10 @@ def test_extract_no_window(
 def test_extract_all_data_types_three_tracers_reals(
     sacc_galaxy_xis_three_tracers: tuple[
         sacc.Sacc,
-        dict[str, object],
-        dict[str, object],
-        dict[str, object],
-        dict[str, object],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
     ],
 ) -> None:
     sacc_data, _, _, _, _ = sacc_galaxy_xis_three_tracers
@@ -591,10 +677,10 @@ def test_extract_all_data_types_three_tracers_reals(
 def test_extract_all_data_types_three_tracers_harmonics(
     sacc_galaxy_cells_three_tracers: tuple[
         sacc.Sacc,
-        dict[str, object],
-        dict[str, object],
-        dict[str, object],
-        dict[str, object],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
     ],
 ) -> None:
     sacc_data, _, _, _, _ = sacc_galaxy_cells_three_tracers
@@ -758,14 +844,7 @@ def test_extract_all_harmonic_data(
 
 @pytest.mark.slow
 def test_extract_all_harmonic_with_window_data(
-    sacc_galaxy_cwindows: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-        ],
-    ],
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
@@ -799,7 +878,7 @@ def test_extract_all_real_data(
             tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
         ],
     ],
-):
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     two_point_xis = extract_all_real_data(sacc_data)
@@ -828,7 +907,7 @@ def test_constructor_harmonic_metadata(
         ],
     ],
     tp_factory: TwoPointFactory,
-):
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
@@ -845,7 +924,17 @@ def test_constructor_harmonic_metadata(
 
 
 @pytest.mark.slow
-def test_constructor_harmonic_data(sacc_galaxy_cells, tp_factory):
+def test_constructor_harmonic_data(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+    tp_factory: TwoPointFactory,
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
@@ -865,7 +954,10 @@ def test_constructor_harmonic_data(sacc_galaxy_cells, tp_factory):
         )
 
 
-def test_constructor_harmonic_with_window_metadata(sacc_galaxy_cwindows, tp_factory):
+def test_constructor_harmonic_with_window_metadata(
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+    tp_factory: TwoPointFactory,
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
@@ -876,9 +968,8 @@ def test_constructor_harmonic_with_window_metadata(sacc_galaxy_cwindows, tp_fact
 
     for two_point in two_points_new:
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
-        _, _, window = tracer_pairs[tracer_pairs_key]
-
         assert tracer_pairs_key in tracer_pairs
+        _, _, window = tracer_pairs[tracer_pairs_key]
         assert two_point.ells is not None
         assert two_point.window is not None
         assert_array_equal(
@@ -888,7 +979,9 @@ def test_constructor_harmonic_with_window_metadata(sacc_galaxy_cwindows, tp_fact
         assert_array_equal(two_point.ells, window.values)
 
 
-def test_extract_all_harmonic_metadata_normalize_true(sacc_galaxy_cwindows):
+def test_extract_all_harmonic_metadata_normalize_true(
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+) -> None:
     """Test that normalize=True normalizes windows in extract_all_harmonic_metadata."""
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -903,7 +996,9 @@ def test_extract_all_harmonic_metadata_normalize_true(sacc_galaxy_cwindows):
         assert_allclose(window_sum, np.ones_like(window_sum))
 
 
-def test_extract_all_harmonic_metadata_normalize_false(sacc_galaxy_cwindows):
+def test_extract_all_harmonic_metadata_normalize_false(
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+) -> None:
     """Test that normalize=False keeps windows unnormalized."""
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -922,7 +1017,9 @@ def test_extract_all_harmonic_metadata_normalize_false(sacc_galaxy_cwindows):
         assert not np.allclose(window_sum, np.ones_like(window_sum))
 
 
-def test_extract_all_harmonic_metadata_default_normalizes(sacc_galaxy_cwindows):
+def test_extract_all_harmonic_metadata_default_normalizes(
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+) -> None:
     """Test that the default behavior (no normalize parameter) normalizes windows."""
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -937,7 +1034,7 @@ def test_extract_all_harmonic_metadata_default_normalizes(sacc_galaxy_cwindows):
         assert_allclose(window_sum, np.ones_like(window_sum))
 
 
-def test_extract_window_function_raises_on_zero_weight():
+def test_extract_window_function_raises_on_zero_weight() -> None:
     """Test that extract_window_function raises ValueError for zero-weight columns."""
     sacc_data = sacc.Sacc()
 
@@ -983,7 +1080,7 @@ def test_extract_window_function_raises_on_zero_weight():
         extract_window_function(sacc_data, indices, normalize=True)
 
 
-def test_extract_window_function_raises_on_multiple_zero_weights():
+def test_extract_window_function_raises_on_multiple_zero_weights() -> None:
     """Test that extract_window_function reports multiple zero-weight columns."""
     sacc_data = sacc.Sacc()
 
@@ -1029,7 +1126,7 @@ def test_extract_window_function_raises_on_multiple_zero_weights():
         extract_window_function(sacc_data, indices, normalize=False)
 
 
-def test_extract_all_harmonic_metadata_raises_on_zero_weight():
+def test_extract_all_harmonic_metadata_raises_on_zero_weight() -> None:
     """Test that extract_all_harmonic_metadata raises ValueError for zero weights."""
     sacc_data = sacc.Sacc()
 
@@ -1069,7 +1166,10 @@ def test_extract_all_harmonic_metadata_raises_on_zero_weight():
 
 
 @pytest.mark.slow
-def test_constructor_harmonic_with_window_data(sacc_galaxy_cwindows, tp_factory):
+def test_constructor_harmonic_with_window_data(
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+    tp_factory: TwoPointFactory,
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
@@ -1081,9 +1181,8 @@ def test_constructor_harmonic_with_window_data(sacc_galaxy_cwindows, tp_factory)
 
     for two_point in two_points_new:
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
-        _, Cell, window = tracer_pairs[tracer_pairs_key]
-
         assert tracer_pairs_key in tracer_pairs
+        _, Cell, window = tracer_pairs[tracer_pairs_key]
         assert two_point.ells is not None
         assert_array_equal(two_point.get_data_vector(), Cell)
         assert two_point.window is not None
@@ -1094,7 +1193,17 @@ def test_constructor_harmonic_with_window_data(sacc_galaxy_cwindows, tp_factory)
         assert_array_equal(two_point.ells, window.values)
 
 
-def test_constructor_reals_metadata(sacc_galaxy_xis, tp_factory):
+def test_constructor_reals_metadata(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+    tp_factory: TwoPointFactory,
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     two_point_reals = extract_all_real_metadata(sacc_data)
@@ -1111,7 +1220,17 @@ def test_constructor_reals_metadata(sacc_galaxy_xis, tp_factory):
 
 
 @pytest.mark.slow
-def test_constructor_reals_data(sacc_galaxy_xis, tp_factory):
+def test_constructor_reals_data(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+    tp_factory: TwoPointFactory,
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     two_point_reals = extract_all_real_data(sacc_data)
@@ -1132,8 +1251,17 @@ def test_constructor_reals_data(sacc_galaxy_xis, tp_factory):
 
 
 def test_compare_constructors_harmonic(
-    sacc_galaxy_cells, tp_factory, tools_with_vanilla_cosmology
-):
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+    tp_factory: TwoPointFactory,
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
     sacc_data, _, _ = sacc_galaxy_cells
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
@@ -1178,8 +1306,10 @@ def test_compare_constructors_harmonic(
 
 
 def test_compare_constructors_harmonic_with_window(
-    sacc_galaxy_cwindows, tp_factory, tools_with_vanilla_cosmology
-):
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+    tp_factory: TwoPointFactory,
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
     sacc_data, _, _ = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
@@ -1230,8 +1360,17 @@ def test_compare_constructors_harmonic_with_window(
 
 
 def test_compare_constructors_reals(
-    sacc_galaxy_xis, tp_factory, tools_with_vanilla_cosmology
-):
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+    tp_factory: TwoPointFactory,
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
     sacc_data, _, _ = sacc_galaxy_xis
 
     two_point_xis = extract_all_real_data(sacc_data)
@@ -1275,7 +1414,16 @@ def test_compare_constructors_reals(
         )
 
 
-def test_extract_all_data_harmonic_no_cov(sacc_galaxy_cells):
+def test_extract_all_data_harmonic_no_cov(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, _, _ = sacc_galaxy_cells
     sacc_data.covariance = None
     with pytest.raises(
@@ -1285,7 +1433,16 @@ def test_extract_all_data_harmonic_no_cov(sacc_galaxy_cells):
         _ = extract_all_harmonic_data(sacc_data)
 
 
-def test_extract_all_data_real_no_cov(sacc_galaxy_xis):
+def test_extract_all_data_real_no_cov(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, _, _ = sacc_galaxy_xis
     sacc_data.covariance = None
     with pytest.raises(
@@ -1295,7 +1452,7 @@ def test_extract_all_data_real_no_cov(sacc_galaxy_xis):
         _ = extract_all_real_data(sacc_data)
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_basic():
+def test_make_all_photoz_bin_combinations_with_cmb_basic() -> None:
     """Test basic functionality of make_all_photoz_bin_combinations_with_cmb."""
     # Create test galaxy bins
     galaxy_bins = [
@@ -1338,7 +1495,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_basic():
     assert len(galaxy_combinations_in_result) == len(galaxy_only_combinations)
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_with_auto():
+def test_make_all_photoz_bin_combinations_with_cmb_with_auto() -> None:
     """Test make_all_photoz_bin_combinations_with_cmb with CMB auto-correlation."""
     galaxy_bins = [
         TomographicBin(
@@ -1372,7 +1529,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_with_auto():
     assert cmb_auto.y.bin_name == "cmb_convergence"
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name():
+def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name() -> None:
     """Test make_all_photoz_bin_combinations_with_cmb with custom CMB tracer name."""
     galaxy_bins = [
         TomographicBin(
@@ -1406,7 +1563,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name():
             assert combo.y.bin_name == custom_name
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_measurement_compatibility():
+def test_make_all_photoz_bin_combinations_with_cmb_measurement_compatibility() -> None:
     """Test that only compatible measurements create CMB-galaxy cross-correlations."""
     galaxy_bins = [
         TomographicBin(
@@ -1457,7 +1614,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_measurement_compatibility():
         assert expected in actual_combinations
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_empty_input():
+def test_make_all_photoz_bin_combinations_with_cmb_empty_input() -> None:
     """Test make_all_photoz_bin_combinations_with_cmb with empty galaxy bins."""
     combinations = make_all_photoz_bin_combinations_with_cmb([])
 
@@ -1465,7 +1622,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty_input():
     assert len(combinations) == 0
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
+def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties() -> None:
     """Test that the created CMB bin has correct properties."""
     galaxy_bins = [
         TomographicBin(
@@ -1491,7 +1648,9 @@ def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
 
 
 @pytest.mark.parametrize("include_auto", [True, False])
-def test_make_all_photoz_bin_combinations_with_cmb_parametrized(include_auto: bool):
+def test_make_all_photoz_bin_combinations_with_cmb_parametrized(
+    include_auto: bool,
+) -> None:
     """Parametrized test for CMB auto-correlation inclusion."""
     galaxy_bins = [
         TomographicBin(
@@ -1522,7 +1681,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_parametrized(include_auto: bo
         assert cmb_auto_count == 0
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_multiple_measurements():
+def test_make_all_photoz_bin_combinations_with_cmb_multiple_measurements() -> None:
     """Test with galaxy bins that have multiple measurement types."""
     galaxy_bins = [
         TomographicBin(
@@ -1566,7 +1725,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_multiple_measurements():
     assert Galaxies.SHEAR_E in galaxy_measurements
 
 
-def test_make_cmb_galaxy_combinations_only_basic():
+def test_make_cmb_galaxy_combinations_only_basic() -> None:
     """Test basic functionality of make_cmb_galaxy_combinations_only."""
     # Create test galaxy bins
     galaxy_bins = [
@@ -1621,7 +1780,7 @@ def test_make_cmb_galaxy_combinations_only_basic():
     assert len(cmb_auto_combinations) == 0
 
 
-def test_make_cmb_galaxy_combinations_only_custom_tracer_name():
+def test_make_cmb_galaxy_combinations_only_custom_tracer_name() -> None:
     """Test make_cmb_galaxy_combinations_only with custom CMB tracer name."""
     galaxy_bins = [
         TomographicBin(
@@ -1655,7 +1814,7 @@ def test_make_cmb_galaxy_combinations_only_custom_tracer_name():
             assert combo.y.bin_name == custom_name
 
 
-def test_make_cmb_galaxy_combinations_only_measurement_compatibility():
+def test_make_cmb_galaxy_combinations_only_measurement_compatibility() -> None:
     """Test that only compatible measurements create CMB-galaxy cross-correlations."""
     galaxy_bins = [
         TomographicBin(
@@ -1692,7 +1851,7 @@ def test_make_cmb_galaxy_combinations_only_measurement_compatibility():
         assert expected in actual_combinations
 
 
-def test_make_cmb_galaxy_combinations_only_empty_input():
+def test_make_cmb_galaxy_combinations_only_empty_input() -> None:
     """Test make_cmb_galaxy_combinations_only with empty galaxy bins."""
     combinations = make_cmb_galaxy_combinations_only([])
 
@@ -1700,7 +1859,7 @@ def test_make_cmb_galaxy_combinations_only_empty_input():
     assert len(combinations) == 0
 
 
-def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
+def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0() -> None:
     """Test behavior with galaxy measurements incompatible with CMB convergence."""
     # Create a galaxy bin with a measurement that might not be compatible
     # (This test depends on what measurements are actually incompatible)
@@ -1726,7 +1885,7 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
         )
 
 
-def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
+def test_make_cmb_galaxy_combinations_only_cmb_bin_properties() -> None:
     """Test that the created CMB bin has correct properties."""
     galaxy_bins = [
         TomographicBin(
@@ -1751,7 +1910,7 @@ def test_make_cmb_galaxy_combinations_only_cmb_bin_properties():
     assert cmb_bin.type_source == TypeSource.DEFAULT
 
 
-def test_make_cmb_galaxy_combinations_only_multiple_measurements():
+def test_make_cmb_galaxy_combinations_only_multiple_measurements() -> None:
     """Test with galaxy bins that have multiple measurement types."""
     galaxy_bins = [
         TomographicBin(
@@ -1782,7 +1941,7 @@ def test_make_cmb_galaxy_combinations_only_multiple_measurements():
     assert Galaxies.SHEAR_E in galaxy_measurements
 
 
-def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
+def test_make_cmb_galaxy_combinations_only_symmetric_pairs() -> None:
     """Test that symmetric pairs are created for each compatible measurement."""
     galaxy_bins = [
         TomographicBin(
@@ -1814,7 +1973,7 @@ def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
     assert not galaxy_first
 
 
-def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
+def test_make_cmb_galaxy_combinations_only_single_galaxy_bin() -> None:
     """Test with a single galaxy bin."""
     galaxy_bins = [
         TomographicBin(
@@ -1838,7 +1997,7 @@ def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
 
 
 @pytest.mark.parametrize("cmb_name", ["cmb_convergence", "cmb_kappa", "planck_cmb"])
-def test_make_cmb_galaxy_combinations_only_parametrized_names(cmb_name: str):
+def test_make_cmb_galaxy_combinations_only_parametrized_names(cmb_name: str) -> None:
     """Parametrized test for different CMB tracer names."""
     galaxy_bins = [
         TomographicBin(
@@ -1861,7 +2020,7 @@ def test_make_cmb_galaxy_combinations_only_parametrized_names(cmb_name: str):
             assert combo.y.bin_name == cmb_name
 
 
-def test_make_cmb_galaxy_combinations_only_vs_with_cmb():
+def test_make_cmb_galaxy_combinations_only_vs_with_cmb() -> None:
     """Test that this function is equivalent to
     make_all_photoz_bin_combinations_with_cmb
     without galaxy combinations."""
@@ -1914,7 +2073,7 @@ def test_make_cmb_galaxy_combinations_only_vs_with_cmb():
     assert cmb_only_tuples == cmb_from_all_tuples
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
+def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements() -> None:
     """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
     galaxy_bins = [
         TomographicBin(
@@ -1967,7 +2126,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
     assert Galaxies.SHEAR_T in galaxy_measurements
 
 
-def test_make_cmb_galaxy_combinations_only_incompatible_measurements():
+def test_make_cmb_galaxy_combinations_only_incompatible_measurements() -> None:
     """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
     galaxy_bins = [
         TomographicBin(
@@ -2006,7 +2165,7 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements():
     assert Galaxies.SHEAR_T in galaxy_measurements
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
+def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible() -> None:
     """Test behavior when all galaxy measurements are incompatible with CMB."""
     # Since we can't find truly incompatible measurements, let's test with
     # measurements that we know ARE compatible and adjust expectations
@@ -2046,7 +2205,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
     assert len(combinations) == len(galaxy_only_combinations) + len(cmb_combinations)
 
 
-def test_make_cmb_galaxy_combinations_only_all_incompatible():
+def test_make_cmb_galaxy_combinations_only_all_incompatible() -> None:
     """Test behavior when all galaxy measurements are incompatible with CMB."""
     # Since we can't find truly incompatible measurements, let's test with
     # measurements that we know ARE compatible and adjust expectations
@@ -2065,7 +2224,7 @@ def test_make_cmb_galaxy_combinations_only_all_incompatible():
     assert len(combinations) == 1
 
 
-def test_make_all_photoz_bin_combinations_with_cmb_empty():
+def test_make_all_photoz_bin_combinations_with_cmb_empty() -> None:
     """Test behavior when given an empty list of galaxy bins."""
     galaxy_bins = [
         TomographicBin(
@@ -2081,7 +2240,16 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty():
     assert len(combinations) == 0
 
 
-def test_extract_all_photoz_bin_combinations_with_selector(sacc_galaxy_cells):
+def test_extract_all_photoz_bin_combinations_with_selector(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_photoz_bin_combinations with bin_pair_selector."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2103,7 +2271,16 @@ def test_extract_all_photoz_bin_combinations_with_selector(sacc_galaxy_cells):
     assert len(auto_combinations) > 0
 
 
-def test_extract_all_photoz_bin_combinations_with_source_selector(sacc_galaxy_cells):
+def test_extract_all_photoz_bin_combinations_with_source_selector(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_photoz_bin_combinations with source bin selector."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2122,7 +2299,16 @@ def test_extract_all_photoz_bin_combinations_with_source_selector(sacc_galaxy_ce
     assert len(source_combinations) > 0
 
 
-def test_extract_all_photoz_bin_combinations_with_lens_selector(sacc_galaxy_cells):
+def test_extract_all_photoz_bin_combinations_with_lens_selector(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_photoz_bin_combinations with lens bin selector."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2140,7 +2326,16 @@ def test_extract_all_photoz_bin_combinations_with_lens_selector(sacc_galaxy_cell
     assert len(lens_combinations) > 0
 
 
-def test_extract_all_harmonic_metadata_with_selector(sacc_galaxy_cells):
+def test_extract_all_harmonic_metadata_with_selector(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_harmonic_metadata with bin_pair_selector."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2167,7 +2362,16 @@ def test_extract_all_harmonic_metadata_with_selector(sacc_galaxy_cells):
         assert isinstance(meta.ells, np.ndarray)
 
 
-def test_extract_all_harmonic_metadata_with_source_selector(sacc_galaxy_cells):
+def test_extract_all_harmonic_metadata_with_source_selector(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_harmonic_metadata with source bin selector."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2184,7 +2388,16 @@ def test_extract_all_harmonic_metadata_with_source_selector(sacc_galaxy_cells):
     assert len(source_metadata) > 0
 
 
-def test_extract_all_harmonic_metadata_with_combined_selector(sacc_galaxy_cells):
+def test_extract_all_harmonic_metadata_with_combined_selector(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_harmonic_metadata with combined selectors."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2202,7 +2415,16 @@ def test_extract_all_harmonic_metadata_with_combined_selector(sacc_galaxy_cells)
     assert len(filtered_metadata) > 0
 
 
-def test_extract_all_real_metadata_with_selector(sacc_galaxy_xis):
+def test_extract_all_real_metadata_with_selector(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_real_metadata with bin_pair_selector."""
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -2229,7 +2451,16 @@ def test_extract_all_real_metadata_with_selector(sacc_galaxy_xis):
         assert isinstance(meta.thetas, np.ndarray)
 
 
-def test_extract_all_real_metadata_with_lens_selector(sacc_galaxy_xis):
+def test_extract_all_real_metadata_with_lens_selector(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_real_metadata with lens bin selector."""
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -2247,7 +2478,16 @@ def test_extract_all_real_metadata_with_lens_selector(sacc_galaxy_xis):
     assert len(lens_metadata) > 0
 
 
-def test_extract_all_real_metadata_with_combined_selector(sacc_galaxy_xis):
+def test_extract_all_real_metadata_with_combined_selector(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_real_metadata with combined selectors."""
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -2266,7 +2506,16 @@ def test_extract_all_real_metadata_with_combined_selector(sacc_galaxy_xis):
     assert len(filtered_metadata) > 0
 
 
-def test_extract_all_harmonic_metadata_with_not_selector(sacc_galaxy_cells):
+def test_extract_all_harmonic_metadata_with_not_selector(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_harmonic_metadata with NOT selector."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2293,7 +2542,16 @@ def test_extract_all_harmonic_metadata_with_not_selector(sacc_galaxy_cells):
     assert len(auto_metadata) + len(cross_metadata) == len(all_metadata)
 
 
-def test_extract_all_real_metadata_with_or_selector(sacc_galaxy_xis):
+def test_extract_all_real_metadata_with_or_selector(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test extract_all_real_metadata with OR selector."""
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -2325,7 +2583,16 @@ def test_extract_all_real_metadata_with_or_selector(sacc_galaxy_xis):
     assert len(filtered_metadata) > 0
 
 
-def test_extract_with_selector_empty_result(sacc_galaxy_cells):
+def test_extract_with_selector_empty_result(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test that selector can result in empty extraction."""
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -2344,7 +2611,16 @@ def test_extract_with_selector_empty_result(sacc_galaxy_cells):
     assert len(empty_harmonic) == 0
 
 
-def test_extract_with_selector_preserves_data_quality(sacc_galaxy_cells):
+def test_extract_with_selector_preserves_data_quality(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     """Test that using selector doesn't affect data quality of extracted metadata."""
     sacc_data, _, _ = sacc_galaxy_cells
 
