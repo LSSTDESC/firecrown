@@ -192,6 +192,20 @@ def _comment(
     return {"id": 42, "body": body, "user": {"login": login, "type": kind}}
 
 
+@pytest.mark.parametrize("value", [None, [], "not an object"])
+def test_get_rejects_non_object_json(value: object) -> None:
+    """Reject JSON responses that are not objects.
+
+    :param value: Non-object JSON response supplied by the transport.
+    """
+    api = GitHub(
+        "test-token",
+        lambda _method, _url, _headers, _body: json.dumps(value).encode("utf-8"),
+    )
+    with pytest.raises(PublicationError, match="^Expected a JSON object$"):
+        api.get(ROOT + "/pulls/7")
+
+
 @pytest.mark.parametrize(
     "target,verdict",
     [
@@ -384,6 +398,7 @@ def test_zip_attacks(attack: str) -> None:
         ("event", "push"),
         ("repository", FORK),
         ("status", "in_progress"),
+        ("run_attempt", True),
     ],
 )
 def test_reject_untrusted_run(field: str, value: object) -> None:
