@@ -1,5 +1,10 @@
-"""Shared types for test fixtures."""
+"""Shared types for test fixtures.
 
+Frozen records bind named fields, but do not freeze nested arrays, maps, or SACC.
+Array annotations specify dtype, not semantic role, shape, or physical units.
+"""
+
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeAlias, TypedDict
 
 import numpy as np
@@ -10,6 +15,44 @@ from firecrown.metadata_types import TracerNames
 
 if TYPE_CHECKING:
     from numcosmo_py import Nc
+
+
+@dataclass(frozen=True, kw_only=True)
+class SampledRedshiftDistribution:
+    """Independent sampled redshift coordinates and unnormalized number density.
+
+    :param z: Sampled redshift coordinates.
+    :param dndz: Number-density values on the redshift grid; not normalized.
+    """
+
+    z: npt.NDArray[np.float64]
+    dndz: npt.NDArray[np.float64]
+
+
+@dataclass(frozen=True, kw_only=True)
+class HarmonicAngularPowerSpectrum:
+    """Independent unwindowed harmonic coordinates and measured cells.
+
+    :param ells: Integer multipoles for the measurements.
+    :param cells: Measured angular power spectrum values, not theory predictions.
+    """
+
+    ells: npt.NDArray[np.int64]
+    cells: npt.NDArray[np.float64]
+
+
+@dataclass(frozen=True, kw_only=True)
+class SaccGalaxyHarmonicFixture:
+    """Harmonic SACC data with independently generated named expectations.
+
+    :param sacc_data: SACC data used by production extraction and construction.
+    :param distributions: Redshift distributions keyed by tracer name.
+    :param spectra: Measured spectra keyed by ordered tracer names and data type.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
+    spectra: dict[tuple[TracerNames, str], HarmonicAngularPowerSpectrum]
 
 
 RedshiftDistribution: TypeAlias = tuple[
