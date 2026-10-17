@@ -74,22 +74,41 @@ def fixture_window_function() -> ScaleCutWindowFunction:
     )
 
 
+@dataclass(frozen=True, kw_only=True)
+class ScaleCutBandpowerPrediction:
+    """Independent CCL bandpower predictions and their scale-cut window context.
+
+    :param bandpowers: CCL predictions projected through the normalized window,
+        one value per bin, also used as the fixture's SACC measurements.
+    :param window: Shared normalized weights, support multipoles, and geometric
+        bin centers; frozen bindings do not freeze its arrays or check shapes.
+    """
+
+    bandpowers: npt.NDArray[np.float64]
+    window: ScaleCutWindowFunction
+
+
+@dataclass(frozen=True, kw_only=True)
+class ScaleCutSaccFixture:
+    """Cosmic-shear SACC data with independent predictions and their cosmology.
+
+    Frozen bindings leave SACC, the spectrum mapping, and nested arrays mutable.
+    Names and dtype annotations do not check same-dtype swaps, shapes, or units.
+
+    :param sacc_data: Windowed SACC measurements for production likelihood loading.
+    :param spectra: Independent CCL predictions keyed by ordered tracer-pair names.
+    :param cosmology: Cosmology used to generate the CCL tracers and predictions.
+    """
+
+    sacc_data: sacc.Sacc
+    spectra: dict[str, ScaleCutBandpowerPrediction]
+    cosmology: ccl.Cosmology
+
+
 @pytest.fixture(name="minimal_3x2pt_sacc", scope="module")
 def fixture_minimal_3x2pt_sacc(
     window_function_data: ScaleCutWindowFunction,
-) -> tuple[
-    sacc.Sacc,
-    dict[
-        str,
-        tuple[
-            npt.NDArray[np.float64],
-            npt.NDArray[np.float64],
-            npt.NDArray[np.int64],
-            npt.NDArray[np.float64],
-        ],
-    ],
-    ccl.Cosmology,
-]:
+) -> ScaleCutSaccFixture:
     """Generate SACC data with window functions for cosmic shear only.
 
     :param window_function_data: Window weights, support, and observation centers.
@@ -101,12 +120,12 @@ def fixture_minimal_3x2pt_sacc(
 
     src_bins_centers = np.linspace(0.25, 0.75, 2)
 
-    ccl_tracers = {}
-    ccl_cell = {}
+    ccl_tracers: dict[str, ccl.WeakLensingTracer] = {}
+    ccl_cell: dict[str, ScaleCutBandpowerPrediction] = {}
     cosmo = ccl.CosmologyVanillaLCDM()
 
     for i, mn in enumerate(src_bins_centers):
-        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05**2)
+        dndz: npt.NDArray[np.float64] = np.exp(-0.5 * (z - mn) ** 2 / 0.05**2)
         sacc_data.add_tracer("NZ", f"src{i}", z, dndz)
         ccl_tracers[f"src{i}"] = ccl.WeakLensingTracer(
             cosmo=cosmo,
@@ -117,13 +136,13 @@ def fixture_minimal_3x2pt_sacc(
         window = sacc.BandpowerWindow(
             window_function_data.support_ells, window_function_data.weights
         )
-        Cell = ccl.angular_cl(
+        Cell: npt.NDArray[np.float64] = ccl.angular_cl(
             cosmo=cosmo,
             tracer1=ccl_tracers[f"src{i}"],
             tracer2=ccl_tracers[f"src{j}"],
             ell=window_function_data.support_ells,
         )
-        Cell_binned = window_function_data.weights.T @ Cell
+        Cell_binned: npt.NDArray[np.float64] = window_function_data.weights.T @ Cell
         sacc_data.add_ell_cl(
             data_type="galaxy_shear_cl_ee",
             tracer1=f"src{i}",
@@ -132,16 +151,14 @@ def fixture_minimal_3x2pt_sacc(
             x=Cell_binned,
             window=window,
         )
-        ccl_cell[f"src{i}-src{j}"] = (
-            Cell_binned,
-            window_function_data.bin_centers,
-            window_function_data.support_ells,
-            window_function_data.weights,
+        ccl_cell[f"src{i}-src{j}"] = ScaleCutBandpowerPrediction(
+            bandpowers=Cell_binned,
+            window=window_function_data,
         )
 
     sacc_data.add_covariance(np.identity(len(sacc_data)) * 0.01)
 
-    return sacc_data, ccl_cell, cosmo
+    return ScaleCutSaccFixture(sacc_data=sacc_data, spectra=ccl_cell, cosmology=cosmo)
 
 
 @pytest.fixture(
@@ -169,24 +186,19 @@ weak_lensing_factories:
 
 
 def test_scale_cuts_with_bandpower_window_label(
-    minimal_3x2pt_sacc: tuple[
-        sacc.Sacc,
-        dict[
-            str,
-            tuple[
-                npt.NDArray[np.float64],
-                npt.NDArray[np.float64],
-                npt.NDArray[np.int64],
-                npt.NDArray[np.float64],
-            ],
-        ],
-        ccl.Cosmology,
-    ],
+    minimal_3x2pt_sacc: ScaleCutSaccFixture,
     cut: tuple[str, str, int],
     tmp_path: Path,
 ) -> None:
-    """Test that the scale cuts with bandpower windows work correctly."""
-    sacc_data, ccl_cell, cosmo = minimal_3x2pt_sacc
+    """Test scale cuts selected by bandpower window labels.
+
+    :param minimal_3x2pt_sacc: SACC data, independent CCL predictions, and cosmology.
+    :param cut: Ordered tracer names and upper multipole threshold.
+    :param tmp_path: Directory for the SACC file loaded by the likelihood factory.
+    """
+    sacc_data = minimal_3x2pt_sacc.sacc_data
+    ccl_cell = minimal_3x2pt_sacc.spectra
+    cosmo = minimal_3x2pt_sacc.cosmology
 
     tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 
@@ -236,8 +248,12 @@ def test_scale_cuts_with_bandpower_window_label(
 
     ccl_cell_cut_data_vector = np.concatenate(
         [
-            cell if name != f"{cut[0]}-{cut[1]}" else cell[window_ell < cut[2]]
-            for name, (cell, window_ell, _, _) in ccl_cell.items()
+            (
+                spectrum.bandpowers
+                if name != f"{cut[0]}-{cut[1]}"
+                else spectrum.bandpowers[spectrum.window.bin_centers < cut[2]]
+            )
+            for name, spectrum in ccl_cell.items()
         ]
     )
     # Check that the shapes match (i.e. that the correct data points are selected)
@@ -255,25 +271,21 @@ def test_scale_cuts_with_bandpower_window_label(
     ],
 )
 def test_scale_cuts_with_bandpower_window_support(
-    minimal_3x2pt_sacc: tuple[
-        sacc.Sacc,
-        dict[
-            str,
-            tuple[
-                npt.NDArray[np.float64],
-                npt.NDArray[np.float64],
-                npt.NDArray[np.int64],
-                npt.NDArray[np.float64],
-            ],
-        ],
-        ccl.Cosmology,
-    ],
+    minimal_3x2pt_sacc: ScaleCutSaccFixture,
     cut: tuple[str, str, int],
     method: tuple[TwoPointFilterMethod, float],
     tmp_path: Path,
 ) -> None:
-    """Test that the scale cuts with bandpower windows work correctly."""
-    sacc_data, ccl_cell, cosmo = minimal_3x2pt_sacc
+    """Test scale cuts selected by cumulative bandpower window support.
+
+    :param minimal_3x2pt_sacc: SACC data, independent CCL predictions, and cosmology.
+    :param cut: Ordered tracer names and upper multipole threshold.
+    :param method: Filter method and required fraction of window support.
+    :param tmp_path: Directory for the SACC file loaded by the likelihood factory.
+    """
+    sacc_data = minimal_3x2pt_sacc.sacc_data
+    ccl_cell = minimal_3x2pt_sacc.spectra
+    cosmo = minimal_3x2pt_sacc.cosmology
 
     tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 
@@ -324,11 +336,16 @@ def test_scale_cuts_with_bandpower_window_support(
     ccl_cell_cut_data_vector = np.concatenate(
         [
             (
-                cell
+                spectrum.bandpowers
                 if name != f"{cut[0]}-{cut[1]}"
-                else cell[window[ell < cut[2]].sum(axis=0) >= method[1]]
+                else spectrum.bandpowers[
+                    spectrum.window.weights[spectrum.window.support_ells < cut[2]].sum(
+                        axis=0
+                    )
+                    >= method[1]
+                ]
             )
-            for name, (cell, _, ell, window) in ccl_cell.items()
+            for name, spectrum in ccl_cell.items()
         ]
     )
     # Check that the shapes match (i.e. that the correct data points are selected)
