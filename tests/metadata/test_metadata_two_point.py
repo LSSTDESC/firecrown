@@ -5,7 +5,6 @@ Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 import dataclasses
 
 import numpy as np
-import numpy.typing as npt
 import pytest
 import sacc
 from numpy.testing import assert_array_equal
@@ -46,7 +45,7 @@ from firecrown.metadata_types._sacc_type_string import (
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
-from tests._types import SaccHarmonicCrossBinFixture
+from tests._types import SaccHarmonicCrossBinFixture, SaccRealCrossBinFixture
 
 
 def test_inferred_galaxy_z_dist() -> None:
@@ -1136,20 +1135,17 @@ def test_make_two_point_xy_sacc_convention_explanation() -> None:
 
 
 def test_extract_all_real_metadata_indices_no_swap(
-    sacc_galaxy_xis_src0_lens0: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_xis_src0_lens0: SaccRealCrossBinFixture,
 ) -> None:
     """Test extract_all_real_metadata_indices with no tracer swap needed.
 
     This test verifies that when tracers are in the correct order according to
     the SACC convention (measurement type order matches tracer order), no swap
     is performed.
+
+    :param sacc_galaxy_xis_src0_lens0: Source-lens real SACC data and expectations.
     """
-    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0
+    sacc_data = sacc_galaxy_xis_src0_lens0.sacc_data
 
     indices = extract_all_real_metadata_indices(sacc_data)
 
