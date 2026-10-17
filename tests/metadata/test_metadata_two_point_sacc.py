@@ -58,7 +58,7 @@ from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real,
 )
 from firecrown.updatable import ParamsMap
-from tests._types import SaccGalaxyWindowedFixture
+from tests._types import SaccGalaxyHarmonicFixture, SaccGalaxyWindowedFixture
 
 # pylint: disable=too-many-lines
 
@@ -178,23 +178,21 @@ def fixture_sacc_galaxy_cells_three_tracers() -> tuple[
 
 
 def test_extract_all_tracers_cells(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, tracers, _ = sacc_galaxy_cells
+    """Extract harmonic tracer distributions matching independent expectations.
+
+    :param sacc_galaxy_cells: Harmonic SACC data and named expected distributions.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
+    tracers = sacc_galaxy_cells.distributions
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
-        assert_array_equal(tracer.z, orig_tracer[0])
-        assert_array_equal(tracer.dndz, orig_tracer[1])
+        assert_array_equal(tracer.z, orig_tracer.z)
+        assert_array_equal(tracer.dndz, orig_tracer.dndz)
 
 
 def test_extract_all_tracers_xis(
@@ -582,16 +580,14 @@ def test_extract_all_tracers_projected_fields_map_tracer_without_data() -> None:
 
 
 def test_extract_all_metadata_index_harmonics(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+    """Extract harmonic indices for every expected tracer pair and data type.
+
+    :param sacc_galaxy_cells: Harmonic SACC data and expected spectra.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
+    tracer_pairs = sacc_galaxy_cells.spectra
 
     all_data = extract_all_harmonic_metadata_indices(sacc_data)
     assert len(all_data) == len(tracer_pairs)
@@ -602,16 +598,14 @@ def test_extract_all_metadata_index_harmonics(
 
 
 def test_extract_all_metadata_index_harmonics_by_type(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+    """Filter harmonic metadata indices to the requested shear data type.
+
+    :param sacc_galaxy_cells: Harmonic SACC data and expected spectra.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
+    tracer_pairs = sacc_galaxy_cells.spectra
 
     all_data = extract_all_harmonic_metadata_indices(
         sacc_data, allowed_data_type=["galaxy_shear_cl_ee"]
@@ -767,16 +761,14 @@ def test_extract_all_photoz_bin_combinations_reals(
 
 
 def test_extract_all_photoz_bin_combinations_harmonics(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+    """Recover expected harmonic bin combinations and their SACC names.
+
+    :param sacc_galaxy_cells: Harmonic SACC data and expected spectra.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
+    tracer_pairs = sacc_galaxy_cells.spectra
     # We build all possible combinations of tracers
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
 
@@ -803,16 +795,13 @@ def test_extract_all_photoz_bin_combinations_harmonics(
 
 
 def test_make_harmonics(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Construct harmonic metadata from extracted bin combinations and multipoles.
+
+    :param sacc_galaxy_cells: Harmonic SACC data used to extract bin combinations.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
@@ -852,16 +841,14 @@ def test_make_reals(
 
 @pytest.mark.slow
 def test_extract_all_harmonic_data(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+    """Extract consistent harmonic measurements matching independent expectations.
+
+    :param sacc_galaxy_cells: Harmonic SACC data and named expected spectra.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
+    tracer_pairs = sacc_galaxy_cells.spectra
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
     assert len(two_point_harmonics) == len(tracer_pairs)
@@ -872,9 +859,9 @@ def test_extract_all_harmonic_data(
         tracer_names = TracerNames(metadata.XY.x.bin_name, metadata.XY.y.bin_name)
         assert (tracer_names, metadata.get_sacc_name()) in tracer_pairs
 
-        ells, Cell = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
-        assert_array_equal(metadata.ells, ells)
-        assert_array_equal(two_point.data, Cell)
+        spectrum = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
+        assert_array_equal(metadata.ells, spectrum.ells)
+        assert_array_equal(two_point.data, spectrum.cells)
 
     check_two_point_consistence_harmonic(two_point_harmonics)
 
@@ -935,17 +922,16 @@ def test_extract_all_real_data(
 
 
 def test_constructor_harmonic_metadata(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+    """Construct TwoPoint statistics from extracted harmonic metadata.
+
+    :param sacc_galaxy_cells: Harmonic SACC data and expected spectra.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
+    tracer_pairs = sacc_galaxy_cells.spectra
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
 
@@ -957,22 +943,21 @@ def test_constructor_harmonic_metadata(
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
         assert tracer_pairs_key in tracer_pairs
         assert two_point.ells is not None
-        assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key][0])
+        assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key].ells)
 
 
 @pytest.mark.slow
 def test_constructor_harmonic_data(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+    """Construct TwoPoint statistics matching independently generated measurements.
+
+    :param sacc_galaxy_cells: Harmonic SACC data and expected spectra.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
+    tracer_pairs = sacc_galaxy_cells.spectra
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
@@ -985,9 +970,9 @@ def test_constructor_harmonic_data(
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
         assert tracer_pairs_key in tracer_pairs
         assert two_point.ells is not None
-        assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key][0])
+        assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key].ells)
         assert_array_equal(
-            two_point.get_data_vector(), tracer_pairs[tracer_pairs_key][1]
+            two_point.get_data_vector(), tracer_pairs[tracer_pairs_key].cells
         )
 
 
@@ -1288,18 +1273,17 @@ def test_constructor_reals_data(
 
 
 def test_compare_constructors_harmonic(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
     tp_factory: TwoPointFactory,
     tools_with_vanilla_cosmology: ModelingTools,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Compare harmonic measurement construction with the original SACC read path.
+
+    :param sacc_galaxy_cells: Harmonic SACC data for both construction paths.
+    :param tp_factory: Factory for the statistics' sources.
+    :param tools_with_vanilla_cosmology: Tools for comparing theory vectors.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
@@ -1452,22 +1436,27 @@ def test_compare_constructors_reals(
 
 
 def test_extract_all_data_harmonic_no_cov(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Reject missing covariance without mutating the shared harmonic fixture.
+
+    :param sacc_galaxy_cells: Shared harmonic SACC data and independent expectations.
+    """
+    shared_sacc = sacc_galaxy_cells.sacc_data
+    shared_covariance = shared_sacc.covariance
+    assert shared_covariance is not None
+    expected_covariance = shared_covariance.dense.copy()
+    sacc_data = shared_sacc.copy()
     sacc_data.covariance = None
     with pytest.raises(
         ValueError,
         match=("The SACC object does not have a dense covariance matrix."),
     ):
         _ = extract_all_harmonic_data(sacc_data)
+
+    assert sacc_data.covariance is None
+    assert shared_sacc.covariance is shared_covariance
+    assert_array_equal(shared_sacc.covariance.dense, expected_covariance)
 
 
 def test_extract_all_data_real_no_cov(
@@ -2278,17 +2267,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty() -> None:
 
 
 def test_extract_all_photoz_bin_combinations_with_selector(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test extract_all_photoz_bin_combinations with bin_pair_selector."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test extract_all_photoz_bin_combinations with bin_pair_selector.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter by bin pair.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # Without selector - should get all combinations
     all_combinations = extract_all_photoz_bin_combinations(sacc_data)
@@ -2309,17 +2294,13 @@ def test_extract_all_photoz_bin_combinations_with_selector(
 
 
 def test_extract_all_photoz_bin_combinations_with_source_selector(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test extract_all_photoz_bin_combinations with source bin selector."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test extract_all_photoz_bin_combinations with source bin selector.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter to source measurements.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # With source selector - should only get source (shear) measurements
     source_selector = SourceBinPairSelector()
@@ -2337,17 +2318,13 @@ def test_extract_all_photoz_bin_combinations_with_source_selector(
 
 
 def test_extract_all_photoz_bin_combinations_with_lens_selector(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test extract_all_photoz_bin_combinations with lens bin selector."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test extract_all_photoz_bin_combinations with lens bin selector.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter to lens measurements.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # With lens selector - should only get lens (counts) measurements
     lens_selector = LensBinPairSelector()
@@ -2364,17 +2341,13 @@ def test_extract_all_photoz_bin_combinations_with_lens_selector(
 
 
 def test_extract_all_harmonic_metadata_with_selector(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test extract_all_harmonic_metadata with bin_pair_selector."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test extract_all_harmonic_metadata with bin_pair_selector.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter by bin pair.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # Without selector - should get all metadata
     all_metadata = extract_all_harmonic_metadata(sacc_data)
@@ -2400,17 +2373,13 @@ def test_extract_all_harmonic_metadata_with_selector(
 
 
 def test_extract_all_harmonic_metadata_with_source_selector(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test extract_all_harmonic_metadata with source bin selector."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test extract_all_harmonic_metadata with source bin selector.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter to source measurements.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # With source selector - should only get source (shear) measurements
     source_selector = SourceBinPairSelector()
@@ -2426,17 +2395,13 @@ def test_extract_all_harmonic_metadata_with_source_selector(
 
 
 def test_extract_all_harmonic_metadata_with_combined_selector(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test extract_all_harmonic_metadata with combined selectors."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test extract_all_harmonic_metadata with combined selectors.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter by combined selectors.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # Combine auto-name and auto-measurement selectors
     combined_selector = AutoNameBinPairSelector() & AutoMeasurementBinPairSelector()
@@ -2544,17 +2509,13 @@ def test_extract_all_real_metadata_with_combined_selector(
 
 
 def test_extract_all_harmonic_metadata_with_not_selector(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test extract_all_harmonic_metadata with NOT selector."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test extract_all_harmonic_metadata with NOT selector.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter by an inverted selector.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # Get all metadata
     all_metadata = extract_all_harmonic_metadata(sacc_data)
@@ -2621,17 +2582,13 @@ def test_extract_all_real_metadata_with_or_selector(
 
 
 def test_extract_with_selector_empty_result(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test that selector can result in empty extraction."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test that selector can result in empty extraction.
+
+    :param sacc_galaxy_cells: Harmonic SACC data to filter to nonexistent bins.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # Create selector for non-existent bin names
     impossible_selector = NamedBinPairSelector(names=[("nonexistent1", "nonexistent2")])
@@ -2649,17 +2606,13 @@ def test_extract_with_selector_empty_result(
 
 
 def test_extract_with_selector_preserves_data_quality(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Test that using selector doesn't affect data quality of extracted metadata."""
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Test that using selector doesn't affect data quality of extracted metadata.
+
+    :param sacc_galaxy_cells: Harmonic SACC data for filtered and full extraction.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # Extract without selector
     all_metadata = extract_all_harmonic_metadata(sacc_data)

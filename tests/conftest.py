@@ -44,8 +44,11 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap, get_default_params_map
 from firecrown.utils import upper_triangle_indices
 from tests._types import (
+    HarmonicAngularPowerSpectrum,
     RedshiftDistribution,
+    SaccGalaxyHarmonicFixture,
     SaccGalaxyWindowedFixture,
+    SampledRedshiftDistribution,
     WindowedAngularPowerSpectrum,
 )
 
@@ -808,17 +811,14 @@ def fixture_sacc_galaxy_xis_src0_lens0() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_cells", scope="module")
-def fixture_sacc_galaxy_cells() -> tuple[
-    sacc.Sacc,
-    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-    dict[
-        tuple[TracerNames, str], tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]
-    ],
-]:
-    """Fixture for a SACC data without window functions.
+def fixture_sacc_galaxy_cells() -> SaccGalaxyHarmonicFixture:
+    """Build unwindowed harmonic SACC data and independent named expectations.
 
-    Module-scoped because SACC objects are expensive to create and are
-    read-only in tests.
+    Module-scoped because SACC objects are expensive to create. Consumers must
+    copy SACC before mutation; expected grids remain shared between records.
+
+    :returns: SACC data, sampled redshift distributions by tracer name, and
+        measured cells by ordered tracer pair and data type.
     """
     sacc_data = sacc.Sacc()
 
@@ -828,29 +828,26 @@ def fixture_sacc_galaxy_cells() -> tuple[
     src_bins_centers = np.linspace(0.25, 0.75, 5)
     lens_bins_centers = np.linspace(0.1, 0.6, 5)
 
-    tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
-    tracer_pairs: dict[
-        tuple[TracerNames, str], tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]
-    ] = {}
+    tracers: dict[str, SampledRedshiftDistribution] = {}
+    tracer_pairs: dict[tuple[TracerNames, str], HarmonicAngularPowerSpectrum] = {}
 
     for i, mn in enumerate(src_bins_centers):
-        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
+        dndz: npt.NDArray[np.float64] = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
         sacc_data.add_tracer("NZ", f"src{i}", z, dndz)
-        tracers[f"src{i}"] = (z, dndz)
+        tracers[f"src{i}"] = SampledRedshiftDistribution(z=z, dndz=dndz)
 
     for i, mn in enumerate(lens_bins_centers):
         dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
         sacc_data.add_tracer("NZ", f"lens{i}", z, dndz)
-        tracers[f"lens{i}"] = (z, dndz)
+        tracers[f"lens{i}"] = SampledRedshiftDistribution(z=z, dndz=dndz)
 
     dv = []
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        Cells = np.array(np.random.normal(size=ells.shape[0]))
+        Cells: npt.NDArray[np.float64] = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"src{i}", f"src{j}", ells, Cells)
         tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_cl_ee")] = (
-            ells,
-            Cells,
+            HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
         )
         dv.append(Cells)
 
@@ -858,8 +855,7 @@ def fixture_sacc_galaxy_cells() -> tuple[
         Cells = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl("galaxy_density_cl", f"lens{i}", f"lens{j}", ells, Cells)
         tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_cl")] = (
-            ells,
-            Cells,
+            HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
         )
         dv.append(Cells)
 
@@ -870,10 +866,7 @@ def fixture_sacc_galaxy_cells() -> tuple[
         )
         tracer_pairs[
             (TracerNames(f"src{i}", f"lens{j}"), "galaxy_shearDensity_cl_e")
-        ] = (
-            ells,
-            Cells,
-        )
+        ] = HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
         dv.append(Cells)
 
     delta_v = np.concatenate(dv, axis=0)
@@ -881,7 +874,9 @@ def fixture_sacc_galaxy_cells() -> tuple[
 
     sacc_data.add_covariance(cov)
 
-    return sacc_data, tracers, tracer_pairs
+    return SaccGalaxyHarmonicFixture(
+        sacc_data=sacc_data, distributions=tracers, spectra=tracer_pairs
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_cwindows", scope="module")
