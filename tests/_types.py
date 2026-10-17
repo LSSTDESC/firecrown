@@ -55,6 +55,32 @@ class SaccGalaxyHarmonicFixture:
     spectra: dict[tuple[TracerNames, str], HarmonicAngularPowerSpectrum]
 
 
+@dataclass(frozen=True, kw_only=True)
+class RealAngularCorrelation:
+    """Independent unwindowed angular coordinates and measured real-space xis.
+
+    :param thetas: Angular coordinates for the measurements; no unit is enforced.
+    :param xis: Measured correlations, not theory predictions or number densities.
+    """
+
+    thetas: npt.NDArray[np.float64]
+    xis: npt.NDArray[np.float64]
+
+
+@dataclass(frozen=True, kw_only=True)
+class SaccGalaxyRealFixture:
+    """Real SACC data with independently generated named expectations.
+
+    :param sacc_data: SACC data used by production extraction and construction.
+    :param distributions: Redshift distributions keyed by tracer name.
+    :param spectra: Measured correlations keyed by ordered tracer names and data type.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
+    spectra: dict[tuple[TracerNames, str], RealAngularCorrelation]
+
+
 RedshiftDistribution: TypeAlias = tuple[
     npt.NDArray[np.float64], npt.NDArray[np.float64]
 ]

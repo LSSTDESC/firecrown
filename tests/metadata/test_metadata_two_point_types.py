@@ -62,7 +62,11 @@ from firecrown.metadata_types._sacc_type_string import (
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
-from tests._types import SaccGalaxyHarmonicFixture, SaccGalaxyWindowedFixture
+from tests._types import (
+    SaccGalaxyHarmonicFixture,
+    SaccGalaxyRealFixture,
+    SaccGalaxyWindowedFixture,
+)
 
 
 def test_order_enums() -> None:
@@ -233,16 +237,13 @@ def test_extract_all_tracers_types_cwindows(
 
 
 def test_extract_all_tracers_types_reals(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real tracers retain their lens and source measurement meanings.
+
+    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tracers, _ = extract_all_measured_types(sacc_data)
 
@@ -259,16 +260,13 @@ def test_extract_all_tracers_types_reals(
 
 
 def test_extract_all_tracers_types_reals_inverted(
-    sacc_galaxy_xis_inverted: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis_inverted: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_inverted
+    """Correct inverted real tracer conventions while preserving measurement types.
+
+    :param sacc_galaxy_xis_inverted: Inverted real SACC data and named expectations.
+    """
+    sacc_data = sacc_galaxy_xis_inverted.sacc_data
 
     with pytest.warns(DeprecationWarning, match="AUTO-CORRECTION PERFORMED"):
         tracers, _ = extract_all_measured_types(sacc_data)
@@ -309,16 +307,13 @@ def test_extract_all_tracers_types_cwindows_include_maybe(
 
 
 def test_extract_all_tracers_types_xi_thetas_include_maybe(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify repeated real measured-type extraction returns equal results.
+
+    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     assert extract_all_measured_types(sacc_data) == extract_all_measured_types(
         sacc_data
@@ -429,16 +424,13 @@ def test_check_two_point_consistence_harmonic_mixing_cov(
 
 
 def test_check_two_point_consistence_real_mixing_cov(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real consistency rejects measurements with mixed covariance names.
+
+    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tpms = extract_all_real_data(sacc_data)
     tpms[0] = replace(tpms[0], covariance_name="wrong_cov_name")
@@ -476,16 +468,13 @@ def test_check_two_point_consistence_harmonic_non_unique_indices(
 
 
 def test_check_two_point_consistence_real_non_unique_indices(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real consistency rejects repeated indices within a measurement.
+
+    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tpms = extract_all_real_data(sacc_data)
     new_indices = tpms[0].indices
@@ -522,16 +511,13 @@ def test_check_two_point_consistence_harmonic_indices_overlap(
 
 
 def test_check_two_point_consistence_real_indices_overlap(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real consistency rejects indices shared between measurements.
+
+    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tpms = extract_all_real_data(sacc_data)
 

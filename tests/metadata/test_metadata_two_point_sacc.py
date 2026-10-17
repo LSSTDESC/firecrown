@@ -58,7 +58,11 @@ from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real,
 )
 from firecrown.updatable import ParamsMap
-from tests._types import SaccGalaxyHarmonicFixture, SaccGalaxyWindowedFixture
+from tests._types import (
+    SaccGalaxyHarmonicFixture,
+    SaccGalaxyRealFixture,
+    SaccGalaxyWindowedFixture,
+)
 
 # pylint: disable=too-many-lines
 
@@ -196,23 +200,21 @@ def test_extract_all_tracers_cells(
 
 
 def test_extract_all_tracers_xis(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, tracers, _ = sacc_galaxy_xis
+    """Extract real tracer distributions matching independent expectations.
+
+    :param sacc_galaxy_xis: Real SACC data and named expected distributions.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
+    tracers = sacc_galaxy_xis.distributions
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
-        assert_array_equal(tracer.z, orig_tracer[0])
-        assert_array_equal(tracer.dndz, orig_tracer[1])
+        assert_array_equal(tracer.z, orig_tracer.z)
+        assert_array_equal(tracer.dndz, orig_tracer.dndz)
 
 
 def test_extract_all_tracers_cells_src0_src0(
@@ -618,16 +620,14 @@ def test_extract_all_metadata_index_harmonics_by_type(
 
 
 def test_extract_all_metadata_index_reals(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+    """Extract real metadata indices for every independently generated spectrum.
+
+    :param sacc_galaxy_xis: Real SACC data and expected spectra.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
+    tracer_pairs = sacc_galaxy_xis.spectra
 
     all_data = extract_all_real_metadata_indices(sacc_data)
     assert len(all_data) == len(tracer_pairs)
@@ -638,16 +638,14 @@ def test_extract_all_metadata_index_reals(
 
 
 def test_extract_all_metadata_index_reals_by_type(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+    """Filter real metadata indices to the requested density data type.
+
+    :param sacc_galaxy_xis: Real SACC data and expected spectra.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
+    tracer_pairs = sacc_galaxy_xis.spectra
 
     all_data = extract_all_real_metadata_indices(
         sacc_data, allowed_data_type=["galaxy_density_xi"]
@@ -727,16 +725,14 @@ def test_extract_all_data_types_three_tracers_harmonics(
 
 
 def test_extract_all_photoz_bin_combinations_reals(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+    """Recover expected real bin combinations and their SACC names.
+
+    :param sacc_galaxy_xis: Real SACC data and expected spectra.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
+    tracer_pairs = sacc_galaxy_xis.spectra
     # We build all possible combinations of tracers
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
 
@@ -816,16 +812,13 @@ def test_make_harmonics(
 
 
 def test_make_reals(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Construct real metadata from extracted bin combinations and angular grids.
+
+    :param sacc_galaxy_xis: Real SACC data used to extract bin combinations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
     thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
@@ -894,16 +887,14 @@ def test_extract_all_harmonic_with_window_data(
 
 @pytest.mark.slow
 def test_extract_all_real_data(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+    """Extract consistent real measurements matching independent expectations.
+
+    :param sacc_galaxy_xis: Real SACC data and named expected spectra.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
+    tracer_pairs = sacc_galaxy_xis.spectra
 
     two_point_xis = extract_all_real_data(sacc_data)
     assert len(two_point_xis) == len(tracer_pairs)
@@ -914,9 +905,9 @@ def test_extract_all_real_data(
         tracer_names = TracerNames(metadata.XY.x.bin_name, metadata.XY.y.bin_name)
         assert (tracer_names, metadata.get_sacc_name()) in tracer_pairs
 
-        thetas, xi = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
-        assert_array_equal(metadata.thetas, thetas)
-        assert_array_equal(two_point.data, xi)
+        spectrum = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
+        assert_array_equal(metadata.thetas, spectrum.thetas)
+        assert_array_equal(two_point.data, spectrum.xis)
 
     check_two_point_consistence_real(two_point_xis)
 
@@ -1216,17 +1207,16 @@ def test_constructor_harmonic_with_window_data(
 
 
 def test_constructor_reals_metadata(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+    """Construct TwoPoint statistics from extracted real metadata.
+
+    :param sacc_galaxy_xis: Real SACC data and expected spectra.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
+    tracer_pairs = sacc_galaxy_xis.spectra
 
     two_point_reals = extract_all_real_metadata(sacc_data)
 
@@ -1238,22 +1228,21 @@ def test_constructor_reals_metadata(
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
         assert tracer_pairs_key in tracer_pairs
         assert two_point.thetas is not None
-        assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key][0])
+        assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key].thetas)
 
 
 @pytest.mark.slow
 def test_constructor_reals_data(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+    """Construct TwoPoint statistics matching independently generated real data.
+
+    :param sacc_galaxy_xis: Real SACC data and expected spectra.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
+    tracer_pairs = sacc_galaxy_xis.spectra
 
     two_point_reals = extract_all_real_data(sacc_data)
 
@@ -1266,9 +1255,9 @@ def test_constructor_reals_data(
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
         assert tracer_pairs_key in tracer_pairs
         assert two_point.thetas is not None
-        assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key][0])
+        assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key].thetas)
         assert_array_equal(
-            two_point.get_data_vector(), tracer_pairs[tracer_pairs_key][1]
+            two_point.get_data_vector(), tracer_pairs[tracer_pairs_key].xis
         )
 
 
@@ -1381,18 +1370,17 @@ def test_compare_constructors_harmonic_with_window(
 
 
 def test_compare_constructors_reals(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
     tp_factory: TwoPointFactory,
     tools_with_vanilla_cosmology: ModelingTools,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Compare real measurement construction with the original SACC read path.
+
+    :param sacc_galaxy_xis: Real SACC data for both construction paths.
+    :param tp_factory: Factory for the statistics' sources.
+    :param tools_with_vanilla_cosmology: Tools for comparing theory vectors.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     two_point_xis = extract_all_real_data(sacc_data)
 
@@ -1460,22 +1448,27 @@ def test_extract_all_data_harmonic_no_cov(
 
 
 def test_extract_all_data_real_no_cov(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Reject missing covariance without mutating the shared real fixture.
+
+    :param sacc_galaxy_xis: Shared real SACC data and independent expectations.
+    """
+    shared_sacc = sacc_galaxy_xis.sacc_data
+    shared_covariance = shared_sacc.covariance
+    assert shared_covariance is not None
+    expected_covariance = shared_covariance.dense.copy()
+    sacc_data = shared_sacc.copy()
     sacc_data.covariance = None
     with pytest.raises(
         ValueError,
         match=("The SACC object does not have a dense covariance matrix."),
     ):
         _ = extract_all_real_data(sacc_data)
+
+    assert sacc_data.covariance is None
+    assert shared_sacc.covariance is shared_covariance
+    assert_array_equal(shared_sacc.covariance.dense, expected_covariance)
 
 
 def test_make_all_photoz_bin_combinations_with_cmb_basic() -> None:
@@ -2418,17 +2411,13 @@ def test_extract_all_harmonic_metadata_with_combined_selector(
 
 
 def test_extract_all_real_metadata_with_selector(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    """Test extract_all_real_metadata with bin_pair_selector."""
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Test extract_all_real_metadata with bin_pair_selector.
+
+    :param sacc_galaxy_xis: Real SACC data to filter by auto-correlation.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     # Without selector - should get all metadata
     all_metadata = extract_all_real_metadata(sacc_data)
@@ -2454,17 +2443,13 @@ def test_extract_all_real_metadata_with_selector(
 
 
 def test_extract_all_real_metadata_with_lens_selector(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    """Test extract_all_real_metadata with lens bin selector."""
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Test extract_all_real_metadata with lens bin selector.
+
+    :param sacc_galaxy_xis: Real SACC data to filter by lens measurements.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     # With lens selector - should only get lens (counts) measurements
     lens_selector = LensBinPairSelector()
@@ -2481,17 +2466,13 @@ def test_extract_all_real_metadata_with_lens_selector(
 
 
 def test_extract_all_real_metadata_with_combined_selector(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    """Test extract_all_real_metadata with combined selectors."""
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Test extract_all_real_metadata with combined selectors.
+
+    :param sacc_galaxy_xis: Real SACC data to filter by combined selectors.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     # Combine auto-name and lens selectors
     combined_selector = AutoNameBinPairSelector() & LensBinPairSelector()
@@ -2541,17 +2522,13 @@ def test_extract_all_harmonic_metadata_with_not_selector(
 
 
 def test_extract_all_real_metadata_with_or_selector(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    """Test extract_all_real_metadata with OR selector."""
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Test extract_all_real_metadata with OR selector.
+
+    :param sacc_galaxy_xis: Real SACC data to filter by alternative selectors.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     # Get all tracers to find specific bin names
     tracers = extract_all_tracers_tomographic_bins(sacc_data)
