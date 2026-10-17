@@ -45,8 +45,10 @@ from firecrown.updatable import ParamsMap, get_default_params_map
 from firecrown.utils import upper_triangle_indices
 from tests._types import (
     HarmonicAngularPowerSpectrum,
+    RealAngularCorrelation,
     RedshiftDistribution,
     SaccGalaxyHarmonicFixture,
+    SaccGalaxyRealFixture,
     SaccGalaxyWindowedFixture,
     SampledRedshiftDistribution,
     WindowedAngularPowerSpectrum,
@@ -982,18 +984,14 @@ def fixture_sacc_galaxy_cwindows() -> SaccGalaxyWindowedFixture:
 
 
 @pytest.fixture(name="sacc_galaxy_xis", scope="module")
-def fixture_sacc_galaxy_xis() -> tuple[
-    sacc.Sacc,
-    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-    dict[
-        tuple[TracerNames, str],
-        tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-    ],
-]:
-    """Fixture for a SACC data without window functions.
+def fixture_sacc_galaxy_xis() -> SaccGalaxyRealFixture:
+    """Build unwindowed real SACC data and independent named expectations.
 
-    Module-scoped because SACC objects are expensive to create and are
-    read-only in tests.
+    Module-scoped because SACC objects are expensive to create. Consumers must
+    copy SACC before mutation; expected grids remain shared between records.
+
+    :returns: SACC data, sampled redshift distributions by tracer name, and
+        measured xis by ordered tracer pair and data type.
     """
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
@@ -1004,29 +1002,26 @@ def fixture_sacc_galaxy_xis() -> tuple[
     src_bins_centers = np.linspace(0.25, 0.75, 5)
     lens_bins_centers = np.linspace(0.1, 0.6, 5)
 
-    tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
-    tracer_pairs: dict[
-        tuple[TracerNames, str], tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
-    ] = {}
+    tracers: dict[str, SampledRedshiftDistribution] = {}
+    tracer_pairs: dict[tuple[TracerNames, str], RealAngularCorrelation] = {}
 
     for i, mn in enumerate(src_bins_centers):
-        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
+        dndz: npt.NDArray[np.float64] = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
         sacc_data.add_tracer("NZ", f"src{i}", z, dndz)
-        tracers[f"src{i}"] = (z, dndz)
+        tracers[f"src{i}"] = SampledRedshiftDistribution(z=z, dndz=dndz)
 
     for i, mn in enumerate(lens_bins_centers):
         dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
         sacc_data.add_tracer("NZ", f"lens{i}", z, dndz)
-        tracers[f"lens{i}"] = (z, dndz)
+        tracers[f"lens{i}"] = SampledRedshiftDistribution(z=z, dndz=dndz)
 
     dv = []
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        xis = np.array(np.random.normal(size=thetas.shape[0]))
+        xis: npt.NDArray[np.float64] = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi("galaxy_density_xi", f"lens{i}", f"lens{j}", thetas, xis)
         tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_xi")] = (
-            thetas,
-            xis,
+            RealAngularCorrelation(thetas=thetas, xis=xis)
         )
         dv.append(xis)
 
@@ -1037,10 +1032,7 @@ def fixture_sacc_galaxy_xis() -> tuple[
         )
         tracer_pairs[
             (TracerNames(f"src{i}", f"lens{j}"), "galaxy_shearDensity_xi_t")
-        ] = (
-            thetas,
-            xis,
-        )
+        ] = RealAngularCorrelation(thetas=thetas, xis=xis)
         dv.append(xis)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
@@ -1049,8 +1041,7 @@ def fixture_sacc_galaxy_xis() -> tuple[
             "galaxy_shear_xi_minus", f"src{i}", f"src{j}", thetas, xis
         )
         tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_xi_minus")] = (
-            thetas,
-            xis,
+            RealAngularCorrelation(thetas=thetas, xis=xis)
         )
         dv.append(xis)
     for i, j in upper_triangle_indices(len(src_bins_centers)):
@@ -1059,8 +1050,7 @@ def fixture_sacc_galaxy_xis() -> tuple[
             "galaxy_shear_xi_plus", f"src{i}", f"src{j}", thetas, xis
         )
         tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_xi_plus")] = (
-            thetas,
-            xis,
+            RealAngularCorrelation(thetas=thetas, xis=xis)
         )
         dv.append(xis)
 
@@ -1069,19 +1059,21 @@ def fixture_sacc_galaxy_xis() -> tuple[
 
     sacc_data.add_covariance(cov)
 
-    return sacc_data, tracers, tracer_pairs
+    return SaccGalaxyRealFixture(
+        sacc_data=sacc_data, distributions=tracers, spectra=tracer_pairs
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_xis_inverted")
-def fixture_sacc_galaxy_xis_inverted() -> tuple[
-    sacc.Sacc,
-    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-    dict[
-        tuple[TracerNames, str],
-        tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-    ],
-]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_xis_inverted() -> SaccGalaxyRealFixture:
+    """Build inverted real SACC data and independent named expectations.
+
+    Preserve the intentionally reversed tracer conventions for correction tests.
+    Expected grids remain shared between records.
+
+    :returns: SACC data, sampled redshift distributions by tracer name, and
+        measured xis by the original inverted tracer-pair and data-type keys.
+    """
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
     thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
@@ -1091,29 +1083,26 @@ def fixture_sacc_galaxy_xis_inverted() -> tuple[
     src_bins_centers = np.linspace(0.25, 0.75, 5)
     lens_bins_centers = np.linspace(0.1, 0.6, 5)
 
-    tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
-    tracer_pairs: dict[
-        tuple[TracerNames, str], tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
-    ] = {}
+    tracers: dict[str, SampledRedshiftDistribution] = {}
+    tracer_pairs: dict[tuple[TracerNames, str], RealAngularCorrelation] = {}
 
     for i, mn in enumerate(src_bins_centers):
-        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
+        dndz: npt.NDArray[np.float64] = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
         sacc_data.add_tracer("NZ", f"src{i}", z, dndz)
-        tracers[f"src{i}"] = (z, dndz)
+        tracers[f"src{i}"] = SampledRedshiftDistribution(z=z, dndz=dndz)
 
     for i, mn in enumerate(lens_bins_centers):
         dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
         sacc_data.add_tracer("NZ", f"lens{i}", z, dndz)
-        tracers[f"lens{i}"] = (z, dndz)
+        tracers[f"lens{i}"] = SampledRedshiftDistribution(z=z, dndz=dndz)
 
     dv = []
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        xis = np.array(np.random.normal(size=thetas.shape[0]))
+        xis: npt.NDArray[np.float64] = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi("galaxy_density_xi", f"lens{j}", f"lens{i}", thetas, xis)
         tracer_pairs[(TracerNames(f"lens{j}", f"lens{i}"), "galaxy_density_xi")] = (
-            thetas,
-            xis,
+            RealAngularCorrelation(thetas=thetas, xis=xis)
         )
         dv.append(xis)
 
@@ -1124,10 +1113,7 @@ def fixture_sacc_galaxy_xis_inverted() -> tuple[
         )
         tracer_pairs[
             (TracerNames(f"lens{j}", f"src{i}"), "galaxy_shearDensity_xi_t")
-        ] = (
-            thetas,
-            xis,
-        )
+        ] = RealAngularCorrelation(thetas=thetas, xis=xis)
         dv.append(xis)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
@@ -1136,8 +1122,7 @@ def fixture_sacc_galaxy_xis_inverted() -> tuple[
             "galaxy_shear_xi_minus", f"src{j}", f"src{i}", thetas, xis
         )
         tracer_pairs[(TracerNames(f"src{j}", f"src{i}"), "galaxy_shear_xi_minus")] = (
-            thetas,
-            xis,
+            RealAngularCorrelation(thetas=thetas, xis=xis)
         )
         dv.append(xis)
     for i, j in upper_triangle_indices(len(src_bins_centers)):
@@ -1146,8 +1131,7 @@ def fixture_sacc_galaxy_xis_inverted() -> tuple[
             "galaxy_shear_xi_plus", f"src{j}", f"src{i}", thetas, xis
         )
         tracer_pairs[(TracerNames(f"src{j}", f"src{i}"), "galaxy_shear_xi_plus")] = (
-            thetas,
-            xis,
+            RealAngularCorrelation(thetas=thetas, xis=xis)
         )
         dv.append(xis)
 
@@ -1156,7 +1140,9 @@ def fixture_sacc_galaxy_xis_inverted() -> tuple[
 
     sacc_data.add_covariance(cov)
 
-    return sacc_data, tracers, tracer_pairs
+    return SaccGalaxyRealFixture(
+        sacc_data=sacc_data, distributions=tracers, spectra=tracer_pairs
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_cells_order_convention")
