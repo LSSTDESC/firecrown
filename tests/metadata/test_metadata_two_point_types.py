@@ -223,7 +223,11 @@ def test_extract_all_tracers_types_cells(
 def test_extract_all_tracers_types_cwindows(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Verify windowed tracers retain their lens and source measurement meanings.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     tracers, _ = extract_all_measured_types(sacc_data)
 
@@ -299,7 +303,11 @@ def test_extract_all_tracers_types_cells_include_maybe(
 def test_extract_all_tracers_types_cwindows_include_maybe(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Verify repeated windowed measured-type extraction returns equal results.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     assert extract_all_measured_types(sacc_data) == extract_all_measured_types(
         sacc_data
