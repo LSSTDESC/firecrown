@@ -863,7 +863,12 @@ def test_extract_all_harmonic_data(
 def test_extract_all_harmonic_with_window_data(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
+    """Extract windowed measurements matching independent support and bandpowers.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data and named expected spectra.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
+    tracer_pairs = sacc_galaxy_cwindows.spectra
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
     assert len(two_point_harmonics) == len(tracer_pairs)
@@ -874,9 +879,10 @@ def test_extract_all_harmonic_with_window_data(
         tracer_names = TracerNames(metadata.XY.x.bin_name, metadata.XY.y.bin_name)
         assert (tracer_names, metadata.get_sacc_name()) in tracer_pairs
 
-        ells, Cell, window = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
-        assert_array_equal(metadata.ells, ells)
-        assert_array_equal(two_point.data, Cell)
+        spectrum = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
+        window = spectrum.window
+        assert_array_equal(metadata.ells, spectrum.support_ells)
+        assert_array_equal(two_point.data, spectrum.bandpowers)
         assert metadata.window is not None
 
         assert_array_equal(metadata.window, window.weight / window.weight.sum(axis=0))
@@ -971,7 +977,13 @@ def test_constructor_harmonic_with_window_metadata(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
+    """Construct TwoPoint statistics from extracted windowed harmonic metadata.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data and independent windows.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
+    tracer_pairs = sacc_galaxy_cwindows.spectra
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
 
@@ -982,7 +994,7 @@ def test_constructor_harmonic_with_window_metadata(
     for two_point in two_points_new:
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
         assert tracer_pairs_key in tracer_pairs
-        _, _, window = tracer_pairs[tracer_pairs_key]
+        window = tracer_pairs[tracer_pairs_key].window
         assert two_point.ells is not None
         assert two_point.window is not None
         assert_array_equal(
@@ -995,8 +1007,11 @@ def test_constructor_harmonic_with_window_metadata(
 def test_extract_all_harmonic_metadata_normalize_true(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    """Test that normalize=True normalizes windows in extract_all_harmonic_metadata."""
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Test that normalize=True normalizes windows in extract_all_harmonic_metadata.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data with unnormalized weights.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data, normalize=True)
 
@@ -1012,8 +1027,11 @@ def test_extract_all_harmonic_metadata_normalize_true(
 def test_extract_all_harmonic_metadata_normalize_false(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    """Test that normalize=False keeps windows unnormalized."""
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Test that normalize=False keeps windows unnormalized.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data with unnormalized weights.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data, normalize=False)
 
@@ -1033,8 +1051,11 @@ def test_extract_all_harmonic_metadata_normalize_false(
 def test_extract_all_harmonic_metadata_default_normalizes(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    """Test that the default behavior (no normalize parameter) normalizes windows."""
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Test that the default behavior (no normalize parameter) normalizes windows.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data with unnormalized weights.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
 
@@ -1183,7 +1204,13 @@ def test_constructor_harmonic_with_window_data(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
+    """Construct TwoPoint statistics matching independent bandpowers and windows.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data and named expected spectra.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
+    tracer_pairs = sacc_galaxy_cwindows.spectra
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
@@ -1195,9 +1222,10 @@ def test_constructor_harmonic_with_window_data(
     for two_point in two_points_new:
         tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
         assert tracer_pairs_key in tracer_pairs
-        _, Cell, window = tracer_pairs[tracer_pairs_key]
+        spectrum = tracer_pairs[tracer_pairs_key]
+        window = spectrum.window
         assert two_point.ells is not None
-        assert_array_equal(two_point.get_data_vector(), Cell)
+        assert_array_equal(two_point.get_data_vector(), spectrum.bandpowers)
         assert two_point.window is not None
         assert_array_equal(
             two_point.window,
@@ -1320,7 +1348,13 @@ def test_compare_constructors_harmonic_with_window(
     tp_factory: TwoPointFactory,
     tools_with_vanilla_cosmology: ModelingTools,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Compare windowed measurement construction with the original SACC read path.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data for both construction paths.
+    :param tp_factory: Factory for the statistics' sources.
+    :param tools_with_vanilla_cosmology: Tools for comparing theory vectors.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 

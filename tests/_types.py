@@ -5,7 +5,7 @@ Array annotations specify dtype, not semantic role, shape, or physical units.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -81,22 +81,37 @@ class SaccGalaxyRealFixture:
     spectra: dict[tuple[TracerNames, str], RealAngularCorrelation]
 
 
-RedshiftDistribution: TypeAlias = tuple[
-    npt.NDArray[np.float64], npt.NDArray[np.float64]
-]
-"""Sampled redshift distribution as (z, dndz), without a normalization guarantee."""
+@dataclass(frozen=True, kw_only=True)
+class WindowedAngularPowerSpectrum:
+    """Independent window support, measured bandpowers, and their shared window.
 
-WindowedAngularPowerSpectrum: TypeAlias = tuple[
-    npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow
-]
-"""Window ell grid, measured bandpowers, and their bandpower window."""
+    Support multipoles need not match the number of measured bandpowers.
+    SACC observation labels are weighted support sums, not the support grid
+    or normalized band centers.
 
-SaccGalaxyWindowedFixture: TypeAlias = tuple[
-    sacc.Sacc,
-    dict[str, RedshiftDistribution],
-    dict[tuple[TracerNames, str], WindowedAngularPowerSpectrum],
-]
-"""SACC data, distributions by tracer name, and spectra by tracer pair/data type."""
+    :param support_ells: Integer multipoles on which the window is defined.
+    :param bandpowers: Measured values, one per window column, not predictions.
+    :param window: SACC BandpowerWindow shared with the fixture's data points;
+        its values are support multipoles and its weights are unnormalized.
+    """
+
+    support_ells: npt.NDArray[np.int64]
+    bandpowers: npt.NDArray[np.float64]
+    window: sacc.BandpowerWindow
+
+
+@dataclass(frozen=True, kw_only=True)
+class SaccGalaxyWindowedFixture:
+    """Windowed SACC data with independently generated named expectations.
+
+    :param sacc_data: SACC data used by production extraction and construction.
+    :param distributions: Redshift distributions keyed by tracer name.
+    :param spectra: Windowed spectra keyed by ordered tracer names and data type.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
+    spectra: dict[tuple[TracerNames, str], WindowedAngularPowerSpectrum]
 
 
 class NumCosmoCosmologyFixture(TypedDict):
