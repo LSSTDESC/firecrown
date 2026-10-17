@@ -9,7 +9,6 @@ from itertools import chain, product
 from unittest.mock import MagicMock
 
 import numpy as np
-import numpy.typing as npt
 import pytest
 import sacc
 import sacc_name_mapping as snm
@@ -66,6 +65,7 @@ from tests._types import (
     SaccGalaxyHarmonicFixture,
     SaccGalaxyRealFixture,
     SaccGalaxyWindowedFixture,
+    SaccRealCrossBinFixture,
 )
 
 
@@ -753,19 +753,16 @@ def test_extract_all_measured_mixed_types_density_only(
 
 
 def test_extract_all_measured_mixed_types_mixed_real_space(
-    sacc_galaxy_xis_src0_lens0: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_xis_src0_lens0: SaccRealCrossBinFixture,
 ) -> None:
     """Test extract_all_measured_types with allow_mixed_types=True on real-space data.
 
     This test verifies behavior with real-space data (xi correlations)
     when mixed types are allowed.
+
+    :param sacc_galaxy_xis_src0_lens0: Source-lens real SACC data and expectations.
     """
-    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0
+    sacc_data = sacc_galaxy_xis_src0_lens0.sacc_data
 
     result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 

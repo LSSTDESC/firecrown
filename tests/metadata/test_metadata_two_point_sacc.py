@@ -63,6 +63,7 @@ from tests._types import (
     SaccGalaxyRealFixture,
     SaccGalaxyWindowedFixture,
     SaccHarmonicCrossBinFixture,
+    SaccRealCrossBinFixture,
 )
 
 # pylint: disable=too-many-lines
@@ -313,26 +314,26 @@ def test_extract_all_tracers_xis_lens0_lens0(
 
 
 def test_extract_all_tracers_xis_lens0_lens1(
-    sacc_galaxy_xis_lens0_lens1: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_xis_lens0_lens1: SaccRealCrossBinFixture,
 ) -> None:
-    sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_lens0_lens1
+    """Extract both lens distributions without changing their real-space roles.
+
+    :param sacc_galaxy_xis_lens0_lens1: Lens-lens SACC data and expectations.
+    """
+    sacc_data = sacc_galaxy_xis_lens0_lens1.sacc_data
+    distributions = sacc_galaxy_xis_lens0_lens1.distributions
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
+        assert_array_equal(tracer.z, distributions[tracer.bin_name].z)
         assert tracer.measurements == {Galaxies.COUNTS}
         if tracer.bin_name == "lens0":
-            assert_array_equal(tracer.dndz, dndz0)
+            assert_array_equal(tracer.dndz, distributions["lens0"].dndz)
         elif tracer.bin_name == "lens1":
-            assert_array_equal(tracer.dndz, dndz1)
+            assert_array_equal(tracer.dndz, distributions["lens1"].dndz)
 
 
 def test_extract_all_trace_cells_src0_lens0(
@@ -361,14 +362,14 @@ def test_extract_all_trace_cells_src0_lens0(
 
 
 def test_extract_all_trace_xis_src0_lens0(
-    sacc_galaxy_xis_src0_lens0: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_xis_src0_lens0: SaccRealCrossBinFixture,
 ) -> None:
-    sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_src0_lens0
+    """Extract source and lens distributions with distinct real-space roles.
+
+    :param sacc_galaxy_xis_src0_lens0: Source-lens SACC data and expectations.
+    """
+    sacc_data = sacc_galaxy_xis_src0_lens0.sacc_data
+    distributions = sacc_galaxy_xis_src0_lens0.distributions
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
@@ -376,12 +377,12 @@ def test_extract_all_trace_xis_src0_lens0(
 
     for tracer in all_tracers:
         if tracer.bin_name == "src0":
-            assert_array_equal(tracer.z, z)
-            assert_array_equal(tracer.dndz, dndz0)
+            assert_array_equal(tracer.z, distributions["src0"].z)
+            assert_array_equal(tracer.dndz, distributions["src0"].dndz)
             assert tracer.measurements == {Galaxies.SHEAR_T}
         elif tracer.bin_name == "lens0":
-            assert_array_equal(tracer.z, z)
-            assert_array_equal(tracer.dndz, dndz1)
+            assert_array_equal(tracer.z, distributions["lens0"].z)
+            assert_array_equal(tracer.dndz, distributions["lens0"].dndz)
             assert tracer.measurements == {Galaxies.COUNTS}
 
 
