@@ -66,8 +66,12 @@ from tests._types import SaccGalaxyWindowedFixture
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
 def fixture_sacc_galaxy_src0_src0_invalid_data_type(
     recwarn: pytest.WarningsRecorder,
-) -> tuple[sacc.Sacc, np.ndarray, np.ndarray]:
-    """Fixture for a SACC data without window functions."""
+) -> tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Build unwindowed SACC data with an intentionally invalid data type.
+
+    :param recwarn: Recorder for SACC's unknown-data-type warning.
+    :returns: SACC data, redshift coordinates, and source number density.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 50) + 0.05
@@ -92,10 +96,18 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(
 
 
 @pytest.fixture(name="sacc_galaxy_xis_three_tracers")
-def fixture_sacc_galaxy_xis_three_tracers() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_xis_three_tracers() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
+    """Build unwindowed real-space SACC data with a three-tracer correlation.
+
+    :returns: SACC data, redshift coordinates, and number densities for src0,
+        lens0, and lens1, in that order.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 50) + 0.05
@@ -125,10 +137,18 @@ def fixture_sacc_galaxy_xis_three_tracers() -> (
 
 
 @pytest.fixture(name="sacc_galaxy_cells_three_tracers")
-def fixture_sacc_galaxy_cells_three_tracers() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_cells_three_tracers() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
+    """Build unwindowed harmonic SACC data with a three-tracer correlation.
+
+    :returns: SACC data, redshift coordinates, and number densities for src0,
+        lens0, and lens1, in that order.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 50) + 0.05
@@ -365,8 +385,15 @@ def test_extract_all_trace_xis_src0_lens0(
 
 
 def test_extract_all_tracers_invalid_data_type(
-    sacc_galaxy_src0_src0_invalid_data_type: tuple[sacc.Sacc, np.ndarray, np.ndarray],
+    sacc_galaxy_src0_src0_invalid_data_type: tuple[
+        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ],
 ) -> None:
+    """Reject a tracer whose only data points have an unsupported data type.
+
+    :param sacc_galaxy_src0_src0_invalid_data_type: Invalid SACC data, redshift
+        coordinates, and source number density.
+    """
     sacc_data, _, _ = sacc_galaxy_src0_src0_invalid_data_type
     assert sacc_data is not None
     with pytest.raises(
@@ -662,6 +689,11 @@ def test_extract_all_data_types_three_tracers_reals(
         npt.NDArray[np.float64],
     ],
 ) -> None:
+    """Reject real-space metadata for a correlation containing three tracers.
+
+    :param sacc_galaxy_xis_three_tracers: SACC data, redshift coordinates, and
+        number densities for src0, lens0, and lens1.
+    """
     sacc_data, _, _, _, _ = sacc_galaxy_xis_three_tracers
 
     with pytest.raises(
@@ -683,6 +715,11 @@ def test_extract_all_data_types_three_tracers_harmonics(
         npt.NDArray[np.float64],
     ],
 ) -> None:
+    """Reject harmonic metadata for a correlation containing three tracers.
+
+    :param sacc_galaxy_cells_three_tracers: SACC data, redshift coordinates, and
+        number densities for src0, lens0, and lens1.
+    """
     sacc_data, _, _, _, _ = sacc_galaxy_cells_three_tracers
 
     with pytest.raises(
