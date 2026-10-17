@@ -1,5 +1,6 @@
 """Test that the scale cuts with bandpower windows work correctly."""
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -23,18 +24,42 @@ from firecrown.updatable import ParamsMap, get_default_params
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 
 
+@dataclass(frozen=True, kw_only=True)
+class ScaleCutWindowFunction:
+    """Window weights, support multipoles, and geometric bin centers.
+
+    Frozen bindings leave the arrays mutable. Names and dtype annotations do not
+    enforce matrix dimensions, shapes, same-dtype array swaps, or physical units.
+
+    :param weights: Column-normalized weights, one row per support multipole and
+        one column per bin.
+    :param support_ells: Integer multipoles on which the window is sampled.
+    :param bin_centers: Geometric means of adjacent bin edges, used as SACC
+        observation labels; not weighted means of the window support.
+    """
+
+    weights: npt.NDArray[np.float64]
+    support_ells: npt.NDArray[np.int64]
+    bin_centers: npt.NDArray[np.float64]
+
+
 @pytest.fixture(name="window_function_data", scope="module")
-def fixture_window_function() -> (
-    tuple[npt.NDArray[np.float64], npt.NDArray[np.int64], npt.NDArray[np.float64]]
-):
-    """Generate window function data."""
+def fixture_window_function() -> ScaleCutWindowFunction:
+    """Generate a normalized window on 800 multipoles for five bins.
+
+    :returns: Window weights, support multipoles, and geometric bin centers.
+    """
     n_ell_bin = 5
     ell_bin_edges = np.geomspace(10, 500, n_ell_bin + 1)
-    ell_bin_centers = np.sqrt(ell_bin_edges[:-1] * ell_bin_edges[1:])
+    ell_bin_centers: npt.NDArray[np.float64] = np.sqrt(
+        ell_bin_edges[:-1] * ell_bin_edges[1:]
+    )
     ell_bin_widths = np.diff(ell_bin_edges)
 
-    ell_window = np.arange(800)
-    window_function = np.zeros((ell_window.shape[0], n_ell_bin))
+    ell_window: npt.NDArray[np.int64] = np.arange(800)
+    window_function: npt.NDArray[np.float64] = np.zeros(
+        (ell_window.shape[0], n_ell_bin)
+    )
     for i, (mu_ell, sigma_ell) in enumerate(zip(ell_bin_centers, ell_bin_widths)):
         window_function[:, i] = np.exp(
             -0.5 * (ell_window - mu_ell) ** 2 / (sigma_ell) ** 2
@@ -42,14 +67,16 @@ def fixture_window_function() -> (
 
     window_function = window_function / window_function.sum(axis=0, keepdims=True)
 
-    return window_function, ell_window, ell_bin_centers
+    return ScaleCutWindowFunction(
+        weights=window_function,
+        support_ells=ell_window,
+        bin_centers=ell_bin_centers,
+    )
 
 
 @pytest.fixture(name="minimal_3x2pt_sacc", scope="module")
 def fixture_minimal_3x2pt_sacc(
-    window_function_data: tuple[
-        npt.NDArray[np.float64], npt.NDArray[np.int64], npt.NDArray[np.float64]
-    ],
+    window_function_data: ScaleCutWindowFunction,
 ) -> tuple[
     sacc.Sacc,
     dict[
@@ -63,8 +90,11 @@ def fixture_minimal_3x2pt_sacc(
     ],
     ccl.Cosmology,
 ]:
-    """Generate SACC data with window functions.
-    At the moment, this only adds cosmic shear data."""
+    """Generate SACC data with window functions for cosmic shear only.
+
+    :param window_function_data: Window weights, support, and observation centers.
+    :returns: SACC data, independent CCL bandpowers with window data, and cosmology.
+    """
     sacc_data = sacc.Sacc()
 
     z = (np.linspace(0, 4.0, 256) + 0.05).astype(np.float64)
@@ -84,27 +114,29 @@ def fixture_minimal_3x2pt_sacc(
         )
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        window = sacc.BandpowerWindow(window_function_data[1], window_function_data[0])
+        window = sacc.BandpowerWindow(
+            window_function_data.support_ells, window_function_data.weights
+        )
         Cell = ccl.angular_cl(
             cosmo=cosmo,
             tracer1=ccl_tracers[f"src{i}"],
             tracer2=ccl_tracers[f"src{j}"],
-            ell=window_function_data[1],
+            ell=window_function_data.support_ells,
         )
-        Cell_binned = window_function_data[0].T @ Cell
+        Cell_binned = window_function_data.weights.T @ Cell
         sacc_data.add_ell_cl(
             data_type="galaxy_shear_cl_ee",
             tracer1=f"src{i}",
             tracer2=f"src{j}",
-            ell=window_function_data[2],
+            ell=window_function_data.bin_centers,
             x=Cell_binned,
             window=window,
         )
         ccl_cell[f"src{i}-src{j}"] = (
             Cell_binned,
-            window_function_data[2],
-            window_function_data[1],
-            window_function_data[0],
+            window_function_data.bin_centers,
+            window_function_data.support_ells,
+            window_function_data.weights,
         )
 
     sacc_data.add_covariance(np.identity(len(sacc_data)) * 0.01)
