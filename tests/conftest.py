@@ -7,6 +7,7 @@ Fixtures defined here are available to any test in Firecrown.
 # pylint: disable=too-many-lines
 import ast
 import sys
+from dataclasses import dataclass
 from itertools import product
 from typing import Callable, assert_never
 
@@ -391,16 +392,40 @@ def fixture_all_real_bins() -> list[TomographicBin]:
     ]
 
 
+@dataclass(frozen=True, kw_only=True)
+class HarmonicWindowFunction:
+    """Harmonic window with its ell grid, weight matrix, and band labels.
+
+    The weight matrix has one row per ell in the grid and one column per band.
+    Named fields and dtype annotations do not check weight-matrix dimensions,
+    shapes, same-dtype swaps between arrays, or physical units.
+
+    :param ell_grid: Integer multipoles on which the window weights are defined.
+    :param weights: Weight matrix with one row per ell and one column per band.
+    :param band_labels: Float labels, one per weight column; TwoPointHarmonic checks
+        their one-dimensional shape and count, not their values or physical meaning.
+    """
+
+    ell_grid: npt.NDArray[np.int64]
+    weights: npt.NDArray[np.float64]
+    band_labels: npt.NDArray[np.float64]
+
+
 @pytest.fixture(name="window_1")
-def fixture_window_1() -> (
-    tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
-):
-    """Generate a Window object with 100 ells."""
+def fixture_window_1() -> HarmonicWindowFunction:
+    """Generate a harmonic window with 100 ells and four bands.
+
+    :returns: The ell grid, weight matrix, and band labels for the window.
+    """
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
-    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
+    band_labels = np.array([0, 1, 2, 3], dtype=np.float64)
 
-    return ells, weights, window_ells
+    return HarmonicWindowFunction(
+        ell_grid=ells,
+        weights=weights,
+        band_labels=band_labels,
+    )
 
 
 @pytest.fixture(name="harmonic_two_point_xy")
@@ -435,17 +460,20 @@ def fixture_real_two_point_xy(
 
 @pytest.fixture(name="two_point_cwindow")
 def fixture_two_point_cwindow(
-    window_1: tuple[
-        npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    window_1: HarmonicWindowFunction,
     harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
-    """Generate a TwoPointXY object with 100 ells."""
+    """Generate a TwoPointHarmonic with 100 ells and four bands.
+
+    :param window_1: Harmonic window supplying the ell grid, weights, and labels.
+    :param harmonic_two_point_xy: Harmonic TwoPointXY metadata for the measurement.
+    :returns: A TwoPointHarmonic carrying the windowed ell grid.
+    """
     two_point = TwoPointHarmonic(
         XY=harmonic_two_point_xy,
-        ells=window_1[0],
-        window=window_1[1],
-        window_ells=window_1[2],
+        ells=window_1.ell_grid,
+        window=window_1.weights,
+        window_ells=window_1.band_labels,
     )
     return two_point
 
@@ -1516,20 +1544,22 @@ def fixture_optimized_harmonic_two_point_xy(
 # Optimized versions of dependent fixtures
 @pytest.fixture(name="optimized_two_point_cwindow")
 def fixture_optimized_two_point_cwindow(
-    window_1: tuple[
-        npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    window_1: HarmonicWindowFunction,
     optimized_harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
-    """Generate a TwoPointXY object with zero skipped tests.
+    """Generate a TwoPointHarmonic using compatible measurement pairs.
 
     Uses optimized fixtures that pre-filter for valid measurement pairs.
+
+    :param window_1: Harmonic window supplying the ell grid, weights, and labels.
+    :param optimized_harmonic_two_point_xy: Pre-filtered harmonic TwoPointXY metadata.
+    :returns: A TwoPointHarmonic carrying the windowed ell grid.
     """
     two_point = TwoPointHarmonic(
         XY=optimized_harmonic_two_point_xy,
-        ells=window_1[0],
-        window=window_1[1],
-        window_ells=window_1[2],
+        ells=window_1.ell_grid,
+        window=window_1.weights,
+        window_ells=window_1.band_labels,
     )
     return two_point
 
