@@ -50,6 +50,7 @@ from tests._types import (
     SaccGalaxyHarmonicFixture,
     SaccGalaxyRealFixture,
     SaccGalaxyWindowedFixture,
+    SaccHarmonicCrossBinFixture,
     SampledRedshiftDistribution,
     WindowedAngularPowerSpectrum,
 )
@@ -649,23 +650,21 @@ def fixture_sacc_galaxy_cells_src0_src0() -> tuple[sacc.Sacc, TomographicBin]:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src1", scope="module")
-def fixture_sacc_galaxy_cells_src0_src1() -> tuple[
-    sacc.Sacc,
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_cells_src0_src1() -> SaccHarmonicCrossBinFixture:
+    """Build source-source harmonic data and named redshift expectations.
 
-    z = np.linspace(0, 1.0, 256) + 0.05
+    :returns: SACC data and src0/src1 distributions sharing the redshift grid.
+    """
+
+    z: npt.NDArray[np.float64] = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     sacc_data = sacc.Sacc()
 
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    dndz0: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz0)
 
-    dndz1 = np.exp(-0.5 * (z - 0.7) ** 2 / 0.05 / 0.05)
+    dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.7) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src1", z, dndz1)
 
     Cells = np.random.normal(size=ells.shape[0])
@@ -674,7 +673,13 @@ def fixture_sacc_galaxy_cells_src0_src1() -> tuple[
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz0, dndz1
+    return SaccHarmonicCrossBinFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z, dndz=dndz0),
+            "src1": SampledRedshiftDistribution(z=z, dndz=dndz1),
+        },
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens0", scope="module")
@@ -704,21 +709,19 @@ def fixture_sacc_galaxy_cells_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens1")
-def fixture_sacc_galaxy_cells_lens0_lens1() -> tuple[
-    sacc.Sacc,
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_cells_lens0_lens1() -> SaccHarmonicCrossBinFixture:
+    """Build lens-lens harmonic data and named redshift expectations.
+
+    :returns: SACC data and lens0/lens1 distributions sharing the redshift grid.
+    """
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 256) + 0.05
+    z: npt.NDArray[np.float64] = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
-    dndz0 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    dndz0: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz0)
-    dndz1 = np.exp(-0.5 * (z - 0.6) ** 2 / 0.05 / 0.05)
+    dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.6) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens1", z, dndz1)
 
     Cells = np.random.normal(size=ells.shape[0])
@@ -727,7 +730,13 @@ def fixture_sacc_galaxy_cells_lens0_lens1() -> tuple[
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz0, dndz1
+    return SaccHarmonicCrossBinFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "lens0": SampledRedshiftDistribution(z=z, dndz=dndz0),
+            "lens1": SampledRedshiftDistribution(z=z, dndz=dndz1),
+        },
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0")
@@ -784,22 +793,20 @@ def fixture_sacc_galaxy_xis_lens0_lens1() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_lens0")
-def fixture_sacc_galaxy_cells_src0_lens0() -> tuple[
-    sacc.Sacc,
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_cells_src0_lens0() -> SaccHarmonicCrossBinFixture:
+    """Build source-lens harmonic data and named redshift expectations.
+
+    :returns: SACC data and src0/lens0 distributions sharing the redshift grid.
+    """
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 256) + 0.05
+    z: npt.NDArray[np.float64] = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    dndz0: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz0)
 
-    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz1)
 
     Cells = np.random.normal(size=ells.shape[0])
@@ -808,7 +815,13 @@ def fixture_sacc_galaxy_cells_src0_lens0() -> tuple[
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz0, dndz1
+    return SaccHarmonicCrossBinFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z, dndz=dndz0),
+            "lens0": SampledRedshiftDistribution(z=z, dndz=dndz1),
+        },
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_xis_src0_lens0")

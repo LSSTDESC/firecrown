@@ -30,6 +30,22 @@ class SampledRedshiftDistribution:
 
 
 @dataclass(frozen=True, kw_only=True)
+class SaccHarmonicCrossBinFixture:
+    """Harmonic cross-bin SACC data and independent redshift expectations.
+
+    Both tracer distributions share their original redshift coordinate array,
+    but retain distinct unnormalized number densities. No measurement metadata
+    is inferred here; consumers still exercise production extraction.
+
+    :param sacc_data: Unwindowed harmonic SACC data for the two tracers.
+    :param distributions: Sampled redshift distributions keyed by tracer name.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
+
+
+@dataclass(frozen=True, kw_only=True)
 class HarmonicAngularPowerSpectrum:
     """Independent unwindowed harmonic coordinates and measured cells.
 

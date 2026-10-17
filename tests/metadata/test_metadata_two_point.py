@@ -46,6 +46,7 @@ from firecrown.metadata_types._sacc_type_string import (
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
+from tests._types import SaccHarmonicCrossBinFixture
 
 
 def test_inferred_galaxy_z_dist() -> None:
@@ -1340,20 +1341,17 @@ def test_extract_all_real_metadata_indices_multiple_combinations() -> None:
 
 
 def test_extract_all_harmonic_metadata_indices_no_swap(
-    sacc_galaxy_cells_src0_lens0: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_cells_src0_lens0: SaccHarmonicCrossBinFixture,
 ) -> None:
     """Test extract_all_harmonic_metadata_indices with no tracer swap needed.
 
     This test verifies that when tracers are in the correct order according to
     the SACC convention (measurement type order matches tracer order), no swap
     is performed.
+
+    :param sacc_galaxy_cells_src0_lens0: Source-lens harmonic SACC expectations.
     """
-    sacc_data, _, _, _ = sacc_galaxy_cells_src0_lens0
+    sacc_data = sacc_galaxy_cells_src0_lens0.sacc_data
 
     indices = extract_all_harmonic_metadata_indices(sacc_data)
 
