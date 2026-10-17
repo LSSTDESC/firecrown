@@ -62,6 +62,7 @@ from tests._types import (
     SaccGalaxyHarmonicFixture,
     SaccGalaxyRealFixture,
     SaccGalaxyWindowedFixture,
+    SaccHarmonicCrossBinFixture,
 )
 
 # pylint: disable=too-many-lines
@@ -234,26 +235,26 @@ def test_extract_all_tracers_cells_src0_src0(
 
 
 def test_extract_all_tracers_cells_src0_src1(
-    sacc_galaxy_cells_src0_src1: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_cells_src0_src1: SaccHarmonicCrossBinFixture,
 ) -> None:
-    sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_src1
+    """Extract both source distributions without changing their harmonic roles.
+
+    :param sacc_galaxy_cells_src0_src1: Source-source SACC data and expectations.
+    """
+    sacc_data = sacc_galaxy_cells_src0_src1.sacc_data
+    distributions = sacc_galaxy_cells_src0_src1.distributions
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
+        assert_array_equal(tracer.z, distributions[tracer.bin_name].z)
         assert tracer.measurements == {Galaxies.SHEAR_E}
         if tracer.bin_name == "src0":
-            assert_array_equal(tracer.dndz, dndz0)
+            assert_array_equal(tracer.dndz, distributions["src0"].dndz)
         elif tracer.bin_name == "src1":
-            assert_array_equal(tracer.dndz, dndz1)
+            assert_array_equal(tracer.dndz, distributions["src1"].dndz)
 
 
 def test_extract_all_tracers_cells_lens0_lens0(
@@ -273,26 +274,26 @@ def test_extract_all_tracers_cells_lens0_lens0(
 
 
 def test_extract_all_tracers_cells_lens0_lens1(
-    sacc_galaxy_cells_lens0_lens1: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_cells_lens0_lens1: SaccHarmonicCrossBinFixture,
 ) -> None:
-    sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_lens0_lens1
+    """Extract both lens distributions without changing their harmonic roles.
+
+    :param sacc_galaxy_cells_lens0_lens1: Lens-lens SACC data and expectations.
+    """
+    sacc_data = sacc_galaxy_cells_lens0_lens1.sacc_data
+    distributions = sacc_galaxy_cells_lens0_lens1.distributions
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 2
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, z)
+        assert_array_equal(tracer.z, distributions[tracer.bin_name].z)
         assert tracer.measurements == {Galaxies.COUNTS}
         if tracer.bin_name == "lens0":
-            assert_array_equal(tracer.dndz, dndz0)
+            assert_array_equal(tracer.dndz, distributions["lens0"].dndz)
         elif tracer.bin_name == "lens1":
-            assert_array_equal(tracer.dndz, dndz1)
+            assert_array_equal(tracer.dndz, distributions["lens1"].dndz)
 
 
 def test_extract_all_tracers_xis_lens0_lens0(
@@ -335,14 +336,14 @@ def test_extract_all_tracers_xis_lens0_lens1(
 
 
 def test_extract_all_trace_cells_src0_lens0(
-    sacc_galaxy_cells_src0_lens0: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_cells_src0_lens0: SaccHarmonicCrossBinFixture,
 ) -> None:
-    sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_lens0
+    """Extract source and lens distributions with distinct harmonic roles.
+
+    :param sacc_galaxy_cells_src0_lens0: Source-lens SACC data and expectations.
+    """
+    sacc_data = sacc_galaxy_cells_src0_lens0.sacc_data
+    distributions = sacc_galaxy_cells_src0_lens0.distributions
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
@@ -350,12 +351,12 @@ def test_extract_all_trace_cells_src0_lens0(
 
     for tracer in all_tracers:
         if tracer.bin_name == "src0":
-            assert_array_equal(tracer.z, z)
-            assert_array_equal(tracer.dndz, dndz0)
+            assert_array_equal(tracer.z, distributions["src0"].z)
+            assert_array_equal(tracer.dndz, distributions["src0"].dndz)
             assert tracer.measurements == {Galaxies.SHEAR_E}
         elif tracer.bin_name == "lens0":
-            assert_array_equal(tracer.z, z)
-            assert_array_equal(tracer.dndz, dndz1)
+            assert_array_equal(tracer.z, distributions["lens0"].z)
+            assert_array_equal(tracer.dndz, distributions["lens0"].dndz)
             assert tracer.measurements == {Galaxies.COUNTS}
 
 
