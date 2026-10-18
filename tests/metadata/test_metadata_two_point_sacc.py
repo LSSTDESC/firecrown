@@ -5,6 +5,7 @@ In this module, we test the functions and classes involved SACC extraction tools
 
 import re
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
@@ -59,6 +60,7 @@ from firecrown.metadata_types._sacc_type_string import (
 )
 from firecrown.updatable import ParamsMap
 from tests._types import (
+    SampledRedshiftDistribution,
     SaccGalaxyHarmonicFixture,
     SaccGalaxyRealFixture,
     SaccGalaxyWindowedFixture,
@@ -67,6 +69,36 @@ from tests._types import (
 )
 
 # pylint: disable=too-many-lines
+
+
+@dataclass(frozen=True, kw_only=True)
+class SaccRealThreeTracerFixture:
+    """Real SACC data with an intentionally invalid three-tracer correlation.
+
+    Frozen bindings leave SACC, mappings, and arrays mutable. Array dtypes do not
+    enforce semantic roles, shapes, units, or a shared redshift grid.
+
+    :param sacc_data: SACC data retaining the three-tracer rejection input.
+    :param distributions: Independent sampled distributions keyed by tracer name.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
+
+
+@dataclass(frozen=True, kw_only=True)
+class SaccHarmonicThreeTracerFixture:
+    """Harmonic SACC data with an intentionally invalid three-tracer correlation.
+
+    Frozen bindings leave SACC, mappings, and arrays mutable. Array dtypes do not
+    enforce semantic roles, shapes, units, or a shared redshift grid.
+
+    :param sacc_data: SACC data retaining the three-tracer rejection input.
+    :param distributions: Independent sampled distributions keyed by tracer name.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
@@ -102,30 +134,24 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(
 
 
 @pytest.fixture(name="sacc_galaxy_xis_three_tracers")
-def fixture_sacc_galaxy_xis_three_tracers() -> tuple[
-    sacc.Sacc,
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-]:
+def fixture_sacc_galaxy_xis_three_tracers() -> SaccRealThreeTracerFixture:
     """Build unwindowed real-space SACC data with a three-tracer correlation.
 
-    :returns: SACC data, redshift coordinates, and number densities for src0,
-        lens0, and lens1, in that order.
+    :returns: SACC data and independent src0/lens0/lens1 distributions sharing
+        their original redshift grid and retaining distinct number densities.
     """
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z: npt.NDArray[np.float64] = np.linspace(0, 1.0, 50) + 0.05
     thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    dndz0: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz0)
 
-    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz1)
 
-    dndz2 = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
+    dndz2: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens1", z, dndz2)
 
     # We have to coerce the return type of np.random.normal to np.array,
@@ -139,34 +165,35 @@ def fixture_sacc_galaxy_xis_three_tracers() -> tuple[
     cov = np.diag(np.ones_like(xis) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz0, dndz1, dndz2
+    return SaccRealThreeTracerFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z, dndz=dndz0),
+            "lens0": SampledRedshiftDistribution(z=z, dndz=dndz1),
+            "lens1": SampledRedshiftDistribution(z=z, dndz=dndz2),
+        },
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_cells_three_tracers")
-def fixture_sacc_galaxy_cells_three_tracers() -> tuple[
-    sacc.Sacc,
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-    npt.NDArray[np.float64],
-]:
+def fixture_sacc_galaxy_cells_three_tracers() -> SaccHarmonicThreeTracerFixture:
     """Build unwindowed harmonic SACC data with a three-tracer correlation.
 
-    :returns: SACC data, redshift coordinates, and number densities for src0,
-        lens0, and lens1, in that order.
+    :returns: SACC data and independent src0/lens0/lens1 distributions sharing
+        their original redshift grid and retaining distinct number densities.
     """
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z: npt.NDArray[np.float64] = np.linspace(0, 1.0, 50) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    dndz0: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz0)
 
-    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz1)
 
-    dndz2 = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
+    dndz2: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens1", z, dndz2)
 
     # We have to coerce the return type of np.random.normal to np.array,
@@ -180,7 +207,14 @@ def fixture_sacc_galaxy_cells_three_tracers() -> tuple[
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz0, dndz1, dndz2
+    return SaccHarmonicThreeTracerFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z, dndz=dndz0),
+            "lens0": SampledRedshiftDistribution(z=z, dndz=dndz1),
+            "lens1": SampledRedshiftDistribution(z=z, dndz=dndz2),
+        },
+    )
 
 
 def test_extract_all_tracers_cells(
@@ -675,20 +709,14 @@ def test_extract_no_window(
 
 
 def test_extract_all_data_types_three_tracers_reals(
-    sacc_galaxy_xis_three_tracers: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_xis_three_tracers: SaccRealThreeTracerFixture,
 ) -> None:
     """Reject real-space metadata for a correlation containing three tracers.
 
-    :param sacc_galaxy_xis_three_tracers: SACC data, redshift coordinates, and
-        number densities for src0, lens0, and lens1.
+    :param sacc_galaxy_xis_three_tracers: Real SACC data and named independent
+        redshift distributions for src0, lens0, and lens1.
     """
-    sacc_data, _, _, _, _ = sacc_galaxy_xis_three_tracers
+    sacc_data = sacc_galaxy_xis_three_tracers.sacc_data
 
     with pytest.raises(
         ValueError,
@@ -701,20 +729,14 @@ def test_extract_all_data_types_three_tracers_reals(
 
 
 def test_extract_all_data_types_three_tracers_harmonics(
-    sacc_galaxy_cells_three_tracers: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_cells_three_tracers: SaccHarmonicThreeTracerFixture,
 ) -> None:
     """Reject harmonic metadata for a correlation containing three tracers.
 
-    :param sacc_galaxy_cells_three_tracers: SACC data, redshift coordinates, and
-        number densities for src0, lens0, and lens1.
+    :param sacc_galaxy_cells_three_tracers: Harmonic SACC data and named independent
+        redshift distributions for src0, lens0, and lens1.
     """
-    sacc_data, _, _, _, _ = sacc_galaxy_cells_three_tracers
+    sacc_data = sacc_galaxy_cells_three_tracers.sacc_data
 
     with pytest.raises(
         ValueError,
