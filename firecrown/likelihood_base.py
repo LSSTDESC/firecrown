@@ -136,6 +136,10 @@ class NamedParameters:
     access functions assures that the parameter value it returns is of the
     specified type.
 
+    Array getters require native int64 or float64 storage and do not convert
+    values. Basic dictionaries represent these arrays as integer or float
+    sequences; Boolean sequences are stored explicitly as int64 arrays.
+
     """
 
     def __init__(
@@ -152,8 +156,11 @@ class NamedParameters:
                 | npt.NDArray[np.float64],
             ]
         ) = None,
-    ):
+    ) -> None:
         """Initialize the object from the supplied mapping of values.
+
+        Array values are retained without copying or dtype conversion. Their
+        dtype is validated by the requested array getter, not at construction.
 
         :param mapping: the mapping from strings to values used for initialization
         """
@@ -223,28 +230,40 @@ class NamedParameters:
         return val
 
     def get_int_array(self, name: str) -> npt.NDArray[np.int64]:
-        """Return the named parameter as a numpy array of int.
+        """Return the named parameter with its stored native int64 dtype.
+
+        Retrieval does not convert values or copy the array; the returned array
+        shares storage with the supplied parameter.
 
         :param name: the name of the parameter to be returned
         :returns: the value of the parameter
+        :raises TypeError: if the array does not have native int64 dtype
         """
         tmp = self.data[name]
         assert isinstance(tmp, np.ndarray)
-        val = tmp.view(dtype=np.int64)
-        assert val.dtype == np.int64
-        return val
+        if tmp.dtype != np.int64:
+            raise TypeError(
+                f"Parameter {name} expected native int64 dtype; got {tmp.dtype}."
+            )
+        return cast(npt.NDArray[np.int64], tmp)
 
     def get_float_array(self, name: str) -> npt.NDArray[np.float64]:
-        """Return the named parameter as a numpy array of float.
+        """Return the named parameter with its stored native float64 dtype.
+
+        Retrieval does not convert values or copy the array; the returned array
+        shares storage with the supplied parameter.
 
         :param name: the name of the parameter to be returned
         :returns: the value of the parameter
+        :raises TypeError: if the array does not have native float64 dtype
         """
         tmp = self.data[name]
         assert isinstance(tmp, np.ndarray)
-        val = tmp.view(dtype=np.float64)
-        assert val.dtype == np.float64
-        return val
+        if tmp.dtype != np.float64:
+            raise TypeError(
+                f"Parameter {name} expected native float64 dtype; got {tmp.dtype}."
+            )
+        return cast(npt.NDArray[np.float64], tmp)
 
     def to_set(
         self,
@@ -286,6 +305,10 @@ class NamedParameters:
     ) -> None:
         """Set the contained data from a dictionary of basic types.
 
+        Floating sequences become float64 arrays. Integer and Boolean sequences
+        become int64 arrays, with Boolean values represented by zero and one.
+        Empty sequences retain the existing float64 representation.
+
         :param basic_dict: the mapping from strings to values used for initialization
         """
         for key, value in basic_dict.items():
@@ -293,7 +316,9 @@ class NamedParameters:
                 self.data = dict(self.data, **{key: value})
             elif isinstance(value, Sequence):
                 if all(isinstance(v, float) for v in value):
-                    self.data = dict(self.data, **{key: np.array(value)})
+                    self.data = dict(
+                        self.data, **{key: np.array(value, dtype=np.float64)}
+                    )
                 elif all(isinstance(v, bool) for v in value) or all(
                     isinstance(v, int) for v in value
                 ):
@@ -313,7 +338,11 @@ class NamedParameters:
     ]:
         """Convert a NamedParameters object to a dictionary of built-in types.
 
+        Native int64 and float64 arrays are flattened into integer and float
+        sequences respectively. Other array dtypes are not supported.
+
         :returns: a dictionary containing the parameters as built-in Python types
+        :raises ValueError: if a value or array dtype is unsupported
         """
         basic_dict: dict[
             str,
