@@ -399,10 +399,10 @@ class ConstGaussianPM(ConstGaussian):
 
         # Cosmology calculations
         sc_valid = pyccl.sigma_critical(cosmo, a_lens=aL_all, a_source=aS_all)
-        sc = np.full(mask.shape, np.nan, dtype=float)
+        sc = np.full(mask.shape, np.nan, dtype=np.float64)
         sc[mask] = sc_valid
         D_l_valid = pyccl.angular_diameter_distance(cosmo, a_l)[z_l > 0]
-        D_l = np.full(z_l.shape, np.nan, dtype=float)
+        D_l = np.full(z_l.shape, np.nan, dtype=np.float64)
         D_l[z_l > 0] = D_l_valid
         D_l = D_l[:, None]
         integrand = 1.0 / sc / (D_l * D_l)
@@ -448,7 +448,7 @@ class ConstGaussianPM(ConstGaussian):
 
         V = np.zeros((len(row_src_idx), len(lens_tracers)))
         valid = (row_lens_idx >= 0) & (row_src_idx >= 0)
-        beta_rows = np.zeros(valid.sum(), dtype=float)
+        beta_rows = np.zeros(valid.sum(), dtype=np.float64)
         beta_rows = betas[row_lens_idx[valid], row_src_idx[valid]]
         V[valid, row_lens_idx[valid]] = beta_rows / (theta[valid] ** 2)
         return V
