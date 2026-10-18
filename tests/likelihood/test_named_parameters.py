@@ -1,6 +1,7 @@
 """Tests for the class firecrown.likelihood.NamedParameters."""
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from firecrown.likelihood._likelihood import NamedParameters
@@ -119,7 +120,8 @@ def test_named_parameters_wrong_type_float() -> None:
 
 
 def test_named_parameters_wrong_type_int_array() -> None:
-    params = NamedParameters({"a": np.array([1, 2, 3])})
+    """Reject integer storage when a floating array is requested."""
+    params = NamedParameters({"a": np.array([1, 2, 3], dtype=np.int64)})
     with pytest.raises(AssertionError):
         params.get_bool("a")
 
@@ -132,13 +134,13 @@ def test_named_parameters_wrong_type_int_array() -> None:
     with pytest.raises(AssertionError):
         params.get_float("a")
 
-    # Int arrays are float arrays in python
-    # with pytest.raises(AssertionError):
-    #    params.get_float_array("a")
+    with pytest.raises(TypeError, match="Parameter a.*expected.*float64.*got.*int64"):
+        params.get_float_array("a")
 
 
 def test_named_parameters_wrong_type_float_array() -> None:
-    params = NamedParameters({"a": np.array([1.0, 2.0, 3.0])})
+    """Reject floating storage when an integer array is requested."""
+    params = NamedParameters({"a": np.array([1.0, 2.0, 3.0], dtype=np.float64)})
     with pytest.raises(AssertionError):
         params.get_bool("a")
 
@@ -151,9 +153,77 @@ def test_named_parameters_wrong_type_float_array() -> None:
     with pytest.raises(AssertionError):
         params.get_float("a")
 
-    # Float arrays are int arrays in python
-    # with pytest.raises(AssertionError):
-    #    params.get_int_array("a")
+    with pytest.raises(TypeError, match="Parameter a.*expected.*int64.*got.*float64"):
+        params.get_int_array("a")
+
+
+@pytest.mark.parametrize("dtype", [np.int64, np.float64])
+@pytest.mark.parametrize("empty", [False, True])
+def test_named_parameters_array_storage(
+    dtype: type[np.int64] | type[np.float64], empty: bool
+) -> None:
+    """Preserve matching dtype, values, and shared storage for array retrieval.
+
+    :param dtype: the stored dtype required by the getter
+    :param empty: whether the parameter array is empty
+    """
+    original: npt.NDArray[np.int64] | npt.NDArray[np.float64]
+    if dtype == np.int64:
+        original = np.array([1, 2, 3, 4], dtype=np.int64)
+    else:
+        original = np.array([1, 2, 3, 4], dtype=np.float64)
+    stored = original[:0] if empty else original[::2]
+    params = NamedParameters({"samples": stored})
+
+    result: npt.NDArray[np.int64] | npt.NDArray[np.float64]
+    if dtype == np.int64:
+        result = params.get_int_array("samples")
+    else:
+        result = params.get_float_array("samples")
+
+    assert result.dtype == dtype
+    assert result.tolist() == ([] if empty else [1, 3])
+    if not empty:
+        assert np.shares_memory(result, original)
+        result[1] = 7
+        assert original.tolist() == [1, 2, 7, 4]
+
+
+@pytest.mark.parametrize(
+    "expected_dtype,actual_dtype",
+    [
+        (np.int64, np.int32),
+        (np.int64, np.uint64),
+        (np.int64, np.bool_),
+        (np.int64, np.dtype(np.int64).newbyteorder("S")),
+        (np.float64, np.float32),
+        (np.float64, np.complex128),
+        (np.float64, np.dtype(np.float64).newbyteorder("S")),
+    ],
+)
+def test_named_parameters_array_dtype_mismatch(
+    expected_dtype: type[np.int64] | type[np.float64], actual_dtype: npt.DTypeLike
+) -> None:
+    """Reject alternate array storage without reinterpreting or converting it.
+
+    :param expected_dtype: the native dtype required by the getter
+    :param actual_dtype: the deliberately incompatible stored dtype
+    """
+    stored = np.array([1, 2, 3], dtype=actual_dtype)
+    params = NamedParameters({"samples": stored})
+    with pytest.raises(TypeError) as exc_info:
+        if expected_dtype == np.int64:
+            params.get_int_array("samples")
+        else:
+            params.get_float_array("samples")
+
+    message = str(exc_info.value)
+    assert "samples" in message
+    assert f"expected native {np.dtype(expected_dtype)} dtype" in message
+    assert f"got {stored.dtype}" in message
+    assert stored.tolist() == (
+        [True, True, True] if stored.dtype == np.bool_ else [1, 2, 3]
+    )
 
 
 def test_named_parameters_set_from_basic_dict_string() -> None:
