@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from firecrown.likelihood._gaussfamily import GaussFamily
 from firecrown.modeling_tools import ModelingTools
@@ -23,7 +24,7 @@ class ConstGaussian(GaussFamily):
         """
         return -0.5 * self.compute_chisq(tools)
 
-    def make_realization_vector(self) -> np.ndarray:
+    def make_realization_vector(self) -> npt.NDArray[np.float64]:
         """Create a new (randomized) realization of the model.
 
         :returns: A new realization of the model
