@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from firecrown.likelihood._likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 
 
 def test_named_parameters_sanity() -> None:
@@ -226,6 +226,37 @@ def test_named_parameters_array_dtype_mismatch(
     )
 
 
+def test_named_parameters_basic_dict_array_round_trip() -> None:
+    """Preserve array values and integer/float meaning through basic dictionaries."""
+    params = NamedParameters()
+    params.set_from_basic_dict(
+        {
+            "integers": [1, -2, 3],
+            "floats": [1.25, -2.5, 3.75],
+            "booleans": [True, False, True],
+        }
+    )
+    basic_dict = params.convert_to_basic_dict()
+    assert basic_dict == {
+        "integers": [1, -2, 3],
+        "floats": [1.25, -2.5, 3.75],
+        "booleans": [1, 0, 1],
+    }
+    restored = NamedParameters()
+    restored.set_from_basic_dict(basic_dict)
+
+    for parameters in (params, restored):
+        integers = parameters.get_int_array("integers")
+        floats = parameters.get_float_array("floats")
+        booleans = parameters.get_int_array("booleans")
+        assert integers.dtype == np.int64
+        assert integers.tolist() == [1, -2, 3]
+        assert floats.dtype == np.float64
+        assert floats.tolist() == [1.25, -2.5, 3.75]
+        assert booleans.dtype == np.int64
+        assert booleans.tolist() == [1, 0, 1]
+
+
 def test_named_parameters_set_from_basic_dict_string() -> None:
     params = NamedParameters()
     params.set_from_basic_dict({"a": "Im a string"})
@@ -439,6 +470,7 @@ def test_invalid_convert_to_basic_dict() -> None:
 
 
 def test_invalid_convert_to_basic_dict_sequence() -> None:
+    """Reject string-array serialization at the serializer, not construction."""
     params = NamedParameters({"a": np.array(["a", "b", "c"])})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid type for sequence value"):
         params.convert_to_basic_dict()
