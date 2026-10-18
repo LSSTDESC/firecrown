@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import hashlib
 from pathlib import Path
 import shutil
@@ -18,6 +19,24 @@ ENVIRONMENTS = [
     for python in ("3.12", "3.13", "3.14")
     for platform in ("linux-64", "osx-arm64")
 ]
+
+
+@dataclass(frozen=True, kw_only=True)
+class RequirementCase:
+    """Identify a manifest requirement and its selected lock route.
+
+    Field names clarify roles but cannot statically distinguish swapped strings.
+
+    :param group: Manifest group containing the requirement.
+    :param identity: Logical manifest identity, independent of the locked name.
+    :param locked_name: Package name selected in the lock for the given manager.
+    :param manager: Installation manager for that locked selection.
+    """
+
+    group: str
+    identity: str
+    locked_name: str
+    manager: str
 
 
 def _run_cli(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -439,18 +458,45 @@ def test_cli_check_rejects_wrong_python_identity(
 @pytest.mark.parametrize(
     "requirement",
     [
-        ("runtime", "sample", "sample-conda", "conda"),
-        ("runtime", "pip-runtime", "pip_runtime", "pip"),
-        ("workarounds", "workaround", "workaround-conda", "conda"),
-        ("workarounds", "pip-workaround", "pip_workaround", "pip"),
-        ("devenv", "dev-tool", "dev-tool-conda", "conda"),
-        ("devenv", "pip-dev", "pip_dev", "pip"),
+        RequirementCase(
+            group="runtime",
+            identity="sample",
+            locked_name="sample-conda",
+            manager="conda",
+        ),
+        RequirementCase(
+            group="runtime",
+            identity="pip-runtime",
+            locked_name="pip_runtime",
+            manager="pip",
+        ),
+        RequirementCase(
+            group="workarounds",
+            identity="workaround",
+            locked_name="workaround-conda",
+            manager="conda",
+        ),
+        RequirementCase(
+            group="workarounds",
+            identity="pip-workaround",
+            locked_name="pip_workaround",
+            manager="pip",
+        ),
+        RequirementCase(
+            group="devenv",
+            identity="dev-tool",
+            locked_name="dev-tool-conda",
+            manager="conda",
+        ),
+        RequirementCase(
+            group="devenv", identity="pip-dev", locked_name="pip_dev", manager="pip"
+        ),
     ],
 )
 def test_cli_check_validates_each_requirement_in_each_environment(
     locked_repository: Path,
     environment: tuple[str, str],
-    requirement: tuple[str, str, str, str],
+    requirement: RequirementCase,
 ) -> None:
     """Compatible selections elsewhere cannot mask one incompatible selection.
 
@@ -459,11 +505,10 @@ def test_cli_check_validates_each_requirement_in_each_environment(
     :param requirement: Group, logical identity, locked name and manager to constrain.
     """
     python, platform = environment
-    group, identity, name, manager = requirement
     manifest_path = locked_repository / "dependencies.yaml"
     manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    for entry in manifest[group]:
-        if entry["name"] == identity:
+    for entry in manifest[requirement.group]:
+        if entry["name"] == requirement.identity:
             entry["version"] = ">=1,<2"
     manifest_path.write_text(
         yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
@@ -473,12 +518,21 @@ def test_cli_check_validates_each_requirement_in_each_environment(
     compatible = _run_cli(locked_repository, "--check")
     assert compatible.returncode == 0, compatible.stderr
     assert _snapshot(locked_repository) == before
-    _set_locked_version(locked_repository, environment, name, manager, "0.9")
+    _set_locked_version(
+        locked_repository,
+        environment,
+        requirement.locked_name,
+        requirement.manager,
+        "0.9",
+    )
     before = _snapshot(locked_repository)
     incompatible = _run_cli(locked_repository, "--check")
     assert incompatible.returncode == 1
     assert f"Python {python} / {platform}" in incompatible.stderr
-    assert f"{group} requirement {identity} ({manager}:{name})" in incompatible.stderr
+    assert (
+        f"{requirement.group} requirement {requirement.identity} "
+        f"({requirement.manager}:{requirement.locked_name})"
+    ) in incompatible.stderr
     assert "locked 0.9, requires >=1,<2" in incompatible.stderr
     assert _snapshot(locked_repository) == before
 
