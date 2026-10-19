@@ -1,6 +1,7 @@
 """Tests for the module firecrown.generators.tomographic_bin."""
 
 import copy
+import math
 import re
 from itertools import pairwise, product
 
@@ -10,8 +11,10 @@ import pytest
 import yaml
 from numcosmo_py import Ncm
 from numpy.testing import assert_allclose, assert_array_equal
-from scipy.integrate import simpson
+from scipy.integrate import quad, simpson
+from scipy.optimize import brentq
 
+from firecrown._source_arrays import _NBit, _RealArray
 from firecrown.generators._inferred_galaxy_zdist import (
     BinsType,
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
@@ -23,6 +26,7 @@ from firecrown.generators._inferred_galaxy_zdist import (
     Y10_LENS_BINS,
     Y10_SOURCE_BINS,
     LinearGrid1D,
+    RawGrid1D,
     Measurement,
     ZDistLSSTSRD,
     ZDistLSSTSRDBin,
@@ -32,6 +36,225 @@ from firecrown.generators._inferred_galaxy_zdist import (
 )
 from firecrown.metadata_types import CMB, Clusters, Galaxies
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.float32, np.float64])
+def test_distribution_real_precision(
+    dtype: type[np.integer[_NBit] | np.floating[_NBit]],
+) -> None:
+    """Evaluate real coordinates at double precision before returning values.
+
+    :param dtype: Supported coordinate storage supplied by the caller.
+    """
+    z: _RealArray[_NBit] = np.array([0, 1, 2, 3], dtype=dtype)
+    # For alpha=1, beta=2, z0=1 the normalized density is z² exp(-z)/2.
+    expected = [0.0, math.exp(-1) / 2, 2 * math.exp(-2), 4.5 * math.exp(-3)]
+    result = ZDistLSSTSRD(alpha=1.0, beta=2.0, z0=1.0).distribution(z)
+    assert result.dtype == np.float64
+    assert_allclose(result, expected, rtol=2e-15, atol=0.0)
+
+
+@pytest.mark.parametrize("use_autoknot", [False, True])
+@pytest.mark.parametrize("dtype", [np.int32, np.float32, np.float64])
+def test_binned_distribution_real_precision(
+    use_autoknot: bool,
+    dtype: type[np.integer[_NBit] | np.floating[_NBit]],
+) -> None:
+    """Preserve Gaussian-bin probabilities and normalization at double precision.
+
+    :param use_autoknot: Select the existing spline or direct branch.
+    :param dtype: Supported coordinate representation.
+    """
+    z: _RealArray[_NBit] = np.array([0, 1, 2, 3], dtype=dtype)
+    zdist = ZDistLSSTSRD(
+        alpha=1.0,
+        beta=2.0,
+        z0=1.0,
+        use_autoknot=use_autoknot,
+        autoknots_reltol=1e-5,
+    )
+    result = zdist.binned_distribution(
+        zpl=0.6,
+        zpu=1.4,
+        sigma_z=0.2,
+        z=z,
+        name="precision",
+        measurements={Galaxies.COUNTS},
+    )
+
+    def density(value: float) -> float:
+        width = math.sqrt(2) * 0.2 * (1 + value)
+        probability = (
+            math.erf((1.4 - value) / width) - math.erf((0.6 - value) / width)
+        ) / (1 + math.erf(value / width))
+        return value**2 * math.exp(-value) / 2 * probability
+
+    normalization = quad(lambda value: density(value) + 1e-15, 0.0, 3.0)[0]
+    expected = np.array([density(float(value)) for value in result.z], dtype=np.float64)
+    if use_autoknot:
+        expected += 1e-15
+    expected /= normalization
+    assert result.z.dtype == np.float64
+    assert result.dndz.dtype == np.float64
+    assert_allclose(result.dndz, expected, rtol=2e-4 if use_autoknot else 2e-13)
+    if not use_autoknot:
+        assert_array_equal(result.z, [0.0, 1.0, 2.0, 3.0])
+        if dtype is np.float64:
+            assert np.shares_memory(result.z, z)
+
+
+@pytest.mark.parametrize(
+    "z",
+    [
+        np.array([False, True]),
+        np.array([0.0, 1.0], dtype=np.complex128),
+        np.array(["0", "1"]),
+        np.array([0.0, 1.0], dtype=object),
+        np.array([(0.0,), (1.0,)], dtype=[("z", np.float64)]),
+        np.array(["2026-01-01", "2026-01-02"], dtype="datetime64[D]"),
+        np.array([0, 1], dtype="timedelta64[D]"),
+        np.ma.array([0.0, 1.0], mask=[False, True]),
+        np.ma.array([0.0, 1.0], mask=False),
+    ],
+    ids=[
+        "bool",
+        "complex",
+        "string",
+        "object",
+        "structured",
+        "datetime",
+        "timedelta",
+        "masked",
+        "empty-mask",
+    ],
+)
+@pytest.mark.parametrize("ingress", ["distribution", "direct-bin", "autoknot-bin"])
+def test_generator_rejects_unsupported_arrays(
+    z: npt.NDArray[np.generic],
+    ingress: str,
+) -> None:
+    """Reject physical representations before computation can lose information.
+
+    :param z: Deliberately unsupported coordinate storage.
+    :param ingress: Public distribution or binned-generation boundary.
+    """
+    zdist = ZDistLSSTSRD.year_1_lens(use_autoknot=ingress == "autoknot-bin")
+    with pytest.raises(TypeError, match="real integer or floating|masked"):
+        if ingress == "distribution":
+            zdist.distribution(z)  # type: ignore[arg-type]  # Invalid input.
+        else:
+            zdist.binned_distribution(
+                zpl=0.6,
+                zpu=1.4,
+                sigma_z=0.2,
+                z=z,  # type: ignore[arg-type]  # Invalid input.
+                name="invalid",
+                measurements={Galaxies.COUNTS},
+            )
+
+
+@pytest.mark.parametrize("num", [0, 1, 7])
+def test_linear_grid_float32_endpoints(num: int) -> None:
+    """Calculate grids from the supplied representable endpoints in float64.
+
+    :param num: Existing supported empty, singleton, and ordinary grid lengths.
+    """
+    start, end = np.float32(0.01), np.float32(1.7)
+    # Pydantic supports these real scalar inputs and converts its float fields.
+    grid = LinearGrid1D(start=start, end=end, num=num)  # type: ignore[arg-type]
+    assert type(grid.start) is float
+    assert type(grid.end) is float
+    lower, upper = float(start), float(end)
+    expected = np.array(
+        (
+            [lower + (upper - lower) * i / (num - 1) for i in range(num)]
+            if num > 1
+            else [lower] * num
+        ),
+        dtype=np.float64,
+    )
+    result = grid.generate()
+    assert result.dtype == np.float64
+    assert_allclose(result, expected, rtol=0.0, atol=3e-16)
+
+
+@pytest.mark.parametrize("values", [[], [0.0], [0.0, 1.0, 2.0]])
+def test_raw_grid_float64(values: list[float]) -> None:
+    """Generate explicit real storage, including established empty results.
+
+    :param values: Raw coordinate values.
+    """
+    result = RawGrid1D(values=values).generate()
+    assert result.dtype == np.float64
+    assert_array_equal(result, values)
+
+
+def test_distribution_scalar_and_empty() -> None:
+    """Retain scalar outputs and empty array shape with float64 values."""
+    zdist = ZDistLSSTSRD(alpha=1.0, beta=2.0, z0=1.0)
+    scalar = zdist.distribution(1.0)
+    assert isinstance(scalar, float)
+    assert_allclose(scalar, math.exp(-1) / 2, rtol=2e-15)
+    result = zdist.distribution(np.empty((0, 2), dtype=np.float32))
+    assert result.dtype == np.float64
+    assert result.shape == (0, 2)
+
+
+@pytest.mark.parametrize("use_autoknot", [False, True])
+def test_binned_distribution_empty_remains_invalid(use_autoknot: bool) -> None:
+    """Keep the established requirement for integration-bound coordinates.
+
+    :param use_autoknot: Existing direct or spline branch.
+    """
+    zdist = ZDistLSSTSRD.year_1_lens(use_autoknot=use_autoknot)
+    with pytest.raises(IndexError):
+        zdist.binned_distribution(
+            zpl=0.6,
+            zpu=1.4,
+            sigma_z=0.2,
+            z=np.empty(0, dtype=np.float64),
+            name="empty",
+            measurements={Galaxies.COUNTS},
+        )
+
+
+@pytest.mark.parametrize("use_true_distribution", [False, True])
+def test_equal_area_edges_float64(use_true_distribution: bool) -> None:
+    """Compare NumCosmo bin edges with independent analytic CDF integration.
+
+    :param use_true_distribution: Bin the true or convolved distribution.
+    """
+    zdist = ZDistLSSTSRD(
+        alpha=1.0,
+        beta=2.0,
+        z0=1.0,
+        max_z=5.0,
+        autoknots_reltol=1e-6,
+    )
+
+    def cdf(limit: float) -> float:
+        if use_true_distribution:
+            return 1 - math.exp(-limit) * (1 + limit + limit**2 / 2)
+
+        def integrand(value: float) -> float:
+            width = math.sqrt(2) * 0.2 * (1 + value)
+            probability = (
+                math.erf((limit - value) / width) + math.erf(value / width)
+            ) / (1 + math.erf(value / width))
+            return value**2 * math.exp(-value) / 2 * probability
+
+        return quad(integrand, 0.0, 5.0)[0]
+
+    half_area = cdf(3.0) / 2
+    middle = brentq(lambda limit: cdf(limit) - half_area, 0.0, 3.0)
+    edges = zdist.equal_area_bins(
+        2,
+        0.2,
+        3.0,
+        use_true_distribution=use_true_distribution,
+    )
+    assert edges.dtype == np.float64
+    assert_allclose(edges, [0.0, middle, 3.0], rtol=1e-5, atol=1e-7)
 
 
 @pytest.fixture(
@@ -70,7 +293,7 @@ def fixture_zdist_y1(request: pytest.FixtureRequest) -> ZDistLSSTSRD:
 @pytest.fixture(name="z_array", params=[100, 600, 1000])
 def fixture_z_array(request: pytest.FixtureRequest) -> npt.NDArray[np.float64]:
     """Fixture for the z array."""
-    return np.linspace(0, 3.0, request.param)
+    return np.linspace(0.0, 3.0, request.param, dtype=np.float64)
 
 
 @pytest.fixture(
@@ -146,6 +369,7 @@ def test_zdist(zdist: ZDistLSSTSRD, z_array: npt.NDArray[np.float64]) -> None:
     """Test the ZDistLSSTSRD class."""
     Pz = zdist.distribution(z_array)
     assert Pz.shape == z_array.shape
+    assert Pz.dtype == np.float64
 
 
 def test_compute_one_bin_dist(
@@ -166,6 +390,9 @@ def test_compute_one_bin_dist(
 
     if not zdist.use_autoknot:
         assert_array_equal(Pz.z, z_array)
+    assert Pz.z.dtype == np.float64
+    assert Pz.dndz.dtype == np.float64
+    assert bins["edges"].dtype == np.float64
     assert_allclose(simpson(y=Pz.dndz, x=Pz.z), 1.0, atol=1e-3)
 
 
@@ -288,7 +515,7 @@ def test_zdist_bin_from_yaml() -> None:
     assert zbin.zpl == zpl
     assert zbin.zpu == zpu
     assert zbin.sigma_z == sigma_z
-    assert_array_equal(zbin.z.generate(), np.linspace(0.0, 3.0, 100))
+    assert_array_equal(zbin.z.generate(), np.linspace(0.0, 3.0, 100, dtype=np.float64))
     assert zbin.bin_name == bin_name
     assert zbin.measurements == measurements
 

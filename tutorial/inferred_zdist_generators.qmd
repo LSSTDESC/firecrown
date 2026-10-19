@@ -64,7 +64,7 @@ import firecrown
 from firecrown.generators import ZDistLSSTSRD
 
 # These are the values of z at which we will evalute f(z)
-z = np.linspace(0, 3.5, 100)
+z = np.linspace(0.0, 3.5, 100, dtype=np.float64)
 
 # We want to evaluate f(z) for both Y1 and Y10, using the SRD prescriptions.
 zdist_y1_lens = ZDistLSSTSRD.year_1_lens(use_autoknot=True, autoknots_reltol=1.0e-5)
@@ -151,7 +151,7 @@ from firecrown.generators import (
 from firecrown.metadata_types import Measurement, Galaxies
 
 # These are the values at which we will evaluate the distribution.
-z = np.linspace(0.0, 0.6, 100)
+z = np.linspace(0.0, 0.6, 100, dtype=np.float64)
 
 
 # We use the same zdist_y1_* and zdist_y10_* that were created above.
@@ -258,7 +258,7 @@ from itertools import pairwise
 
 # We use the same zdist_y1 and zdist_y10 that were created above.
 # We create two TomographicBin objects, one for Y1 and one for Y10.
-z = np.linspace(0.0, 3.5, 1000)
+z = np.linspace(0.0, 3.5, 1000, dtype=np.float64)
 all_y1_bins = [
     zdist_y1_lens.binned_distribution(
         zpl=zpl,
@@ -356,9 +356,9 @@ We can plot just the bins edges to see the difference between the two methods.
 # | fig-cap-location: margin
 # | code-fold: true
 
-z = np.linspace(0.0, 3.5, 1000)
+z = np.linspace(0.0, 3.5, 1000, dtype=np.float64)
 stats = zdist_y1_source.compute_distribution(Y1_SOURCE_BINS["sigma_z"])
-dndz = np.array([stats.eval_p(z_i) for z_i in z])
+dndz = np.array([stats.eval_p(z_i) for z_i in z], dtype=np.float64)
 
 d_source_bins = pd.DataFrame({"z": z, "dndz": dndz})
 
@@ -403,13 +403,15 @@ N_gal = np.array(
     [
         (stats.eval_pdf(zu) - stats.eval_pdf(zl)) / N_total
         for zl, zu in pairwise(source_bins)
-    ]
+    ],
+    dtype=np.float64,
 )
 N_gal_phot = np.array(
     [
         (stats.eval_pdf(zu) - stats.eval_pdf(zl)) / N_total
         for zl, zu in pairwise(source_bins_phot)
-    ]
+    ],
+    dtype=np.float64,
 )
 percent_diff = 100.0 * (N_gal - N_gal_phot) / N_gal
 (
