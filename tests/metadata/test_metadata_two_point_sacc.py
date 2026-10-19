@@ -118,8 +118,12 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "this_type_is_invalid", ("src0", "src0"), cell_value, ell=ell_value
+        )
     warning = next(iter(recwarn), None)
     if warning is not None:
         assert isinstance(warning.message, UserWarning)
@@ -459,8 +463,12 @@ def test_extract_all_tracers_skips_non_nztracer() -> None:
     sacc_data.add_tracer("misc", "sample")
 
     # Add measurement data using only the NZTracer
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("src0", "src0"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -809,7 +817,7 @@ def test_extract_all_photoz_bin_combinations_harmonics(
 
         bin_comb = all_bin_combs[tracer_names_list.index(tracer_names_type)]
         two_point_cells = TwoPointHarmonic(
-            XY=bin_comb, ells=np.unique(np.logspace(1, 3, 10))
+            XY=bin_comb, ells=np.unique(np.logspace(1, 3, 10).astype(np.int64))
         )
         assert two_point_cells.get_sacc_name() == tracer_names_type[1]
 

@@ -9,6 +9,8 @@ from numpy import typing as npt
 from sacc.utils import detect_sacc_file_type
 from typing_extensions import assert_never
 
+from firecrown._integer_arrays import _as_int64
+
 
 def load_sacc_data(filepath: str | Path) -> sacc.Sacc:
     """Load SACC data from a file, auto-detecting the format.
@@ -97,6 +99,7 @@ def save_to_sacc(
         already present in the sacc_data.
     :returns: A copy of `sacc_data`, with data at `indices` replaced with `data_vector`.
     """
+    indices = _as_int64(indices)
     assert len(indices) == len(data_vector)
 
     new_sacc = sacc_data.copy()

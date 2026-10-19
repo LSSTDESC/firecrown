@@ -844,10 +844,15 @@ def test_extract_all_measured_mixed_types_different_tracer_types() -> None:
     sacc_data.add_tracer("NZ", "lens_bin", z, dndz_lens)
 
     # Add shear-density (different measurement types for different tracers)
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl(
-        "galaxy_shearDensity_cl_e", "source_bin", "lens_bin", ells, Cells
-    )
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shearDensity_cl_e",
+            ("source_bin", "lens_bin"),
+            cell_value,
+            ell=ell_value,
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -877,12 +882,20 @@ def test_extract_all_measured_mixed_types_multiple_measurements_same_tracer() ->
     sacc_data.add_tracer("NZ", "galaxy", z, dndz)
 
     # Add galaxy shear measurement (source)
-    Cells_shear = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "galaxy", "galaxy", ells, Cells_shear)
+    Cells_shear = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells_shear):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("galaxy", "galaxy"), cell_value, ell=ell_value
+        )
 
     # Add galaxy density measurement (lens) - same tracer
-    Cells_density = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_density_cl", "galaxy", "galaxy", ells, Cells_density)
+    Cells_density = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells_density):
+        sacc_data.add_data_point(
+            "galaxy_density_cl", ("galaxy", "galaxy"), cell_value, ell=ell_value
+        )
 
     cov_data = np.concatenate([Cells_shear, Cells_density])
     cov = np.diag(np.ones_like(cov_data) * 0.01)
@@ -950,16 +963,20 @@ def test_extract_all_measured_types_raises_on_mixed_types_when_not_allowed() -> 
     sacc_data.add_tracer("NZ", "mixed_bin", z, dndz)
 
     # Add galaxy shear measurement (source type)
-    Cells_shear = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl(
-        "galaxy_shear_cl_ee", "mixed_bin", "mixed_bin", ells, Cells_shear
-    )
+    Cells_shear = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells_shear):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("mixed_bin", "mixed_bin"), cell_value, ell=ell_value
+        )
 
     # Add galaxy density measurement (lens type) - same tracer creates mixed type
-    Cells_density = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl(
-        "galaxy_density_cl", "mixed_bin", "mixed_bin", ells, Cells_density
-    )
+    Cells_density = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells_density):
+        sacc_data.add_data_point(
+            "galaxy_density_cl", ("mixed_bin", "mixed_bin"), cell_value, ell=ell_value
+        )
 
     cov_data = np.concatenate([Cells_shear, Cells_density])
     cov = np.diag(np.ones_like(cov_data) * 0.01)

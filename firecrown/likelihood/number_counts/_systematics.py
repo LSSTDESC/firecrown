@@ -113,7 +113,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
         )
 
         if tracer_arg.bias is None:
-            bias = np.ones_like(tracer_arg.z)
+            bias = np.ones_like(tracer_arg.z, dtype=np.float64)
         else:
             bias = tracer_arg.bias
         bias = bias * pref
@@ -174,8 +174,8 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         :returns: the updated NumberCountsArgs object
         """
         z = tracer_arg.z
-        b_2_z = self.b_2 * np.ones_like(z)
-        b_s_z = self.b_s * np.ones_like(z)
+        b_2_z = self.b_2 * np.ones_like(z, dtype=np.float64)
+        b_s_z = self.b_s * np.ones_like(z, dtype=np.float64)
         # b_1 uses the "bias" field
         return replace(
             tracer_arg,
@@ -246,7 +246,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         )
 
         if tracer_arg.mag_bias is None:
-            mag_bias = np.ones_like(tracer_arg.z)
+            mag_bias = np.ones_like(tracer_arg.z, dtype=np.float64)
         else:
             mag_bias = tracer_arg.mag_bias[1]
         mag_bias = mag_bias * s / np.log(10)
@@ -300,5 +300,8 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         """
         return replace(
             tracer_arg,
-            mag_bias=(tracer_arg.z, np.ones_like(tracer_arg.z) * self.mag_bias),
+            mag_bias=(
+                tracer_arg.z,
+                np.ones_like(tracer_arg.z, dtype=np.float64) * self.mag_bias,
+            ),
         )
