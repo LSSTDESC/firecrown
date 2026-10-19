@@ -228,6 +228,19 @@ integration method. For supernovae, convert real redshift data before calculatin
 scale factors and distance moduli. For cluster profiles, do the same before
 logarithms, integrations, and statistical calculations.
 
+`TomographicBin`, `SourceGalaxyArgs`, `NumberCountsArgs`, and `WeakLensingArgs`
+accept real integer and floating arrays for redshift coordinates and distribution
+values, converting them to float64 storage before source calculations. The public
+active and passive photo-z transforms also accept these representations and
+convert before weighted averages and interpolation. Conforming arrays may share
+storage, including strided arrays; converting other real dtypes requires storage
+and may round values. SACC source reads retain their copy, flatten, and sort
+behavior. These boundaries reject masked arrays even when every mask entry is
+false, since there is no missing-data policy. Tabulated bias and alignment fields
+have float64 contracts and are validated during source-argument construction.
+Tracer preparation supplies double-valued arrays to pyccl; external callers do
+not have to supply float64 redshifts to Firecrown's flexible ingress interfaces.
+
 Window support multipoles remain exact integers; window weights and effective
 labels are real. Convert weights to `float64` before summing or contracting them.
 An existing option named `normalize` controls **sum-to-one window rescaling**, not
