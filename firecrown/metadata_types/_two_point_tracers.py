@@ -10,7 +10,9 @@ from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
 import numpy as np
+import numpy.typing as npt
 
+from firecrown._source_arrays import _DndzBit, _NBit, _RealArray, _as_float64
 from firecrown.metadata_types._measurements import Galaxies, CMB, Measurement
 from firecrown.metadata_types._utils import TypeSource
 from firecrown.utils import YAMLSerializable
@@ -49,7 +51,7 @@ class ProjectedField(Protocol):
         """The source of the tracer type information."""
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, init=False)
 class TomographicBin(YAMLSerializable):
     """Concrete tomographic bin holding redshift distribution arrays.
 
@@ -58,10 +60,39 @@ class TomographicBin(YAMLSerializable):
     """
 
     bin_name: str
-    z: np.ndarray
-    dndz: np.ndarray
+    z: npt.NDArray[np.float64]
+    dndz: npt.NDArray[np.float64]
     measurements: set[Measurement]
     type_source: TypeSource = TypeSource.DEFAULT
+
+    def __init__(
+        self,
+        *,
+        bin_name: str,
+        z: _RealArray[_NBit],
+        dndz: _RealArray[_DndzBit],
+        measurements: set[Measurement],
+        type_source: TypeSource = TypeSource.DEFAULT,
+    ) -> None:
+        """Convert real arrays to float64, then validate the bin.
+
+        Conforming arrays may share storage, including strided arrays. Other
+        real dtypes require conversion, which may round values. No distribution
+        normalization or unit scaling is performed. Unsupported dtypes and
+        masked arrays (even with an empty mask) are rejected.
+
+        :param bin_name: Identifier for the bin.
+        :param z: Real integer or floating redshift coordinates.
+        :param dndz: Real integer or floating distribution values.
+        :param measurements: Supported measurements.
+        :param type_source: Origin of measurement type information.
+        """
+        object.__setattr__(self, "bin_name", bin_name)
+        object.__setattr__(self, "z", _as_float64(z))
+        object.__setattr__(self, "dndz", _as_float64(dndz))
+        object.__setattr__(self, "measurements", measurements)
+        object.__setattr__(self, "type_source", type_source)
+        self.__post_init__()
 
     def __post_init__(self) -> None:
         """Validate the redshift resolution data.
