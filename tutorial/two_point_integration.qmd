@@ -45,7 +45,7 @@ all_y1_bins = count_bins[:1] + shear_bins[:1]
 all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
 ells = np.unique(
     np.concatenate((np.arange(2, 120), np.geomspace(120, 2000, 128)))
-).astype(int)
+).astype(np.int64)
 all_two_point_cells = [TwoPointHarmonic(XY=xy, ells=ells) for xy in all_two_point_xy]
 ```
 

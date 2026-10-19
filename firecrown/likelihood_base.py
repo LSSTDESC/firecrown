@@ -585,7 +585,7 @@ class TrivialStatistic(Statistic):
         our_data = sacc_data.get_mean(data_type="count")
         assert len(our_data) == self.count
         self.data_vector = DataVector.from_list(our_data)
-        self.sacc_indices = np.arange(len(self.data_vector))
+        self.sacc_indices = np.arange(len(self.data_vector), dtype=np.int64)
         super().read(sacc_data)
 
     @final

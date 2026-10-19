@@ -182,7 +182,11 @@ def test_source_rejects_unsupported_physical_arrays(
             # representation on its public tracer fields so Firecrown sees it.
             tracer = data.get_tracer("src")
             tracer.z, tracer.nz = z, dndz
-            data.add_ell_cl("galaxy_shear_cl_ee", "src", "src", [10], [1.0])
+            # Preserve exact support: SACC add_ell_cl casts tags to float.
+            for ell_value, cell_value in zip([10], [1.0]):
+                data.add_data_point(
+                    "galaxy_shear_cl_ee", ("src", "src"), cell_value, ell=ell_value
+                )
             if ingress == "extract":
                 extract_all_tracers_tomographic_bins(data)
             elif ingress == "projected":
@@ -211,7 +215,11 @@ def test_source_preparation_real_ingress(
     z = np.array([0, 1, 2, 3, 4, 5] if ready else [5, 4, 0, 2, 1, 3], dtype=dtype)
     nz = np.array([0, 1, 2, 1, 0, 0] if ready else [0, 0, 0, 2, 1, 1], dtype=dtype)
     data.add_tracer("NZ", "src", z, nz)
-    data.add_ell_cl("galaxy_shear_cl_ee", "src", "src", [10], [1.0])
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip([10], [1.0]):
+        data.add_data_point(
+            "galaxy_shear_cl_ee", ("src", "src"), cell_value, ell=ell_value
+        )
     assert data.get_tracer("src").z.dtype == dtype
 
     counts_photoz = nc.PhotoZShift("src", active=False)

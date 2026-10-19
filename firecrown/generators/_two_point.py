@@ -63,8 +63,12 @@ class LogLinearElls(BaseModel):
         assert minimum < midpoint
         assert midpoint < maximum
 
-        lower_range = np.linspace(minimum, midpoint - 1, midpoint - minimum)
-        upper_range = np.logspace(np.log10(midpoint), np.log10(maximum), n_log)
+        lower_range = np.linspace(
+            minimum, midpoint - 1, midpoint - minimum, dtype=np.float64
+        )
+        upper_range = np.logspace(
+            np.log10(midpoint), np.log10(maximum), n_log, dtype=np.float64
+        )
         concatenated = np.concatenate((lower_range, upper_range))
         # Round the results to the nearest integer values.
         # N.B. the dtype of the result is np.dtype[float64]
@@ -72,7 +76,7 @@ class LogLinearElls(BaseModel):
 
     def generate_all(self) -> npt.NDArray[np.int64]:
         """Generate all ell values from minimum to maximum, inclusive."""
-        return np.arange(self.minimum, self.maximum + 1)
+        return np.arange(self.minimum, self.maximum + 1, dtype=np.int64)
 
 
 def generate_bin_centers(
