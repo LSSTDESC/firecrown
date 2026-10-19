@@ -11,6 +11,7 @@ from numpy import typing as npt
 from pydantic import BaseModel, BeforeValidator, ConfigDict, field_serializer
 from typing_extensions import assert_never
 
+from firecrown._integer_arrays import _as_int64
 from firecrown.utils._yaml_serialization import YAMLSerializable
 
 
@@ -169,12 +170,13 @@ class ClIntegrationOptions(BaseModel):
                 assert_never(unreachable_method)
 
 
-@functools.lru_cache(maxsize=128)
 def cached_angular_cl(
     cosmo: pyccl.Cosmology,
     tracers: tuple[pyccl.Tracer, pyccl.Tracer],
     ells: tuple[int, ...],
-    p_of_k_a: Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]] | None = None,
+    p_of_k_a: (
+        Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]] | str | None
+    ) = None,
     p_of_k_a_lin: pyccl.Pk2D | str | None = None,
     int_options: ClIntegrationOptions | None = None,
 ) -> npt.NDArray[np.float64]:
@@ -187,11 +189,31 @@ def cached_angular_cl(
     :param l_limber: the maximum ell for the non-limber integration
     :param p_of_k_a_lin: function that returns the linear power spectrum
     """
+    # Validate before cache lookup: tuples of floats compare equal to integer
+    # tuples, so validation inside the cached function would miss cache hits.
+    if any(
+        not isinstance(ell, (int, np.integer)) or isinstance(ell, (bool, np.bool_))
+        for ell in ells
+    ):
+        raise TypeError("Exact multipoles must have an integer dtype.")
+    _as_int64(np.asarray(ells) if ells else np.empty(0, dtype=np.int64))
+    return _cached_angular_cl(cosmo, tracers, ells, p_of_k_a, p_of_k_a_lin, int_options)
+
+
+@functools.lru_cache(maxsize=128)
+def _cached_angular_cl(
+    cosmo: pyccl.Cosmology,
+    tracers: tuple[pyccl.Tracer, pyccl.Tracer],
+    ells: tuple[int, ...],
+    p_of_k_a: Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]] | str | None,
+    p_of_k_a_lin: pyccl.Pk2D | str | None,
+    int_options: ClIntegrationOptions | None,
+) -> npt.NDArray[np.float64]:
     return pyccl.angular_cl(
         cosmo,
         tracers[0],
         tracers[1],
-        np.array(ells),
+        np.array(ells, dtype=np.int64),
         p_of_k_a=p_of_k_a,
         p_of_k_a_lin=p_of_k_a_lin,
         **(int_options.get_angular_cl_args() if int_options else {}),

@@ -15,6 +15,7 @@ import sacc
 import scipy.linalg
 from typing_extensions import ParamSpec
 
+from firecrown._integer_arrays import _as_int64
 from firecrown.likelihood_base import (
     GuardedStatistic,
     Likelihood,
@@ -270,10 +271,10 @@ class GaussFamily(Likelihood, ABC):
                 raise RuntimeError(
                     f"The statistic {stat.statistic} has no sacc_indices."
                 )
-            indices_list.append(stat.statistic.sacc_indices.copy())
+            indices_list.append(_as_int64(stat.statistic.sacc_indices))
             data_vector_list.append(stat.statistic.get_data_vector())
 
-        indices = np.concatenate(indices_list).astype(int)
+        indices = np.concatenate(indices_list)
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)), dtype=np.float64)
 
@@ -511,9 +512,13 @@ class GaussFamily(Likelihood, ABC):
         sacc_indices_list = []
         for stat in statistic:
             assert stat.sacc_indices is not None
-            sacc_indices_list.append(stat.sacc_indices.copy())
+            sacc_indices_list.append(_as_int64(stat.sacc_indices))
 
-        sacc_indices = np.concatenate(sacc_indices_list)
+        sacc_indices = (
+            np.concatenate(sacc_indices_list)
+            if sacc_indices_list
+            else np.empty(0, dtype=np.int64)
+        )
 
         return sacc_indices
 

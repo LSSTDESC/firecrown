@@ -8,6 +8,7 @@ import numpy as np
 import numpy.typing as npt
 from pydantic_core import core_schema
 
+from firecrown._integer_arrays import _IntBit, _as_int64
 from firecrown.metadata_types._compatibility import measurement_is_compatible
 from firecrown.metadata_types._two_point_tracers import ProjectedField
 from firecrown.metadata_types._measurements import (
@@ -88,7 +89,7 @@ class TwoPointXY(YAMLSerializable):
         return TracerNames(self.x.bin_name, self.y.bin_name)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, init=False)
 class TwoPointHarmonic(YAMLSerializable):
     """Class defining the metadata for an harmonic-space two-point measurement.
 
@@ -104,6 +105,30 @@ class TwoPointHarmonic(YAMLSerializable):
     ells: npt.NDArray[np.int64]
     window: None | npt.NDArray[np.float64] = None
     window_ells: None | npt.NDArray[np.float64] = None
+
+    def __init__(
+        self,
+        *,
+        XY: TwoPointXY,
+        ells: npt.NDArray[np.integer[_IntBit]],
+        window: None | npt.NDArray[np.float64] = None,
+        window_ells: None | npt.NDArray[np.float64] = None,
+    ) -> None:
+        """Store exact integer support separately from real observation labels.
+
+        Conforming int64 arrays may share storage. Other integer arrays are
+        converted only after checking their range; floats and masks are rejected.
+
+        :param XY: The correlated tracer pair.
+        :param ells: Integer support multipoles, never floating bin centers.
+        :param window: Optional weights over the support multipoles.
+        :param window_ells: Optional real observation labels.
+        """
+        object.__setattr__(self, "XY", XY)
+        object.__setattr__(self, "ells", _as_int64(ells))
+        object.__setattr__(self, "window", window)
+        object.__setattr__(self, "window_ells", window_ells)
+        self.__post_init__()
 
     def __post_init__(self) -> None:
         """Validate the TwoPointHarmonic data.

@@ -409,7 +409,9 @@ def test_two_point_cwindow_invalid_window() -> None:
         match="window should be a ndarray.",
     ):
         TwoPointHarmonic(
-            XY=xy, ells=np.array([1.0]), window="Im not a window"  # type: ignore
+            XY=xy,
+            ells=np.array([1], dtype=np.int64),
+            window="Im not a window",  # type: ignore[arg-type]  # Invalid window.
         )
 
 
@@ -1390,13 +1392,29 @@ def test_extract_all_harmonic_metadata_indices_with_swap() -> None:
 
     # Add measurement: galaxy_shearDensity_cl_e expects (SHEAR_E, COUNTS)
     # But we provide it with (lens_bin, source_bin) which is (COUNTS, SHEAR_E)
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
     # The only way to determine the incorrect order is to add autocorrelation
-    sacc_data.add_ell_cl(
-        "galaxy_shearDensity_cl_e", "lens_bin", "source_bin", ells, Cells
-    )
-    sacc_data.add_ell_cl("galaxy_density_cl", "lens_bin", "lens_bin", ells, Cells)
-    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "source_bin", "source_bin", ells, Cells)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shearDensity_cl_e",
+            ("lens_bin", "source_bin"),
+            cell_value,
+            ell=ell_value,
+        )
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_density_cl", ("lens_bin", "lens_bin"), cell_value, ell=ell_value
+        )
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee",
+            ("source_bin", "source_bin"),
+            cell_value,
+            ell=ell_value,
+        )
 
     cov = np.ones(30) * 0.01
     sacc_data.add_covariance(cov)
@@ -1438,8 +1456,12 @@ def test_extract_all_harmonic_metadata_indices_density_only() -> None:
     sacc_data.add_tracer("NZ", "lens1", z, dndz1)
 
     # Add density-density measurement
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_density_cl", "lens0", "lens1", ells, Cells)
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_density_cl", ("lens0", "lens1"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -1471,8 +1493,12 @@ def test_extract_all_harmonic_metadata_indices_shear_only() -> None:
     sacc_data.add_tracer("NZ", "src1", z, dndz1)
 
     # Add shear-shear measurement (both tracers have SHEAR_E)
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src1", ells, Cells)
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("src0", "src1"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -1515,8 +1541,12 @@ def test_extract_all_harmonic_metadata_indices_multiple_combinations() -> None:
     data_list = []
     for src in src_tracers:
         for lens in lens_tracers:
-            Cells = np.random.normal(size=ells.shape[0])
-            sacc_data.add_ell_cl("galaxy_shearDensity_cl_e", src, lens, ells, Cells)
+            Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+            # Preserve exact support: SACC add_ell_cl casts tags to float.
+            for ell_value, cell_value in zip(ells, Cells):
+                sacc_data.add_data_point(
+                    "galaxy_shearDensity_cl_e", (src, lens), cell_value, ell=ell_value
+                )
             data_list.append(Cells)
 
     cov_data = np.concatenate(data_list)

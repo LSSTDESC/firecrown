@@ -580,6 +580,15 @@ def test_cached_angular_cl(tools_with_vanilla_cosmology: ModelingTools) -> None:
     assert len(cl) == len(ells)
     assert np.all(np.isfinite(cl))
 
+    # A cache hit for equal integer values must not admit floating multipoles.
+    with pytest.raises(TypeError, match="integer dtype"):
+        cached_angular_cl(
+            cosmo,
+            (tracer1, tracer2),
+            (10.0, 20.0, 30.0),  # type: ignore[arg-type]  # Invalid exact support.
+            p_of_k_a="delta_matter:delta_matter",
+        )
+
 
 def test_cached_angular_cl_with_options(
     tools_with_vanilla_cosmology: ModelingTools,
