@@ -280,6 +280,10 @@ def test_two_point_harmonic_bin_filter_collection_apply_filter_single(
             harmonic_filter_collection.bin_filter_dict[bin_spec],
             harmonic_bin.metadata.ells,
         )
+        assert match_elements.dtype == np.bool_
+        assert match_obs.dtype == np.bool_
+        assert harmonic_bin.metadata.ells[match_elements].dtype == np.int64
+        assert harmonic_bin.indices[~match_obs].dtype == np.int64
         assert np.all(match_elements == match_obs)
         assert np.all(match_elements == match_ells)
 
