@@ -11,6 +11,7 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_serial
 from scipy.integrate import quad
 from scipy.special import erf, erfc, gamma  # pylint: disable=no-name-in-module
 
+from firecrown._source_arrays import _NBit, _RealArray, _as_float64
 from firecrown.metadata_functions import make_measurements, make_measurements_dict
 from firecrown.metadata_types import Galaxies, TomographicBin, Measurement
 
@@ -179,21 +180,28 @@ class ZDistLSSTSRD:
 
     @overload
     def distribution(  # noqa: E704
-        self, z: npt.NDArray[np.float64]
+        self, z: _RealArray[_NBit]
     ) -> npt.NDArray[np.float64]: ...
 
     def distribution(
-        self, z: float | npt.NDArray[np.float64]
+        self, z: float | _RealArray[_NBit]
     ) -> float | npt.NDArray[np.float64]:
         """Generate the inferred galaxy redshift distribution.
+
+        Real integer and floating arrays are converted to float64 before
+        evaluation. Conversion may round values; masked and other dtype families
+        are rejected. Scalar input retains scalar output.
 
         :param z: The redshifts at which to evaluate the distribution
         :returns: The inferred galaxy redshift distribution
         """
+        redshifts = _as_float64(z) if isinstance(z, np.ndarray) else z
         norma = self.alpha / (self.z0 * gamma((1.0 + self.beta) / self.alpha))
 
         return (
-            norma * (z / self.z0) ** self.beta * np.exp(-((z / self.z0) ** self.alpha))
+            norma
+            * (redshifts / self.z0) ** self.beta
+            * np.exp(-((redshifts / self.z0) ** self.alpha))
         )
 
     def distribution_zp(self, zp: float, sigma_z: float) -> float:
@@ -244,7 +252,7 @@ class ZDistLSSTSRD:
     ) -> npt.NDArray[np.float64]:
         """Generate the integrated Gaussian distribution."""
         denom = np.sqrt(2.0) * sigma_z * (1.0 + z)
-        result = np.zeros_like(denom)
+        result = np.zeros_like(denom, dtype=np.float64)
         erfc_up = (z - zpu) > 0.0
         erfc_low = (z - zpl) < 0.0
         rest = ~(erfc_up | erfc_low)
@@ -358,7 +366,8 @@ class ZDistLSSTSRD:
         total_area = stats.eval_pdf(last_z)
 
         return np.array(
-            [stats.eval_inv_pdf(i * total_area / n_bins) for i in range(n_bins + 1)]
+            [stats.eval_inv_pdf(i * total_area / n_bins) for i in range(n_bins + 1)],
+            dtype=np.float64,
         )
 
     def binned_distribution(
@@ -367,11 +376,17 @@ class ZDistLSSTSRD:
         zpl: float,
         zpu: float,
         sigma_z: float,
-        z: npt.NDArray[np.float64],
+        z: _RealArray[_NBit],
         name: str,
         measurements: set[Measurement],
     ) -> TomographicBin:
         """Generate the inferred galaxy redshift distribution in bins.
+
+        Real integer and floating coordinates are converted to float64 before
+        integration and Gaussian-bin arithmetic. Conforming coordinates may
+        share storage with the result when autoknot is disabled; other dtypes
+        require conversion, which may round values. Masked arrays and unsupported
+        dtype families are rejected.
 
         :param zpl: The lower bound of the integration
         :param zpu: The upper bound of the integration
@@ -395,13 +410,14 @@ class ZDistLSSTSRD:
                 + self.autoknots_abstol
             )
 
-        norma = quad(lambda x: _P(x, None), z[0], z[-1], args=())[0]
+        redshifts = _as_float64(z)
+        norma = quad(lambda x: _P(x, None), redshifts[0], redshifts[-1], args=())[0]
 
         if not self.use_autoknot:
-            z_knots = z
+            z_knots = redshifts
             dndz = (
-                self._integrated_gaussian(zpl, zpu, sigma_z, z)
-                * self.distribution(z)
+                self._integrated_gaussian(zpl, zpu, sigma_z, redshifts)
+                * self.distribution(redshifts)
                 / norma
             )
         else:
@@ -410,14 +426,19 @@ class ZDistLSSTSRD:
                 Ncm.SplineFuncType.FUNCTION_SPLINE,
                 _P,
                 None,
-                z[0],
-                z[-1],
+                redshifts[0],
+                redshifts[-1],
                 0,
                 self.autoknots_reltol,
             )
-            z_knots = np.array(s.peek_xv().dup_array())  # pylint: disable-msg=no-member
+            z_knots = np.array(
+                s.peek_xv().dup_array(), dtype=np.float64  # pylint: disable=no-member
+            )
             dndz = (
-                np.array(s.peek_yv().dup_array())  # pylint: disable-msg=no-member
+                np.array(
+                    s.peek_yv().dup_array(),
+                    dtype=np.float64,  # pylint: disable=no-member
+                )
                 / norma
             )
 
@@ -437,7 +458,9 @@ class LinearGrid1D(BaseModel):
 
     def generate(self) -> npt.NDArray[np.float64]:
         """Generate the 1D linear grid."""
-        return np.linspace(self.start, self.end, self.num)
+        return np.linspace(
+            np.float64(self.start), np.float64(self.end), self.num, dtype=np.float64
+        )
 
 
 class RawGrid1D(BaseModel):
@@ -449,7 +472,7 @@ class RawGrid1D(BaseModel):
 
     def generate(self) -> npt.NDArray[np.float64]:
         """Generate the 1D grid."""
-        return np.array(self.values)
+        return np.array(self.values, dtype=np.float64)
 
 
 Grid1D = LinearGrid1D | RawGrid1D
@@ -515,7 +538,7 @@ class ZDistLSSTSRDBinCollection(BaseModel):
 @cache
 def get_y1_lens_bins() -> BinsType:
     """Get the Year 1 lens bins."""
-    return {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.03}
+    return {"edges": np.linspace(0.2, 1.2, 5 + 1, dtype=np.float64), "sigma_z": 0.03}
 
 
 @cache
@@ -530,7 +553,7 @@ def get_y1_source_bins() -> BinsType:
 @cache
 def get_y10_lens_bins() -> BinsType:
     """Get the Year 10 lens bins."""
-    return {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.03}
+    return {"edges": np.linspace(0.2, 1.2, 10 + 1, dtype=np.float64), "sigma_z": 0.03}
 
 
 @cache
