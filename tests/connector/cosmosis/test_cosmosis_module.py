@@ -14,6 +14,8 @@ from cosmosis.datablock import DataBlock, option_section, names as section_names
 import pyccl
 
 from firecrown.connector.mapping import MappingCosmoSIS
+from firecrown.likelihood import GaussFamily, TwoPoint
+from firecrown.data_types import TheoryVector
 from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import (
     FirecrownLikelihood,
@@ -791,3 +793,53 @@ def test_gaussfamily_special_case(
     # A second call should work
     firecrown_mod_with_const_gaussian.execute(sample_with_M2)
     assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
+
+
+@pytest.mark.parametrize("out_of_range", ["none", "above", "below"])
+def test_twopoint_integer_abi(
+    firecrown_mod_with_two_point_harmonic: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
+    out_of_range: str,
+) -> None:
+    """Check C int narrowing without retyping or mutating domain multipoles.
+
+    :param firecrown_mod_with_two_point_harmonic: Existing harmonic connector.
+    :param sample_with_lens0_bias: Sample with required modeling parameters.
+    :param out_of_range: Exercise rejection beyond the actual platform C int.
+    """
+    module = firecrown_mod_with_two_point_harmonic
+    assert module.execute(sample_with_lens0_bias) == 0
+    assert isinstance(module.likelihood, GaussFamily)
+    statistic = module.likelihood.statistics[0].statistic
+    assert isinstance(statistic, TwoPoint)
+    limits = np.iinfo(np.intc)
+    domain = np.array([0, 1, limits.max], dtype=np.int64)
+    if out_of_range != "none":
+        if limits.max == np.iinfo(np.int64).max:
+            pytest.skip("C int already covers the int64 domain on this platform")
+        domain[-1] = limits.max + 1 if out_of_range == "above" else limits.min - 1
+    statistic.theory.ells = domain
+    # execute resets computed state after writing predictions. Restore those
+    # actual predictions to exercise the public adapter independently of CCL.
+    statistic.theory_vector = TheoryVector.create(
+        sample_with_lens0_bias.get_double_array_1d(
+            "data_vector", "theory_galaxy_density_cl_lens0_lens0"
+        )
+    )
+    statistic.computed_theory_vector = True
+    before = domain.copy()
+    sample = DataBlock()
+    if out_of_range != "none":
+        with pytest.raises(ValueError, match="C int range"):
+            module.handle_twopoint_statistic(sample, statistic)
+        assert not sample.has_value("data_vector", "ell_galaxy_density_cl_lens0_lens0")
+    else:
+        module.handle_twopoint_statistic(sample, statistic)
+        result = sample.get_int_array_1d(
+            "data_vector", "ell_galaxy_density_cl_lens0_lens0"
+        )
+        assert result.dtype == np.intc
+        np.testing.assert_array_equal(result, [0, 1, limits.max])
+    assert statistic.ells is domain
+    assert domain.dtype == np.int64
+    np.testing.assert_array_equal(domain, before)

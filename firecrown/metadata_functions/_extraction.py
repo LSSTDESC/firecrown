@@ -8,6 +8,8 @@ import sacc
 from sacc.data_types import required_tags
 
 import firecrown.metadata_types as mdt
+from firecrown._integer_arrays import _as_int64
+from firecrown._source_arrays import _NBit, _RealArray, _as_float64
 from firecrown.metadata_functions._combination_utils import (
     make_all_photoz_bin_combinations,
 )
@@ -682,6 +684,7 @@ def extract_window_function(
        if the indices represent the measured Cells directly.
     :raises ValueError: if any window function column has zero total weight.
     """
+    indices = _as_int64(indices)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",
@@ -690,7 +693,7 @@ def extract_window_function(
         bandpower_window = sacc_data.get_bandpower_windows(indices)
     if bandpower_window is None:
         return None, None
-    ells = bandpower_window.values
+    ells = _as_int64(bandpower_window.values)
 
     # Check for zero-weight columns
     weight_sums = bandpower_window.weight.sum(axis=0)
@@ -710,7 +713,7 @@ def extract_window_function(
 
 
 def maybe_enforce_window(
-    ells: npt.NDArray[np.int64],
+    ells: _RealArray[_NBit],
     indices: npt.NDArray[np.int64],
     sacc_data: sacc.Sacc,
     normalize: bool = True,
@@ -732,9 +735,10 @@ def maybe_enforce_window(
     replacement_ells, weights = extract_window_function(sacc_data, indices, normalize)
     window_ells: None | npt.NDArray[np.float64]
     if replacement_ells is not None:
-        window_ells = ells.astype(np.float64)
-        ells = replacement_ells
+        window_ells = _as_float64(ells)
+        exact_ells = replacement_ells
     else:
         window_ells = None
+        exact_ells = _as_int64(ells)
 
-    return ells, weights, window_ells
+    return exact_ells, weights, window_ells

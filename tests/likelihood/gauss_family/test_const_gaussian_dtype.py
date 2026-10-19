@@ -97,3 +97,57 @@ def test_gaussian_rejects_unsupported_covariance(
             [statistic],
             covariance,  # type: ignore[arg-type]  # Test invalid runtime ingress.
         )
+
+
+@pytest.mark.parametrize(
+    "indices, error",
+    [
+        (np.array([0.5, 1.5, 2.5]), TypeError),
+        (np.array([0.0, 1.0, 2.0]), TypeError),
+        (np.array([False, True, True]), TypeError),
+        (np.array([0, 1, np.iinfo(np.int64).max + 1], dtype=np.uint64), ValueError),
+    ],
+)
+def test_gaussian_rejects_invalid_covariance_indices(
+    indices: npt.NDArray[np.generic], error: type[Exception]
+) -> None:
+    """Reject invalid statistic indices instead of silently truncating them.
+
+    :param indices: Deliberately invalid covariance index storage.
+    :param error: Expected representation or range error.
+    """
+    data = sacc.Sacc()
+    for value in [1.0, 2.0, 3.0]:
+        data.add_data_point("count", (), value)
+    statistic = TrivialStatistic()
+    statistic.read(data)
+    statistic.sacc_indices = indices  # type: ignore[assignment]  # Invalid ingress.
+    with pytest.raises(error, match="integer dtype|int64 range"):
+        ConstGaussian.create_ready([statistic], np.eye(3))
+
+
+def test_gaussian_empty_index_selection(sacc_data_for_trivial_stat: sacc.Sacc) -> None:
+    """An empty statistic selection returns integer indices usable for indexing.
+
+    :param sacc_data_for_trivial_stat: SACC observations and covariance.
+    """
+    likelihood = ConstGaussian([TrivialStatistic()])
+    likelihood.read(sacc_data_for_trivial_stat)
+    indices = likelihood.get_sacc_indices([])
+    assert indices.dtype == np.int64
+    np.testing.assert_array_equal(likelihood.get_data_vector()[indices], [])
+
+
+def test_gaussian_integer_index_reordering() -> None:
+    """Select covariance rows in statistic order with checked integer indices."""
+    data = sacc.Sacc()
+    for value in [1.0, 2.0, 3.0]:
+        data.add_data_point("count", (), value)
+    statistic = TrivialStatistic()
+    statistic.read(data)
+    statistic.sacc_indices = np.array([2, 0, 1], dtype=np.int32)
+    likelihood = ConstGaussian.create_ready([statistic], np.diag([4.0, 9.0, 16.0]))
+    indices = likelihood.get_sacc_indices()
+    assert indices.dtype == np.int64
+    np.testing.assert_array_equal(indices, [2, 0, 1])
+    np.testing.assert_array_equal(likelihood.get_cov(), np.diag([16.0, 4.0, 9.0]))

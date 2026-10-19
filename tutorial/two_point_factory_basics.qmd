@@ -137,7 +137,7 @@ bin_pair_selector = ThreeTwoBinPairSelector(
     lens_dist=1, source_dist=1, source_lens_dist=5
 )
 all_two_point_xy = make_binned_two_point_filtered(all_y1_bins, bin_pair_selector)
-ells = np.unique(np.geomspace(2, 2000, 128).astype(int))
+ells = np.unique(np.geomspace(2, 2000, 128).astype(np.int64))
 all_two_point_cells = [TwoPointHarmonic(XY=xy, ells=ells) for xy in all_two_point_xy]
 ```
 
