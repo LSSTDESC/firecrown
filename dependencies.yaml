@@ -122,6 +122,8 @@ devenv:
   - name: pandas
     note: tutorials
   - name: plotnine
+  - name: pygobject-stubs
+    version: "<2.18"
   - name: pylint
   - name: pytest
   - name: pytest-cov
