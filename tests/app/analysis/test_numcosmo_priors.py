@@ -406,6 +406,42 @@ class TestSetupModels:
         # Verify no prior was added
         assert len(priors) == initial_priors_count
 
+    def test_setup_models_sets_fit_flags(
+        self, numcosmo_init: bool, tmp_path: Path
+    ) -> None:
+        """Free parameters are fitted and fixed parameters are not."""
+        assert numcosmo_init
+
+        model = Model(
+            name="fit_flag_model",
+            description="Model with one free and one fixed parameter",
+            parameters=[
+                Parameter.from_tuple("free_param", "f", -1.0, 1.0, 0.5, True),
+                Parameter.from_tuple("fixed_param", "x", -1.0, 1.0, 0.25, False),
+            ],
+        )
+        config_opts = ConfigOptions(
+            output_path=tmp_path,
+            factory_source=Path("factory.py"),
+            build_parameters=NamedParameters({}),
+            models=[model],
+            cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+            use_absolute_path=True,
+            required_cosmology=FrameworkCosmology.NONLINEAR,
+            prefix="test",
+        )
+        mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+
+        _ = _setup_models(config_opts, mset, [])
+
+        fc_model = mset.peek_array_pos(0)
+        free_index = fc_model.param_index_from_name("free_param")[1]
+        fixed_index = fc_model.param_index_from_name("fixed_param")[1]
+        assert fc_model.param_get_ftype(free_index) == Ncm.ParamType.FREE
+        assert fc_model.param_get_ftype(fixed_index) == Ncm.ParamType.FIXED
+        assert fc_model.param_get(free_index) == 0.5
+        assert fc_model.param_get(fixed_index) == 0.25
+
     def test_setup_models_mixed_priors(
         self, numcosmo_init: bool, tmp_path: Path
     ) -> None:
