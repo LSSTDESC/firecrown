@@ -27,8 +27,7 @@ if [[ ! -f "$prefix/conda-meta/history" ]] ||
     cp "$lockfile" "$prefix/.firecrown-lockfile"
 fi
 
-conda env config vars set --prefix "$prefix" \
-    "CSL_DIR=$csl_dir" "FIRECROWN_DIR=$repo_root"
+conda env config vars set --prefix "$prefix" "CSL_DIR=$csl_dir"
 
 if [[ ! -f "$prefix/bin/cosmosis-configure" ]]; then
     echo "Missing CosmoSIS configuration: $prefix/bin/cosmosis-configure" >&2

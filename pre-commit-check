@@ -1,6 +1,6 @@
 #!/usr/bin/env bash -x
 
-if black firecrown/ examples/ tests/; then
+if black firecrown/ tests/; then
   echo "black ok"
 else
   echo "black failed"
@@ -8,7 +8,7 @@ else
 fi
 
 
-if flake8 firecrown/ examples/ tests/; then
+if flake8 firecrown/ tests/; then
   echo "flake8 ok"
 else
   echo "flake8 failed"
@@ -37,14 +37,7 @@ else
   exit 1
 fi
 
-if pylint --rcfile examples/pylintrc examples; then
-  echo "pylint ok for examples"
-else
-  echo "pylint failed for examples"
-  exit 1
-fi
-
-if mypy -p firecrown -p examples -p tests; then
+if mypy -p firecrown -p tests; then
   echo "mypy ok"
 else
   echo "mypy failed"

@@ -2,8 +2,6 @@ env/
 dist/
 build/
 __pycache__/
-examples/output_*
-examples/srd_sn/sndata/
 .idea
 .project
 .pydevproject
@@ -17,9 +15,6 @@ covdata/
 *.fits
 !requirements.txt
 !dev-requirements.txt
-examples/*/output_*
-examples/output_*
-examples/desc_srd_v1/srd_data/LSST_DESC_SRD_v1_release
 
 *.pytest_cache
 # Byte-compiled / optimized / DLL files

@@ -4,7 +4,7 @@ As a unit test, what this can test is very limited.
 This test do not invoke the `cosmosis` executable.
 """
 
-from os.path import expandvars
+from pathlib import Path
 from unittest import mock
 import yaml
 import pytest
@@ -22,6 +22,8 @@ from firecrown.connector.cosmosis.likelihood import (
     extract_section,
     form_error_message,
 )
+
+LIKELIHOOD_DIR = Path(__file__).parents[2] / "likelihood"
 
 
 @pytest.fixture(name="minimal_module_config")
@@ -44,7 +46,7 @@ def fixture_defective_module_config() -> DataBlock:
     block.put_string(
         option_section,
         "likelihood_source",
-        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param.py"),
+        str(LIKELIHOOD_DIR / "lkdir/lk_needing_param.py"),
     )
     return block
 
@@ -55,7 +57,7 @@ def fixture_minimal_config() -> DataBlock:
     result.put_string(
         option_section,
         "likelihood_source",
-        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lkscript.py"),
+        str(LIKELIHOOD_DIR / "lkdir/lkscript.py"),
     )
     return result
 
@@ -66,7 +68,7 @@ def fixture_config_with_derived_parameters() -> DataBlock:
     result.put_string(
         option_section,
         "Likelihood_source",
-        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_derived_parameter.py"),
+        str(LIKELIHOOD_DIR / "lkdir/lk_derived_parameter.py"),
     )
     return result
 
@@ -79,9 +81,7 @@ def fixture_config_with_const_gaussian_missing_sampling_parameters_sections() ->
     result.put_string(
         option_section,
         "Likelihood_source",
-        expandvars(
-            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_const_gaussian.py"
-        ),
+        str(LIKELIHOOD_DIR / "gauss_family/lkscript_const_gaussian.py"),
     )
     # result.put_string(option_section, )
     return result
@@ -93,9 +93,7 @@ def fixture_config_with_two_point_real() -> DataBlock:
     result.put_string(
         option_section,
         "Likelihood_source",
-        expandvars(
-            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
-        ),
+        str(LIKELIHOOD_DIR / "gauss_family/lkscript_two_point.py"),
     )
     result.put_string(
         option_section,
@@ -121,21 +119,18 @@ def fixture_config_with_two_point_harmonic(ccl_mode: str) -> DataBlock:
     likelihood_file = ""
     sampling_sections = ""
     if ccl_mode == "default":
-        likelihood_file = (
-            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
-        )
+        likelihood_file = str(LIKELIHOOD_DIR / "gauss_family/lkscript_two_point.py")
         sampling_sections = "firecrown_two_point_parameters"
     elif ccl_mode == "pure_ccl":
-        likelihood_file = (
-            "${FIRECROWN_DIR}/tests/likelihood/"
-            "gauss_family/lkscript_two_point_pure_ccl.py"
+        likelihood_file = str(
+            LIKELIHOOD_DIR / "gauss_family/lkscript_two_point_pure_ccl.py"
         )
         sampling_sections = "firecrown_ccl_parameters firecrown_two_point_parameters"
 
     result.put_string(
         option_section,
         "Likelihood_source",
-        expandvars(likelihood_file),
+        likelihood_file,
     )
 
     result.put_string(
@@ -288,8 +283,8 @@ def fixture_sample_without_M(minimal_sample: DataBlock) -> DataBlock:
 def test_extract_section_gets_named_parameters(defective_module_config: DataBlock):
     params = extract_section(defective_module_config, "module_options")
     assert isinstance(params, NamedParameters)
-    assert params.get_string("likelihood_source") == expandvars(
-        "${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param.py"
+    assert params.get_string("likelihood_source") == str(
+        LIKELIHOOD_DIR / "lkdir/lk_needing_param.py"
     )
 
 

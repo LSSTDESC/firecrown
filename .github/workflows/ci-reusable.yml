@@ -302,8 +302,6 @@ jobs:
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
-          export FIRECROWN_DIR=${PWD}
-          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           echo "starting pip install --no-deps -e ."
           pip install --no-deps -e .
           echo "done with pip install --no-deps -e ."
@@ -478,8 +476,6 @@ jobs:
       - name: Create firecrown_developer environment
         shell: bash -l {0}
         run: |
-          export FIRECROWN_DIR=${PWD}
-          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           echo "starting pip install --no-deps -e ."
           pip install --no-deps -e .
           echo "done with pip install --no-deps -e ."

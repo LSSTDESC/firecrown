@@ -12,7 +12,7 @@ changes.
 
 """
 
-import os
+from pathlib import Path
 
 import sacc
 from numpy.testing import assert_allclose
@@ -67,7 +67,7 @@ def build_likelihood(
     return likelihood, modeling_tools
 
 
-SACC_FILE = f"{os.environ.get('FIRECROWN_DIR')}/tests/bug_398.sacc.gz"
+SACC_FILE = str(Path(__file__).parent / "bug_398.sacc.gz")
 
 SRC2_SRC2_CL_VANILLA_LCDM = [
     1.6996796409559522e-08,

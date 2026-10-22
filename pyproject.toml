@@ -51,7 +51,7 @@ Homepage = "https://github.com/LSSTDESC/firecrown"
 
 [tool.setuptools.packages.find]
 include = ["firecrown*"]
-exclude = ["examples*", "tests*", "tutorial*", "docs*"]
+exclude = ["tests*", "tutorial*", "docs*"]
 
 [project.scripts]
 firecrown = "firecrown.app:app"
@@ -79,12 +79,11 @@ exclude_also = [
 [tool.black]
 line-length = 88
 target-version = ['py312']
-extend-exclude = 'examples/srd_sn/sndata'
 
 # Pyright configuration - runs alongside mypy without conflicts
 [tool.pyright]
 # Include all main source directories
-include = ["firecrown", "tests", "examples"]
+include = ["firecrown", "tests"]
 
 # Exclude common non-source directories
 exclude = [
@@ -136,7 +135,7 @@ reportUnnecessaryCast = false
 [tool.mypy]
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "build|docs|.venv|venv|examples/srd_sn/sndata"
+exclude = "build|docs|.venv|venv"
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true

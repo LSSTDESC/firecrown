@@ -31,10 +31,10 @@ pip install --no-deps -e .
 echo "🔍 Running quick linting checks..."
 
 echo "  - Black check..."
-black --check firecrown tests examples
+black --check firecrown tests
 
 echo "  - Flake8 check..."
-flake8 firecrown examples tests
+flake8 firecrown tests
 
 echo "✅ Quick validation completed successfully!"
 echo "This matches the 2-3 minute quick-validation job from the CI workflow"
