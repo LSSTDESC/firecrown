@@ -296,7 +296,7 @@ def test_extract_coverage_data_no_functions():
 
 
 def test_extract_coverage_data_empty_files():
-    coverage_data: dict[str, dict] = {"files": {}}
+    coverage_data: dict[str, dict[str, object]] = {"files": {}}
 
     result = extract_coverage_data(coverage_data)
 
@@ -304,7 +304,7 @@ def test_extract_coverage_data_empty_files():
 
 
 def test_extract_coverage_data_missing_summary_fields():
-    coverage_data: dict[str, dict] = {
+    coverage_data: dict[str, dict[str, object]] = {
         "files": {
             "src/partial.py": {
                 "summary": {},  # Missing all fields

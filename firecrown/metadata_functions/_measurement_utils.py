@@ -62,7 +62,9 @@ def make_measurements_dict(value: set[mdt.Measurement]) -> list[dict[str, str]]:
     return [make_measurement_dict(measurement) for measurement in value]
 
 
-def make_correlation_space(value: mdt.TwoPointCorrelationSpace | str):
+def make_correlation_space(
+    value: mdt.TwoPointCorrelationSpace | str,
+) -> mdt.TwoPointCorrelationSpace:
     """Create a CorrelationSpace object from a string."""
     if not isinstance(value, mdt.TwoPointCorrelationSpace) and isinstance(value, str):
         try:

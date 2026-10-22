@@ -43,7 +43,7 @@ class ClusterData:
     def _get_observed_data_and_indices_by_survey(
         self,
         survey_nm: str,
-        data_types: list,
+        data_types: list[str],
         tracers_n: int,
     ) -> tuple[list[float], list[int]]:
         """Returns the observed data for the specified survey and data types.
@@ -73,7 +73,7 @@ class ClusterData:
 
     def _all_bin_combinations_for_data_type(
         self, data_type: str, tracers_n: int
-    ) -> npt.NDArray:
+    ) -> npt.NDArray[np.str_]:
         bins_combos_for_type = np.array(
             self.sacc_data.get_tracer_combinations(data_type=data_type)
         )
@@ -94,7 +94,7 @@ class ClusterData:
 
     def _all_bin_combinations_for_data_type_and_survey(
         self, survey_nm: str, data_type: str, tracers_n: int
-    ) -> npt.NDArray:
+    ) -> npt.NDArray[np.str_]:
 
         bin_combinations = self._all_bin_combinations_for_data_type(
             data_type, tracers_n

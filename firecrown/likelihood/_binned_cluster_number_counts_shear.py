@@ -101,7 +101,7 @@ class BinnedClusterShearProfile(BinnedCluster):
 
     def _group_bins_by_edges(self) -> dict[tuple[Any, Any], list[tuple[int, float]]]:
         """Group bins by (z_edges, mass_proxy_edges)."""
-        grouped = {}  # type: dict[tuple, list[tuple[int, float]]]
+        grouped = {}  # type: dict[tuple[Any, Any], list[tuple[int, float]]]
         for i, b in enumerate(self.bins):
             key = (b.z_edges, b.mass_proxy_edges)
             grouped.setdefault(key, []).append((i, b.radius_center))

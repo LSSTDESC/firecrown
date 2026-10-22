@@ -206,6 +206,15 @@ def test_create_tuple_bin():
     assert tb.radius_center == 1.5
 
 
+def test_tuple_bin_radius_center_requires_center_value():
+    tb = TupleBin([(1, 2), (3, 4), (1, 2)])
+
+    with pytest.raises(
+        ValueError, match="TupleBin radius bin does not have a center value"
+    ):
+        _ = tb.radius_center
+
+
 def test_tuple_bins_are_equal():
     tb1 = TupleBin([(1, 2), (3, 4)])
     tb2 = TupleBin([(1, 2), (3, 4)])

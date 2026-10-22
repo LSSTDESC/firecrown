@@ -15,6 +15,7 @@ import sacc
 from astropy.io import fits
 from astropy.table import Table
 from numcosmo_py import Nc, Ncm
+from numpy import typing as npt
 from scipy import stats
 
 
@@ -31,12 +32,9 @@ def setup_cosmology(
     :param sigma8: The amplitude of matter fluctuations on scales of 8 Mpc/h.
     :return: Configured cosmology object.
     """
-    cosmo = Nc.HICosmoDEXcdm()
     reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
     prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
-
-    cosmo.add_submodel(reion)
-    cosmo.add_submodel(prim)
+    cosmo = Nc.HICosmoDEXcdm(reion=reion, prim=prim)
 
     tf = Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
     psml = Nc.PowspecMLTransfer.new(tf)
@@ -61,7 +59,7 @@ def setup_cosmology(
 
 def setup_cluster_models(
     z_min: float, z_max: float, M0: float, z0: float, lnRl: float, lnRu: float
-) -> tuple:
+) -> tuple[Nc.ClusterRedshiftNodist, Nc.ClusterMassAscaso]:
     """
     Set up cluster redshift and mass models.
 
@@ -140,7 +138,15 @@ def generate_cluster_data(
     return Table(ncdata_data)
 
 
-def process_data_for_sacc(data_table: Table) -> tuple:
+def process_data_for_sacc(
+    data_table: Table,
+) -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """
     Process cluster data for SACC file generation.
 
@@ -176,7 +182,13 @@ def process_data_for_sacc(data_table: Table) -> tuple:
         np.concatenate((cluster_counts.flatten(), var_mean_logM.flatten()))
     )
 
-    return cluster_counts, z_edges, richness_edges, mean_logM, covariance
+    return (
+        np.asarray(cluster_counts, dtype=np.float64),
+        np.asarray(z_edges, dtype=np.float64),
+        np.asarray(richness_edges, dtype=np.float64),
+        mean_logM,
+        covariance,
+    )
 
 
 def generate_sacc_file() -> None:

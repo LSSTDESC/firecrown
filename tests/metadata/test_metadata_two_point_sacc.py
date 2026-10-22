@@ -7,6 +7,7 @@ import re
 import warnings
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 import sacc
 from numpy.testing import assert_allclose, assert_array_equal
@@ -528,7 +529,14 @@ def test_extract_all_metadata_index_reals(sacc_galaxy_xis):
 
 
 def test_extract_all_metadata_index_reals_by_type(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
@@ -543,7 +551,9 @@ def test_extract_all_metadata_index_reals_by_type(
 
 
 def test_extract_no_window(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells_src0_src0: tuple[
+        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ],
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
     indices = np.array([0, 1, 2], dtype=np.int64)
@@ -558,7 +568,13 @@ def test_extract_no_window(
 
 
 def test_extract_all_data_types_three_tracers_reals(
-    sacc_galaxy_xis_three_tracers: tuple[sacc.Sacc, dict, dict, dict, dict],
+    sacc_galaxy_xis_three_tracers: tuple[
+        sacc.Sacc,
+        dict[str, object],
+        dict[str, object],
+        dict[str, object],
+        dict[str, object],
+    ],
 ) -> None:
     sacc_data, _, _, _, _ = sacc_galaxy_xis_three_tracers
 
@@ -573,7 +589,13 @@ def test_extract_all_data_types_three_tracers_reals(
 
 
 def test_extract_all_data_types_three_tracers_harmonics(
-    sacc_galaxy_cells_three_tracers: tuple[sacc.Sacc, dict, dict, dict, dict],
+    sacc_galaxy_cells_three_tracers: tuple[
+        sacc.Sacc,
+        dict[str, object],
+        dict[str, object],
+        dict[str, object],
+        dict[str, object],
+    ],
 ) -> None:
     sacc_data, _, _, _, _ = sacc_galaxy_cells_three_tracers
 
@@ -588,7 +610,14 @@ def test_extract_all_data_types_three_tracers_harmonics(
 
 
 def test_extract_all_photoz_bin_combinations_reals(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
     # We build all possible combinations of tracers
@@ -615,7 +644,14 @@ def test_extract_all_photoz_bin_combinations_reals(
 
 
 def test_extract_all_photoz_bin_combinations_harmonics(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
     # We build all possible combinations of tracers
@@ -643,7 +679,16 @@ def test_extract_all_photoz_bin_combinations_harmonics(
         assert two_point_cells.get_sacc_name() == tracer_names_type[1]
 
 
-def test_make_harmonics(sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]) -> None:
+def test_make_harmonics(
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, _, _ = sacc_galaxy_cells
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
@@ -658,7 +703,16 @@ def test_make_harmonics(sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]) -> None
         assert two_point_cells.XY == bin_comb
 
 
-def test_make_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]) -> None:
+def test_make_reals(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+) -> None:
     sacc_data, _, _ = sacc_galaxy_xis
     thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
@@ -675,7 +729,14 @@ def test_make_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]) -> None:
 
 @pytest.mark.slow
 def test_extract_all_harmonic_data(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
@@ -697,7 +758,14 @@ def test_extract_all_harmonic_data(
 
 @pytest.mark.slow
 def test_extract_all_harmonic_with_window_data(
-    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cwindows: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
+        ],
+    ],
 ) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
@@ -722,7 +790,16 @@ def test_extract_all_harmonic_with_window_data(
 
 
 @pytest.mark.slow
-def test_extract_all_real_data(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
+def test_extract_all_real_data(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     two_point_xis = extract_all_real_data(sacc_data)
@@ -742,7 +819,15 @@ def test_extract_all_real_data(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
 
 
 def test_constructor_harmonic_metadata(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict], tp_factory: TwoPointFactory
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
+    tp_factory: TwoPointFactory,
 ):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 

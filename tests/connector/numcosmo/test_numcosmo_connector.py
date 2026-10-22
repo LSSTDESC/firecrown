@@ -3,7 +3,7 @@
 import pytest
 from numcosmo_py import GObject, Nc, Ncm
 
-from firecrown.connector.numcosmo.numcosmo import (
+from firecrown.connector.numcosmo import (
     MappingNumCosmo,
     NumCosmoData,
     NumCosmoFactory,
@@ -285,7 +285,7 @@ def test_empty_gauss_cov_data():
 def test_create_params_map_with_mapping():
     """Test create_params_map function when mapping is provided."""
     from firecrown.connector.mapping import Mapping
-    from firecrown.connector.numcosmo.numcosmo import create_params_map
+    from firecrown.connector.numcosmo import create_params_map
     from firecrown.updatable import ParamsMap
 
     # Create a simple mock model and mset
@@ -349,7 +349,7 @@ def test_create_params_map_with_mapping():
 
 def test_create_params_map_without_mapping():
     """Test create_params_map function when mapping is None."""
-    from firecrown.connector.numcosmo.numcosmo import create_params_map
+    from firecrown.connector.numcosmo import create_params_map
     from firecrown.updatable import ParamsMap
 
     # Create a simple mock model and mset
@@ -455,9 +455,7 @@ def test_numcosmo_data_pure_ccl_mode():
     model.params_set_default_ftype()
 
     # Create a basic cosmology model as well
-    cosmo = Nc.HICosmoDEXcdm()
-    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
-    cosmo.add_submodel(Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
 
     mset = Ncm.MSet()
     mset.set(cosmo)
@@ -569,9 +567,7 @@ def test_numcosmo_gauss_cov_pure_ccl_mode():
     model.params_set_default_ftype()
 
     # Create a basic cosmology model as well
-    cosmo = Nc.HICosmoDEXcdm()
-    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
-    cosmo.add_submodel(Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
 
     mset = Ncm.MSet()
     mset.set(cosmo)

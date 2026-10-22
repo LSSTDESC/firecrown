@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import itertools
 import warnings
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Annotated
 
 import numpy as np
@@ -70,7 +70,7 @@ def calculate_angular_cl(
     tracer0: Tracer,
     tracer1: Tracer,
     int_options: ClIntegrationOptions | None = None,
-):
+) -> npt.NDArray[np.float64]:
     """Calculate the angular multipole moments.
 
     :param ells: The angular wavenumbers at which to compute the power spectrum.
@@ -178,7 +178,7 @@ class TwoPoint(Statistic):
         return self.theory.ells_for_xi
 
     @property
-    def cells(self):
+    def cells(self) -> dict[TracerNames, npt.NDArray[np.float64]]:
         """Backwards compatibility for cells."""
         return self.theory.cells
 
@@ -268,7 +268,7 @@ class TwoPoint(Statistic):
     @classmethod
     def _from_metadata_single_base(
         cls, metadata: TwoPointHarmonic | TwoPointReal, tp_factory: TwoPointFactory
-    ):
+    ) -> TwoPoint:
         """Create a single TwoPoint statistic from metadata.
 
         Base method for creating a single TwoPoint statistic from metadata.
@@ -382,7 +382,7 @@ class TwoPoint(Statistic):
 
         super().read(sacc_data)
 
-    def read_real_space(self, sacc_data: sacc.Sacc):
+    def read_real_space(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
         assert self.theory.sacc_tracers is not None
         thetas_xis_indices = read_reals(self.theory, sacc_data)
@@ -488,7 +488,13 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
                 )
-            ells, Cells = gen.generate_ells_cells(self.theory.ell_or_theta_config)
+            # TODO(bug): generate_ells_cells returns float64 bin centers, not
+            # rounded int64 ell values (unlike LogLinearElls.generate()). This
+            # silences mypy only until that generator is fixed to emit integer
+            # ells; ells consumed here must be true integer multipoles.
+            ells, Cells = gen.generate_ells_cells(  # type: ignore[assignment]
+                self.theory.ell_or_theta_config
+            )
             sacc_indices = None
 
             # When generating the ells and Cells we do not have a window function
@@ -802,7 +808,7 @@ class TwoPointFactory(BaseModel):
     _nc_factory_map: dict[TypeSource, NumberCountsFactory] = PrivateAttr()
     _cmb_factory_map: dict[TypeSource, CMBConvergenceFactory] = PrivateAttr()
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the WeakLensingFactory object."""
         self._wl_factory_map: dict[TypeSource, WeakLensingFactory] = {}
         self._nc_factory_map: dict[TypeSource, NumberCountsFactory] = {}
@@ -836,7 +842,10 @@ class TwoPointFactory(BaseModel):
         self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
     ) -> WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory:
         """Get the Factory for the given Measurement and TypeSource."""
-        candidates: Sequence[tuple[tuple[str, ...], dict, str]] = [
+        factory_map_type = Mapping[
+            TypeSource, WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory
+        ]
+        candidates: Sequence[tuple[tuple[Measurement, ...], factory_map_type, str]] = [
             (GALAXY_SOURCE_TYPES, self._wl_factory_map, "WeakLensingFactory"),
             (GALAXY_LENS_TYPES, self._nc_factory_map, "NumberCountsFactory"),
             (CMB_TYPES, self._cmb_factory_map, "CMBConvergenceFactory"),

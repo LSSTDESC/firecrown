@@ -28,12 +28,12 @@ def get_cluster_abundance() -> ClusterAbundance:
 
 
 def get_cluster_recipe(
-    cluster_theory=None,
+    cluster_theory: ClusterAbundance | None = None,
     pivot_mass: float = 14.625862906,
     pivot_redshift: float = 0.6,
-    mass_interval=(12, 17),
-    true_z_interval=(0.1, 2.0),
-):
+    mass_interval: tuple[float, float] = (12, 17),
+    true_z_interval: tuple[float, float] = (0.1, 2.0),
+) -> ExactBinnedClusterRecipe:
     """Creates and returns an ExactBinnedClusterRecipe.
 
     Parameters

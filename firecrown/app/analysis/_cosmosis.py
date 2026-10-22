@@ -120,7 +120,10 @@ def _add_cosmology_modules(
                 else {}
             ),
             **(
-                cosmo_spec.extra_parameters.get_dict()
+                {
+                    key: str(value)
+                    for key, value in cosmo_spec.extra_parameters.get_dict().items()
+                }
                 if cosmo_spec.extra_parameters
                 else {}
             ),

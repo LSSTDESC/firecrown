@@ -68,7 +68,9 @@ class CMBConvergence(Source):
             raise RuntimeError("current_tracer_args is not initialized")
         return current_args.scale
 
-    def create_tracers(self, tools: ModelingTools):
+    def create_tracers(
+        self, tools: ModelingTools
+    ) -> tuple[list[Tracer], CMBConvergenceArgs]:
         """Create the CMB convergence tracer."""
         ccl_cosmo = tools.get_ccl_cosmology()
         tracer_args = self.tracer_args
@@ -109,7 +111,7 @@ class CMBConvergenceFactory(BaseModel):
     z_source: float = 1100.0
     scale: float = 1.0
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the CMBConvergenceFactory."""
         self._cache: dict[int, CMBConvergence] = {}
 

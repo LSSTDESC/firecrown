@@ -47,8 +47,10 @@ class TwoPointMeasurement(YAMLSerializable):
         if len(self.data) != self.metadata.n_observations():
             raise ValueError("Data and metadata should have the same length.")
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality test for TwoPointMeasurement objects."""
+        if not isinstance(other, TwoPointMeasurement):
+            return NotImplemented
         return (
             np.array_equal(self.data, other.data)
             and np.array_equal(self.indices, other.indices)

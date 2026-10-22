@@ -22,7 +22,8 @@ import time
 from dataclasses import dataclass
 from hashlib import sha1
 from pathlib import Path
-from typing import Annotated
+from types import TracebackType
+from typing import Annotated, Self
 
 import bs4
 import requests
@@ -355,11 +356,16 @@ class SiteChecker:
         """Remove the temporary download cache directory used for external pages."""
         shutil.rmtree(self.tmp_root)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Enter context manager."""
         return self
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         """Exit context manager and clean up temporary files."""
         self.close()
 
@@ -483,7 +489,7 @@ def cli(
             ),
         ),
     ] = None,
-):
+) -> None:
     """Command-line entry point using Typer and Rich for output."""
     code = main(
         root_dir,

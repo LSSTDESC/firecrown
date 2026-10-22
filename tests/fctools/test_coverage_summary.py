@@ -439,7 +439,7 @@ class TestAnalyzeCoverageJson:
 
     def test_empty_coverage_file(self, tmp_path, console):
         """Test analyzing an empty coverage file."""
-        coverage_data: dict[str, dict] = {"files": {}, "totals": {}}
+        coverage_data: dict[str, dict[str, object]] = {"files": {}, "totals": {}}
 
         coverage_file = tmp_path / "coverage.json"
         coverage_file.write_text(json.dumps(coverage_data))

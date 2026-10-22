@@ -1,0 +1,7 @@
+# .config/wt.toml
+[pre-start]
+dev-environment = "./tools/create-worktree-environment"
+
+[step.copy-ignored]
+exclude = [".conda-env/"]
+

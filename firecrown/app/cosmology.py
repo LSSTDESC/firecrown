@@ -199,7 +199,7 @@ class Generate(logging.Logging):
         ),
     ] = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize and execute the complete cosmology generation workflow."""
         super().__post_init__()
         match self.cosmology:

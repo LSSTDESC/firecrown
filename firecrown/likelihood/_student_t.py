@@ -1,8 +1,10 @@
 """The Student-t likelihood."""
 
 from __future__ import annotations
+from typing import cast
 
 import numpy as np
+import numpy.typing as npt
 
 from firecrown.likelihood._gaussfamily import GaussFamily
 from firecrown.likelihood_base import Statistic
@@ -30,7 +32,9 @@ class StudentT(GaussFamily):
         :param nu: The degrees of freedom of the T-distribution
         """
         super().__init__(statistics)
-        self.nu = register_new_updatable_parameter(nu, default_value=3.0)
+        self.nu: float = cast(
+            float, register_new_updatable_parameter(nu, default_value=3.0)
+        )
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Compute the log-likelihood.
@@ -40,3 +44,12 @@ class StudentT(GaussFamily):
         """
         chi2 = self.compute_chisq(tools)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
+
+    def make_realization_vector(self) -> npt.NDArray[np.float64]:
+        """Create a new realization of the model.
+
+        Realizations are not available for the Student-t likelihood.
+
+        :raises NotImplementedError: always.
+        """
+        raise NotImplementedError("StudentT does not support realizations.")

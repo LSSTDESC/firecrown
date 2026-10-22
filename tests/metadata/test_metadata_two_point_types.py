@@ -9,6 +9,7 @@ from itertools import chain, product
 from unittest.mock import MagicMock
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 import sacc
 import sacc_name_mapping as snm
@@ -194,7 +195,7 @@ def test_measurement_is_compatible():
 
 
 def test_extract_all_tracers_types_cells(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -210,7 +211,7 @@ def test_extract_all_tracers_types_cells(
 
 
 def test_extract_all_tracers_types_cwindows(
-    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -225,7 +226,16 @@ def test_extract_all_tracers_types_cwindows(
                 assert measurement == Galaxies.SHEAR_E
 
 
-def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
+def test_extract_all_tracers_types_reals(
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
+):
     sacc_data, _, _ = sacc_galaxy_xis
 
     tracers, _ = extract_all_measured_types(sacc_data)
@@ -243,7 +253,14 @@ def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict,
 
 
 def test_extract_all_tracers_types_reals_inverted(
-    sacc_galaxy_xis_inverted: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_xis_inverted: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
 ):
     sacc_data, _, _ = sacc_galaxy_xis_inverted
 
@@ -262,7 +279,14 @@ def test_extract_all_tracers_types_reals_inverted(
 
 
 def test_extract_all_tracers_types_cells_include_maybe(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+        ],
+    ],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -272,7 +296,14 @@ def test_extract_all_tracers_types_cells_include_maybe(
 
 
 def test_extract_all_tracers_types_cwindows_include_maybe(
-    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cwindows: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
+        ],
+    ],
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -282,7 +313,14 @@ def test_extract_all_tracers_types_cwindows_include_maybe(
 
 
 def test_extract_all_tracers_types_xi_thetas_include_maybe(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_xis: tuple[
+        sacc.Sacc,
+        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+        dict[
+            tuple[TracerNames, str],
+            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+        ],
+    ],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -370,7 +408,7 @@ def test_check_two_point_consistence_real_harmonic(
 
 
 def test_check_two_point_consistence_harmonic_mixing_cov(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -389,7 +427,7 @@ def test_check_two_point_consistence_harmonic_mixing_cov(
 
 
 def test_check_two_point_consistence_real_mixing_cov(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -407,7 +445,7 @@ def test_check_two_point_consistence_real_mixing_cov(
 
 
 def test_check_two_point_consistence_harmonic_non_unique_indices(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -425,7 +463,7 @@ def test_check_two_point_consistence_harmonic_non_unique_indices(
 
 
 def test_check_two_point_consistence_real_non_unique_indices(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -442,7 +480,7 @@ def test_check_two_point_consistence_real_non_unique_indices(
 
 
 def test_check_two_point_consistence_harmonic_indices_overlap(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -460,7 +498,7 @@ def test_check_two_point_consistence_harmonic_indices_overlap(
 
 
 def test_check_two_point_consistence_real_indices_overlap(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -635,7 +673,7 @@ def test_measurements_types_multiple_galaxy_and_cmb():
 
 
 def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     """Test extract_all_measured_types with allow_mixed_types=True on mixed tracers.
 
@@ -656,7 +694,7 @@ def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
 
 
 def test_extract_all_measured_mixed_types_galaxy_only(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     """Test extract_all_measured_types with allow_mixed_types=True on single type.
 
@@ -672,7 +710,9 @@ def test_extract_all_measured_mixed_types_galaxy_only(
 
 
 def test_extract_all_measured_mixed_types_density_only(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells_lens0_lens0: tuple[
+        sacc.Sacc, dict[str, object], dict[str, object]
+    ],
 ):
     """Test extract_all_measured_types with allow_mixed_types=True on density.
 
@@ -688,7 +728,12 @@ def test_extract_all_measured_mixed_types_density_only(
 
 
 def test_extract_all_measured_mixed_types_mixed_real_space(
-    sacc_galaxy_xis_src0_lens0: tuple[sacc.Sacc, dict, dict, dict],
+    sacc_galaxy_xis_src0_lens0: tuple[
+        sacc.Sacc,
+        dict[str, object],
+        dict[str, object],
+        dict[str, object],
+    ],
 ):
     """Test extract_all_measured_types with allow_mixed_types=True on real-space data.
 
@@ -832,7 +877,7 @@ def test_extract_all_measured_mixed_types_multiple_measurements_same_tracer():
 
 
 def test_extract_all_measured_types_allow_mixed_types_vs_false(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict[str, object], dict[str, object]],
 ):
     """Test the difference between allow_mixed_types=True and False.
 

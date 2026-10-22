@@ -243,7 +243,7 @@ data.h5
 
         return output_path, src_format, target_format
 
-    def _read_sacc_data(self, src_format: str):
+    def _read_sacc_data(self, src_format: str) -> sacc.Sacc:
         """Read input file and return SACC data object."""
         self.console.print(
             f"Reading {src_format.upper()} file: [cyan]{self.sacc_file}[/cyan]"

@@ -83,7 +83,7 @@ class TwoPointTheory(Updatable):
         for s in self.sources:
             s.update(params)
 
-    def _reset(self):
+    def _reset(self) -> None:
         """Implementation of Updatable interface method `_reset`.
 
         This is needed because of the tuple data member, which is not reset
@@ -126,9 +126,9 @@ class TwoPointTheory(Updatable):
 
         return tracers0, scale0, tracers1, scale1
 
-    def generate_ells_for_interpolation(self):
+    def generate_ells_for_interpolation(self) -> npt.NDArray[np.int64]:
         """Generate ells for interpolation."""
         assert self.ells is not None
-        min_ell = int(self.ells[0])
-        max_ell = int(self.ells[-1])
+        min_ell = int(np.min(self.ells))
+        max_ell = int(np.max(self.ells))
         return self.interp_ells_gen.generate(min_ell, max_ell)

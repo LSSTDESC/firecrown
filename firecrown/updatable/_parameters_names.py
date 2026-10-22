@@ -27,7 +27,7 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
     return param
 
 
-def _validate_params_map_value(name: str, value: float | list[float]) -> None:
+def validate_params_map_value(name: str, value: float | list[float]) -> None:
     """Check if the value is a float or a list of floats.
 
     Raises a TypeError if the value is not a float or a list of floats.

@@ -1,6 +1,6 @@
 """CCLFactory class for creating pyccl.Cosmology instances."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import pyccl
 from pyccl.neutrinos import NeutrinoMassSplits
@@ -37,7 +37,8 @@ from firecrown.updatable import (
 )
 
 
-def _validate_neutrino_mass_splits(value):
+def _validate_neutrino_mass_splits(value: object) -> object:
+    # Preserve non-strings for Pydantic's subsequent validation.
     if isinstance(value, str):
         try:
             return NeutrinoMassSplits(value)  # Convert from string to StrEnum
@@ -76,7 +77,7 @@ class CCLFactory(Updatable, BaseModel):
     ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
     # pylint: disable=too-many-branches
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         """Initialize the CCLFactory object."""
         parameter_prefix = parameter_prefix = data.pop("parameter_prefix", None)
         BaseModel.__init__(self, **data)
@@ -119,8 +120,11 @@ class CCLFactory(Updatable, BaseModel):
                         )
             case _:
                 assert self.num_neutrino_masses is None
-                self.m_nu = register_new_updatable_parameter(
-                    default_value=temp_cosmology["m_nu"]
+                self.m_nu = cast(
+                    float | None,
+                    register_new_updatable_parameter(
+                        default_value=temp_cosmology["m_nu"]
+                    ),
                 )
 
         self.w0 = register_new_updatable_parameter(default_value=temp_cosmology["w0"])
@@ -163,17 +167,23 @@ class CCLFactory(Updatable, BaseModel):
                     "To sample over the halo model, "
                     "you must include camb_extra_parameters."
                 )
-            # The default values are taken from CAMB v1.6.0
-            if self.camb_extra_params.is_mead():
-                self.HMCode_A_baryon = register_new_updatable_parameter(
-                    default_value=3.13
+            hm_defaults = self.camb_extra_params.get_hm_sampling_defaults()
+            if not hm_defaults:
+                raise ValueError(
+                    f"There are no HMCode parameters to sample for "
+                    f"halofit_version={self.camb_extra_params.halofit_version}. "
+                    f"Valid halofit versions are: mead, mead2015, mead2016, "
+                    f"mead2020_feedback"
                 )
-                self.HMCode_eta_baryon = register_new_updatable_parameter(
-                    default_value=0.603
-                )
-            if self.camb_extra_params.is_mead2020_feedback():
-                self.HMCode_logT_AGN = register_new_updatable_parameter(
-                    default_value=7.8
+            # Registering the parameters under the names CAMB uses lets the sampler
+            # parameter machinery resolve them, which is what makes the lower-cased
+            # names supplied by CosmoSIS match. Going through setattr rather than
+            # set_sampler_parameter is what applies the parameter prefix.
+            for name, default_value in hm_defaults.items():
+                setattr(
+                    self,
+                    name,
+                    register_new_updatable_parameter(default_value=default_value),
                 )
 
     def _update(self, params: ParamsMap) -> None:
@@ -182,8 +192,14 @@ class CCLFactory(Updatable, BaseModel):
         :param params: The parameters to update.
         :returns: None
         """
+        # This ugly construction is necessary otherwise pylint complains about the type
+        # of self.camb_extra_params being None.
         if self.camb_extra_params is not None:
-            self.camb_extra_params.update(params)
+            if self.use_camb_hm_sampling:
+                hm_names = self.camb_extra_params.get_hm_sampling_defaults().keys()
+                self.camb_extra_params.set_hm_parameters(
+                    {name: getattr(self, name) for name in hm_names}
+                )
 
     def using_camb(self) -> bool:
         """Return True if the CCLFactory is using CAMB for the matter power spectrum.
@@ -198,7 +214,9 @@ class CCLFactory(Updatable, BaseModel):
         return False
 
     @model_serializer(mode="wrap")
-    def serialize_model(self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo):
+    def serialize_model(
+        self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo
+    ) -> dict[str, Any]:
         """Serialize the CCLFactory object."""
         model_dump = nxt(self)
         exclude_params = [param.name for param in self._sampler_parameters] + list(
@@ -213,7 +231,7 @@ class CCLFactory(Updatable, BaseModel):
         """Serialize the mass split parameter."""
         return value.value
 
-    def model_post_init(self, _, /) -> None:
+    def model_post_init(self, _: object, /) -> None:
         """Initialize the WeakLensingFactory object."""
 
     def create(

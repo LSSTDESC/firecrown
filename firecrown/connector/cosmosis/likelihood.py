@@ -320,7 +320,9 @@ def calculate_firecrown_params(
                 f"module {firecrown_module_name}."
             )
 
-        firecrown_params = ParamsMap({**firecrown_params, **section_params.data})
+        firecrown_params = ParamsMap(
+            firecrown_params.params | section_params.to_float_dict()
+        )
 
     firecrown_params.use_lower_case_keys(True)
     return firecrown_params
@@ -377,9 +379,10 @@ def execute(sample: cosmosis.datablock, instance: FirecrownLikelihood) -> int:
     return instance.execute(sample)
 
 
-def cleanup(_) -> int:
+def cleanup(instance: FirecrownLikelihood) -> int:
     """Cleanup hook for a CosmoSIS module. This one has nothing to do.
 
     :returns: 0
     """
+    assert isinstance(instance, FirecrownLikelihood)
     return 0

@@ -704,7 +704,7 @@ def test_apply_interp_when_serialization_error():
 
 
 def test_two_point_src0_src0_window_aiw(
-    sacc_galaxy_cells_src0_src0_window: tuple,
+    sacc_galaxy_cells_src0_src0_window: tuple[object, ...],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
     """This test also makes sure that TwoPoint theory calculations are
@@ -738,7 +738,7 @@ def test_two_point_src0_src0_window_aiw(
 
 
 def test_two_point_src0_src0_no_window_aiw(
-    sacc_galaxy_cells_src0_src0_no_window: tuple,
+    sacc_galaxy_cells_src0_src0_no_window: tuple[object, ...],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
@@ -772,7 +772,7 @@ def test_two_point_src0_src0_no_window_aiw(
 
 
 def test_two_point_src0_src0_real_aiw(
-    sacc_galaxy_xis_lens0_lens0_real: tuple,
+    sacc_galaxy_xis_lens0_lens0_real: tuple[object, ...],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
     sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_real

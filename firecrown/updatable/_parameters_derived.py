@@ -46,7 +46,7 @@ class DerivedParameter:
             and self.val == other.val
         )
 
-    def get_full_name(self):
+    def get_full_name(self) -> str:
         """Constructs the full name using section--name."""
         return f"{self.section}--{self.name}"
 
@@ -71,7 +71,9 @@ class DerivedParameterCollection:
         """Return the number of parameters contained."""
         return len(self.derived_parameters)
 
-    def __add__(self, other: None | DerivedParameterCollection):
+    def __add__(
+        self, other: None | DerivedParameterCollection
+    ) -> DerivedParameterCollection:
         """Add two DerivedParameterCollection objects.
 
         Return a new DerivedParameterCollection with the lists of DerivedParameter
@@ -91,7 +93,7 @@ class DerivedParameterCollection:
             + list(other.derived_parameters.values())
         )
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         """Compare two DerivedParameterCollection objects for equality.
 
         This implementation raises a NotImplemented exception unless both
@@ -116,7 +118,7 @@ class DerivedParameterCollection:
                 derived_parameter.get_val(),
             )
 
-    def add_required_parameter(self, derived_parameter: DerivedParameter):
+    def add_required_parameter(self, derived_parameter: DerivedParameter) -> None:
         """Adds derived_parameter to the collection.
 
         We raises an ValueError if a required parameter with the same name is already

@@ -2,8 +2,10 @@
 
 import copy
 import warnings
+from collections.abc import ItemsView, Iterable, Mapping, Sequence
 
-from ._parameters_names import _validate_params_map_value, parameter_get_full_name
+from ._parameters_names import parameter_get_full_name, validate_params_map_value
+from ._records import UpdatableUsageRecord
 
 
 class ParamsMap:
@@ -13,7 +15,11 @@ class ParamsMap:
     with square brackets like x[].
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        *args: Mapping[str, float] | Iterable[tuple[str, float]],
+        **kwargs: float,
+    ) -> None:
         """Initialize the ParamsMap.
 
         :param args: arguments
@@ -21,7 +27,7 @@ class ParamsMap:
         """
         self.params: dict[str, float] = dict(*args, **kwargs)
         for name, value in self.params.items():
-            _validate_params_map_value(name, value)
+            validate_params_map_value(name, value)
 
         self.lower_case: bool = False
         self.used_keys: set[str] = set()
@@ -62,7 +68,7 @@ class ParamsMap:
         result.lower_case = self.lower_case
         return result
 
-    def items(self):
+    def items(self) -> ItemsView[str, float]:
         """Return an iterator over the items in the dictionary.
 
         :returns: an iterator over the items in the dictionary
@@ -170,9 +176,9 @@ class ParamsMap:
 
 def handle_unused_params(
     params: ParamsMap,
-    updated_records: list,
+    updated_records: Sequence[UpdatableUsageRecord],
     raise_on_unused: bool = False,
-):
+) -> None:
     """Check for unused keys in the parameters map."""
     unused_keys = params.get_unused_keys()
     if unused_keys:
