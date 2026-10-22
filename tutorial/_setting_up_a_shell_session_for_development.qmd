@@ -3,10 +3,8 @@ If you have just completed the installation and are in the same shell session, y
 
 ```{.bash}
 conda activate firecrown_developer
-cd ${FIRECROWN_DIR}
+cd /path/to/firecrown  # the directory into which you cloned the repository
 ```
 
-Each of the three defined environment variables is used for a different purpose:
-
-1. `CSL_DIR` is used in CosmoSIS *ini* files to allow the `cosmosis` command to be run from any directory.
-2. `FIRECROWN_DIR` is used in the examples that come with Firecrown.
+Activating the environment defines the environment variable `CSL_DIR`.
+It is used in CosmoSIS *ini* files to allow the `cosmosis` command to be run from any directory.

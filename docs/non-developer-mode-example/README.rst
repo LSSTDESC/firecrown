@@ -5,7 +5,7 @@ Using Firecrown in non-developer mode
 =====================================
 
 An important difference between using Firecrown in developer mode and non-developer mode involves how paths used in likelihood scripts and CosmoSIS `ini` files are specified.
-These examples show the correct usage for non-developer mode (the examples in the Firecrown repository are set up for developer mode).
+These examples show the correct usage for non-developer mode.
 
 .. toctree::
    :maxdepth: 1

@@ -39,13 +39,13 @@ Please make sure to run black on your code before creating any commits.
 
 .. code:: bash
 
-    black firecrown/ examples/ tests/
+    black firecrown/ tests/
 
 We are also using :bash:`flake8` to check for coding style issues.
 
 .. code:: bash
 
-    flake8 firecrown/ examples/ tests/
+    flake8 firecrown/ tests/
 
 Linting
 -------
@@ -56,8 +56,7 @@ We are using :bash:`pylint` to check for a variety of possible problems.
 .. code:: bash
 
     pylint firecrown
-    pylint --rcfile firecrown/models/pylintrc firecrown/models
-    pylint --rcfile tests/pylintrc  tests
+    pylint --rcfile tests/pylintrc tests
 
 Type checking
 -------------
@@ -68,7 +67,7 @@ Please run:
 
 .. code:: bash
 
-    mypy -p firecrown -p examples -p tests
+    mypy -p firecrown -p tests
 
 and fix any errors reported before pushing commits to the GitHub repository.
 

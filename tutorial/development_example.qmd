@@ -55,14 +55,12 @@ In Firecrown, this means writing a new *likelihood factory function* -- the func
 
 ```{python}
 #| eval: false
-import os.path 
 import firecrown.likelihood.supernova as sn
 from firecrown.likelihood import ConstGaussian
 from firecrown.likelihood.factories import load_sacc_data
 
-SACC_FILENAME = os.path.expandvars( \
-    "${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc" \
-    )
+# Written by: firecrown examples sn_srd sn_srd_example
+SACC_FILENAME = "sn_srd_example/sn_srd.sacc"
 
 def build_likelihood(_):
     snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")

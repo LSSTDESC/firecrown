@@ -3,7 +3,7 @@ One is to do an *editable installation* using `python -m pip install --no-deps -
 We recommend use of the `python -m pip install --no-deps -e .`; direct use of the `setup.py` file is deprecated with recent versions of `setuputils`.
 
 ```{.bash}
-cd ${FIRECROWN_DIR}
+cd /path/to/firecrown  # the directory into which you cloned the repository
 python -m pip install --no-deps -e .
 ```
 

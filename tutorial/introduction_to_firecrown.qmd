@@ -104,17 +104,16 @@ Optionally, add a demo program:
 :::
 :::
 
-## Examples in the repository
+## Examples
 
--   Simplified DES Y1 cosmic shear
-    -   Only for CosmoSIS
--   DES Y1 3x2pt
-    -   For Cobaya, CosmoSIS and NumCosmo
-    -   basic version
-    -   enhanced version with perturbation theory systematics
--   SRD Supernova
-    -   For CosmoSIS and NumCosmo
-    -   NumCosmo version also demonstrates the calculation of the Fisher matrix
+-   Generated with `firecrown examples NAME OUTPUT_DIR --target-framework FRAMEWORK`
+    -   Each one writes the data, the likelihood factory and the configuration for Cobaya, CosmoSIS or NumCosmo
+-   `cosmic_shear`: synthetic cosmic shear
+-   `cmb_cross`: cosmic shear cross-correlated with CMB lensing
+-   `des_y1_3x2pt`: DES Y1 3x2pt, with the factory function chosen by `--factory-type`
+-   `sn_srd`: SRD supernovae
+-   `cluster_counts`: cluster counts and mean mass, simulated or SDSS
+-   `cluster_shear`: cluster counts with stacked weak lensing profiles
 
 # Installation and setup
 
@@ -159,21 +158,21 @@ These instructions will create a new conda environment containing all the packag
 # well as updating an existing environment.
 conda env create --name firecrown_developer --file firecrown/environment.yml
 conda activate firecrown_developer
-# We define two environment variables that will be defined whenever you activate
-# the conda environment.
-conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}/firecrown
-# The command above does not immediately defined the environment variables.
-# They are made available on every fresh activation of the environment.
+# CSL_DIR is defined whenever you activate the conda environment.
+# CosmoSIS configuration files use it to find the CSL.
+conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library
+# The variable is defined from the next activation of the environment on.
 # So we have to deactivate and then reactivate...
 conda deactivate
 conda activate firecrown_developer
 # Now we can finish building the CosmoSIS Standard Library.
 source ${CONDA_PREFIX}/bin/cosmosis-configure
 # We want to put the CSL into the same directory as conda environment upon which it depends
-cd ${CONDA_PREFIX}
+pushd ${CONDA_PREFIX}
 cosmosis-build-standard-library
+popd
 # Now change directory into the firecrown repository
-cd ${FIRECROWN_DIR}
+cd firecrown
 # And finally make an editable (developer) installation of firecrown into the conda environment
 python -m pip install --no-deps --editable ${PWD}
 ```
@@ -182,15 +181,14 @@ python -m pip install --no-deps --editable ${PWD}
 
 Each time you want to do development in a new shell session you need to activate the conda environment.
 
-When you activate the conda environment, you can use the environment variable you defined when creating the environment to find your Firecrown directory:
+Then change into your clone of the Firecrown repository:
 
 ```{.bash}
 conda activate firecrown_developer
-cd ${FIRECROWN_DIR}
+cd /path/to/firecrown
 ```
 
 -   `CSL_DIR` is used in CosmoSIS *ini* files to allow CosmoSIS to be run from any directory.
--   `FIRECROWN_DIR` is used in examples.
 
 ## Code development hygiene
 
@@ -210,12 +208,11 @@ cd ${FIRECROWN_DIR}
 
 
 ```{.bash code-copy=true}
-black --check firecrown/ examples/ tests/
-flake8 firecrown examples tests
-mypy -p firecrown -p examples -p tests
+black --check firecrown/ tests/
+flake8 firecrown tests
+mypy -p firecrown -p tests
 pylint firecrown
-pylint --rcfile firecrown/models/pylintrc firecrown/models
-pylint --rcfile pylintrc_for_tests tests
+pylint --rcfile tests/pylintrc tests
 python -m pytest -v tests
 ```
 :::

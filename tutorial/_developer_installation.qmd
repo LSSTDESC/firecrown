@@ -38,21 +38,22 @@ Because the CI system is typically using the newest environment available, devel
 # well as updating an existing environment.
 conda env create --name firecrown_developer --file firecrown/environment.yml
 conda activate firecrown_developer
-# We define two environment variables that will be defined whenever you activate
-# the conda environment.
-conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}/firecrown
-# The command above does not immediately defined the environment variables.
-# They are made available on every fresh activation of the environment.
+# CSL_DIR is defined whenever you activate the conda environment.
+# CosmoSIS configuration files use it to find the CSL.
+conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library
+# The variable is defined from the next activation of the environment on.
 # So we have to deactivate and then reactivate...
 conda deactivate
 conda activate firecrown_developer
 # Now we can finish building the CosmoSIS Standard Library.
 source ${CONDA_PREFIX}/bin/cosmosis-configure
 # We want to put the CSL into the same directory as conda environment upon which it depends
-cd ${CONDA_PREFIX}
+pushd ${CONDA_PREFIX}
 cosmosis-build-standard-library
+# Return to the directory in which the firecrown repository was cloned
+popd
 # Now change directory into the firecrown repository
-cd ${FIRECROWN_DIR}
+cd firecrown
 # And finally make an editable (developer) installation of firecrown into the conda environment
 python -m pip install --no-deps --editable ${PWD}
 ```
