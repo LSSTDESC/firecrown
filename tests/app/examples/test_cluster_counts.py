@@ -150,3 +150,29 @@ def test_build_likelihood_execution(tmp_path: Path, dataset: ClusterDataset) -> 
         assert isinstance(likelihood_copy, ConstGaussian)
     finally:
         del sys.modules["test_cc_factory"]
+
+
+@pytest.mark.parametrize(
+    "use_cluster_counts,use_mean_log_mass", [(True, False), (False, True)]
+)
+def test_build_likelihood_single_observable(
+    tmp_path: Path, use_cluster_counts: bool, use_mean_log_mass: bool
+) -> None:
+    """The factory builds a likelihood from either observable alone."""
+    builder = make_builder(
+        tmp_path,
+        dataset=ClusterDataset.SDSS,
+        use_cluster_counts=use_cluster_counts,
+        use_mean_log_mass=use_mean_log_mass,
+    )
+    sacc_file = builder.generate_sacc(tmp_path)
+
+    # pylint: disable-next=import-outside-toplevel
+    from firecrown.app.examples import _cluster_counts_template
+
+    likelihood, _ = _cluster_counts_template.build_likelihood(
+        builder.get_build_parameters(sacc_file)
+    )
+
+    assert isinstance(likelihood, ConstGaussian)
+    assert len(likelihood.get_data_vector()) == 5

@@ -112,16 +112,13 @@ class ExampleClusterCounts(AnalysisBuilder):
         :param output_path: Output directory
         :returns: Path to generated SACC file
         """
-        match self.dataset:
-            case ClusterDataset.NUMCOSMO:
-                with self.console.status("Simulating cluster catalog..."):
-                    catalog = simulate_catalog(
-                        self.seed, Nc.MultiplicityFuncMassDef.MEAN
-                    )
-                    sacc_data = counts_sacc(SIMULATED_SURVEY_NAME, bin_catalog(catalog))
-                self.console.print(f"Simulated {len(catalog.z)} clusters")
-            case ClusterDataset.SDSS:
-                sacc_data = sdss_sacc()
+        if self.dataset == ClusterDataset.SDSS:
+            sacc_data = sdss_sacc()
+        else:
+            with self.console.status("Simulating cluster catalog..."):
+                catalog = simulate_catalog(self.seed, Nc.MultiplicityFuncMassDef.MEAN)
+                sacc_data = counts_sacc(SIMULATED_SURVEY_NAME, bin_catalog(catalog))
+            self.console.print(f"Simulated {len(catalog.z)} clusters")
 
         sacc_full_file = output_path / f"{self.prefix}.sacc"
         sacc_data.save_fits(sacc_full_file, overwrite=True)
@@ -203,8 +200,7 @@ class ExampleClusterCounts(AnalysisBuilder):
 
     def _survey_name(self) -> str:
         """Return the name of the survey tracer in the SACC file."""
-        match self.dataset:
-            case ClusterDataset.NUMCOSMO:
-                return SIMULATED_SURVEY_NAME
-            case ClusterDataset.SDSS:
-                return SDSS_SURVEY_NAME
+        return {
+            ClusterDataset.NUMCOSMO: SIMULATED_SURVEY_NAME,
+            ClusterDataset.SDSS: SDSS_SURVEY_NAME,
+        }[self.dataset]

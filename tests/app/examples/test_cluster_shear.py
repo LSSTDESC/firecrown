@@ -9,7 +9,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from firecrown.app.analysis import FrameworkCosmology, Frameworks
+from firecrown.app.analysis import CCLCosmologySpec, FrameworkCosmology, Frameworks
 from firecrown.app.examples import EXAMPLES_LIST
 from firecrown.app.examples import _cluster_shear_template
 from firecrown.app.examples._cluster_data import SIM_Z_RANGE, ClusterCatalog
@@ -127,3 +127,43 @@ def test_build_likelihood_unknown_profile(sacc_file: Path) -> None:
     )
     with pytest.raises(ValueError, match="Unknown lensing profile"):
         _cluster_shear_template.build_likelihood(params)
+
+
+@pytest.mark.parametrize(
+    "profile,distance_max_z", [("delta_sigma", 4.0), ("reduced_shear", 11.0)]
+)
+def test_required_distance_max_z(
+    tmp_path: Path, profile: str, distance_max_z: float
+) -> None:
+    """The reduced shear needs distances above z_inf; DeltaSigma does not."""
+    builder = make_builder(tmp_path, profile=ClusterProfile(profile))
+
+    assert builder.required_distance_max_z() == pytest.approx(distance_max_z)
+
+
+def test_build_likelihood_without_counts(sacc_file: Path) -> None:
+    """The factory builds a likelihood from the mean mass and DeltaSigma alone."""
+    params = NamedParameters(
+        {
+            "sacc_file": sacc_file.as_posix(),
+            "survey_name": SIMULATED_SURVEY_NAME,
+            "profile": "delta_sigma",
+            "use_cluster_counts": False,
+            "use_mean_log_mass": True,
+        }
+    )
+    likelihood, _ = _cluster_shear_template.build_likelihood(params)
+
+    assert isinstance(likelihood, ConstGaussian)
+    assert len(likelihood.statistics) == 2
+
+
+def test_cosmology_spec_override(tmp_path: Path) -> None:
+    """A user cosmology specification takes precedence."""
+    spec_file = tmp_path / "cosmo.yaml"
+    spec_file.write_text(
+        CCLCosmologySpec.vanilla_lcdm().model_dump_json(), encoding="utf-8"
+    )
+    builder = make_builder(tmp_path, cosmology_spec=spec_file)
+
+    assert builder.cosmology_analysis_spec() == CCLCosmologySpec.vanilla_lcdm()
