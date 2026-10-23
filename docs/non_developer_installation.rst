@@ -52,4 +52,4 @@ Each time you want to do development in a new shell session you need to activate
 
     conda activate firecrown_user
 
-See the :doc:`example of non-developer mode usage <non-developer-mode-example/README>` for an example likelihood script and its use with the samplers.
+See the :doc:`example of non-developer mode usage <non-developer-mode-example/README>` for generating an example and running it with the samplers.
