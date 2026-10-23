@@ -5,10 +5,10 @@
 # firecrown-deps-validated metapackage.
 #
 # The digest records which environment.yml the lockfiles were solved
-# from, so that pins left behind by a manifest edit are detected.
-environment-sha256: "8ada10463b470da5f4f2d7d49d676498d471c635cd770c1a7037b927387edcf8"
+# from as historical metadata; --check verifies constraints from locks.
+environment-sha256: "52bad1a39356cd718b23ced5b6cbe6a2174801a7ab5109885c91a87b2c62bd6d"
 constraints:
-  astropy: ">=8.0.1,<8.1"
+  astropy: ">=8.0.2,<8.1"
   camb: ">=1.6.5,<1.7"
   charset-normalizer: ">=3.5.1,<3.6"
   clmm: ">=1.16.10,<1.17"
@@ -23,20 +23,20 @@ constraints:
   idna: ">=3.20,<3.21"
   lsstdesc-crow: ">=1.0.12,<1.1"
   matplotlib-base: ">=3.11.2,<3.12"
-  more-itertools: ">=11.1.0,<11.2"
-  numcosmo: ">=0.27.0,<0.28"
+  more-itertools: ">=11.2.1,<11.3"
+  numcosmo: ">=0.28.0,<0.29"
   numpy: ">=2.3.5,<2.4"
-  pip: ">=26.2.1,<26.3"
+  pip: ">=26.2.2,<26.3"
   portalocker: ">=3.2.0,<3.3"
   pybobyqa: ">=1.5.0,<1.6"
   pyccl: ">=3.3.6,<3.4"
-  pydantic: ">=2.13.5,<2.14"
+  pydantic: ">=2.14.1,<2.15"
   pyyaml: ">=6.0.3,<6.1"
   rich: ">=15.0.0,<15.1"
   sacc: ">=2.4,<2.5"
   scipy: ">=1.18.1,<1.19"
   tabulate: ">=0.10.0,<0.11"
-  typer: ">=0.27.2,<0.28"
+  typer: ">=0.27.3,<0.28"
   types-pyyaml: ">=6.0.12.20260906,<6.1"
   typing_extensions: ">=4.16.0,<4.17"
   urllib3: ">=2.8.0,<2.9"

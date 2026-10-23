@@ -188,9 +188,8 @@ def test_numcosmo_mapping_missing_hiprim(map_cosmo_dist: MappingNumCosmo):
 def test_numcosmo_mapping_invalid_hiprim(map_cosmo_dist: MappingNumCosmo):
     """Test the NumCosmo mapping connector with a model an invalid hiprim."""
 
-    cosmo = Nc.HICosmoDECpl()
     prim = Nc.HIPrimAtan()
-    cosmo.add_submodel(prim)
+    cosmo = Nc.HICosmoDECpl(prim=prim)
 
     mset = Ncm.MSet()
     mset.set(cosmo)
@@ -518,9 +517,7 @@ def test_mapping_ccl_args_bg_only():
     assert mapping.p_ml is None
     assert mapping.p_mnl is None
 
-    cosmo = Nc.HICosmoDEXcdm()
-    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
-    cosmo.add_submodel(Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
 
     mset = Ncm.MSet.new_array([cosmo])
     mset.prepare_fparam_map()
@@ -540,9 +537,7 @@ def test_mapping_ccl_args_bg_pk_ml():
     )
     assert mapping.p_mnl is None
 
-    cosmo = Nc.HICosmoDEXcdm()
-    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
-    cosmo.add_submodel(Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
 
     mset = Ncm.MSet.new_array([cosmo])
     mset.prepare_fparam_map()
@@ -565,9 +560,7 @@ def test_mapping_ccl_args_bg_pk_ml_pk_mnl():
     assert mapping.p_ml is not None
     assert mapping.p_mnl is not None
 
-    cosmo = Nc.HICosmoDEXcdm()
-    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
-    cosmo.add_submodel(Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
 
     mset = Ncm.MSet.new_array([cosmo])
     mset.prepare_fparam_map()
