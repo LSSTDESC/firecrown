@@ -13,10 +13,10 @@ dependencies:
   - cosmosis-build-standard-library
   - coverage
   - deno # quarto rendering
-  - dill # required by cobaya, installed from PyPI
+  - dill # required by cobaya, which is installed from PyPI
   - flake8
   - flake8-docstrings
-  - getdist # required by cobaya, installed from PyPI
+  - getdist # required by cobaya, which is installed from PyPI
   - glib
   - graphviz
   - griffe
@@ -28,15 +28,15 @@ dependencies:
   - mypy
   - numcosmo >=0.28,<1.0
   - numpy >=2.0,<2.4
-  - packaging # required by cobaya and isitgr, installed from PyPI
-  - pandas # required by cobaya, installed from PyPI; also the tutorials
+  - packaging # required by cobaya and isitgr, which are installed from PyPI
+  - pandas # required by cobaya, which is installed from PyPI; also the tutorials
   - pip >=20.1 # installs cobaya, which conda-forge does not package
   - pip:
       - cobaya
       - isitgr
   - plotnine
-  - portalocker # required by cobaya, installed from PyPI
-  - pybobyqa # required by cobaya (as py-bobyqa), installed from PyPI
+  - portalocker # required by cobaya, which is installed from PyPI
+  - pybobyqa # required by cobaya (as py-bobyqa), which is installed from PyPI
   - pyccl >=2.8.0
   - pydantic
   - pydantic-core
@@ -50,8 +50,8 @@ dependencies:
   - python-build
   - pyyaml
   - quarto
-  - rapidfuzz # required by cobaya, installed from PyPI
-  - requests # required by cobaya, installed from PyPI; also firecrown-link-checker
+  - rapidfuzz # required by cobaya, which is installed from PyPI
+  - requests # required by cobaya, which is installed from PyPI; also firecrown-link-checker
   - rich
   - sacc >=2.4
   - scipy >=1.13
@@ -61,9 +61,9 @@ dependencies:
   - sphinx-autodoc-typehints
   - sphinx-rtd-theme
   - sphinxcontrib-apidoc
-  - sympy # required by isitgr, installed from PyPI
+  - sympy # required by isitgr, which is installed from PyPI
   - tabulate # imported by numcosmo_py's CLI but not declared by conda-forge's numcosmo 0.28.0; remove once numcosmo declares it
-  - tqdm # required by cobaya, installed from PyPI
+  - tqdm # required by cobaya, which is installed from PyPI
   - typer
   - types-pyyaml
   - types-requests
