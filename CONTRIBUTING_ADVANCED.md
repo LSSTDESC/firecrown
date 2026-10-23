@@ -101,7 +101,6 @@ graph TD
     lint-pylint --> pylint-fc["pylint-firecrown"]:::sequential
     lint-pylint --> pylint-plug["pylint-plugins"]:::sequential
     lint-pylint --> pylint-test["pylint-tests"]:::sequential
-    lint-pylint --> pylint-ex["pylint-examples"]:::sequential
     
     %% Test-CI parallelism (after unit-tests-pre barrier)
     test-ci --> barrier["🚧 unit-tests-pre<br/>(runs first)"]:::sequential

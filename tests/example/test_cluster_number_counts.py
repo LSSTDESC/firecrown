@@ -1,87 +1,66 @@
-"""Integration tests for cluster number counts"""
+"""Integration tests for the galaxy cluster examples."""
 
 import subprocess
+from pathlib import Path
+from typing import Any
 
 import pytest
 
+from firecrown.app.analysis import AnalysisBuilder, Frameworks
+from firecrown.app.examples import (
+    ClusterDataset,
+    ClusterProfile,
+    ExampleClusterCounts,
+    ExampleClusterShear,
+)
 
-@pytest.mark.example
-def test_cluster_number_counts_cosmosis():
-    result = subprocess.run(
-        [
-            "bash",
-            "-c",
-            """
-                set -e
-                cd examples/cluster_number_counts
-                python generate_rich_mean_mass_sacc_data.py
-                python generate_rich_mean_mass_sacc_data_withshear.py
-                cosmosis cluster_counts_redshift_richness.ini
-                cosmosis cluster_mean_mass_redshift_richness.ini
-                cosmosis cluster_counts_mean_mass_redshift_richness.ini
-                cosmosis cluster_counts_mean_mass_redshift_richness_delta_sigma.ini
-                cosmosis cluster_counts_mean_mass_redshift_richness_shear.ini
-            """,
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
+CLUSTER_CASES: dict[str, tuple[type[AnalysisBuilder], dict[str, Any]]] = {
+    "counts_mean_mass": (ExampleClusterCounts, {}),
+    "counts": (ExampleClusterCounts, {"use_mean_log_mass": False}),
+    "mean_mass": (ExampleClusterCounts, {"use_cluster_counts": False}),
+    "sdss": (ExampleClusterCounts, {"dataset": ClusterDataset.SDSS}),
+    "delta_sigma": (ExampleClusterShear, {"profile": ClusterProfile.DELTA_SIGMA}),
+    "reduced_shear": (
+        ExampleClusterShear,
+        {"profile": ClusterProfile.REDUCED_SHEAR},
+    ),
+}
+
+
+@pytest.fixture(name="target_framework", params=Frameworks)
+def fixture_target_framework(request) -> Frameworks:
+    """Generate a target framework for all frameworks."""
+    return request.param
+
+
+@pytest.fixture(name="cluster_example", params=CLUSTER_CASES)
+def fixture_cluster_example(
+    request, target_framework: Frameworks, tmp_path: Path
+) -> tuple[Path, Frameworks]:
+    """Generate each cluster example for all frameworks."""
+    example_cls, options = CLUSTER_CASES[request.param]
+    example_cls(
+        output_path=tmp_path,
+        prefix="cluster",
+        target_framework=target_framework,
+        **options,
     )
-
-    assert result.returncode == 0
-    print(result.stdout)
-
-
-@pytest.mark.example
-def test_cluster_number_counts_sdss_cosmosis():
-    result = subprocess.run(
-        [
-            "bash",
-            "-c",
-            """
-                set -e
-                cd examples/cluster_number_counts
-                python generate_SDSS_ClusterCountsMass_sacc_data.py
-                cosmosis cluster_SDSS_counts_mean_mass_redshift_richness.ini
-            """,
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    assert result.returncode == 0
-    print(result.stdout)
+    return tmp_path, target_framework
 
 
 @pytest.mark.example
-def test_cluster_number_counts_numcosmo():
-    result = subprocess.run(
-        [
-            "bash",
-            "-c",
-            """
-                set -e
-                cd examples/cluster_number_counts
-                numcosmo from-cosmosis cluster_counts_redshift_richness.ini\\
-                    --matter-ps eisenstein_hu
-                numcosmo run test cluster_counts_redshift_richness.yaml
-                numcosmo from-cosmosis cluster_mean_mass_redshift_richness.ini\\
-                    --matter-ps eisenstein_hu
-                numcosmo run test cluster_mean_mass_redshift_richness.yaml
-                numcosmo from-cosmosis cluster_counts_mean_mass_redshift_richness.ini\\
-                    --matter-ps eisenstein_hu
-                numcosmo run test cluster_counts_mean_mass_redshift_richness.yaml
-                numcosmo from-cosmosis \\
-                    cluster_SDSS_counts_mean_mass_redshift_richness.ini \\
-                    --matter-ps eisenstein_hu
-                numcosmo run test cluster_SDSS_counts_mean_mass_redshift_richness.yaml
-            """,
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+def test_cluster_run(cluster_example: tuple[Path, Frameworks]) -> None:
+    """Run each framework's generated configuration end-to-end."""
+    output_path, framework = cluster_example
+    match framework:
+        case Frameworks.COSMOSIS:
+            command = ["cosmosis", "cosmosis_cluster.ini"]
+        case Frameworks.COBAYA:
+            command = ["cobaya-run", "--no-mpi", "-f", "cobaya_cluster.yaml"]
+        case Frameworks.NUMCOSMO:
+            command = ["numcosmo", "run", "test", "numcosmo_cluster.yaml"]
 
+    result = subprocess.run(
+        command, cwd=output_path, capture_output=True, text=True, check=True
+    )
     assert result.returncode == 0
-    print(result.stdout)

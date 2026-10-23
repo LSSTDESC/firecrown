@@ -27,7 +27,7 @@ A [recording of the original talk](https://stanford.zoom.us/rec/play/L5kfslcPirR
 ## Development workflow
 {{< include _development_workflow.qmd >}}
 
-## Examples in the repository
+## Examples
 {{< include _examples_in_the_repository.qmd >}}
 
 ## Installation modes

@@ -19,7 +19,6 @@ Statistics
 
 # Environment variables (not Python symbols but may appear in code spans)
 CSL_DIR
-FIRECROWN_DIR
 
 # Type variables and generic terms
 T

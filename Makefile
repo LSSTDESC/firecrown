@@ -10,7 +10,7 @@ SHELL := /bin/bash
 .PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
-	lint-pylint-tests lint-pylint-examples lint-pylint-tools lint-mypy pre-commit install all-checks \
+	lint-pylint-tests lint-pylint-tools lint-mypy pre-commit install all-checks \
 	test-updatable test-utils test-parameters test-modeling-tools \
 	test-models-cluster test-models-two-point unit-tests test-ci test-all-coverage \
 	unit-tests-pre unit-tests-post unit-tests-core docs-generate-symbol-map \
@@ -50,7 +50,6 @@ RELEASE_CONDA_ENV := firecrown_developer
 FIRECROWN_PKG_DIR := firecrown
 TOOLS_DIR := tools
 TESTS_DIR := tests
-EXAMPLES_DIR := examples
 PYLINT_PLUGINS_DIR := pylint_plugins
 DOCS_DIR := docs
 TUTORIAL_DIR := tutorial
@@ -175,10 +174,10 @@ help-all:  ## Show this help message
 ##@ Formatting
 
 format:  ## Format code with black
-	black $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/
+	black $(FIRECROWN_PKG_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/
 
 format-check:  ## Check code formatting without modifying files
-	black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/
+	black --check $(FIRECROWN_PKG_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/
 
 ##@ Dependencies
 
@@ -218,20 +217,20 @@ lint: lint-black lint-flake8 lint-mypy lint-pylint  ## Run all linting tools
 
 lint-black:  ## Check code formatting with black
 	@echo "Running black..."
-	@black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/ || (echo "❌ black failed" && exit 1)
+	@black --check $(FIRECROWN_PKG_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/ || (echo "❌ black failed" && exit 1)
 	@echo "✅ black passed"
 
 lint-flake8:  ## Run flake8 linter
 	@echo "Running flake8..."
-	@flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
+	@flake8 $(FIRECROWN_PKG_DIR)/ $(TESTS_DIR)/ $(TOOLS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
 	@echo "✅ flake8 passed"
 
 lint-mypy:  ## Run mypy type checker
 	@echo "Running mypy..."
-	@mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) -p $(TOOLS_DIR) || (echo "❌ mypy failed" && exit 1)
+	@mypy -p $(FIRECROWN_PKG_DIR) -p $(TESTS_DIR) -p $(TOOLS_DIR) || (echo "❌ mypy failed" && exit 1)
 	@echo "✅ mypy passed"
 
-lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-examples lint-pylint-tools ## Run all pylint checks
+lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-tools ## Run all pylint checks
 	@echo "✅ All pylint checks passed!"
 
 lint-pylint-firecrown:  ## Run pylint on firecrown package
@@ -248,11 +247,6 @@ lint-pylint-tests:  ## Run pylint on tests
 	@echo "Running pylint on tests..."
 	@pylint --rcfile $(TESTS_DIR)/pylintrc $(TESTS_DIR) || (echo "❌ pylint failed for tests" && exit 1)
 	@echo "✅ pylint passed for tests"
-
-lint-pylint-examples:  ## Run pylint on examples
-	@echo "Running pylint on examples..."
-	@pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) || (echo "❌ pylint failed for examples" && exit 1)
-	@echo "✅ pylint passed for examples"
 
 lint-pylint-tools:  ## Run pylint on tools
 	@echo "Running pylint on tools..."
