@@ -11,11 +11,10 @@ description = "DESC Cosmology Likelihood Framework"
 requires-python = ">=3.12"
 license-files = ["LICENSE"]
 dependencies = [
-    "astropy",
     "camb<2.0",
+    "clmm",
     "cobaya",
     "cosmosis>=3.0,<3.26",
-    "fitsio",
     "isitgr",
     "lsstdesc-crow",
     "matplotlib",
@@ -23,6 +22,7 @@ dependencies = [
     "numpy>=2.0,<2.4",
     "pyccl>=2.8.0",
     "pydantic",
+    "pydantic-core",
     "pyyaml",
     "rich",
     "sacc>=2.4",

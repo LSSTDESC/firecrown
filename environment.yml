@@ -3,49 +3,43 @@ channels:
   - conda-forge
 dependencies:
   - alabaster
-  - astropy # examples/cluster_number_counts
   - babel
   - beautifulsoup4 # firecrown-link-checker, run by make docs-linkcheck
   - black
   - camb <2.0
-  - charset-normalizer
-  - clmm # part of the DESC stack; needed indirectly through lsstdesc-crow
+  - clmm
   - compilers # two-phase cosmosis-standard-library installation
   - cosmosis >=3.0,<3.26 # 3.26 .mod files need gfortran 15; camb <2.0 holds compilers at 14
   - cosmosis-build-standard-library
   - coverage
-  - cython
   - deno # quarto rendering
-  - dill
-  - fitsio
+  - dill # required by cobaya, installed from PyPI
   - flake8
   - flake8-docstrings
-  - fuzzywuzzy
-  - getdist
+  - getdist # required by cobaya, installed from PyPI
   - glib
   - graphviz
   - griffe
   - hypothesis
-  - idna
   - jupyter
   - linkchecker
   - lsstdesc-crow
   - matplotlib-base # firecrown sacc view
-  - more-itertools
   - mypy
   - numcosmo >=0.28,<1.0
   - numpy >=2.0,<2.4
-  - pandas # tutorials
+  - packaging # required by cobaya and isitgr, installed from PyPI
+  - pandas # required by cobaya, installed from PyPI; also the tutorials
   - pip >=20.1 # installs cobaya, which conda-forge does not package
   - pip:
-      - build
       - cobaya
       - isitgr
   - plotnine
-  - portalocker
-  - pybobyqa
+  - portalocker # required by cobaya, installed from PyPI
+  - pybobyqa # required by cobaya (as py-bobyqa), installed from PyPI
   - pyccl >=2.8.0
   - pydantic
+  - pydantic-core
   - pygobject-stubs <2.18
   - pylint
   - pytest
@@ -53,9 +47,11 @@ dependencies:
   - pytest-json-report
   - pytest-xdist
   - python >=3.12
+  - python-build
   - pyyaml
   - quarto
-  - requests # firecrown-link-checker, run by make docs-linkcheck
+  - rapidfuzz # required by cobaya, installed from PyPI
+  - requests # required by cobaya, installed from PyPI; also firecrown-link-checker
   - rich
   - sacc >=2.4
   - scipy >=1.13
@@ -65,9 +61,10 @@ dependencies:
   - sphinx-autodoc-typehints
   - sphinx-rtd-theme
   - sphinxcontrib-apidoc
-  - tabulate
+  - sympy # required by isitgr, installed from PyPI
+  - tabulate # imported by numcosmo_py's CLI but not declared by conda-forge's numcosmo 0.28.0; remove once numcosmo declares it
+  - tqdm # required by cobaya, installed from PyPI
   - typer
   - types-pyyaml
   - types-requests
   - typing_extensions
-  - urllib3
