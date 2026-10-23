@@ -46,6 +46,7 @@ dependencies:
   - pybobyqa
   - pyccl >=2.8.0
   - pydantic
+  - pygobject-stubs <2.18
   - pylint
   - pytest
   - pytest-cov
