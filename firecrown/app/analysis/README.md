@@ -48,6 +48,7 @@ generator.write_config()
 - `cosmosis_{prefix}.ini`: Pipeline configuration
 - `cosmosis_{prefix}_values.ini`: Parameter values and bounds
 - `cosmosis_{prefix}_priors.ini`: Prior specifications (if priors defined)
+- `firecrown_cosmosis.py`: Module CosmoSIS loads for the Firecrown likelihood; it imports the connector from the Firecrown installed in the running Python environment
 
 **Key Features**:
 - Configures CAMB for cosmology computation (optional)
@@ -206,6 +207,7 @@ generator.write_config()
 - Uses `configparser` with extended interpolation
 - Comments formatted with `;;` prefix
 - Requires CSL_DIR environment variable
+- With relative paths, the default, run `cosmosis` from the directory of the generated files
 - Fixed parameters need `.0` suffix
 
 ### Cobaya

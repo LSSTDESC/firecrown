@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pyccl
+import pytest
 
 from firecrown.app.analysis import (
     FrameworkCosmology,
@@ -581,8 +582,11 @@ class TestExampleDESY13x2pt:
         # Values should be different when f_bar changes
         assert not np.allclose(pk_values, pk_values_2)
 
-    def test_build_likelihood_yaml_default(self, tmp_path: Path) -> None:
+    def test_build_likelihood_yaml_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that YAML_DEFAULT factory build_likelihood executes."""
+        monkeypatch.chdir(tmp_path)
         builder = ExampleDESY13x2pt(
             output_path=tmp_path,
             prefix="test_des_yaml",
@@ -614,8 +618,11 @@ class TestExampleDESY13x2pt:
         assert isinstance(modeling_tools, ModelingTools)
         assert len(likelihood.statistics) > 0
 
-    def test_build_likelihood_yaml_pure_ccl(self, tmp_path: Path) -> None:
+    def test_build_likelihood_yaml_pure_ccl(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that YAML_PURE_CCL factory build_likelihood executes."""
+        monkeypatch.chdir(tmp_path)
         builder = ExampleDESY13x2pt(
             output_path=tmp_path,
             prefix="test_des_pure_ccl",
@@ -644,8 +651,11 @@ class TestExampleDESY13x2pt:
         assert isinstance(modeling_tools, ModelingTools)
         assert len(likelihood.statistics) > 0
 
-    def test_build_likelihood_yaml_mu_sigma(self, tmp_path: Path) -> None:
+    def test_build_likelihood_yaml_mu_sigma(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that YAML_MU_SIGMA factory build_likelihood executes."""
+        monkeypatch.chdir(tmp_path)
         builder = ExampleDESY13x2pt(
             output_path=tmp_path,
             prefix="test_des_mu_sigma",

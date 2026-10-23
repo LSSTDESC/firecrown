@@ -516,7 +516,13 @@ ccl_factory:
         """Return the likelihood configuration path for likelihood construction."""
         experiment_path = sacc_path.parent / f"{self.prefix}_experiment.yaml"
         return NamedParameters(
-            {"likelihood_config": experiment_path.absolute().as_posix()}
+            {
+                "likelihood_config": (
+                    experiment_path.absolute().as_posix()
+                    if self.use_absolute_path
+                    else experiment_path.name
+                )
+            }
         )
 
     def get_models(self) -> list[Model]:

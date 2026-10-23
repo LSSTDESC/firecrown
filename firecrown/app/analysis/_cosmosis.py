@@ -16,7 +16,6 @@ import textwrap
 from pathlib import Path
 from typing import assert_never
 
-import firecrown
 from firecrown.likelihood import NamedParameters
 
 from ._types import (
@@ -130,8 +129,20 @@ def _add_cosmology_modules(
         }
 
 
+#: File name of the module that CosmoSIS loads for the Firecrown likelihood.
+CONNECTOR_SHIM = "firecrown_cosmosis.py"
+
+#: Contents of the connector shim: it imports the connector of the Firecrown
+#: installation in the running Python environment, so the generated files do
+#: not record where Firecrown is installed.
+CONNECTOR_SHIM_SOURCE = (
+    "from firecrown.connector.cosmosis.likelihood import cleanup, execute, setup\n"
+)
+
+
 def _add_firecrown_likelihood(
     cfg: configparser.ConfigParser,
+    connector_str: str,
     factory_source_str: str,
     build_parameters: NamedParameters,
 ) -> None:
@@ -142,12 +153,7 @@ def _add_firecrown_likelihood(
         "firecrown_likelihood",
         "This will point to the Firecrown's cosmosis likelihood connector module.",
     )
-    firecrown_path = Path(firecrown.__path__[0])
-    cfg.set(
-        "firecrown_likelihood",
-        "file",
-        f"{firecrown_path}/connector/cosmosis/likelihood.py",
-    )
+    cfg.set("firecrown_likelihood", "file", connector_str)
     cfg.set("firecrown_likelihood", "likelihood_source", factory_source_str)
     for key, value in build_parameters.convert_to_basic_dict().items():
         cfg.set("firecrown_likelihood", key, str(value))
@@ -176,7 +182,7 @@ def create_config(
     :param build_parameters: Parameters passed to likelihood factory
     :param values_path: Path to values.ini file (referenced in pipeline)
     :param priors_path: Path to priors.ini file (optional)
-    :param output_path: Output directory for results
+    :param output_path: Directory of the generated files and the connector shim
     :param cosmo_spec: Cosmology specification
     :param use_absolute_path: Use absolute paths in configuration
     :param required_cosmology: Level of cosmology computation
@@ -191,7 +197,6 @@ def create_config(
 
     cfg["runtime"] = {
         "sampler": "test",
-        "root": str(output_path.absolute()),
         "verbosity": "quiet",
     }
     cfg["DEFAULT"] = {"fatal_errors": "T"}
@@ -218,7 +223,10 @@ def create_config(
         _add_cosmology_modules(cfg, required_cosmology, cosmo_spec, distance_max_z)
 
     _add_firecrown_likelihood(
-        cfg, get_path_str(factory_source, use_absolute_path), build_parameters
+        cfg,
+        get_path_str(output_path / CONNECTOR_SHIM, use_absolute_path),
+        get_path_str(factory_source, use_absolute_path),
+        build_parameters,
     )
 
     cfg["test"] = {"fatal_errors": "T", "save_dir": "output"}
@@ -470,6 +478,9 @@ class CosmosisConfigGenerator(ConfigGenerator):
         )
         add_models(cfg, self.models)
 
+        (self.output_path / CONNECTOR_SHIM).write_text(
+            CONNECTOR_SHIM_SOURCE, encoding="utf-8"
+        )
         with values_ini.open("w") as fp:
             values_cfg.write(fp)
         with cosmosis_ini.open("w") as fp:

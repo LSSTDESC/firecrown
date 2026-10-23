@@ -99,9 +99,13 @@ def test_cosmology_and_options(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("profile", list(ClusterProfile))
 def test_build_likelihood_execution(
-    tmp_path: Path, sacc_file: Path, profile: ClusterProfile
+    tmp_path: Path,
+    sacc_file: Path,
+    profile: ClusterProfile,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The generated data and factory build a likelihood for each profile."""
+    monkeypatch.chdir(sacc_file.parent)
     builder = make_builder(tmp_path, prefix="test_cs", profile=profile)
 
     factory_file = builder.generate_factory(tmp_path, sacc_file)

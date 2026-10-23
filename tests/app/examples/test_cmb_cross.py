@@ -7,6 +7,7 @@ through Firecrown's YAML-driven TwoPointFactory system.
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 import sacc
 
 from firecrown.app.analysis import (
@@ -191,9 +192,7 @@ class TestExampleCMBCross:
 
         assert isinstance(params, NamedParameters)
         param_dict = params.convert_to_basic_dict()
-        assert param_dict["likelihood_config"] == str(
-            (tmp_path / "test_cmb_experiment.yaml").absolute()
-        )
+        assert param_dict["likelihood_config"] == "test_cmb_experiment.yaml"
 
     def test_get_models_returns_delta_z_params(self, tmp_path: Path) -> None:
         """Test that get_models returns delta_z parameters for photo-z shifts."""
@@ -243,10 +242,13 @@ class TestExampleCMBCross:
         assert any("bin" in name.lower() for name in option_names)
         assert any("cmb" in name.lower() for name in option_names)
 
-    def test_build_likelihood_execution(self, tmp_path: Path) -> None:
+    def test_build_likelihood_execution(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that the auto-discovered likelihood is built successfully,
         picking up both the galaxy and CMB lensing tracers via the
         WeakLensingFactory/CMBConvergenceFactory dispatch."""
+        monkeypatch.chdir(tmp_path)
         builder = ExampleCMBCross(
             output_path=tmp_path,
             prefix="test_cmb",
@@ -271,9 +273,12 @@ class TestExampleCMBCross:
         expected_n_stats = 2 * (2 + 1) // 2 + 2 + 1
         assert len(likelihood.statistics) == expected_n_stats
 
-    def test_build_likelihood_without_cmb_auto(self, tmp_path: Path) -> None:
+    def test_build_likelihood_without_cmb_auto(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that the auto-discovered likelihood correctly omits the CMB
         auto-correlation when it is not present in the SACC file."""
+        monkeypatch.chdir(tmp_path)
         builder = ExampleCMBCross(
             output_path=tmp_path,
             prefix="test_cmb",
