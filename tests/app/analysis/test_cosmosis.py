@@ -244,18 +244,21 @@ class TestAddFirecrownLikelihood:
         cfg = configparser.ConfigParser(allow_no_value=True)
         build_params = NamedParameters({})
 
-        _add_firecrown_likelihood(cfg, "factory.py", build_params)
+        _add_firecrown_likelihood(
+            cfg, "firecrown_cosmosis.py", "factory.py", build_params
+        )
 
-        assert "firecrown_likelihood" in cfg
-        assert "file" in cfg["firecrown_likelihood"]
-        assert "likelihood_source" in cfg["firecrown_likelihood"]
+        assert cfg["firecrown_likelihood"]["file"] == "firecrown_cosmosis.py"
+        assert cfg["firecrown_likelihood"]["likelihood_source"] == "factory.py"
 
     def test_add_firecrown_likelihood_with_params(self) -> None:
         """Test adding likelihood with build parameters."""
         cfg = configparser.ConfigParser(allow_no_value=True)
         build_params = NamedParameters({"sacc_file": "data.sacc", "option": "value"})
 
-        _add_firecrown_likelihood(cfg, "factory.py", build_params)
+        _add_firecrown_likelihood(
+            cfg, "firecrown_cosmosis.py", "factory.py", build_params
+        )
 
         assert cfg["firecrown_likelihood"]["sacc_file"] == "data.sacc"
         assert cfg["firecrown_likelihood"]["option"] == "value"

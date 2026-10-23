@@ -48,6 +48,7 @@ generator.write_config()
 - `cosmosis_{prefix}.ini`: Pipeline configuration
 - `cosmosis_{prefix}_values.ini`: Parameter values and bounds
 - `cosmosis_{prefix}_priors.ini`: Prior specifications (if priors defined)
+- `firecrown_cosmosis.py`: Module CosmoSIS loads for the Firecrown likelihood; it imports the connector from the Firecrown installed in the running Python environment
 
 **Key Features**:
 - Configures CAMB for cosmology computation (optional)
