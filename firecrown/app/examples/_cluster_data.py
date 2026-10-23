@@ -119,11 +119,9 @@ class StackedProfiles:
 
 def _numcosmo_cosmology() -> Nc.HICosmoDEXcdm:
     """Create the fiducial NumCosmo cosmology normalized to sigma8."""
-    cosmo = Nc.HICosmoDEXcdm()
     reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
     prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
-    cosmo.add_submodel(reion)
-    cosmo.add_submodel(prim)
+    cosmo = Nc.HICosmoDEXcdm(prim=prim, reion=reion)
 
     psml = Nc.PowspecMLTransfer.new(
         Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
