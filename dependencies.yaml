@@ -42,18 +42,17 @@ python: ">=3.12"
 # is imported -- `compilers` is there for the two-phase
 # cosmosis-standard-library installation, `pip` because cobaya is not packaged
 # on conda-forge and has to be installed from PyPI to finish the environment,
-# and `astropy`, `camb` and `isitgr` are needed to run the examples.  What separates this group from `workarounds` is that
+# and `camb` and `isitgr` are needed to run the examples.  What separates this group from `workarounds` is that
 # firecrown needs these present, rather than merely needing them bounded.
 # Generates: firecrown-deps run requirements, pyproject [project.dependencies].
 runtime:
-  - name: astropy
-    note: examples/cluster_number_counts
   - name: camb
     version: "<2.0"
   - name: compilers
     pip: false
     import: false
     note: two-phase cosmosis-standard-library installation
+  - name: clmm
   - name: cobaya
     conda: false
     note: cobaya connector; not packaged on conda-forge
@@ -85,6 +84,8 @@ runtime:
   - name: pyccl
     version: ">=2.8.0"
   - name: pydantic
+  - name: pydantic-core
+    import: pydantic_core
   - name: pyyaml
     import: yaml
   - name: rich
@@ -106,8 +107,8 @@ devenv:
     import: bs4
     note: firecrown-link-checker, run by make docs-linkcheck
   - name: black
-  - name: build
-    conda: false
+  - name: python-build
+    import: build
   - name: coverage
   - name: deno
     note: quarto rendering
@@ -119,8 +120,6 @@ devenv:
   - name: jupyter
   - name: linkchecker
   - name: mypy
-  - name: pandas
-    note: tutorials
   - name: plotnine
   - name: pygobject-stubs
     version: "<2.18"
@@ -129,8 +128,6 @@ devenv:
   - name: pytest-cov
   - name: pytest-json-report
   - name: pytest-xdist
-  - name: requests
-    note: firecrown-link-checker, run by make docs-linkcheck
   - name: quarto
   - name: scipy-stubs
   - name: sphinx
@@ -138,6 +135,7 @@ devenv:
   - name: sphinx-autodoc-typehints
   - name: sphinx-rtd-theme
   - name: sphinxcontrib-apidoc
+  - name: types-pyyaml
   - name: types-requests
   - name: griffe
 
@@ -152,19 +150,25 @@ devenv:
 # than outliving the bug.  These have never been part of the pip metadata; give
 # an entry a `pip` name to change that.
 workarounds:
-  - name: charset-normalizer
-  - name: clmm
-    note: part of the DESC stack; needed indirectly through lsstdesc-crow
-  - name: cython
   - name: dill
-  - name: fitsio
-    pip: true
-  - name: fuzzywuzzy
+    note: required by cobaya, installed from PyPI
   - name: getdist
-  - name: idna
-  - name: more-itertools
+    note: required by cobaya, installed from PyPI
+  - name: packaging
+    note: required by cobaya and isitgr, installed from PyPI
+  - name: pandas
+    note: required by cobaya, installed from PyPI; also the tutorials
   - name: portalocker
+    note: required by cobaya, installed from PyPI
   - name: pybobyqa
+    note: required by cobaya (as py-bobyqa), installed from PyPI
+  - name: rapidfuzz
+    note: required by cobaya, installed from PyPI
+  - name: requests
+    note: required by cobaya, installed from PyPI; also firecrown-link-checker
+  - name: sympy
+    note: required by isitgr, installed from PyPI
   - name: tabulate
-  - name: types-pyyaml
-  - name: urllib3
+    note: imported by numcosmo_py's CLI but not declared by conda-forge's numcosmo 0.28.0; remove once numcosmo declares it
+  - name: tqdm
+    note: required by cobaya, installed from PyPI

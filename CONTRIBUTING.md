@@ -81,7 +81,7 @@ firecrown ships — the package, its command line tools and the examples. That i
 broader than what firecrown imports: `compilers` is there for the two-phase
 `cosmosis-standard-library` installation, `pip` because cobaya is not packaged
 on conda-forge and has to come from PyPI to complete the environment, and
-`astropy`, `camb` and `isitgr` because the examples need them.
+`camb` and `isitgr` because the examples need them.
 
 `devenv` is what developing, testing and documenting needs — the link checker's
 `bs4` and `requests` live here, since `make docs-linkcheck` is the only thing
