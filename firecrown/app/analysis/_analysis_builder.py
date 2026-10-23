@@ -81,7 +81,7 @@ class AnalysisBuilder(logging.Logging):
             help="Use absolute file paths in configuration files",
             show_default=True,
         ),
-    ] = True
+    ] = False
 
     cosmology_spec: Annotated[
         Path | None,

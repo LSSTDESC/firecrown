@@ -71,7 +71,7 @@ def test_get_build_parameters(
 
     params = builder.get_build_parameters(tmp_path / "data.sacc")
 
-    assert params.get_string("sacc_file") == (tmp_path / "data.sacc").as_posix()
+    assert params.get_string("sacc_file") == "data.sacc"
     assert params.get_string("survey_name") == survey_name
     assert params.get_bool("use_cluster_counts") is True
     assert params.get_bool("use_mean_log_mass") is False
@@ -121,8 +121,11 @@ def test_options_desc(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("dataset", list(ClusterDataset))
-def test_build_likelihood_execution(tmp_path: Path, dataset: ClusterDataset) -> None:
+def test_build_likelihood_execution(
+    tmp_path: Path, dataset: ClusterDataset, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """The generated data and factory build a likelihood."""
+    monkeypatch.chdir(tmp_path)
     builder = make_builder(tmp_path, prefix="test_cc", dataset=dataset)
 
     sacc_file = builder.generate_sacc(tmp_path)
@@ -156,9 +159,13 @@ def test_build_likelihood_execution(tmp_path: Path, dataset: ClusterDataset) -> 
     "use_cluster_counts,use_mean_log_mass", [(True, False), (False, True)]
 )
 def test_build_likelihood_single_observable(
-    tmp_path: Path, use_cluster_counts: bool, use_mean_log_mass: bool
+    tmp_path: Path,
+    use_cluster_counts: bool,
+    use_mean_log_mass: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The factory builds a likelihood from either observable alone."""
+    monkeypatch.chdir(tmp_path)
     builder = make_builder(
         tmp_path,
         dataset=ClusterDataset.SDSS,

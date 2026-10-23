@@ -207,6 +207,7 @@ generator.write_config()
 - Uses `configparser` with extended interpolation
 - Comments formatted with `;;` prefix
 - Requires CSL_DIR environment variable
+- With relative paths, the default, run `cosmosis` from the directory of the generated files
 - Fixed parameters need `.0` suffix
 
 ### Cobaya
