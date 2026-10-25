@@ -13,8 +13,21 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import ApplyInterpolationWhen
 from firecrown.updatable import get_default_params_map
 
+from firecrown._integer_arrays import _as_multipole_array
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_types import TwoPointHarmonic, TwoPointXY
+
+
+def test_as_multipole_array_rejects_masked() -> None:
+    """Reject masked arrays before dtype inspection."""
+    with pytest.raises(TypeError, match="must not be masked"):
+        _as_multipole_array(np.ma.array([2, 5], mask=[False, True]))
+
+
+def test_as_multipole_array_rejects_non_numeric_dtype() -> None:
+    """Reject arrays whose dtype is neither integer nor floating."""
+    with pytest.raises(TypeError, match="integer or floating dtype"):
+        _as_multipole_array(np.array(["2", "5"]))
 
 
 @pytest.mark.parametrize(

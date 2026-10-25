@@ -564,6 +564,18 @@ def test_make_log_interpolator_negative() -> None:
     assert_allclose(f(x), y, atol=0.0, rtol=1e-12)
 
 
+def test_cached_angular_cl_rejects_non_numeric_ell(
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
+    """Reject ell tuples containing non-numeric values."""
+    cosmo = tools_with_vanilla_cosmology.get_ccl_cosmology()
+    z = np.linspace(0, 1, 100)
+    nz = np.exp(-0.5 * ((z - 0.5) / 0.1) ** 2)
+    tracer = pyccl.WeakLensingTracer(cosmo, dndz=(z, nz))
+    with pytest.raises(TypeError, match="Multipoles must be real numbers"):
+        cached_angular_cl(cosmo, (tracer, tracer), (10, "bad"))  # type: ignore[arg-type]
+
+
 def test_cached_angular_cl(tools_with_vanilla_cosmology: ModelingTools) -> None:
     tools = tools_with_vanilla_cosmology
     cosmo = tools.get_ccl_cosmology()
