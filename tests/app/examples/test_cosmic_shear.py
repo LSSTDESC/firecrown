@@ -8,16 +8,15 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
+import numpy as np
 
 from firecrown.app.analysis import (
     FrameworkCosmology,
     Frameworks,
 )
 from firecrown.app.examples._cosmic_shear import ExampleCosmicShear
-from firecrown.likelihood import ConstGaussian, NamedParameters
+from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
 from firecrown.modeling_tools import ModelingTools
-from tests._types import SaccGalaxyHarmonicFixture
 
 
 class TestExampleCosmicShear:
@@ -159,13 +158,10 @@ class TestExampleCosmicShear:
             "noise" in name.lower() or "ell" in name.lower() for name in option_names
         )
 
-    def test_build_likelihood_execution(
-        self, tmp_path: Path, sacc_galaxy_cells: SaccGalaxyHarmonicFixture
-    ) -> None:
-        """Reject fractional example sampling and read compatible integer data.
+    def test_build_likelihood_execution(self, tmp_path: Path) -> None:
+        """Build both templates using the example's fractional sampling grid.
 
         :param tmp_path: Temporary directory for generated files.
-        :param sacc_galaxy_cells: Independently constructed integer-support data.
         """
         # Generate real SACC file and factory
         builder = ExampleCosmicShear(
@@ -184,24 +180,18 @@ class TestExampleCosmicShear:
         # Test 1: Load and execute the ORIGINAL template module for coverage
         from firecrown.app.examples import _cosmic_shear_template
 
-        # The example's real sampling grid cannot satisfy exact multipoles.
-        with pytest.raises(TypeError, match="integer dtype"):
-            _cosmic_shear_template.build_likelihood(params)
-
-        # Keep positive template execution on independently constructed exact
-        # support, rather than rounding or retagging the example's real grid.
-        exact_data = sacc_galaxy_cells.sacc_data.copy()
-        exact_data.rename_tracer("src0", "trc0")
-        exact_data.rename_tracer("src1", "trc1")
-        exact_path = tmp_path / "exact-support.sacc"
-        exact_data.save_fits(str(exact_path), overwrite=True)
-        params = NamedParameters({"sacc_file": str(exact_path), "n_bins": 2})
         likelihood_orig, modeling_tools_orig = _cosmic_shear_template.build_likelihood(
             params
         )
         assert isinstance(likelihood_orig, ConstGaussian)
         assert isinstance(modeling_tools_orig, ModelingTools)
         assert len(likelihood_orig.statistics) == 3  # n_bins * (n_bins + 1) / 2
+        assert any(
+            isinstance(guard.statistic, TwoPoint)
+            and guard.statistic.ells is not None
+            and np.any(guard.statistic.ells % 1 != 0)
+            for guard in likelihood_orig.statistics
+        )
 
         # Test 2: Load and execute the COPIED template module
         spec = importlib.util.spec_from_file_location("test_factory", factory_file)

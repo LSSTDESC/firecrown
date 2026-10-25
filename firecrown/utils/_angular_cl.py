@@ -11,7 +11,7 @@ from numpy import typing as npt
 from pydantic import BaseModel, BeforeValidator, ConfigDict, field_serializer
 from typing_extensions import assert_never
 
-from firecrown._integer_arrays import _as_int64
+from firecrown._integer_arrays import _as_multipole_array
 from firecrown.utils._yaml_serialization import YAMLSerializable
 
 
@@ -173,7 +173,7 @@ class ClIntegrationOptions(BaseModel):
 def cached_angular_cl(
     cosmo: pyccl.Cosmology,
     tracers: tuple[pyccl.Tracer, pyccl.Tracer],
-    ells: tuple[int, ...],
+    ells: tuple[int | float, ...],
     p_of_k_a: pyccl.Pk2D | str | None = None,
     p_of_k_a_lin: pyccl.Pk2D | str | None = None,
     int_options: ClIntegrationOptions | None = None,
@@ -199,16 +199,19 @@ def cached_angular_cl(
         stacklevel=2,
     )
     if any(
-        not isinstance(ell, (int, np.integer)) or isinstance(ell, (bool, np.bool_))
+        not isinstance(ell, (int, float, np.integer, np.floating))
+        or isinstance(ell, (bool, np.bool_))
         for ell in ells
     ):
-        raise TypeError("Exact multipoles must have an integer dtype.")
-    _as_int64(np.asarray(ells) if ells else np.empty(0, dtype=np.int64))
+        raise TypeError("Multipoles must be real numbers.")
+    validated = _as_multipole_array(
+        np.asarray(ells) if ells else np.empty(0, dtype=np.int64)
+    )
     return pyccl.angular_cl(
         cosmo,
         tracers[0],
         tracers[1],
-        np.array(ells, dtype=np.int64),
+        validated,
         p_of_k_a=p_of_k_a,
         p_of_k_a_lin=p_of_k_a_lin,
         **(int_options.get_angular_cl_args() if int_options else {}),

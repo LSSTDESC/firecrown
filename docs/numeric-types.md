@@ -179,12 +179,13 @@ ells = np.array([2, 3, 4], dtype=np.int64)
 effective_ells = np.array([20.5, 45.75], dtype=np.float64)
 ```
 
-An exact-multipole interface does not automatically accept `[2.0, 3.0, 4.0]` as an
-integer representation. Another integer dtype may require a range-checked
-conversion. Do not silently round fractional bin centers to make them fit an
-exact-multipole route. Use the established scientific generator or a route that
-supports real labels. A SACC artifact generated with fractional sampling is not
-necessarily compatible with every exact-multipole consumer or display route.
+Bandpower-window support is exact and requires an integer dtype; `[2.0, 3.0, 4.0]`
+is not an integer representation of that support. Another integer dtype may require
+a range-checked conversion. Unwindowed SACC multipoles and generated harmonic
+bin centers are sampling coordinates and may be `float64`, including fractional
+values. Keep those values through angular-Cl evaluation and diagnostics. Do not
+round them to make them fit an exact-multipole route. SACC indices remain integer
+regardless of how the multipoles are represented.
 
 ### Indices and Masks
 

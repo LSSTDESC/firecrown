@@ -231,7 +231,7 @@ def test_two_point_src0_src0_no_data_binning(
     sacc_galaxy_cells_src0_src0_no_data: SaccGalaxyDistributionFixture,
     binning_type: str,
 ) -> None:
-    """Reject real generated bin centers at the exact-multipole boundary.
+    """Retain real generated bin centers when no SACC observations exist.
 
     :param sacc_galaxy_cells_src0_src0_no_data: SACC tracer with no observations.
     :param binning_type: Existing linear or logarithmic binning prescription.
@@ -254,9 +254,10 @@ def test_two_point_src0_src0_no_data_binning(
         ell_or_theta=ell_config,
     )
     with pytest.warns(UserWarning, match="Empty index selected"):
-        with pytest.raises(TypeError, match="integer dtype"):
-            statistic.read(sacc_data)
-    assert statistic.ells is None
+        statistic.read(sacc_data)
+    expected_ells, _ = generate_ells_cells(ell_config)
+    assert statistic.ells is not None and statistic.ells.dtype == np.float64
+    np.testing.assert_array_equal(statistic.ells, expected_ells)
 
 
 def test_two_point_lens0_lens0_generates_configured_thetas_without_measurements(

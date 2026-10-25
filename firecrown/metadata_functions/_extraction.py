@@ -8,7 +8,7 @@ import sacc
 from sacc.data_types import required_tags
 
 import firecrown.metadata_types as mdt
-from firecrown._integer_arrays import _as_int64
+from firecrown._integer_arrays import _as_int64, _as_multipole_array
 from firecrown._source_arrays import _NBit, _RealArray, _as_float64
 from firecrown.metadata_functions._combination_utils import (
     make_all_photoz_bin_combinations,
@@ -718,7 +718,7 @@ def maybe_enforce_window(
     sacc_data: sacc.Sacc,
     normalize: bool = True,
 ) -> tuple[
-    npt.NDArray[np.int64],
+    npt.NDArray[np.int64] | npt.NDArray[np.float64],
     None | npt.NDArray[np.float64],
     None | npt.NDArray[np.float64],
 ]:
@@ -734,11 +734,12 @@ def maybe_enforce_window(
     """
     replacement_ells, weights = extract_window_function(sacc_data, indices, normalize)
     window_ells: None | npt.NDArray[np.float64]
+    exact_ells: npt.NDArray[np.int64] | npt.NDArray[np.float64]
     if replacement_ells is not None:
         window_ells = _as_float64(ells)
         exact_ells = replacement_ells
     else:
         window_ells = None
-        exact_ells = _as_int64(ells)
+        exact_ells = _as_multipole_array(ells)
 
     return exact_ells, weights, window_ells
