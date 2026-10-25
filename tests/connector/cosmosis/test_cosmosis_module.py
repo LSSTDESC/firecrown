@@ -838,3 +838,35 @@ def test_twopoint_integer_abi(
     assert statistic.ells is domain
     assert domain.dtype == np.int64
     np.testing.assert_array_equal(domain, before)
+
+
+def test_twopoint_fractional_ell_diagnostics(
+    firecrown_mod_with_two_point_harmonic: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
+) -> None:
+    """Write real harmonic sampling coordinates to a CosmoSIS double array.
+
+    :param firecrown_mod_with_two_point_harmonic: Existing harmonic connector.
+    :param sample_with_lens0_bias: Sample with required modeling parameters.
+    """
+    module = firecrown_mod_with_two_point_harmonic
+    assert module.execute(sample_with_lens0_bias) == 0
+    assert isinstance(module.likelihood, GaussFamily)
+    statistic = module.likelihood.statistics[0].statistic
+    assert isinstance(statistic, TwoPoint)
+    ells = np.array([2.5, 7.5], dtype=np.float64)
+    statistic.theory.ells = ells
+    statistic.theory_vector = TheoryVector.create(
+        sample_with_lens0_bias.get_double_array_1d(
+            "data_vector", "theory_galaxy_density_cl_lens0_lens0"
+        )
+    )
+    statistic.computed_theory_vector = True
+
+    sample = DataBlock()
+    module.handle_twopoint_statistic(sample, statistic)
+    result = sample.get_double_array_1d(
+        "data_vector", "ell_galaxy_density_cl_lens0_lens0"
+    )
+    assert result.dtype == np.float64
+    np.testing.assert_array_equal(result, ells)

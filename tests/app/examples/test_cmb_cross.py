@@ -7,6 +7,7 @@ through Firecrown's YAML-driven TwoPointFactory system.
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 import sacc
 
@@ -18,9 +19,10 @@ from firecrown.app.examples._cmb_cross import (
     BUILD_LIKELIHOOD_FACTORY,
     ExampleCMBCross,
 )
-from firecrown.likelihood import NamedParameters
+from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
 from firecrown.likelihood.factories import build_two_point_likelihood
 from firecrown.metadata_types import CMBLensing, TomographicBin
+from firecrown.modeling_tools import ModelingTools
 
 
 class TestExampleCMBCross:
@@ -244,7 +246,7 @@ class TestExampleCMBCross:
     def test_build_likelihood_execution(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Expose fractional example sampling at the exact-multipole boundary.
+        """Build a likelihood from the example's fractional multipoles.
 
         :param tmp_path: Temporary directory for generated example files.
         :param monkeypatch: Pytest fixture used to run from the example directory.
@@ -265,15 +267,20 @@ class TestExampleCMBCross:
         assert factory_ref == BUILD_LIKELIHOOD_FACTORY
         params = builder.get_build_parameters(sacc_file)
 
-        # Fractional sampling is preserved; exact harmonic support is required
-        # by the likelihood route, so choosing new scientific bins is deferred.
-        with pytest.raises(TypeError, match="integer dtype"):
-            build_two_point_likelihood(params)
+        likelihood, modeling_tools = build_two_point_likelihood(params)
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert any(
+            isinstance(guard.statistic, TwoPoint)
+            and guard.statistic.ells is not None
+            and np.any(guard.statistic.ells % 1 != 0)
+            for guard in likelihood.statistics
+        )
 
     def test_build_likelihood_without_cmb_auto(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Preserve CMB-auto exclusion and reject fractional exact support.
+        """Build a likelihood without CMB auto-correlation.
 
         :param tmp_path: Temporary directory for generated example files.
         :param monkeypatch: Pytest fixture used to run from the example directory.
@@ -296,5 +303,12 @@ class TestExampleCMBCross:
 
         data = sacc.Sacc.load_fits(str(sacc_file))
         assert "cmb_convergence_cl" not in data.get_data_types()
-        with pytest.raises(TypeError, match="integer dtype"):
-            build_two_point_likelihood(params)
+        likelihood, modeling_tools = build_two_point_likelihood(params)
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(modeling_tools, ModelingTools)
+        assert any(
+            isinstance(guard.statistic, TwoPoint)
+            and guard.statistic.ells is not None
+            and np.any(guard.statistic.ells % 1 != 0)
+            for guard in likelihood.statistics
+        )
