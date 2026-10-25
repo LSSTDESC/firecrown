@@ -573,7 +573,7 @@ def test_cached_angular_cl_rejects_non_numeric_ell(
     nz = np.exp(-0.5 * ((z - 0.5) / 0.1) ** 2)
     tracer = pyccl.WeakLensingTracer(cosmo, dndz=(z, nz))
     with pytest.raises(TypeError, match="Multipoles must be real numbers"):
-        cached_angular_cl(cosmo, (tracer, tracer), (10, "bad"))  # type: ignore[arg-type]
+        cached_angular_cl(cosmo, (tracer, tracer), (10, "no"))  # type: ignore[arg-type]
 
 
 def test_cached_angular_cl(tools_with_vanilla_cosmology: ModelingTools) -> None:
