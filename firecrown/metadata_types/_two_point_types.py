@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 from pydantic_core import core_schema
 
-from firecrown._integer_arrays import _IntBit, _as_int64
+from firecrown._integer_arrays import _IntBit, _as_int64, _as_multipole_array
 from firecrown.metadata_types._compatibility import measurement_is_compatible
 from firecrown.metadata_types._two_point_tracers import ProjectedField
 from firecrown.metadata_types._measurements import (
@@ -102,7 +102,7 @@ class TwoPointHarmonic(YAMLSerializable):
     """
 
     XY: TwoPointXY
-    ells: npt.NDArray[np.int64]
+    ells: npt.NDArray[np.int64] | npt.NDArray[np.float64]
     window: None | npt.NDArray[np.float64] = None
     window_ells: None | npt.NDArray[np.float64] = None
 
@@ -110,22 +110,26 @@ class TwoPointHarmonic(YAMLSerializable):
         self,
         *,
         XY: TwoPointXY,
-        ells: npt.NDArray[np.integer[_IntBit]],
+        ells: npt.NDArray[np.integer[_IntBit]] | npt.NDArray[np.floating[_IntBit]],
         window: None | npt.NDArray[np.float64] = None,
         window_ells: None | npt.NDArray[np.float64] = None,
     ) -> None:
-        """Store exact integer support separately from real observation labels.
+        """Store window support or unwindowed harmonic sampling coordinates.
 
-        Conforming int64 arrays may share storage. Other integer arrays are
-        converted only after checking their range; floats and masks are rejected.
+        Window support must be integer. Unwindowed coordinates may be real;
+        integer inputs retain their integer representation after range checking.
 
         :param XY: The correlated tracer pair.
-        :param ells: Integer support multipoles, never floating bin centers.
+        :param ells: Window support multipoles or unwindowed sampling coordinates.
         :param window: Optional weights over the support multipoles.
         :param window_ells: Optional real observation labels.
         """
         object.__setattr__(self, "XY", XY)
-        object.__setattr__(self, "ells", _as_int64(ells))
+        object.__setattr__(
+            self,
+            "ells",
+            _as_int64(ells) if window is not None else _as_multipole_array(ells),
+        )
         object.__setattr__(self, "window", window)
         object.__setattr__(self, "window_ells", window_ells)
         self.__post_init__()

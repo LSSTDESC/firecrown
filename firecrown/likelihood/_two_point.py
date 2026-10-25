@@ -21,7 +21,7 @@ from pydantic import (
 
 import firecrown.generators as gen
 import firecrown.metadata_types as mdt
-from firecrown._integer_arrays import _as_int64
+from firecrown._integer_arrays import _as_int64, _as_multipole_array
 from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
 from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceFactory
 from firecrown.likelihood.number_counts import NumberCounts, NumberCountsFactory
@@ -63,7 +63,7 @@ from firecrown.utils import (
 
 
 def calculate_angular_cl(
-    ells: npt.NDArray[np.int64],
+    ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
     pk_name: str,
     scale0: float,
     scale1: float,
@@ -83,7 +83,7 @@ def calculate_angular_cl(
     :param tracer1: The second tracer to use.
     :returns: The angular multipole moments.
     """
-    ells = _as_int64(ells)
+    ells = _as_multipole_array(ells)
     pk = calculate_pk(pk_name, tools, tracer0, tracer1)
     cosmo_in = tools.get_ccl_cosmology()
     result = (
@@ -165,7 +165,7 @@ class TwoPoint(Statistic):
         return self.theory.sacc_tracers
 
     @property
-    def ells(self) -> None | npt.NDArray[np.int64]:
+    def ells(self) -> None | npt.NDArray[np.int64] | npt.NDArray[np.float64]:
         """Backwards compatibility for ells."""
         return self.theory.ells
 
@@ -445,7 +445,7 @@ class TwoPoint(Statistic):
         sacc_data: sacc.Sacc,
     ) -> tuple[
         npt.NDArray[np.float64],
-        npt.NDArray[np.int64],
+        npt.NDArray[np.int64] | npt.NDArray[np.float64],
         npt.NDArray[np.int64] | None,
         npt.NDArray[np.float64] | None,
     ]:
@@ -457,6 +457,7 @@ class TwoPoint(Statistic):
         :returns: The ells, the cells and the indices, and window function if
             there is one.
         """
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64]
         if ells_cells_indices is not None:
             input_ells, Cells, sacc_indices = ells_cells_indices
             sacc_indices = _as_int64(sacc_indices)
@@ -482,7 +483,7 @@ class TwoPoint(Statistic):
                 assert replacement_ells is not None
                 ells = replacement_ells
             else:
-                ells = _as_int64(input_ells)
+                ells = _as_multipole_array(input_ells)
         else:
             if self.theory.ell_or_theta_config is None:
                 # The SACC file has no data points, just a tracer, in this case we
@@ -495,10 +496,9 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
                 )
-            # Generated bin centers are real sampling coordinates. They cannot
-            # satisfy this exact-multipole route without a scientific decision.
+            # Generated bin centers are real sampling coordinates.
             input_ells, Cells = gen.generate_ells_cells(self.theory.ell_or_theta_config)
-            ells = _as_int64(input_ells)
+            ells = _as_multipole_array(input_ells)
             sacc_indices = None
 
             # When generating the ells and Cells we do not have a window function
@@ -611,7 +611,7 @@ class TwoPoint(Statistic):
 
     def _compute_cells_all_orders(
         self,
-        ells: npt.NDArray[np.int64],
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
         scale0: float,
         scale1: float,
         tools: ModelingTools,
@@ -646,7 +646,7 @@ class TwoPoint(Statistic):
 
     def _compute_cells_interpolated(
         self,
-        ells: npt.NDArray[np.int64],
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
         ells_for_interpolation: npt.NDArray[np.int64],
         scale0: float,
         scale1: float,
@@ -686,7 +686,7 @@ class TwoPoint(Statistic):
 
     def compute_cells(
         self,
-        ells: npt.NDArray[np.int64],
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
         scale0: float,
         scale1: float,
         tools: ModelingTools,
@@ -700,7 +700,7 @@ class TwoPoint(Statistic):
         interpolate is True, it will interpolate the power spectrum to the ells
         provided.
         """
-        ells = _as_int64(ells)
+        ells = _as_multipole_array(ells)
         if interpolate:
             # ells_for_interpolation are true ells (and thus integral).
             # These are the values at which we will have CCL calculate the "exact"

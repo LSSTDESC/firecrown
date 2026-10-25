@@ -9,6 +9,9 @@ from firecrown.data_functions import extract_all_harmonic_data
 from firecrown.metadata_functions import extract_all_harmonic_metadata
 from firecrown.likelihood import TwoPoint
 from firecrown.likelihood.number_counts import NumberCounts
+from firecrown.modeling_tools import ModelingTools
+from firecrown.models.two_point import ApplyInterpolationWhen
+from firecrown.updatable import get_default_params_map
 
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.metadata_types import TwoPointHarmonic, TwoPointXY
@@ -61,7 +64,7 @@ def test_harmonic_integer_storage(
 def test_harmonic_rejects_noninteger_storage(
     harmonic_two_point_xy: TwoPointXY, ells: npt.NDArray[np.generic]
 ) -> None:
-    """Reject noninteger or masked multipoles before any value conversion.
+    """Reject noninteger or masked window support before value conversion.
 
     :param harmonic_two_point_xy: Compatible harmonic tracer pair.
     :param ells: Deliberately unsupported exact-multipole representation.
@@ -70,6 +73,8 @@ def test_harmonic_rejects_noninteger_storage(
         TwoPointHarmonic(
             XY=harmonic_two_point_xy,
             ells=ells,  # type: ignore[arg-type]  # Invalid runtime ingress.
+            window=np.ones((2, 1)),
+            window_ells=np.array([3.5]),
         )
 
 
@@ -192,7 +197,7 @@ def test_sacc_support_and_fractional_labels(
     data.add_covariance(np.eye(2 if windowed else 3))
     source = NumberCounts(sacc_tracer="lens0")
     statistic = TwoPoint("galaxy_density_cl", source, source)
-    if floating_support:
+    if floating_support and windowed:
         for extract in (extract_all_harmonic_metadata, extract_all_harmonic_data):
             with pytest.raises(TypeError, match="integer dtype"):
                 extract(data)
@@ -202,17 +207,80 @@ def test_sacc_support_and_fractional_labels(
     metadata = extract_all_harmonic_metadata(data)[0]
     measurement = extract_all_harmonic_data(data)[0]
     statistic.read(data)
-    assert metadata.ells.dtype == np.int64
+    expected_dtype = np.float64 if floating_support else np.int64
+    assert metadata.ells.dtype == expected_dtype
     np.testing.assert_array_equal(metadata.ells, [2, 5, 11])
     assert measurement.indices.dtype == np.int64
     np.testing.assert_array_equal(data.mean[measurement.indices], measurement.data)
-    assert statistic.ells is not None and statistic.ells.dtype == np.int64
+    assert statistic.ells is not None and statistic.ells.dtype == expected_dtype
     assert statistic.sacc_indices is not None
     assert statistic.sacc_indices.dtype == np.int64
     if windowed:
         assert metadata.window_ells is not None
         assert metadata.window_ells.dtype == np.float64
         np.testing.assert_array_equal(metadata.window_ells, [2.5, 7.5])
+
+
+@pytest.mark.parametrize(
+    "apply_interp", [ApplyInterpolationWhen.NONE, ApplyInterpolationWhen.HARMONIC]
+)
+@pytest.mark.parametrize(
+    "ells",
+    [
+        np.array([2.5, 7.5], dtype=np.float64),
+        np.array([200.5, 300.5], dtype=np.float64),
+    ],
+)
+def test_fractional_unwindowed_multipoles(
+    apply_interp: ApplyInterpolationWhen, ells: npt.NDArray[np.float64]
+) -> None:
+    """Preserve real unwindowed multipoles through extraction and prediction.
+
+    :param apply_interp: Exercise direct and interpolated angular-Cl sampling.
+    :param ells: Sampling grid below or above the interpolation midpoint.
+    """
+    data = sacc.Sacc()
+    z = np.linspace(0.1, 1.0, 100)
+    data.add_tracer("NZ", "lens0", z=z, nz=np.ones_like(z))
+    data.add_ell_cl("galaxy_density_cl", "lens0", "lens0", ells, np.array([1.0, 2.0]))
+    data.add_covariance(np.eye(2))
+
+    metadata = extract_all_harmonic_metadata(data)[0]
+    measurement = extract_all_harmonic_data(data)[0]
+    source = NumberCounts(sacc_tracer="lens0")
+    statistic = TwoPoint("galaxy_density_cl", source, source, apply_interp=apply_interp)
+    statistic.read(data)
+
+    assert metadata.ells.dtype == np.float64
+    np.testing.assert_array_equal(metadata.ells, ells)
+    assert measurement.indices.dtype == np.int64
+    np.testing.assert_array_equal(data.mean[measurement.indices], measurement.data)
+    assert statistic.ells is not None and statistic.ells.dtype == np.float64
+    np.testing.assert_array_equal(statistic.ells, ells)
+    assert statistic.sacc_indices is not None
+    assert statistic.sacc_indices.dtype == np.int64
+
+    tools = ModelingTools()
+    params = get_default_params_map(statistic, tools)
+    statistic.update(params)
+    tools.update(params)
+    tools.prepare()
+    prediction = statistic.compute_theory_vector(tools)
+    assert prediction.shape == (2,)
+    assert np.all(np.isfinite(prediction))
+
+
+@pytest.mark.parametrize("ells", [np.array([np.nan]), np.array([np.inf])])
+def test_harmonic_rejects_nonfinite_sampling(
+    harmonic_two_point_xy: TwoPointXY, ells: npt.NDArray[np.float64]
+) -> None:
+    """Reject unwindowed sampling coordinates that cannot be evaluated.
+
+    :param harmonic_two_point_xy: Compatible harmonic tracer pair.
+    :param ells: Nonfinite real sampling coordinate.
+    """
+    with pytest.raises(ValueError, match="must be finite"):
+        TwoPointHarmonic(XY=harmonic_two_point_xy, ells=ells)
 
 
 def test_measurement_rejects_index_overflow(harmonic_two_point_xy: TwoPointXY) -> None:

@@ -4,6 +4,7 @@ Tests for the firecrown.utils modle.
 
 import re
 from pathlib import Path
+from unittest.mock import patch
 from typing import cast
 
 import numpy as np
@@ -580,14 +581,45 @@ def test_cached_angular_cl(tools_with_vanilla_cosmology: ModelingTools) -> None:
     assert len(cl) == len(ells)
     assert np.all(np.isfinite(cl))
 
-    # A cache hit for equal integer values must not admit floating multipoles.
-    with pytest.raises(TypeError, match="integer dtype"):
-        cached_angular_cl(
-            cosmo,
-            (tracer1, tracer2),
-            (10.0, 20.0, 30.0),  # type: ignore[arg-type]  # Invalid exact support.
-            p_of_k_a="delta_matter:delta_matter",
-        )
+    # Real sampling coordinates may have the same values as integer support.
+    real_cl = cached_angular_cl(
+        cosmo,
+        (tracer1, tracer2),
+        (10.0, 20.0, 30.0),
+        p_of_k_a="delta_matter:delta_matter",
+    )
+    assert_allclose(real_cl, cl)
+
+
+def test_cached_angular_cl_preserves_sampling_dtype(
+    tools_with_vanilla_cosmology: ModelingTools,
+) -> None:
+    """Keep equal-valued integer and real grids distinct in the cache.
+
+    :param tools_with_vanilla_cosmology: Prepared CCL cosmology.
+    """
+    cosmo = tools_with_vanilla_cosmology.get_ccl_cosmology()
+    z = np.linspace(0, 1, 100)
+    nz = np.exp(-0.5 * ((z - 0.5) / 0.1) ** 2)
+    tracer = pyccl.WeakLensingTracer(cosmo, dndz=(z, nz))
+
+    # Capture the CCL boundary dtype: equal integer and real values otherwise
+    # produce the same numerical spectrum and would hide a cache collision.
+    with patch(
+        "firecrown.utils._angular_cl.pyccl.angular_cl", return_value=np.ones(2)
+    ) as angular_cl:
+        cached_angular_cl(cosmo, (tracer, tracer), (10, 20))
+        cached_angular_cl(cosmo, (tracer, tracer), (10.0, 20.0))
+        cached_angular_cl(cosmo, (tracer, tracer), (10.5, 20.5))
+
+    assert angular_cl.call_count == 3
+    inputs = [call.args[3] for call in angular_cl.call_args_list]
+    assert [values.dtype for values in inputs] == [
+        np.dtype(np.int64),
+        np.dtype(np.float64),
+        np.dtype(np.float64),
+    ]
+    np.testing.assert_array_equal(inputs[2], [10.5, 20.5])
 
 
 def test_cached_angular_cl_with_options(
