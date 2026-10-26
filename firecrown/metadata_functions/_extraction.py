@@ -694,9 +694,11 @@ def extract_window_function(
     if bandpower_window is None:
         return None, None
     ells = _as_int64(bandpower_window.values)
+    # Convert before summing so reduced-precision weights are accumulated in float64.
+    float_weights = _as_float64(bandpower_window.weight)
 
     # Check for zero-weight columns
-    weight_sums = bandpower_window.weight.sum(axis=0)
+    weight_sums = float_weights.sum(axis=0)
     zero_weight_indices = np.where(np.isclose(weight_sums, 0.0))[0]
     if len(zero_weight_indices) > 0:
         raise ValueError(
@@ -706,9 +708,9 @@ def extract_window_function(
         )
 
     if normalize:
-        weights = bandpower_window.weight / weight_sums
+        weights = float_weights / weight_sums
     else:
-        weights = bandpower_window.weight
+        weights = float_weights
     return ells, weights
 
 

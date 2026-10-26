@@ -2,13 +2,14 @@
 
 from dataclasses import dataclass
 from enum import StrEnum, auto
-from typing import Any
+from typing import Any, TypeVar
 
 import numpy as np
 import numpy.typing as npt
 from pydantic_core import core_schema
 
 from firecrown._integer_arrays import _IntBit, _as_int64, _as_multipole_array
+from firecrown._source_arrays import _RealArray, _as_float64
 from firecrown.metadata_types._compatibility import measurement_is_compatible
 from firecrown.metadata_types._two_point_tracers import ProjectedField
 from firecrown.metadata_types._measurements import (
@@ -22,6 +23,10 @@ from firecrown.metadata_types._sacc_type_string import (
 )
 from firecrown.metadata_types._utils import TracerNames
 from firecrown.utils import YAMLSerializable, compare_optional_arrays
+
+_WindowBit = TypeVar("_WindowBit", bound=npt.NBitBase)
+_LabelBit = TypeVar("_LabelBit", bound=npt.NBitBase)
+_ThetaBit = TypeVar("_ThetaBit", bound=npt.NBitBase)
 
 
 def _measurement_supports_real(x: Measurement) -> bool:
@@ -111,13 +116,17 @@ class TwoPointHarmonic(YAMLSerializable):
         *,
         XY: TwoPointXY,
         ells: npt.NDArray[np.integer[_IntBit]] | npt.NDArray[np.floating[_IntBit]],
-        window: None | npt.NDArray[np.float64] = None,
-        window_ells: None | npt.NDArray[np.float64] = None,
+        window: None | _RealArray[_WindowBit] = None,
+        window_ells: None | _RealArray[_LabelBit] = None,
     ) -> None:
         """Store window support or unwindowed harmonic sampling coordinates.
 
         Window support must be integer. Unwindowed coordinates may be real;
         integer inputs retain their integer representation after range checking.
+        Window weights and effective labels accept real integer or floating arrays
+        and are stored as float64, sharing conforming arrays. Boolean, complex,
+        string, object and masked arrays are rejected. Conversion does not rescale
+        the weights.
 
         :param XY: The correlated tracer pair.
         :param ells: Window support multipoles or unwindowed sampling coordinates.
@@ -130,8 +139,21 @@ class TwoPointHarmonic(YAMLSerializable):
             "ells",
             _as_int64(ells) if window is not None else _as_multipole_array(ells),
         )
-        object.__setattr__(self, "window", window)
-        object.__setattr__(self, "window_ells", window_ells)
+        # Non-arrays are left for the existing consistency validation to reject.
+        object.__setattr__(
+            self,
+            "window",
+            _as_float64(window) if isinstance(window, np.ndarray) else window,
+        )
+        object.__setattr__(
+            self,
+            "window_ells",
+            (
+                _as_float64(window_ells)
+                if isinstance(window_ells, np.ndarray)
+                else window_ells
+            ),
+        )
         self.__post_init__()
 
     def __post_init__(self) -> None:
@@ -205,7 +227,7 @@ class TwoPointHarmonic(YAMLSerializable):
         return self.window.shape[1]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, init=False)
 class TwoPointReal(YAMLSerializable):
     """Class defining the metadata for a real-space two-point measurement.
 
@@ -219,6 +241,19 @@ class TwoPointReal(YAMLSerializable):
 
     XY: TwoPointXY
     thetas: npt.NDArray[np.float64]
+
+    def __init__(self, *, XY: TwoPointXY, thetas: _RealArray[_ThetaBit]) -> None:
+        """Store the tracer pair and real angular coordinates as float64.
+
+        Real integer or floating coordinates are accepted; conforming arrays are
+        shared. Boolean, complex, string, object and masked arrays are rejected.
+
+        :param XY: The correlated tracer pair.
+        :param thetas: Angular separations at which the function was measured.
+        """
+        object.__setattr__(self, "XY", XY)
+        object.__setattr__(self, "thetas", _as_float64(thetas))
+        self.__post_init__()
 
     def __post_init__(self) -> None:
         """Validate the TwoPointReal data.

@@ -243,7 +243,16 @@ Tracer preparation supplies double-valued arrays to pyccl; external callers do
 not have to supply float64 redshifts to Firecrown's flexible ingress interfaces.
 
 Window support multipoles remain exact integers; window weights and effective
-labels are real. Convert weights to `float64` before summing or contracting them.
+labels are real. `TwoPointHarmonic`, `TwoPointReal`, and `TwoPointMeasurement`
+accept real integer and floating window weights, effective labels, angular
+coordinates, and measured values, and store them as `float64`. Boolean, complex,
+string, object, and masked arrays are rejected. SACC extraction converts window
+weights to `float64` before the zero-total check and column sums in both modes, so
+reduced-precision weights are never accumulated at their input precision. This
+also converts big-endian arrays, such as those read from FITS files, to native
+`float64`. Measurement values and real angular coordinates are converted at the
+same ingress. The raw-buffer covariance identifier is still computed from the
+SACC covariance in its original representation.
 An existing option named `normalize` controls **sum-to-one window rescaling**, not
 dtype conversion. When that option is false, preserve the supplied weight scale;
 conversion to `float64` is not permission to divide by the sum. Keep the existing
