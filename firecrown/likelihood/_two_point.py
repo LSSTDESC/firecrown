@@ -22,6 +22,7 @@ from pydantic import (
 import firecrown.generators as gen
 import firecrown.metadata_types as mdt
 from firecrown._integer_arrays import _as_int64, _as_multipole_array
+from firecrown._source_arrays import _as_float64
 from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
 from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceFactory
 from firecrown.likelihood.number_counts import NumberCounts, NumberCountsFactory
@@ -755,7 +756,8 @@ def read_reals(
     )
     assert sacc_indices is not None  # Needed for mypy
     assert len(sacc_indices) == common_length
-    return thetas, xis, sacc_indices
+    # Convert real angular coordinates once, so later arithmetic is float64.
+    return _as_float64(thetas), xis, sacc_indices
 
 
 def read_ell_cells(
