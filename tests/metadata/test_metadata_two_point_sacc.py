@@ -101,14 +101,33 @@ class SaccHarmonicThreeTracerFixture:
     distributions: dict[str, SampledRedshiftDistribution]
 
 
+@dataclass(frozen=True, kw_only=True)
+class SaccInvalidDataTypeFixture:
+    """SACC data and raw inputs for an intentionally invalid data type.
+
+    Frozen bindings leave SACC, mappings, and arrays mutable. The raw values
+    have no asserted physical spectrum interpretation.
+
+    :param sacc_data: SACC data retaining the unsupported data type.
+    :param distributions: Sampled redshift distributions keyed by tracer name.
+    :param ells: Integer multipole coordinates used for the data points.
+    :param values: Raw values used for the invalid data points.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
+    ells: npt.NDArray[np.int64]
+    values: npt.NDArray[np.float64]
+
+
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
 def fixture_sacc_galaxy_src0_src0_invalid_data_type(
     recwarn: pytest.WarningsRecorder,
-) -> tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+) -> SaccInvalidDataTypeFixture:
     """Build unwindowed SACC data with an intentionally invalid data type.
 
     :param recwarn: Recorder for SACC's unknown-data-type warning.
-    :returns: SACC data, redshift coordinates, and source number density.
+    :returns: Invalid SACC data, sampled distribution, multipoles, and raw values.
     """
     sacc_data = sacc.Sacc()
 
@@ -118,8 +137,8 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
+    values: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=ells.shape[0]))
+    sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, values)
     warning = next(iter(recwarn), None)
     if warning is not None:
         assert isinstance(warning.message, UserWarning)
@@ -127,10 +146,15 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(
             r"Unknown data_type value this_type_is_invalid\.", str(warning.message)
         )
 
-    cov = np.diag(np.ones_like(Cells) * 0.01)
+    cov = np.diag(np.ones_like(values) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    return SaccInvalidDataTypeFixture(
+        sacc_data=sacc_data,
+        distributions={"src0": SampledRedshiftDistribution(z=z, dndz=dndz)},
+        ells=ells,
+        values=values,
+    )
 
 
 @pytest.fixture(name="sacc_galaxy_xis_three_tracers")
@@ -254,17 +278,18 @@ def test_extract_all_tracers_xis(
 
 
 def test_extract_all_tracers_cells_src0_src0(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, expected_bin = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
+    expected_distribution = sacc_galaxy_cells_src0_src0.distributions["src0"]
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, expected_bin.z)
-        assert_array_equal(tracer.dndz, expected_bin.dndz)
+        assert_array_equal(tracer.z, expected_distribution.z)
+        assert_array_equal(tracer.dndz, expected_distribution.dndz)
         assert tracer.bin_name == "src0"
         assert tracer.measurements == {Galaxies.SHEAR_E}
 
@@ -293,17 +318,18 @@ def test_extract_all_tracers_cells_src0_src1(
 
 
 def test_extract_all_tracers_cells_lens0_lens0(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, expected_bin = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
+    expected_distribution = sacc_galaxy_cells_lens0_lens0.distributions["lens0"]
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, expected_bin.z)
-        assert_array_equal(tracer.dndz, expected_bin.dndz)
+        assert_array_equal(tracer.z, expected_distribution.z)
+        assert_array_equal(tracer.dndz, expected_distribution.dndz)
         assert tracer.bin_name == "lens0"
         assert tracer.measurements == {Galaxies.COUNTS}
 
@@ -332,17 +358,18 @@ def test_extract_all_tracers_cells_lens0_lens1(
 
 
 def test_extract_all_tracers_xis_lens0_lens0(
-    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_xis_lens0_lens0: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, expected_bin = sacc_galaxy_xis_lens0_lens0
+    sacc_data = sacc_galaxy_xis_lens0_lens0.sacc_data
+    expected_distribution = sacc_galaxy_xis_lens0_lens0.distributions["lens0"]
     assert sacc_data is not None
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
 
     assert len(all_tracers) == 1
 
     for tracer in all_tracers:
-        assert_array_equal(tracer.z, expected_bin.z)
-        assert_array_equal(tracer.dndz, expected_bin.dndz)
+        assert_array_equal(tracer.z, expected_distribution.z)
+        assert_array_equal(tracer.dndz, expected_distribution.dndz)
         assert tracer.bin_name == "lens0"
         assert tracer.measurements == {Galaxies.COUNTS}
 
@@ -421,16 +448,13 @@ def test_extract_all_trace_xis_src0_lens0(
 
 
 def test_extract_all_tracers_invalid_data_type(
-    sacc_galaxy_src0_src0_invalid_data_type: tuple[
-        sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]
-    ],
+    sacc_galaxy_src0_src0_invalid_data_type: SaccInvalidDataTypeFixture,
 ) -> None:
     """Reject a tracer whose only data points have an unsupported data type.
 
-    :param sacc_galaxy_src0_src0_invalid_data_type: Invalid SACC data, redshift
-        coordinates, and source number density.
+    :param sacc_galaxy_src0_src0_invalid_data_type: Invalid SACC data and raw inputs.
     """
-    sacc_data, _, _ = sacc_galaxy_src0_src0_invalid_data_type
+    sacc_data = sacc_galaxy_src0_src0_invalid_data_type.sacc_data
     assert sacc_data is not None
     with pytest.raises(
         ValueError, match="Tracer src0 does not have data points associated with it."
@@ -694,9 +718,9 @@ def test_extract_all_metadata_index_reals_by_type(
 
 
 def test_extract_no_window(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
     indices = np.array([0, 1, 2], dtype=np.int64)
 
     with warnings.catch_warnings():

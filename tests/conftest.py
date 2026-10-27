@@ -47,6 +47,7 @@ from firecrown.utils import upper_triangle_indices
 from tests._types import (
     HarmonicAngularPowerSpectrum,
     RealAngularCorrelation,
+    SaccGalaxyDistributionFixture,
     SaccGalaxyHarmonicFixture,
     SaccGalaxyRealFixture,
     SaccGalaxyWindowedFixture,
@@ -625,8 +626,11 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0", scope="module")
-def fixture_sacc_galaxy_cells_src0_src0() -> tuple[sacc.Sacc, TomographicBin]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_cells_src0_src0() -> SaccGalaxyHarmonicFixture:
+    """Build unwindowed source-source SACC data and named expectations.
+
+    :returns: SACC data, the copied source distribution, and its synthetic spectrum.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -635,19 +639,23 @@ def fixture_sacc_galaxy_cells_src0_src0() -> tuple[sacc.Sacc, TomographicBin]:
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=ells.shape[0]))
     sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    expected_bin = TomographicBin(
-        bin_name="src0",
-        z=z.copy(),
-        dndz=dndz.copy(),
-        measurements={Galaxies.SHEAR_E},
+    return SaccGalaxyHarmonicFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z.copy(), dndz=dndz.copy())
+        },
+        spectra={
+            (TracerNames("src0", "src0"), "galaxy_shear_cl_ee"): (
+                HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
+            )
+        },
     )
-    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src1", scope="module")
@@ -684,8 +692,11 @@ def fixture_sacc_galaxy_cells_src0_src1() -> SaccHarmonicCrossBinFixture:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens0", scope="module")
-def fixture_sacc_galaxy_cells_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_cells_lens0_lens0() -> SaccGalaxyHarmonicFixture:
+    """Build unwindowed lens-lens SACC data and named expectations.
+
+    :returns: SACC data, the copied lens distribution, and its synthetic spectrum.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -694,19 +705,23 @@ def fixture_sacc_galaxy_cells_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz)
 
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=ells.shape[0]))
     sacc_data.add_ell_cl("galaxy_density_cl", "lens0", "lens0", ells, Cells)
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    expected_bin = TomographicBin(
-        bin_name="lens0",
-        z=z.copy(),
-        dndz=dndz.copy(),
-        measurements={Galaxies.COUNTS},
+    return SaccGalaxyHarmonicFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "lens0": SampledRedshiftDistribution(z=z.copy(), dndz=dndz.copy())
+        },
+        spectra={
+            (TracerNames("lens0", "lens0"), "galaxy_density_cl"): (
+                HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
+            )
+        },
     )
-    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens1")
@@ -741,8 +756,11 @@ def fixture_sacc_galaxy_cells_lens0_lens1() -> SaccHarmonicCrossBinFixture:
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0")
-def fixture_sacc_galaxy_xis_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_xis_lens0_lens0() -> SaccGalaxyRealFixture:
+    """Build unwindowed lens-lens real SACC data and named expectations.
+
+    :returns: SACC data, the copied lens distribution, and its synthetic correlation.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -751,19 +769,23 @@ def fixture_sacc_galaxy_xis_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz)
 
-    xis = np.random.normal(size=thetas.shape[0])
+    xis: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=thetas.shape[0]))
     sacc_data.add_theta_xi("galaxy_density_xi", "lens0", "lens0", thetas, xis)
 
     cov = np.diag(np.ones_like(xis) * 0.01)
     sacc_data.add_covariance(cov)
 
-    expected_bin = TomographicBin(
-        bin_name="lens0",
-        z=z.copy(),
-        dndz=dndz.copy(),
-        measurements={Galaxies.COUNTS},
+    return SaccGalaxyRealFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "lens0": SampledRedshiftDistribution(z=z.copy(), dndz=dndz.copy())
+        },
+        spectra={
+            (TracerNames("lens0", "lens0"), "galaxy_density_xi"): (
+                RealAngularCorrelation(thetas=thetas, xis=xis)
+            )
+        },
     )
-    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens1")
@@ -1220,8 +1242,11 @@ def fixture_sacc_galaxy_cells_order_convention() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_data")
-def fixture_sacc_galaxy_cells_src0_src0_no_data() -> tuple[sacc.Sacc, TomographicBin]:
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_cells_src0_src0_no_data() -> SaccGalaxyDistributionFixture:
+    """Build source SACC tracer data without two-point observations.
+
+    :returns: SACC data and the copied source distribution.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -1229,13 +1254,12 @@ def fixture_sacc_galaxy_cells_src0_src0_no_data() -> tuple[sacc.Sacc, Tomographi
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    expected_bin = TomographicBin(
-        bin_name="src0",
-        z=z.copy(),
-        dndz=dndz.copy(),
-        measurements={Galaxies.SHEAR_E},
+    return SaccGalaxyDistributionFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z.copy(), dndz=dndz.copy())
+        },
     )
-    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_lens0_no_two_point_data")
@@ -1260,8 +1284,11 @@ def fixture_sacc_galaxy_lens0_no_two_point_data() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_window")
-def fixture_sacc_galaxy_cells_src0_src0_window() -> tuple[sacc.Sacc, TomographicBin]:
-    """Fixture for a SACC data with a window function."""
+def fixture_sacc_galaxy_cells_src0_src0_window() -> SaccGalaxyWindowedFixture:
+    """Build windowed source-source SACC data and named expectations.
+
+    :returns: SACC data, the copied source distribution, and its synthetic bandpowers.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -1273,7 +1300,7 @@ def fixture_sacc_galaxy_cells_src0_src0_window() -> tuple[sacc.Sacc, Tomographic
     # Making a diagonal window function
     window = sacc.BandpowerWindow(ells, np.diag(np.ones_like(ells)))
 
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=ells.shape[0]))
     sacc_data.add_ell_cl(
         "galaxy_shear_cl_ee", "src0", "src0", ells, Cells, window=window
     )
@@ -1281,18 +1308,27 @@ def fixture_sacc_galaxy_cells_src0_src0_window() -> tuple[sacc.Sacc, Tomographic
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    expected_bin = TomographicBin(
-        bin_name="src0",
-        z=z.copy(),
-        dndz=dndz.copy(),
-        measurements={Galaxies.SHEAR_E},
+    return SaccGalaxyWindowedFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z.copy(), dndz=dndz.copy())
+        },
+        spectra={
+            (TracerNames("src0", "src0"), "galaxy_shear_cl_ee"): (
+                WindowedAngularPowerSpectrum(
+                    support_ells=ells, bandpowers=Cells, window=window
+                )
+            )
+        },
     )
-    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_window")
-def fixture_sacc_galaxy_cells_src0_src0_no_window() -> tuple[sacc.Sacc, TomographicBin]:
-    """Fixture for a SACC data without a window function."""
+def fixture_sacc_galaxy_cells_src0_src0_no_window() -> SaccGalaxyHarmonicFixture:
+    """Build unwindowed source-source SACC data and named expectations.
+
+    :returns: SACC data, the copied source distribution, and its synthetic spectrum.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -1307,20 +1343,25 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window() -> tuple[sacc.Sacc, Tomograp
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    expected_bin = TomographicBin(
-        bin_name="src0",
-        z=z.copy(),
-        dndz=dndz.copy(),
-        measurements={Galaxies.SHEAR_E},
+    return SaccGalaxyHarmonicFixture(
+        sacc_data=sacc_data,
+        distributions={
+            "src0": SampledRedshiftDistribution(z=z.copy(), dndz=dndz.copy())
+        },
+        spectra={
+            (TracerNames("src0", "src0"), "galaxy_shear_cl_ee"): (
+                HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
+            )
+        },
     )
-    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_real")
-def fixture_sacc_galaxy_xis_lens0_lens0_real() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
+def fixture_sacc_galaxy_xis_lens0_lens0_real() -> SaccGalaxyRealFixture:
+    """Build unwindowed lens-lens real SACC data and named expectations.
+
+    :returns: SACC data, the lens distribution, and its synthetic correlation.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -1329,13 +1370,21 @@ def fixture_sacc_galaxy_xis_lens0_lens0_real() -> (
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz)
 
-    xis = np.random.normal(size=thetas.shape[0])
+    xis: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=thetas.shape[0]))
     sacc_data.add_theta_xi("galaxy_density_xi", "lens0", "lens0", thetas, xis)
 
     cov = np.diag(np.ones_like(xis) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, thetas
+    return SaccGalaxyRealFixture(
+        sacc_data=sacc_data,
+        distributions={"lens0": SampledRedshiftDistribution(z=z, dndz=dndz)},
+        spectra={
+            (TracerNames("lens0", "lens0"), "galaxy_density_xi"): (
+                RealAngularCorrelation(thetas=thetas, xis=xis)
+            )
+        },
+    )
 
 
 @pytest.fixture(name="wl_factory")

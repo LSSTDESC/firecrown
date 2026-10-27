@@ -5,7 +5,7 @@ Array annotations specify dtype, not semantic role, shape, or physical units.
 """
 
 from dataclasses import dataclass
-from typing import TypeAlias, TypedDict
+from typing import TypedDict
 
 from numcosmo_py import Nc
 import numpy as np
@@ -13,6 +13,7 @@ import numpy.typing as npt
 import sacc
 
 from firecrown.metadata_types import TracerNames
+
 
 @dataclass(frozen=True, kw_only=True)
 class SampledRedshiftDistribution:
@@ -24,6 +25,18 @@ class SampledRedshiftDistribution:
 
     z: npt.NDArray[np.float64]
     dndz: npt.NDArray[np.float64]
+
+
+@dataclass(frozen=True, kw_only=True)
+class SaccGalaxyDistributionFixture:
+    """SACC tracer data and independently sampled redshift distributions.
+
+    :param sacc_data: SACC data used by production extraction and construction.
+    :param distributions: Redshift distributions keyed by tracer name.
+    """
+
+    sacc_data: sacc.Sacc
+    distributions: dict[str, SampledRedshiftDistribution]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -60,10 +73,10 @@ class SaccRealCrossBinFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class HarmonicAngularPowerSpectrum:
-    """Independent unwindowed harmonic coordinates and measured cells.
+    """Independent unwindowed harmonic coordinates and synthetic observations.
 
-    :param ells: Integer multipoles for the measurements.
-    :param cells: Measured angular power spectrum values, not theory predictions.
+    :param ells: Integer multipoles for the synthetic observations.
+    :param cells: Synthetic observed values, not survey data or theory predictions.
     """
 
     ells: npt.NDArray[np.int64]
@@ -76,7 +89,7 @@ class SaccGalaxyHarmonicFixture:
 
     :param sacc_data: SACC data used by production extraction and construction.
     :param distributions: Redshift distributions keyed by tracer name.
-    :param spectra: Measured spectra keyed by ordered tracer names and data type.
+    :param spectra: Synthetic spectra keyed by ordered tracer names and data type.
     """
 
     sacc_data: sacc.Sacc
@@ -86,10 +99,10 @@ class SaccGalaxyHarmonicFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class RealAngularCorrelation:
-    """Independent unwindowed angular coordinates and measured real-space xis.
+    """Independent unwindowed angular coordinates and synthetic observations.
 
-    :param thetas: Angular coordinates for the measurements; no unit is enforced.
-    :param xis: Measured correlations, not theory predictions or number densities.
+    :param thetas: Angular coordinates for the observations; no unit is enforced.
+    :param xis: Synthetic correlations, not survey data or theory predictions.
     """
 
     thetas: npt.NDArray[np.float64]
@@ -102,7 +115,7 @@ class SaccGalaxyRealFixture:
 
     :param sacc_data: SACC data used by production extraction and construction.
     :param distributions: Redshift distributions keyed by tracer name.
-    :param spectra: Measured correlations keyed by ordered tracer names and data type.
+    :param spectra: Synthetic correlations keyed by ordered tracer names and data type.
     """
 
     sacc_data: sacc.Sacc
@@ -112,14 +125,15 @@ class SaccGalaxyRealFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class WindowedAngularPowerSpectrum:
-    """Independent window support, measured bandpowers, and their shared window.
+    """Independent window support, synthetic bandpowers, and their shared window.
 
-    Support multipoles need not match the number of measured bandpowers.
+    Support multipoles need not match the number of bandpowers.
     SACC observation labels are weighted support sums, not the support grid
     or normalized band centers.
 
     :param support_ells: Integer multipoles on which the window is defined.
-    :param bandpowers: Measured values, one per window column, not predictions.
+    :param bandpowers: Synthetic observed values, not survey data or predictions;
+        one per window column.
     :param window: SACC BandpowerWindow shared with the fixture's data points;
         its values are support multipoles and its weights are unnormalized.
     """
