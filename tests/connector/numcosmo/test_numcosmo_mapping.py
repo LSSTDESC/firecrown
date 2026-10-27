@@ -33,18 +33,6 @@ def fixture_map_cosmo_dist() -> MappingNumCosmo:
     return MappingNumCosmo(dist=Nc.Distance.new(6.0))
 
 
-@pytest.fixture(name="map_cosmo_spec_nl")
-def fixture_map_cosmo_spec_nl(
-    numcosmo_cosmo_xcdm: NumCosmoCosmologyFixture,
-) -> MappingNumCosmo:
-    """Return a MappingNumCosmo instance with the specified p_ml, p_mnl, and dist."""
-    return MappingNumCosmo(
-        p_ml=numcosmo_cosmo_xcdm["p_ml"],
-        p_mnl=numcosmo_cosmo_xcdm["p_mnl"],
-        dist=numcosmo_cosmo_xcdm["dist"],
-    )
-
-
 def test_create_params_map_non_existing_model(
     map_cosmo_dist: MappingNumCosmo,
 ) -> None:

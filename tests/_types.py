@@ -1,16 +1,13 @@
 """Shared types for test fixtures."""
 
-from typing import TYPE_CHECKING, TypeAlias, TypedDict
+from typing import TypeAlias, TypedDict
 
+from numcosmo_py import Nc
 import numpy as np
 import numpy.typing as npt
 import sacc
 
 from firecrown.metadata_types import TracerNames
-
-if TYPE_CHECKING:
-    from numcosmo_py import Nc
-
 
 RedshiftDistribution: TypeAlias = tuple[
     npt.NDArray[np.float64], npt.NDArray[np.float64]
@@ -33,7 +30,7 @@ SaccGalaxyWindowedFixture: TypeAlias = tuple[
 class NumCosmoCosmologyFixture(TypedDict):
     """Values provided by the NumCosmo cosmology fixtures."""
 
-    cosmo: "Nc.HICosmo"
-    p_ml: "Nc.PowspecML"
-    p_mnl: "Nc.PowspecMNL"
-    dist: "Nc.Distance"
+    cosmo: Nc.HICosmo
+    p_ml: Nc.PowspecML
+    p_mnl: Nc.PowspecMNL
+    dist: Nc.Distance
