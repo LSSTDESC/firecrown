@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
+import numpy.typing as npt
 import pyccl
 import pytest
 import sacc
