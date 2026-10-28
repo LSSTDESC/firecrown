@@ -30,7 +30,9 @@ CASES = [(name, framework) for name in EXAMPLES for framework in Frameworks]
     params=CASES,
     ids=[f"{name}-{framework.value}" for name, framework in CASES],
 )
-def fixture_generated(request, tmp_path: Path) -> tuple[Path, Frameworks, str]:
+def fixture_generated(
+    request: pytest.FixtureRequest, tmp_path: Path
+) -> tuple[Path, Frameworks, str]:
     """Generate each example for each framework with the default options."""
     name, framework = request.param
     example_cls, options = EXAMPLES[name]

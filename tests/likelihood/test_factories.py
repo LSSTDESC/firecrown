@@ -103,7 +103,9 @@ def test_two_point_factory_dict() -> None:
     "correlation_space",
     [TwoPointCorrelationSpace.HARMONIC, TwoPointCorrelationSpace.REAL],
 )
-def test_two_point_factory_to_from_dict(correlation_space) -> None:
+def test_two_point_factory_to_from_dict(
+    correlation_space: TwoPointCorrelationSpace,
+) -> None:
     two_point_factory = TwoPointFactory(
         correlation_space=correlation_space,
         weak_lensing_factories=[
@@ -570,7 +572,9 @@ def test_build_two_point_likelihood_invalid_likelihood_config(tmp_path: Path) ->
         _ = build_two_point_likelihood(build_parameters)
 
 
-def test_build_two_point_harmonic_with_filter(empty_factory_harmonic) -> None:
+def test_build_two_point_harmonic_with_filter(
+    empty_factory_harmonic: TwoPointFactory,
+) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_harmonic,
         data_source=DataSourceSacc(
@@ -594,7 +598,7 @@ def test_build_two_point_harmonic_with_filter(empty_factory_harmonic) -> None:
 
 
 def test_build_two_point_harmonic_with_filter_require_filter(
-    empty_factory_harmonic,
+    empty_factory_harmonic: TwoPointFactory,
 ) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_harmonic,
@@ -619,7 +623,9 @@ def test_build_two_point_harmonic_with_filter_require_filter(
         _ = two_point_experiment.make_likelihood()
 
 
-def test_build_two_point_harmonic_with_filter_empty(empty_factory_harmonic) -> None:
+def test_build_two_point_harmonic_with_filter_empty(
+    empty_factory_harmonic: TwoPointFactory,
+) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_harmonic,
         data_source=DataSourceSacc(
@@ -747,7 +753,7 @@ def test_build_from_measurement_harmonic_cwindow(
     assert isinstance(two_point0, TwoPoint)
 
 
-def test_two_point_factory_get_wl_factory():
+def test_two_point_factory_get_wl_factory() -> None:
     wl_factory1 = WeakLensingFactory(type_source=TypeSource("ts1"))
     wl_factory2 = WeakLensingFactory(type_source=TypeSource("ts2"))
     wl_factory_default = WeakLensingFactory()
@@ -766,7 +772,7 @@ def test_two_point_factory_get_wl_factory():
             assert wl_factory0 is wl_factory
 
 
-def test_two_point_factory_get_nc_factory():
+def test_two_point_factory_get_nc_factory() -> None:
     nc_factory1 = NumberCountsFactory(type_source=TypeSource("ts1"))
     nc_factory2 = NumberCountsFactory(type_source=TypeSource("ts2"))
     nc_factory_default = NumberCountsFactory()
@@ -785,7 +791,7 @@ def test_two_point_factory_get_nc_factory():
             assert nc_factory0 is nc_factory
 
 
-def test_two_point_factory_two_equal_wls():
+def test_two_point_factory_two_equal_wls() -> None:
     with pytest.raises(
         ValueError, match="Duplicate WeakLensingFactory found for type_source ts1"
     ):
@@ -798,7 +804,7 @@ def test_two_point_factory_two_equal_wls():
         )
 
 
-def test_two_point_factory_two_equal_ncs():
+def test_two_point_factory_two_equal_ncs() -> None:
     with pytest.raises(
         ValueError, match="Duplicate NumberCountsFactory found for type_source ts1"
     ):
@@ -811,7 +817,7 @@ def test_two_point_factory_two_equal_ncs():
         )
 
 
-def test_two_point_factory_get_unavailable_wl_factory():
+def test_two_point_factory_get_unavailable_wl_factory() -> None:
     factory = TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
         weak_lensing_factories=[
@@ -824,7 +830,7 @@ def test_two_point_factory_get_unavailable_wl_factory():
         _ = factory.get_factory(Galaxies.SHEAR_E, type_source=TypeSource("ts2"))
 
 
-def test_two_point_factory_get_unavailable_nc_factory():
+def test_two_point_factory_get_unavailable_nc_factory() -> None:
     factory = TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
         number_counts_factories=[
@@ -850,12 +856,12 @@ def test_two_point_factory_get_unavailable_nc_factory():
         ("../example.txt", Path("../example.txt")),
     ],
 )
-def test_ensure_path(file, expected):
+def test_ensure_path(file: str | Path, expected: Path) -> None:
     result = ensure_path(file)
     assert result == expected
 
 
-def test_ensure_path_invalid():
+def test_ensure_path_invalid() -> None:
     with pytest.raises(
         AssertionError, match="Expected code to be unreachable, but got: 123"
     ):
@@ -863,7 +869,7 @@ def test_ensure_path_invalid():
 
 
 def test_build_two_point_likelihood_harmonic_filters_result_empty(
-    empty_factory_harmonic,
+    empty_factory_harmonic: TwoPointFactory,
 ) -> None:
     """Test case where filters remove all data in harmonic space."""
     two_point_experiment = TwoPointExperiment(
@@ -1014,7 +1020,7 @@ def test_build_two_point_likelihood_real_with_filters_fast() -> None:
     assert likelihood is not None
 
 
-def test_two_point_factory_two_equal_cmbs():
+def test_two_point_factory_two_equal_cmbs() -> None:
     """Test that duplicate CMBConvergenceFactory with same type_source raises error."""
     with pytest.raises(
         ValueError, match="Duplicate CMBConvergenceFactory found for type_source ts1"
@@ -1028,7 +1034,7 @@ def test_two_point_factory_two_equal_cmbs():
         )
 
 
-def test_two_point_factory_get_cmb_factory():
+def test_two_point_factory_get_cmb_factory() -> None:
     """Test getting CMB factories by type_source."""
     cmb_factory1 = CMBConvergenceFactory(type_source=TypeSource("ts1"))
     cmb_factory2 = CMBConvergenceFactory(type_source=TypeSource("ts2"))
@@ -1049,7 +1055,7 @@ def test_two_point_factory_get_cmb_factory():
             assert cmb_factory0 is cmb_factory
 
 
-def test_two_point_factory_get_unavailable_cmb_factory():
+def test_two_point_factory_get_unavailable_cmb_factory() -> None:
     """Test error when requesting unavailable CMB factory type_source."""
     factory = TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
@@ -1063,7 +1069,7 @@ def test_two_point_factory_get_unavailable_cmb_factory():
         _ = factory.get_factory(CMB.CONVERGENCE, type_source=TypeSource("ts2"))
 
 
-def test_two_point_factory_cmb_measurement_handling():
+def test_two_point_factory_cmb_measurement_handling() -> None:
     """Test that CMB measurements are properly handled by get_factory."""
     cmb_factory = CMBConvergenceFactory()
     factory = TwoPointFactory(
@@ -1077,7 +1083,7 @@ def test_two_point_factory_cmb_measurement_handling():
     assert result_factory is cmb_factory
 
 
-def test_two_point_factory_cmb_measurement_with_type_source():
+def test_two_point_factory_cmb_measurement_with_type_source() -> None:
     """Test CMB measurement handling with specific type_source."""
     cmb_factory1 = CMBConvergenceFactory(type_source=TypeSource("ts1"))
     cmb_factory2 = CMBConvergenceFactory(type_source=TypeSource("ts2"))
@@ -1101,7 +1107,7 @@ def test_two_point_factory_cmb_measurement_with_type_source():
     assert result_factory2 is cmb_factory2
 
 
-def test_two_point_factory_all_cmb_types():
+def test_two_point_factory_all_cmb_types() -> None:
     """Test that all CMB measurement types are handled correctly."""
     cmb_factory = CMBConvergenceFactory()
     factory = TwoPointFactory(
@@ -1116,7 +1122,7 @@ def test_two_point_factory_all_cmb_types():
         assert result_factory is cmb_factory
 
 
-def test_two_point_factory_measurement_not_supported():
+def test_two_point_factory_measurement_not_supported() -> None:
     """Test that measurements not supported by the factory raise an error."""
     factory = TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
@@ -1129,7 +1135,7 @@ def test_two_point_factory_measurement_not_supported():
         _ = factory.get_factory(Clusters.COUNTS)
 
 
-def test_two_point_factory_all_factories():
+def test_two_point_factory_all_factories() -> None:
     """Test that all factory types are handled correctly."""
     wl_factory = WeakLensingFactory(type_source=TypeSource("ts_wl"))
     nc_factory = NumberCountsFactory(type_source=TypeSource("ts_nc"))
@@ -1154,19 +1160,19 @@ def test_two_point_factory_all_factories():
     assert cmb_result is cmb_factory
 
 
-def test_load_sacc_data_file_not_found():
+def test_load_sacc_data_file_not_found() -> None:
     """Test load_sacc_data raises FileNotFoundError for non-existent file."""
     with pytest.raises(FileNotFoundError, match="SACC file not found"):
         load_sacc_data("nonexistent_file.fits")
 
 
-def test_load_sacc_data_file_not_found_with_path():
+def test_load_sacc_data_file_not_found_with_path() -> None:
     """Test load_sacc_data raises FileNotFoundError with Path object."""
     with pytest.raises(FileNotFoundError, match="SACC file not found"):
         load_sacc_data(Path("/tmp/nonexistent_file.sacc"))
 
 
-def test_load_sacc_data_both_formats_fail(tmp_path):
+def test_load_sacc_data_both_formats_fail(tmp_path: Path) -> None:
     """Test load_sacc_data raises ValueError when file is neither HDF5 nor FITS."""
     # Create a file with invalid content (not HDF5, not FITS)
     bad_file = tmp_path / "corrupted.sacc"
@@ -1182,7 +1188,7 @@ def test_load_sacc_data_both_formats_fail(tmp_path):
         load_sacc_data(bad_file)
 
 
-def test_load_sacc_data_ambiguous_extension_hdf5_content(tmp_path):
+def test_load_sacc_data_ambiguous_extension_hdf5_content(tmp_path: Path) -> None:
     """Test load_sacc_data loads a .sacc-suffixed file with HDF5 content."""
     hdf5_file = tmp_path / "data.sacc"
     s = sacc.Sacc()
@@ -1194,7 +1200,7 @@ def test_load_sacc_data_ambiguous_extension_hdf5_content(tmp_path):
     assert isinstance(sacc_data, sacc.Sacc)
 
 
-def test_load_sacc_data_ambiguous_extension_fits_content(tmp_path):
+def test_load_sacc_data_ambiguous_extension_fits_content(tmp_path: Path) -> None:
     """Test load_sacc_data loads a .sacc-suffixed file with FITS content."""
     fits_file = tmp_path / "data.sacc"
     s = sacc.Sacc()
@@ -1206,14 +1212,14 @@ def test_load_sacc_data_ambiguous_extension_fits_content(tmp_path):
     assert isinstance(sacc_data, sacc.Sacc)
 
 
-def test_load_sacc_data_with_path_object():
+def test_load_sacc_data_with_path_object() -> None:
     """Test load_sacc_data works with Path object input."""
     sacc_data = load_sacc_data(Path("tests/bug_398.sacc.gz"))
     assert sacc_data is not None
     assert isinstance(sacc_data, sacc.Sacc)
 
 
-def test_load_sacc_data_with_string():
+def test_load_sacc_data_with_string() -> None:
     """Test load_sacc_data works with string input."""
     sacc_data = load_sacc_data("tests/bug_398.sacc.gz")
     assert sacc_data is not None
@@ -1221,7 +1227,7 @@ def test_load_sacc_data_with_string():
 
 
 @pytest.fixture(name="sacc_with_window", scope="function")
-def fixture_sacc_with_window(tmp_path: Path):
+def fixture_sacc_with_window(tmp_path: Path) -> Path:
     """Create a SACC file with window functions for testing normalize_window."""
     # Create window function data
     n_ell_bin = 5
@@ -1287,13 +1293,15 @@ def fixture_sacc_with_window(tmp_path: Path):
     return sacc_file
 
 
-def test_data_source_sacc_normalize_window_default(sacc_with_window: Path):
+def test_data_source_sacc_normalize_window_default(sacc_with_window: Path) -> None:
     """Test that DataSourceSacc.normalize_window defaults to True."""
     data_source = DataSourceSacc(sacc_data_file=str(sacc_with_window))
     assert data_source.normalize_window is True
 
 
-def test_data_source_sacc_normalize_window_false_dict(sacc_with_window: Path):
+def test_data_source_sacc_normalize_window_false_dict(
+    sacc_with_window: Path,
+) -> None:
     """Test DataSourceSacc.normalize_window can be set to False via dict."""
     data_source_dict = {
         "sacc_data_file": str(sacc_with_window),
@@ -1303,7 +1311,9 @@ def test_data_source_sacc_normalize_window_false_dict(sacc_with_window: Path):
     assert data_source.normalize_window is False
 
 
-def test_data_source_sacc_normalize_window_false_direct(sacc_with_window: Path):
+def test_data_source_sacc_normalize_window_false_direct(
+    sacc_with_window: Path,
+) -> None:
     """Test DataSourceSacc.normalize_window can be set to False directly."""
     data_source = DataSourceSacc(
         sacc_data_file=str(sacc_with_window), normalize_window=False
@@ -1311,7 +1321,9 @@ def test_data_source_sacc_normalize_window_false_direct(sacc_with_window: Path):
     assert data_source.normalize_window is False
 
 
-def test_data_source_sacc_normalize_window_true_explicit(sacc_with_window: Path):
+def test_data_source_sacc_normalize_window_true_explicit(
+    sacc_with_window: Path,
+) -> None:
     """Test DataSourceSacc.normalize_window can be explicitly set to True."""
     data_source = DataSourceSacc(
         sacc_data_file=str(sacc_with_window), normalize_window=True
@@ -1322,7 +1334,7 @@ def test_data_source_sacc_normalize_window_true_explicit(sacc_with_window: Path)
 def test_two_point_experiment_normalize_window_flows_through(
     empty_factory_harmonic: TwoPointFactory,
     sacc_with_window: Path,
-):
+) -> None:
     """Test that normalize_window flows through TwoPointExperiment to likelihood."""
     # Create experiment with normalize_window=False
     experiment = TwoPointExperiment(
@@ -1343,7 +1355,7 @@ def test_two_point_experiment_normalize_window_flows_through(
 def test_two_point_experiment_normalize_window_default_flows_through(
     empty_factory_harmonic: TwoPointFactory,
     sacc_with_window: Path,
-):
+) -> None:
     """Test that default normalize_window=True flows through correctly."""
     experiment = TwoPointExperiment(
         two_point_factory=empty_factory_harmonic,
@@ -1358,7 +1370,7 @@ def test_two_point_experiment_normalize_window_default_flows_through(
     assert likelihood is not None
 
 
-def test_normalize_window_affects_extraction(sacc_with_window: Path):
+def test_normalize_window_affects_extraction(sacc_with_window: Path) -> None:
     """Test that normalize_window parameter actually affects window extraction."""
     sacc_data = load_sacc_data(sacc_with_window)
 
@@ -1404,7 +1416,7 @@ def test_normalize_window_affects_extraction(sacc_with_window: Path):
 
 def test_two_point_experiment_yaml_with_normalize_window(
     tmp_path: Path, sacc_with_window: Path
-):
+) -> None:
     """Test TwoPointExperiment loading from YAML with normalize_window=False."""
     tmp_experiment_file = tmp_path / "experiment_no_norm.yaml"
     # Use relative path from tmp_path to sacc_with_window

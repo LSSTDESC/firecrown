@@ -4,6 +4,7 @@ Tests ExampleClusterShear example generator and build_likelihood execution.
 """
 
 from pathlib import Path
+from typing import TypedDict, Unpack
 from unittest.mock import patch
 
 import numpy as np
@@ -22,8 +23,23 @@ from firecrown.likelihood import ConstGaussian, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 
 
-def make_builder(tmp_path: Path, **kwargs) -> ExampleClusterShear:
-    """Create a builder without running the generation workflow."""
+class _BuilderKwargs(TypedDict, total=False):
+    """Optional constructor arguments exercised by these tests."""
+
+    prefix: str
+    profile: ClusterProfile
+    cosmology_spec: Path
+
+
+def make_builder(
+    tmp_path: Path, **kwargs: Unpack[_BuilderKwargs]
+) -> ExampleClusterShear:
+    """Create a builder without running the generation workflow.
+
+    :param tmp_path: Output directory for the builder.
+    :param kwargs: Optional builder settings used by the test.
+    :returns: Builder with generation suppressed.
+    """
     with patch.object(ExampleClusterShear, "_proceed_generation"):
         return ExampleClusterShear(
             output_path=tmp_path, target_framework=Frameworks.COSMOSIS, **kwargs

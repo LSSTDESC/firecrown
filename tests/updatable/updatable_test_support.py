@@ -29,7 +29,7 @@ class SimpleUpdatable(Updatable):  # pylint: disable=too-many-instance-attribute
 class UpdatableWithDerived(Updatable):
     """A concrete type that implements Updatable that implements derived parameters."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize object with defaulted values."""
         super().__init__()
 

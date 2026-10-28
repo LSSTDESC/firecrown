@@ -21,8 +21,10 @@ from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.modeling_tools import ModelingTools
 
+type CobayaParamsConfig = dict[str, float | dict[str, bool]]
 
-def test_cobaya_ccl_initialize():
+
+def test_cobaya_ccl_initialize() -> None:
     ccl_connector = LikelihoodConnector(
         info={
             "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
@@ -35,7 +37,7 @@ def test_cobaya_ccl_initialize():
     assert ccl_connector.distance_max_z == 4.0
 
 
-def test_cobaya_ccl_initialize_with_distance_max_z():
+def test_cobaya_ccl_initialize_with_distance_max_z() -> None:
     ccl_connector = LikelihoodConnector(
         info={
             "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
@@ -47,7 +49,7 @@ def test_cobaya_ccl_initialize_with_distance_max_z():
     assert ccl_connector.distance_max_z == 1210.0
 
 
-def test_cobaya_ccl_initialize_with_params():
+def test_cobaya_ccl_initialize_with_params() -> None:
     ccl_connector = LikelihoodConnector(
         info={
             "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
@@ -61,7 +63,7 @@ def test_cobaya_ccl_initialize_with_params():
     assert ccl_connector.input_style == "CAMB"
 
 
-def test_compute_pyccl_args_options_default_no_extension():
+def test_compute_pyccl_args_options_default_no_extension() -> None:
     """With the default distance_max_z (4.0), no background extension is
     needed since it does not exceed the redshift already covered by
     spl.A_SPLINE_MIN (z~9)."""
@@ -76,7 +78,7 @@ def test_compute_pyccl_args_options_default_no_extension():
     assert z_bg.max() == pytest.approx(1.0 / spl.A_SPLINE_MIN - 1.0)
 
 
-def test_compute_pyccl_args_options_extends_for_cmb_lensing():
+def test_compute_pyccl_args_options_extends_for_cmb_lensing() -> None:
     """A distance_max_z beyond spl.A_SPLINE_MIN's implicit z_max extends the
     background arrays out to that redshift, without the array's minimum
     scale factor landing exactly on spl.A_SPLINE_MINLOG (see the note in
@@ -105,7 +107,7 @@ def test_compute_pyccl_args_options_extends_for_cmb_lensing():
     assert z_spline_min == pytest.approx(z_bg_no_ext.max())
 
 
-def test_cobaya_likelihood_initialize():
+def test_cobaya_likelihood_initialize() -> None:
     lk_connector = LikelihoodConnector(
         info={
             "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
@@ -117,7 +119,7 @@ def test_cobaya_likelihood_initialize():
     assert lk_connector.firecrownIni == "tests/likelihood/lkdir/lkscript.py"
 
 
-def test_cobaya_likelihood_initialize_with_params():
+def test_cobaya_likelihood_initialize_with_params() -> None:
     lk_connector = LikelihoodConnector(
         info={
             "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
@@ -132,10 +134,10 @@ def test_cobaya_likelihood_initialize_with_params():
 
 
 @pytest.fixture(name="fiducial_params")
-def fixture_fiducial_params():
+def fixture_fiducial_params() -> CobayaParamsConfig:
     # Fiducial parameters for CAMB
     # These are the names expected by Cobaya.
-    fiducial_params = {
+    fiducial_params: CobayaParamsConfig = {
         "ombh2": 0.022,
         "omch2": 0.12,
         "H0": 68,
@@ -148,7 +150,9 @@ def fixture_fiducial_params():
     return fiducial_params
 
 
-def test_cobaya_ccl_likelihood(fiducial_params):
+def test_cobaya_ccl_likelihood(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
@@ -166,7 +170,9 @@ def test_cobaya_ccl_likelihood(fiducial_params):
     assert model_fiducial.logposterior({}).logpost == -3.0
 
 
-def test_resetting_after_exception_in_log_likelihood(fiducial_params):
+def test_resetting_after_exception_in_log_likelihood(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     fiducial_params.update({"pantheon_M": -19.0})
     info_fiducial = {
         "params": fiducial_params,
@@ -204,7 +210,9 @@ def test_resetting_after_exception_in_log_likelihood(fiducial_params):
     assert np.isfinite(model_fiducial.logposterior({}).logpost)
 
 
-def test_parameterized_likelihood_missing(fiducial_params):
+def test_parameterized_likelihood_missing(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
@@ -221,7 +229,9 @@ def test_parameterized_likelihood_missing(fiducial_params):
         _ = get_model(info_fiducial)
 
 
-def test_parameterized_likelihood_wrong_type(fiducial_params):
+def test_parameterized_likelihood_wrong_type(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
@@ -241,7 +251,9 @@ def test_parameterized_likelihood_wrong_type(fiducial_params):
         _ = get_model(info_fiducial)
 
 
-def test_parameterized_likelihood_dict(fiducial_params):
+def test_parameterized_likelihood_dict(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
@@ -260,7 +272,9 @@ def test_parameterized_likelihood_dict(fiducial_params):
     assert model_fiducial.logposterior({}).logpost == -1.5
 
 
-def test_parameterized_likelihood_namedparameters(fiducial_params):
+def test_parameterized_likelihood_namedparameters(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
@@ -281,7 +295,9 @@ def test_parameterized_likelihood_namedparameters(fiducial_params):
     assert model_fiducial.logposterior({}).logpost == -1.5
 
 
-def test_sampler_parameter_likelihood_missing(fiducial_params):
+def test_sampler_parameter_likelihood_missing(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
@@ -299,7 +315,9 @@ def test_sampler_parameter_likelihood_missing(fiducial_params):
         _ = get_model(info_fiducial)
 
 
-def test_sampler_parameter_likelihood(fiducial_params):
+def test_sampler_parameter_likelihood(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     fiducial_params.update({"my_prefix_sampler_param0": 1.0})
     info_fiducial = {
         "params": fiducial_params,
@@ -319,7 +337,9 @@ def test_sampler_parameter_likelihood(fiducial_params):
     assert model_fiducial.logposterior({}).logpost == -2.1
 
 
-def test_derived_parameter_likelihood(fiducial_params):
+def test_derived_parameter_likelihood(
+    fiducial_params: CobayaParamsConfig,
+) -> None:
     fiducial_params.update({"derived_section__derived_param0": {"derived": True}})
     info_fiducial = {
         "params": fiducial_params,
@@ -341,7 +361,9 @@ def test_derived_parameter_likelihood(fiducial_params):
     assert logpost.derived[0] == 1.0
 
 
-def _factory_as(_: NamedParameters):
+def _factory_as(
+    _: NamedParameters,
+) -> tuple[ConstGaussian, ModelingTools]:
     return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
         ccl_factory=ccl_factory.CCLFactory(
             amplitude_parameter=ccl_factory.PoweSpecAmplitudeParameter.AS
@@ -349,7 +371,9 @@ def _factory_as(_: NamedParameters):
     )
 
 
-def _factory_sigma8(_: NamedParameters):
+def _factory_sigma8(
+    _: NamedParameters,
+) -> tuple[ConstGaussian, ModelingTools]:
     return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
         ccl_factory=ccl_factory.CCLFactory(
             amplitude_parameter=ccl_factory.PoweSpecAmplitudeParameter.SIGMA8
@@ -357,7 +381,7 @@ def _factory_sigma8(_: NamedParameters):
     )
 
 
-def test_likelihood_connector_from_module():
+def test_likelihood_connector_from_module() -> None:
     name = "my_dummy_likelihood_module"
     factory_full = f"{name}.factory"
     mod = types.ModuleType(factory_full)
@@ -378,7 +402,7 @@ def test_likelihood_connector_from_module():
     assert "sigma8" in lk_connector.get_requirements()
 
 
-def test_get_can_support_params_with_map_none():
+def test_get_can_support_params_with_map_none() -> None:
     """Test get_can_support_params when map is None (non-DEFAULT creation mode)."""
     # Create a connector that uses PURE_CCL_MODE, which keeps map=None
     lk_connector = LikelihoodConnector(
@@ -396,7 +420,7 @@ def test_get_can_support_params_with_map_none():
     assert supported_params == []
 
 
-def test_logp_with_pure_ccl_mode():
+def test_logp_with_pure_ccl_mode() -> None:
     """Test logp method with PURE_CCL_MODE (non-DEFAULT creation mode)."""
     # Pure CCL mode requires different parameters than the CAMB-based DEFAULT mode
     pure_ccl_params = {
@@ -431,7 +455,7 @@ def test_logp_with_pure_ccl_mode():
     assert logpost.logpost == -3.0
 
 
-def test_missing_input_style_assertion():
+def test_missing_input_style_assertion() -> None:
     """Test assertion failure when input_style is None in DEFAULT mode."""
     # Create a connector with DEFAULT mode but no input_style
     # This should trigger the assertion at line 113: assert self.input_style
@@ -444,7 +468,7 @@ def test_missing_input_style_assertion():
         )
 
 
-def test_get_requirements_different_modes():
+def test_get_requirements_different_modes() -> None:
     """Test get_requirements with different CCL creation modes."""
     # Test with DEFAULT mode (should include external observables)
     lk_connector_default = LikelihoodConnector(
@@ -478,7 +502,7 @@ def test_get_requirements_different_modes():
     assert "Hubble" not in requirements_pure
 
 
-def test_initialize_without_build_parameters_attribute():
+def test_initialize_without_build_parameters_attribute() -> None:
     """Test initialize() when build_parameters attribute doesn't exist.
 
     This covers the case where hasattr(self, 'build_parameters') is False,

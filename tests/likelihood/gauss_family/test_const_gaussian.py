@@ -14,7 +14,7 @@ from firecrown.data_functions import extract_all_harmonic_data
 from firecrown.likelihood._gaussfamily import Statistic
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._statistic import TrivialStatistic
-from firecrown.likelihood._two_point import TwoPoint
+from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
 from firecrown.metadata_functions import TwoPointHarmonicIndex
 from firecrown.metadata_types import Galaxies, TracerNames
 from firecrown.modeling_tools import ModelingTools
@@ -23,6 +23,7 @@ from firecrown.updatable import (
     RequiredParameters,
     SamplerParameter,
 )
+from tests._types import SaccGalaxyWindowedFixture
 
 
 class StatisticWithoutIndices(TrivialStatistic):
@@ -36,18 +37,20 @@ class StatisticWithoutIndices(TrivialStatistic):
         self.sacc_indices = None
 
 
-def test_require_nonempty_statistics():
+def test_require_nonempty_statistics() -> None:
     with pytest.raises(ValueError):
         _ = ConstGaussian(statistics=[])
 
 
-def test_get_cov_fails_before_read(trivial_stats):
+def test_get_cov_fails_before_read(trivial_stats: list[TrivialStatistic]) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(AssertionError):
         _ = likelihood.get_cov()
 
 
-def test_read_with_wrong_statistic_fails(sacc_data_for_trivial_stat):
+def test_read_with_wrong_statistic_fails(
+    sacc_data_for_trivial_stat: sacc.Sacc,
+) -> None:
     # Make the first statistic defective.
     defective_stat = StatisticWithoutIndices()
     likelihood = ConstGaussian(statistics=[defective_stat])
@@ -58,20 +61,26 @@ def test_read_with_wrong_statistic_fails(sacc_data_for_trivial_stat):
         likelihood.read(sacc_data_for_trivial_stat)
 
 
-def test_get_cov_works_after_read(trivial_stats, sacc_data_for_trivial_stat):
+def test_get_cov_works_after_read(
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     assert np.all(likelihood.get_cov() == np.diag([4.0, 9.0, 16.0]))
 
 
-def test_get_cov_with_one_statistic(trivial_stats, sacc_data_for_trivial_stat):
+def test_get_cov_with_one_statistic(
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
     assert np.all(likelihood.get_cov(trivial_stats[0]) == np.diag([4.0, 9.0, 16.0]))
 
 
-def test_get_cov_with_list_of_statistics(trivial_stats, sacc_data_for_trivial_stat):
+def test_get_cov_with_list_of_statistics(
+    trivial_stats: list[Statistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
@@ -80,7 +89,9 @@ def test_get_cov_with_list_of_statistics(trivial_stats, sacc_data_for_trivial_st
     assert np.all(cov == np.diag([4.0, 9.0, 16.0]))
 
 
-def test_get_data_vector_fails_before_read(trivial_stats):
+def test_get_data_vector_fails_before_read(
+    trivial_stats: list[TrivialStatistic],
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(
         AssertionError,
@@ -89,13 +100,17 @@ def test_get_data_vector_fails_before_read(trivial_stats):
         _ = likelihood.get_data_vector()
 
 
-def test_get_data_vector_works_after_read(trivial_stats, sacc_data_for_trivial_stat):
+def test_get_data_vector_works_after_read(
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     assert np.all(likelihood.get_data_vector() == np.array([1.0, 4.0, -3.0]))
 
 
-def test_compute_theory_vector_fails_before_read(trivial_stats):
+def test_compute_theory_vector_fails_before_read(
+    trivial_stats: list[TrivialStatistic],
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(
         AssertionError,
@@ -105,8 +120,8 @@ def test_compute_theory_vector_fails_before_read(trivial_stats):
 
 
 def test_compute_theory_vector_fails_before_update(
-    trivial_stats, sacc_data_for_trivial_stat
-):
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     with pytest.raises(
@@ -117,8 +132,8 @@ def test_compute_theory_vector_fails_before_update(
 
 
 def test_compute_theory_vector_works_after_read_and_update(
-    trivial_stats, sacc_data_for_trivial_stat
-):
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
@@ -128,7 +143,9 @@ def test_compute_theory_vector_works_after_read_and_update(
     )
 
 
-def test_compute_theory_vector_called_twice(trivial_stats, sacc_data_for_trivial_stat):
+def test_compute_theory_vector_called_twice(
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
@@ -137,7 +154,9 @@ def test_compute_theory_vector_called_twice(trivial_stats, sacc_data_for_trivial
     assert np.all(res_1 == res_2)
 
 
-def test_get_theory_vector_fails_before_read(trivial_stats):
+def test_get_theory_vector_fails_before_read(
+    trivial_stats: list[TrivialStatistic],
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(
         AssertionError,
@@ -149,8 +168,8 @@ def test_get_theory_vector_fails_before_read(trivial_stats):
 
 
 def test_get_theory_vector_fails_before_update(
-    trivial_stats, sacc_data_for_trivial_stat
-):
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     with pytest.raises(
@@ -163,8 +182,8 @@ def test_get_theory_vector_fails_before_update(
 
 
 def test_get_theory_vector_fails_before_compute_theory_vector(
-    trivial_stats, sacc_data_for_trivial_stat
-):
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
@@ -178,8 +197,8 @@ def test_get_theory_vector_fails_before_compute_theory_vector(
 
 
 def test_get_theory_vector_works_after_read_update_and_compute_theory_vector(
-    trivial_stats, sacc_data_for_trivial_stat
-):
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
@@ -188,8 +207,8 @@ def test_get_theory_vector_works_after_read_update_and_compute_theory_vector(
 
 
 def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_reset(
-    trivial_stats, sacc_data_for_trivial_stat
-):
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(firecrown.updatable.ParamsMap(mean=10.5))
@@ -204,7 +223,9 @@ def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_res
         _ = likelihood.get_theory_vector()
 
 
-def test_compute_chisq_fails_before_read(trivial_stats):
+def test_compute_chisq_fails_before_read(
+    trivial_stats: list[TrivialStatistic],
+) -> None:
     """Note that the error message from the direct call to compute_chisq notes
     that update() must be called; this can only be called after read()."""
     likelihood = ConstGaussian(statistics=trivial_stats)
@@ -215,14 +236,22 @@ def test_compute_chisq_fails_before_read(trivial_stats):
         _ = likelihood.compute_chisq(ModelingTools())
 
 
-def test_compute_chisq(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
+def test_compute_chisq(
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params: firecrown.updatable.ParamsMap,
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
     assert likelihood.compute_chisq(ModelingTools()) == 2.0
 
 
-def test_deprecated_compute(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
+def test_deprecated_compute(
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params: firecrown.updatable.ParamsMap,
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
@@ -233,8 +262,10 @@ def test_deprecated_compute(trivial_stats, sacc_data_for_trivial_stat, trivial_p
 
 
 def test_chisquared_compute_vector_not_implemented(
-    trivial_stats, sacc_data_for_trivial_stat, trivial_params
-):
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params: firecrown.updatable.ParamsMap,
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
@@ -253,7 +284,11 @@ def test_chisquared_compute_vector_not_implemented(
     assert likelihood.compute_chisq(ModelingTools()) == 2.0
 
 
-def test_required_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
+def test_required_parameters(
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params: firecrown.updatable.ParamsMap,
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
@@ -263,7 +298,11 @@ def test_required_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_
     assert likelihood.required_parameters() == expected_params
 
 
-def test_derived_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
+def test_derived_parameters(
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params: firecrown.updatable.ParamsMap,
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
@@ -271,7 +310,11 @@ def test_derived_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_p
     assert likelihood.get_derived_parameters() == expected_params
 
 
-def test_reset(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
+def test_reset(
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params: firecrown.updatable.ParamsMap,
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
@@ -282,7 +325,9 @@ def test_reset(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
     assert not trivial_stats[0].computed_theory_vector
 
 
-def test_missing_covariance(trivial_stats, sacc_with_data_points: sacc.Sacc):
+def test_missing_covariance(
+    trivial_stats: list[TrivialStatistic], sacc_with_data_points: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(
         RuntimeError,
@@ -293,10 +338,10 @@ def test_missing_covariance(trivial_stats, sacc_with_data_points: sacc.Sacc):
 
 
 def test_using_good_sacc(
-    trivial_stats,
+    trivial_stats: list[TrivialStatistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.updatable.ParamsMap(mean=10.5)
@@ -307,8 +352,8 @@ def test_using_good_sacc(
 
 
 def test_after_read_all_statistics_are_ready(
-    trivial_stats, sacc_data_for_trivial_stat: sacc.Sacc
-):
+    trivial_stats: list[TrivialStatistic], sacc_data_for_trivial_stat: sacc.Sacc
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     for gs in likelihood.statistics:
@@ -317,10 +362,10 @@ def test_after_read_all_statistics_are_ready(
 
 
 def test_make_realization_chisq(
-    trivial_stats,
+    trivial_stats: list[TrivialStatistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.updatable.ParamsMap(mean=10.5)
@@ -344,10 +389,10 @@ def test_make_realization_chisq(
 
 
 def test_make_realization_chisq_mean(
-    trivial_stats,
+    trivial_stats: list[TrivialStatistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.updatable.ParamsMap(mean=10.5)
@@ -373,10 +418,10 @@ def test_make_realization_chisq_mean(
 
 
 def test_make_realization_data_vector(
-    trivial_stats,
+    trivial_stats: list[TrivialStatistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.updatable.ParamsMap(mean=10.5)
@@ -416,10 +461,10 @@ def test_make_realization_data_vector(
 
 
 def test_make_realization_no_noise(
-    trivial_stats,
+    trivial_stats: list[TrivialStatistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
     tools_with_vanilla_cosmology: ModelingTools,
-):
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     params = firecrown.updatable.ParamsMap(mean=10.5)
@@ -437,9 +482,9 @@ def test_make_realization_no_noise(
 
 
 def test_get_sacc_indices(
-    trivial_stats,
+    trivial_stats: list[TrivialStatistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
-):
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
@@ -454,9 +499,9 @@ def test_get_sacc_indices(
 
 
 def test_get_sacc_indices_single_stat(
-    trivial_stats,
+    trivial_stats: list[TrivialStatistic],
     sacc_data_for_trivial_stat: sacc.Sacc,
-):
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
@@ -466,14 +511,17 @@ def test_get_sacc_indices_single_stat(
 
 
 def test_access_required_parameters(
-    trivial_stats,
-):
+    trivial_stats: list[TrivialStatistic],
+) -> None:
     likelihood = ConstGaussian(statistics=trivial_stats)
     params = likelihood.required_parameters().get_default_values()
     assert params == {"mean": 0.0}
 
 
-def test_create_ready(sacc_galaxy_cwindows, tp_factory):
+def test_create_ready(
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+    tp_factory: TwoPointFactory,
+) -> None:
     sacc_data, _, _ = sacc_galaxy_cwindows
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
@@ -485,7 +533,10 @@ def test_create_ready(sacc_galaxy_cwindows, tp_factory):
     assert isinstance(likelihood, ConstGaussian)
 
 
-def test_create_ready_wrong_size(sacc_galaxy_cwindows, tp_factory):
+def test_create_ready_wrong_size(
+    sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
+    tp_factory: TwoPointFactory,
+) -> None:
     sacc_data, _, _ = sacc_galaxy_cwindows
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
@@ -502,7 +553,7 @@ def test_create_ready_wrong_size(sacc_galaxy_cwindows, tp_factory):
         ConstGaussian.create_ready(two_points, np.diag([1.0, 2.0, 3.0]))
 
 
-def test_create_ready_not_ready(tp_factory):
+def test_create_ready_not_ready(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": TracerNames("lens0", "lens0"),
@@ -519,8 +570,10 @@ def test_create_ready_not_ready(tp_factory):
 
 
 def test_compute_chisq_without_cholesky(
-    trivial_stats, sacc_data_for_trivial_stat, trivial_params
-):
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    trivial_params: firecrown.updatable.ParamsMap,
+) -> None:
     """Test compute_chisq with use_cholesky=False.
 
     This test ensures that the parent GaussFamily.compute_chisq_impl() method

@@ -6,6 +6,7 @@ for testing purposes.
 import sacc
 
 from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.likelihood.supernova._supernova import Supernova
 from firecrown.modeling_tools import (
     CCLFactory,
@@ -14,7 +15,7 @@ from firecrown.modeling_tools import (
 )
 
 
-def build_likelihood(_):
+def build_likelihood(_: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:
     """Return a ConstGaussian (likelihood) object."""
     statistic = Supernova(sacc_tracer="pantheon")
     likelihood = ConstGaussian(statistics=[statistic])

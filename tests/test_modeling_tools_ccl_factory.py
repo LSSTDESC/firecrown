@@ -2,6 +2,7 @@
 
 import itertools as it
 import re
+from typing import cast
 
 import numpy as np
 import pyccl
@@ -29,12 +30,14 @@ from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 
 @pytest.fixture(name="amplitude_parameter", params=list(PoweSpecAmplitudeParameter))
-def fixture_amplitude_parameter(request):
+def fixture_amplitude_parameter(
+    request: pytest.FixtureRequest,
+) -> PoweSpecAmplitudeParameter:
     return request.param
 
 
 @pytest.fixture(name="neutrino_mass_splits", params=list(NeutrinoMassSplits))
-def fixture_neutrino_mass_splits(request):
+def fixture_neutrino_mass_splits(request: pytest.FixtureRequest) -> NeutrinoMassSplits:
     return request.param
 
 
@@ -43,7 +46,7 @@ def fixture_neutrino_mass_splits(request):
     params=[True, False],
     ids=["require_nonlinear_pk", "no_require_nonlinear_pk"],
 )
-def fixture_require_nonlinear_pk(request):
+def fixture_require_nonlinear_pk(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
@@ -55,7 +58,7 @@ def fixture_require_nonlinear_pk(request):
         CCLCreationMode.MU_SIGMA_ISITGR,
     ],
 )
-def fixture_ccl_creation_mode(request) -> CCLCreationMode:
+def fixture_ccl_creation_mode(request: pytest.FixtureRequest) -> CCLCreationMode:
     """Fixture providing each CCLCreationMode."""
     return request.param
 
@@ -71,7 +74,9 @@ def fixture_ccl_creation_mode(request) -> CCLCreationMode:
     ],
     ids=["no_camb", "mead", "mead_kmax", "mead_kmax_lmax", "ppf"],
 )
-def fixture_camb_extra_params(request) -> CAMBExtraParams | None:
+def fixture_camb_extra_params(
+    request: pytest.FixtureRequest,
+) -> CAMBExtraParams | None:
     """Fixture providing each possible CAMBExtraParams configuration."""
     if request.param is not None:
         return CAMBExtraParams.model_validate(request.param)
@@ -109,7 +114,9 @@ def fixture_camb_extra_params(request) -> CAMBExtraParams | None:
     ],
     ids=lambda x: x[2],  # Use the third element (id string) as the test id
 )
-def fixture_ccl_creation_mode_and_camb_params(request):
+def fixture_ccl_creation_mode_and_camb_params(
+    request: pytest.FixtureRequest,
+) -> tuple[CCLCreationMode, CAMBExtraParams | None]:
     """Provides valid combinations of creation mode and CAMB params.
 
     CAMB extra parameters are only compatible with PURE_CCL_MODE, so this
@@ -132,7 +139,9 @@ def fixture_ccl_creation_mode_and_camb_params(request):
     params=[None, {"a_spline_na": 451}],
     ids=["default", "set_a_spline_na"],
 )
-def fixture_ccl_spline_params(request) -> CCLSplineParams | None:
+def fixture_ccl_spline_params(
+    request: pytest.FixtureRequest,
+) -> CCLSplineParams | None:
     return CCLSplineParams(**request.param) if request.param is not None else None
 
 
@@ -173,7 +182,7 @@ PK_NONLIN = {
     params=[BACKGROUND, BACKGROUND | PK_LINEAR, BACKGROUND | PK_LINEAR | PK_NONLIN],
     ids=["background", "background_linear_pk", "background_linear_pk_nonlinear_pk"],
 )
-def fixture_calculator_args(request) -> CCLCalculatorArgs:
+def fixture_calculator_args(request: pytest.FixtureRequest) -> CCLCalculatorArgs:
     return request.param
 
 
@@ -202,7 +211,9 @@ def fixture_calculator_args(request) -> CCLCalculatorArgs:
     ],
     ids=lambda x: x[2],  # Use the third element (id string) as the test id
 )
-def fixture_require_nonlinear_pk_and_calculator_args(request):
+def fixture_require_nonlinear_pk_and_calculator_args(
+    request: pytest.FixtureRequest,
+) -> tuple[bool, CCLCalculatorArgs]:
     """Fixture providing valid combinations of require_nonlinear_pk and calculator_args.
 
     Nonlinear PK requires linear PK to be present, so this fixture only generates
@@ -219,7 +230,9 @@ def fixture_require_nonlinear_pk_and_calculator_args(request):
     "transfer_function",
     list(CCLPureModeTransferFunction),
 )
-def test_ccl_factory_pure_mode_transfer_function(transfer_function):
+def test_ccl_factory_pure_mode_transfer_function(
+    transfer_function: CCLPureModeTransferFunction,
+) -> None:
     ccl_factory = CCLFactory(
         creation_mode=CCLCreationMode.PURE_CCL_MODE,
         pure_ccl_transfer_function=transfer_function,
@@ -233,7 +246,7 @@ def test_ccl_factory_pure_mode_transfer_function(transfer_function):
     assert isinstance(cosmo, pyccl.Cosmology)
 
 
-def test_ccl_factory_invalid_pure_mode_transfer_function():
+def test_ccl_factory_invalid_pure_mode_transfer_function() -> None:
     with pytest.raises(ValueError, match="is not a valid CCLPureModeTransferFunction"):
         CCLFactory(
             creation_mode=CCLCreationMode.PURE_CCL_MODE,
@@ -249,7 +262,7 @@ def test_setting_each_spline_param(
     # param_value to be tested.
     ccl_creation_mode, camb_extra_params = ccl_creation_mode_and_camb_params
 
-    def test_helper(param_name: str, param_value: float | int):
+    def test_helper(param_name: str, param_value: float | int) -> None:
         # Using combined fixture ensures only valid combinations are tested
         original_param_value = getattr(pyccl.spline_params, param_name.upper())
         args = {param_name: param_value}
@@ -302,7 +315,7 @@ def test_setting_each_spline_param(
     test_helper("n_ell_corr", 4444)
 
 
-def test_ccl_spline_params_validation():
+def test_ccl_spline_params_validation() -> None:
     with pytest.raises(pydantic.ValidationError):
         _ = CCLSplineParams(logm_spline_min=20, logm_spline_max=10)
     with pytest.raises(pydantic.ValidationError):
@@ -311,7 +324,7 @@ def test_ccl_spline_params_validation():
         _ = CCLSplineParams(ell_min_corr=100, ell_max_corr=10)
 
 
-def test_ccl_spline_params_context_manager_exception():
+def test_ccl_spline_params_context_manager_exception() -> None:
     with CCLSplineParams(k_max=900) as params:
         assert params.k_max == 900
     with pytest.raises(AssertionError):
@@ -319,7 +332,7 @@ def test_ccl_spline_params_context_manager_exception():
             assert False
 
 
-def _nu_mass_is_list(mass_split: NeutrinoMassSplits):
+def _nu_mass_is_list(mass_split: NeutrinoMassSplits) -> bool:
     """Check if the neutrino mass split is a list.
 
     This function is used to check if the neutrino mass split is a list or a sum.
@@ -845,7 +858,7 @@ def test_ccl_factory_invalid_extra_params() -> None:
         CCLFactory(not_a_valid_param="Im not a valid value")
 
 
-def test_validate_creation_mode_incompatible():
+def test_validate_creation_mode_incompatible() -> None:
     ccl_factory = CCLFactory(creation_mode=CCLCreationMode.PURE_CCL_MODE)
     params = get_default_params_map(ccl_factory)
     ccl_factory.update(params)
@@ -1171,7 +1184,11 @@ def test_camb_extra_params_set_hm_parameters_wrong_name() -> None:
         ),
     ],
 )
-def test_ccl_factory_using_camb(creation_mode, transfer_function, expected):
+def test_ccl_factory_using_camb(
+    creation_mode: CCLCreationMode,
+    transfer_function: CCLPureModeTransferFunction,
+    expected: bool,
+) -> None:
     factory = CCLFactory(
         creation_mode=creation_mode,
         pure_ccl_transfer_function=transfer_function,
@@ -1227,8 +1244,11 @@ def test_ccl_factory_using_camb(creation_mode, transfer_function, expected):
     ],
 )
 def test_ccl_factory_ccl_powerspectra(
-    creation_mode, transfer_function, nonlinear_pk, matter_pk_str
-):
+    creation_mode: CCLCreationMode,
+    transfer_function: CCLPureModeTransferFunction,
+    nonlinear_pk: bool,
+    matter_pk_str: str,
+) -> None:
     factory = CCLFactory(
         creation_mode=creation_mode,
         pure_ccl_transfer_function=transfer_function,
@@ -1248,7 +1268,11 @@ def test_ccl_factory_ccl_powerspectra(
         [0.0, 0.1, 0.2], [(2.0e-9, None), (None, 0.81)], list(NeutrinoMassSplits)
     ),
 )
-def test_ccl_factory_parameters_passthrough_all(m_nu, As_sigma8, mass_split) -> None:
+def test_ccl_factory_parameters_passthrough_all(
+    m_nu: float,
+    As_sigma8: tuple[float | None, float | None],
+    mass_split: NeutrinoMassSplits,
+) -> None:
     """Ensure all cosmology parameters provided by the user are passed through
     unchanged to the created CCL cosmology when using the CCLFactory/ModelingTools
     plumbing.
@@ -1259,7 +1283,7 @@ def test_ccl_factory_parameters_passthrough_all(m_nu, As_sigma8, mass_split) -> 
     specifically exercised since that was the reported failing case.
     """
     As, sigma8 = As_sigma8
-    cosmo_dict = {
+    cosmo_dict: dict[str, float | list[float]] = {
         "Omega_c": 0.2906682,
         "Omega_b": 0.04575,
         "h": 0.6714,
@@ -1295,7 +1319,8 @@ def test_ccl_factory_parameters_passthrough_all(m_nu, As_sigma8, mass_split) -> 
         cosmo_dict["m_nu_2"] = 0.02
         cosmo_dict["m_nu_3"] = 0.03
 
-    tools.update(ParamsMap(cosmo_dict))
+    # At this point the list form of m_nu has not yet replaced its scalar form.
+    tools.update(ParamsMap(cast(dict[str, float], cosmo_dict)))
     tools.prepare()
 
     if m_nu_is_list:

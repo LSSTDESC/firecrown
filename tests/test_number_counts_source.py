@@ -9,7 +9,7 @@ from firecrown import updatable
 def test_get_derived_parameters(
     harmonic_bin_1: mt.TomographicBin,
     tools_with_vanilla_cosmology: mtools.ModelingTools,
-):
+) -> None:
     ncs = nc.NumberCounts.create_ready(harmonic_bin_1, derived_scale=True)
     ncs.update(updatable.ParamsMap({"bin_1_bias": 1.0}))
     ncs.create_tracers(tools_with_vanilla_cosmology)

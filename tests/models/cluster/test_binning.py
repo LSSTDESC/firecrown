@@ -8,7 +8,7 @@ import sacc
 from firecrown.models.cluster import NDimensionalBin, SaccBin, TupleBin
 
 
-def test_bin_str():
+def test_bin_str() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -16,7 +16,7 @@ def test_bin_str():
     assert str(sb) == "[(0, 1), (4, 5), (1, 2)]\n"
 
 
-def test_create_sacc_bin_with_correct_dimension():
+def test_create_sacc_bin_with_correct_dimension() -> None:
     tracer = sacc.tracers.SurveyTracer("", 1)
     for i in range(10):
         tracers = [tracer for _ in range(i)]
@@ -25,7 +25,7 @@ def test_create_sacc_bin_with_correct_dimension():
         assert sb.dimension == i
 
 
-def test_sacc_bin_z_edges():
+def test_sacc_bin_z_edges() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -45,7 +45,7 @@ def test_sacc_bin_z_edges():
     assert sb.z_edges == (0, 1)
 
 
-def test_sacc_bin_z_edges_throws_when_multiple_z_bins():
+def test_sacc_bin_z_edges_throws_when_multiple_z_bins() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -54,7 +54,7 @@ def test_sacc_bin_z_edges_throws_when_multiple_z_bins():
         print(sb.z_edges)
 
 
-def test_sacc_bin_mass_proxy_edges_throws_when_multiple_mass_proxy_bins():
+def test_sacc_bin_mass_proxy_edges_throws_when_multiple_mass_proxy_bins() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -63,7 +63,7 @@ def test_sacc_bin_mass_proxy_edges_throws_when_multiple_mass_proxy_bins():
         print(sb.mass_proxy_edges)
 
 
-def test_sacc_bin_radius_edges_throws_when_multiple_radius_bins():
+def test_sacc_bin_radius_edges_throws_when_multiple_radius_bins() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -72,7 +72,7 @@ def test_sacc_bin_radius_edges_throws_when_multiple_radius_bins():
         print(sb.radius_edges)
 
 
-def test_sacc_bin_radius_center_throws_when_multiple_radius_bins():
+def test_sacc_bin_radius_center_throws_when_multiple_radius_bins() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -81,7 +81,7 @@ def test_sacc_bin_radius_center_throws_when_multiple_radius_bins():
         print(sb.radius_center)
 
 
-def test_sacc_bin_richness_edges():
+def test_sacc_bin_richness_edges() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     sb = SaccBin([tracer_z, tracer_lambda])
@@ -93,7 +93,7 @@ def test_sacc_bin_richness_edges():
     assert sb.mass_proxy_edges == (4, 5)
 
 
-def test_sacc_bin_radius_edges():
+def test_sacc_bin_radius_edges() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -113,7 +113,7 @@ def test_sacc_bin_radius_edges():
     assert sb.radius_edges == (1, 2)
 
 
-def test_sacc_bin_radius_center():
+def test_sacc_bin_radius_center() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
@@ -136,7 +136,7 @@ def test_sacc_bin_radius_center():
     assert radius_center == 1.5
 
 
-def test_equal_sacc_bins_are_equal():
+def test_equal_sacc_bins_are_equal() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     sb1 = SaccBin([tracer_z, tracer_lambda])
@@ -152,7 +152,7 @@ def test_equal_sacc_bins_are_equal():
     assert sb1 is not sb2
 
 
-def test_sacc_bin_different_edges_not_equal():
+def test_sacc_bin_different_edges_not_equal() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     sb1 = SaccBin([tracer_z, tracer_lambda])
@@ -176,7 +176,7 @@ def test_sacc_bin_different_edges_not_equal():
     assert sb1 != sb2
 
 
-def test_sacc_bin_different_dimensions_not_equal():
+def test_sacc_bin_different_dimensions_not_equal() -> None:
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_z2 = sacc.tracers.BinZTracer("", 1, 2)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
@@ -186,7 +186,7 @@ def test_sacc_bin_different_dimensions_not_equal():
     assert sb1 != sb2
 
 
-def test_sacc_bin_must_be_equal_type():
+def test_sacc_bin_must_be_equal_type() -> None:
     other_bin = Mock(spec=NDimensionalBin)
 
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
@@ -196,7 +196,7 @@ def test_sacc_bin_must_be_equal_type():
     assert sb != other_bin
 
 
-def test_create_tuple_bin():
+def test_create_tuple_bin() -> None:
     tb = TupleBin([(1, 2), (3, 4), (1, 2, 1.5)])
     assert tb is not None
     assert tb.dimension == 3
@@ -206,7 +206,7 @@ def test_create_tuple_bin():
     assert tb.radius_center == 1.5
 
 
-def test_tuple_bin_radius_center_requires_center_value():
+def test_tuple_bin_radius_center_requires_center_value() -> None:
     tb = TupleBin([(1, 2), (3, 4), (1, 2)])
 
     with pytest.raises(
@@ -215,7 +215,7 @@ def test_tuple_bin_radius_center_requires_center_value():
         _ = tb.radius_center
 
 
-def test_tuple_bins_are_equal():
+def test_tuple_bins_are_equal() -> None:
     tb1 = TupleBin([(1, 2), (3, 4)])
     tb2 = TupleBin([(1, 2), (3, 4)])
     assert tb1 == tb2
@@ -223,7 +223,7 @@ def test_tuple_bins_are_equal():
     assert tb1 is not tb2
 
 
-def test_tuple_bin_neq_sacc_bin():
+def test_tuple_bin_neq_sacc_bin() -> None:
     tb = TupleBin([(1, 2), (3, 4)])
     tracer_z = sacc.tracers.BinZTracer("", 3, 4)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 1, 2)
@@ -231,7 +231,7 @@ def test_tuple_bin_neq_sacc_bin():
     assert tb != sb
 
 
-def test_tuple_bin_different_dimensions_not_equal():
+def test_tuple_bin_different_dimensions_not_equal() -> None:
     tb1 = TupleBin([(1, 2), (3, 4), (5, 6)])
     tb2 = TupleBin([(1, 2), (3, 4)])
     assert tb1 != tb2
@@ -241,7 +241,7 @@ def test_tuple_bin_different_dimensions_not_equal():
     assert tb1 != tb2
 
 
-def test_tuple_bin_different_bins_not_equal():
+def test_tuple_bin_different_bins_not_equal() -> None:
     tb1 = TupleBin([(1, 2), (3, 4)])
     tb2 = TupleBin([(1, 2), (3, 5)])
     assert tb1 != tb2

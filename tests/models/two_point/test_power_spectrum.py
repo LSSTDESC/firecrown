@@ -19,7 +19,7 @@ from firecrown.models.two_point import (
 
 
 @pytest.fixture
-def mock_tools():
+def mock_tools() -> Mock:
     """Create a mock ModelingTools object."""
     tools = Mock(spec=ModelingTools)
 
@@ -39,7 +39,7 @@ def mock_tools():
 
 
 @pytest.fixture
-def mock_tracer_with_hm():
+def mock_tracer_with_hm() -> Mock:
     """Create a mock tracer that has halo model."""
     tracer = Mock(spec=Tracer)
     tracer.has_hm = True
@@ -55,7 +55,7 @@ def mock_tracer_with_hm():
 
 
 @pytest.fixture
-def mock_tracer_without_hm():
+def mock_tracer_without_hm() -> Mock:
     """Create a mock tracer that does not have halo model."""
     tracer = Mock(spec=Tracer)
     tracer.has_hm = False
@@ -65,7 +65,7 @@ def mock_tracer_without_hm():
     return tracer
 
 
-def test_both_tracers_have_hm(mock_tools, mock_tracer_with_hm):
+def test_both_tracers_have_hm(mock_tools: Mock, mock_tracer_with_hm: Mock) -> None:
     """Test case where both tracers have halo model."""
     tracer0 = mock_tracer_with_hm
     tracer1 = mock_tracer_with_hm
@@ -95,8 +95,10 @@ def test_both_tracers_have_hm(mock_tools, mock_tracer_with_hm):
 
 
 def test_only_first_tracer_has_hm(
-    mock_tools, mock_tracer_with_hm, mock_tracer_without_hm
-):
+    mock_tools: Mock,
+    mock_tracer_with_hm: Mock,
+    mock_tracer_without_hm: Mock,
+) -> None:
     """Test case where only the first tracer has halo model."""
     tracer0 = mock_tracer_with_hm
     tracer1 = mock_tracer_without_hm
@@ -120,8 +122,10 @@ def test_only_first_tracer_has_hm(
 
 
 def test_only_second_tracer_has_hm(
-    mock_tools, mock_tracer_with_hm, mock_tracer_without_hm
-):
+    mock_tools: Mock,
+    mock_tracer_with_hm: Mock,
+    mock_tracer_without_hm: Mock,
+) -> None:
     """Test case where only the second tracer has halo model."""
     tracer0 = mock_tracer_without_hm
     tracer1 = mock_tracer_with_hm
@@ -144,7 +148,7 @@ def test_only_second_tracer_has_hm(
         assert result == mock_pk_total
 
 
-def test_mixed_tracer_requires_shear(mock_tools):
+def test_mixed_tracer_requires_shear(mock_tools: Mock) -> None:
     """Test that when not both tracers have HM, at least one must be 'shear'."""
     # Create two tracers without HM and without shear to trigger AssertionError
     tracer0 = Mock(spec=Tracer)
@@ -165,7 +169,9 @@ def test_mixed_tracer_requires_shear(mock_tools):
         at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
 
-def test_profile_assertion_for_mixed_hm(mock_tools, mock_tracer_without_hm):
+def test_profile_assertion_for_mixed_hm(
+    mock_tools: Mock, mock_tracer_without_hm: Mock
+) -> None:
     """Test assertion when HM tracer has None halo_profile in mixed case."""
     # Create HM tracer with None halo_profile
     tracer0 = Mock(spec=Tracer)
@@ -180,7 +186,7 @@ def test_profile_assertion_for_mixed_hm(mock_tools, mock_tracer_without_hm):
         at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
 
-def test_ia_bias_exponent_both_hm(mock_tools, mock_tracer_with_hm):
+def test_ia_bias_exponent_both_hm(mock_tools: Mock, mock_tracer_with_hm: Mock) -> None:
     """Test that IA bias exponent is 2 when both tracers have HM."""
     tracer0 = mock_tracer_with_hm
     tracer1 = mock_tracer_with_hm
@@ -221,8 +227,10 @@ def test_ia_bias_exponent_both_hm(mock_tools, mock_tracer_with_hm):
 
 
 def test_halo_profile_nfw_configuration(
-    mock_tools, mock_tracer_with_hm, mock_tracer_without_hm
-):
+    mock_tools: Mock,
+    mock_tracer_with_hm: Mock,
+    mock_tracer_without_hm: Mock,
+) -> None:
     """Test that HaloProfileNFW is configured correctly for non-HM tracers."""
     tracer0 = mock_tracer_with_hm
     tracer1 = mock_tracer_without_hm
@@ -257,7 +265,7 @@ def test_halo_profile_nfw_configuration(
         assert result == mock_pk_total
 
 
-def test_pk2d_addition_result(mock_tools, mock_tracer_with_hm):
+def test_pk2d_addition_result(mock_tools: Mock, mock_tracer_with_hm: Mock) -> None:
     """Test that the function returns the sum of 1-halo and 2-halo power spectra."""
     tracer0 = mock_tracer_with_hm
     tracer1 = mock_tracer_with_hm
@@ -285,7 +293,7 @@ def test_pk2d_addition_result(mock_tools, mock_tracer_with_hm):
         assert result is mock_pk_total  # Ensure it's the exact same object
 
 
-def test_calculate_pk_with_existing_pk(mock_tools):
+def test_calculate_pk_with_existing_pk(mock_tools: Mock) -> None:
     """Test calculate_pk when power spectrum already exists in tools."""
 
     pk_name = "existing_pk"
@@ -303,7 +311,7 @@ def test_calculate_pk_with_existing_pk(mock_tools):
     assert result == mock_pk
 
 
-def test_calculate_pk_with_pt_tracers():
+def test_calculate_pk_with_pt_tracers() -> None:
     """Test calculate_pk when at least one tracer has PT."""
 
     pk_name = "pt_pk"
@@ -330,7 +338,7 @@ def test_calculate_pk_with_pt_tracers():
         assert result == mock_pk
 
 
-def test_calculate_pk_with_hm_tracers():
+def test_calculate_pk_with_hm_tracers() -> None:
     """Test calculate_pk when at least one tracer has HM."""
 
     pk_name = "hm_pk"
@@ -357,7 +365,7 @@ def test_calculate_pk_with_hm_tracers():
         assert result == mock_pk
 
 
-def test_calculate_pk_no_valid_method():
+def test_calculate_pk_no_valid_method() -> None:
     """Test calculate_pk raises ValueError when no valid method exists."""
 
     pk_name = "invalid_pk"
@@ -376,7 +384,7 @@ def test_calculate_pk_no_valid_method():
         calculate_pk(pk_name, mock_tools, tracer0, tracer1)
 
 
-def test_at_least_one_tracer_has_pt_both_have_pt():
+def test_at_least_one_tracer_has_pt_both_have_pt() -> None:
     """Test at_least_one_tracer_has_pt when both tracers have PT."""
 
     mock_tools = Mock(spec=ModelingTools)
@@ -399,7 +407,7 @@ def test_at_least_one_tracer_has_pt_both_have_pt():
     assert result == mock_pk
 
 
-def test_at_least_one_tracer_has_pt_first_missing_pt():
+def test_at_least_one_tracer_has_pt_first_missing_pt() -> None:
     """Test at_least_one_tracer_has_pt when first tracer does not have PT."""
 
     mock_tools = Mock(spec=ModelingTools)
@@ -423,7 +431,7 @@ def test_at_least_one_tracer_has_pt_first_missing_pt():
         assert result == mock_pk
 
 
-def test_at_least_one_tracer_has_pt_second_missing_pt():
+def test_at_least_one_tracer_has_pt_second_missing_pt() -> None:
     """Test at_least_one_tracer_has_pt when second tracer does not have PT."""
 
     mock_tools = Mock(spec=ModelingTools)

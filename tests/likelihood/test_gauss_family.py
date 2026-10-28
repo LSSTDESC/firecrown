@@ -7,7 +7,7 @@ import pytest
 import firecrown.likelihood._gaussian as g
 
 
-def test_init_rejects_non_statistics():
+def test_init_rejects_non_statistics() -> None:
     with pytest.raises(
         ValueError,
         match=re.escape(

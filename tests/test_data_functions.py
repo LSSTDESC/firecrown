@@ -23,8 +23,12 @@ from firecrown.data_functions import ensure_no_overlaps
     ],
 )
 def test_ensure_no_overlaps(
-    measurement, index_set, index_sets, other_measurements, expected_result
-):
+    measurement: str,
+    index_set: set[int],
+    index_sets: list[set[int]],
+    other_measurements: list[str],
+    expected_result: type[ValueError] | None,
+) -> None:
     if expected_result is None:
         ensure_no_overlaps(measurement, index_set, index_sets, other_measurements)
     else:
@@ -34,12 +38,12 @@ def test_ensure_no_overlaps(
 
 
 # Additional test for empty other_measurements and index_sets
-def test_empty_other_measurements_and_index_sets():
+def test_empty_other_measurements_and_index_sets() -> None:
     ensure_no_overlaps("A", {1, 2}, [], [])
 
 
 # Additional test for overlap with the last set in the list
-def test_overlap_with_last_set():
+def test_overlap_with_last_set() -> None:
     with pytest.raises(ValueError) as excinfo:
         ensure_no_overlaps("A", {1}, [{3, 4}, {5, 6}, {1, 7}], ["B", "C", "D"])
     assert "overlap" in str(excinfo.value), "Error message should contain 'overlap'"
@@ -47,10 +51,10 @@ def test_overlap_with_last_set():
 
 # Test for edge case where the index_set is empty but there are non-empty set
 # in index_sets
-def test_empty_index_set_with_non_empty_index_sets():
+def test_empty_index_set_with_non_empty_index_sets() -> None:
     ensure_no_overlaps("A", set(), [{1}, {2}], ["B", "C"])
 
 
 # Test for edge case where all sets are empty
-def test_all_sets_empty():
+def test_all_sets_empty() -> None:
     ensure_no_overlaps("A", set(), [set(), set()], ["B", "C"])

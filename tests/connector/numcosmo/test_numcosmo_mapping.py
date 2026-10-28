@@ -1,10 +1,11 @@
 """Unit tests for the numcosmo Mapping connector."""
 
-import unittest.mock as mock
 from typing import cast
+from unittest import mock
 
 import pyccl as ccl
 import pytest
+import sacc
 from numcosmo_py import GObject, Nc, Ncm
 
 from firecrown.connector.numcosmo import (
@@ -17,9 +18,13 @@ from firecrown.connector.numcosmo import (
 )
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._likelihood import Likelihood, NamedParameters
+from firecrown.likelihood._statistic import TrivialStatistic
 from firecrown.modeling_tools import ModelingTools, PoweSpecAmplitudeParameter
+from tests._types import NumCosmoCosmologyFixture
 
-Ncm.cfg_init()
+# NumCosmo's introspected static functions and enum members confuse Pylint.
+# Keep the corresponding suppressions local to the affected calls below.
+Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 
 
 @pytest.fixture(name="map_cosmo_dist")
@@ -28,19 +33,9 @@ def fixture_map_cosmo_dist() -> MappingNumCosmo:
     return MappingNumCosmo(dist=Nc.Distance.new(6.0))
 
 
-@pytest.fixture(name="map_cosmo_spec_nl")
-def fixture_map_cosmo_spec_nl(numcosmo_cosmo) -> MappingNumCosmo:
-    """Return a MappingNumCosmo instance with the specified p_ml, p_mnl, and dist."""
-    return MappingNumCosmo(
-        p_ml=numcosmo_cosmo["p_ml"],
-        p_mnl=numcosmo_cosmo["p_mnl"],
-        dist=numcosmo_cosmo["dist"],
-    )
-
-
 def test_create_params_map_non_existing_model(
     map_cosmo_dist: MappingNumCosmo,
-):
+) -> None:
     """Test the NumCosmo mapping connector create_params_map
     with an non existing type."""
 
@@ -58,7 +53,7 @@ def test_create_params_map_non_existing_model(
 
 def test_numcosmo_mapping_create_params_map_absent_model(
     map_cosmo_dist: MappingNumCosmo,
-):
+) -> None:
     """Test the NumCosmo mapping connector create_params_map
     with an existing type but not present in the model set."""
 
@@ -76,7 +71,7 @@ def test_numcosmo_mapping_create_params_map_absent_model(
 
 def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters(
     map_cosmo_dist: MappingNumCosmo,
-):
+) -> None:
     """Test the NumCosmo mapping connector create_params_map
     with an existing type but not present in the model set."""
 
@@ -128,7 +123,7 @@ NcmModelBuilder:
         fit-type: 0
 """
 
-    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)  # pylint: disable=no-member
     mb_model1: Ncm.ModelBuilder = cast(
         Ncm.ModelBuilder, ser.from_yaml(my_model1_dc_yaml)  # pylint: disable=no-member
     )
@@ -159,7 +154,7 @@ NcmModelBuilder:
         create_params_map(["MyModel1", "MyModel2"], mset, map_cosmo_dist.mapping)
 
 
-def test_numcosmo_mapping_unsupported(map_cosmo_dist: MappingNumCosmo):
+def test_numcosmo_mapping_unsupported(map_cosmo_dist: MappingNumCosmo) -> None:
     """Test the NumCosmo mapping connector with an unsupported model."""
 
     cosmo = Nc.HICosmoDEJbp()
@@ -171,7 +166,7 @@ def test_numcosmo_mapping_unsupported(map_cosmo_dist: MappingNumCosmo):
         map_cosmo_dist.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.SIGMA8)
 
 
-def test_numcosmo_mapping_missing_hiprim(map_cosmo_dist: MappingNumCosmo):
+def test_numcosmo_mapping_missing_hiprim(map_cosmo_dist: MappingNumCosmo) -> None:
     """Test the NumCosmo mapping connector with a model missing hiprim."""
 
     cosmo = Nc.HICosmoDECpl()
@@ -185,7 +180,7 @@ def test_numcosmo_mapping_missing_hiprim(map_cosmo_dist: MappingNumCosmo):
         map_cosmo_dist.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.AS)
 
 
-def test_numcosmo_mapping_invalid_hiprim(map_cosmo_dist: MappingNumCosmo):
+def test_numcosmo_mapping_invalid_hiprim(map_cosmo_dist: MappingNumCosmo) -> None:
     """Test the NumCosmo mapping connector with a model an invalid hiprim."""
 
     prim = Nc.HIPrimAtan()
@@ -204,9 +199,15 @@ def test_numcosmo_mapping_invalid_hiprim(map_cosmo_dist: MappingNumCosmo):
     "numcosmo_cosmo_fixture",
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
-def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
+def test_numcosmo_mapping(
+    numcosmo_cosmo_fixture: str,
+    request: pytest.FixtureRequest,
+) -> None:
     """Test the NumCosmo mapping connector consistence."""
-    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+    # Cast: parametrization selects only cosmology fixtures with this shared shape.
+    numcosmo_cosmo = cast(
+        NumCosmoCosmologyFixture, request.getfixturevalue(numcosmo_cosmo_fixture)
+    )
 
     cosmo = numcosmo_cosmo["cosmo"]
     map_cosmo = MappingNumCosmo(
@@ -231,9 +232,15 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
     "numcosmo_cosmo_fixture",
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
-def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
+def test_numcosmo_serialize_mapping(
+    numcosmo_cosmo_fixture: str,
+    request: pytest.FixtureRequest,
+) -> None:
     """Test the NumCosmo mapping connector consistence."""
-    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+    # Cast: parametrization selects only cosmology fixtures with this shared shape.
+    numcosmo_cosmo = cast(
+        NumCosmoCosmologyFixture, request.getfixturevalue(numcosmo_cosmo_fixture)
+    )
 
     cosmo = numcosmo_cosmo["cosmo"]
     map_cosmo = MappingNumCosmo(
@@ -244,7 +251,7 @@ def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
 
     assert map_cosmo.mapping_name == "default"
 
-    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)  # pylint: disable=no-member
 
     map_cosmo_dup = ser.dup_obj(map_cosmo)  # pylint: disable=no-member
     assert isinstance(map_cosmo_dup, MappingNumCosmo)
@@ -277,15 +284,18 @@ def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
 def test_numcosmo_data(
-    numcosmo_cosmo_fixture,
-    trivial_stats,
-    sacc_data_for_trivial_stat,
-    nc_model_trivial,
-    request,
-):
+    numcosmo_cosmo_fixture: str,
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    nc_model_trivial: type[Ncm.Model],
+    request: pytest.FixtureRequest,
+) -> None:
     """Test the NumCosmo data connector for NcmData."""
 
-    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+    # Cast: parametrization selects only cosmology fixtures with this shared shape.
+    numcosmo_cosmo = cast(
+        NumCosmoCosmologyFixture, request.getfixturevalue(numcosmo_cosmo_fixture)
+    )
 
     cosmo = numcosmo_cosmo["cosmo"]
     map_cosmo = MappingNumCosmo(
@@ -328,15 +338,18 @@ def test_numcosmo_data(
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
 def test_numcosmo_gauss_cov(
-    numcosmo_cosmo_fixture,
-    trivial_stats,
-    sacc_data_for_trivial_stat,
-    nc_model_trivial,
-    request,
-):
+    numcosmo_cosmo_fixture: str,
+    trivial_stats: list[TrivialStatistic],
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    nc_model_trivial: type[Ncm.Model],
+    request: pytest.FixtureRequest,
+) -> None:
     """Test the NumCosmo data connector for NcmDataGaussCov."""
 
-    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+    # Cast: parametrization selects only cosmology fixtures with this shared shape.
+    numcosmo_cosmo = cast(
+        NumCosmoCosmologyFixture, request.getfixturevalue(numcosmo_cosmo_fixture)
+    )
 
     cosmo = numcosmo_cosmo["cosmo"]
     map_cosmo = MappingNumCosmo(
@@ -386,13 +399,16 @@ def test_numcosmo_gauss_cov(
     ],
 )
 def test_numcosmo_serialize_likelihood(
-    numcosmo_cosmo_fixture,
-    likelihood_file,
-    request,
-):
+    numcosmo_cosmo_fixture: str,
+    likelihood_file: str,
+    request: pytest.FixtureRequest,
+) -> None:
     """Test the NumCosmo data connector for NcmData with serialization."""
 
-    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+    # Cast: parametrization selects only cosmology fixtures with this shared shape.
+    numcosmo_cosmo = cast(
+        NumCosmoCosmologyFixture, request.getfixturevalue(numcosmo_cosmo_fixture)
+    )
 
     map_cosmo = MappingNumCosmo(
         p_ml=numcosmo_cosmo["p_ml"],
@@ -413,7 +429,7 @@ def test_numcosmo_serialize_likelihood(
     assert fc_data.get_length() > 0
     assert fc_data.get_dof() > 0
 
-    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)  # pylint: disable=no-member
 
     fc_data_dup = ser.dup_obj(fc_data)  # pylint: disable=no-member
     assert isinstance(fc_data_dup, (NumCosmoData, NumCosmoGaussCov))
@@ -435,14 +451,16 @@ def test_numcosmo_serialize_likelihood(
     assert fc_data_dup.model_list == fc_data.model_list
 
 
-def test_numcosmo_mapping_deprecated_require_nonlinear_pk():
+def test_numcosmo_mapping_deprecated_require_nonlinear_pk() -> None:
     """Test the MappingNumCosmo deprecated require_nonlinear_pk."""
 
     with pytest.deprecated_call():
         _ = MappingNumCosmo(require_nonlinear_pk=True)
 
 
-def test_numcosmo_mapping_sigma8_missing_pk(map_cosmo_dist: MappingNumCosmo):
+def test_numcosmo_mapping_sigma8_missing_pk(
+    map_cosmo_dist: MappingNumCosmo,
+) -> None:
     """Test the MappingNumCosmo with sigma8 as a parameter but missing pk."""
 
     cosmo = Nc.HICosmoDEXcdm()
@@ -457,12 +475,14 @@ def test_numcosmo_mapping_sigma8_missing_pk(map_cosmo_dist: MappingNumCosmo):
 
 
 @pytest.fixture(name="numcosmo_cosmo")
-def fixture_numcosmo_cosmo():
+def fixture_numcosmo_cosmo() -> mock.Mock:
     """Create a mock NumCosmo cosmology instance."""
     return mock.Mock(spec=Nc.HICosmo)
 
 
-def test_get_amplitude_parameters_sigma8_no_powerspectrum(numcosmo_cosmo):
+def test_get_amplitude_parameters_sigma8_no_powerspectrum(
+    numcosmo_cosmo: mock.Mock,
+) -> None:
     """Test the get_amplitude_parameters function with sigma8 as a parameter but
     without a power spectrum."""
 
@@ -474,7 +494,7 @@ def test_get_amplitude_parameters_sigma8_no_powerspectrum(numcosmo_cosmo):
         )
 
 
-def test_accessors_with_no_powerspectrum():
+def test_accessors_with_no_powerspectrum() -> None:
     mapping = MappingNumCosmo()
     assert mapping.p_ml is None
     assert mapping.p_mnl is None
@@ -483,21 +503,27 @@ def test_accessors_with_no_powerspectrum():
     mapping.p_mnl = None
     assert mapping.p_mnl is None
 
-    linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    linear = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+    )
     nonlinear = Nc.PowspecMNLHaloFit.new(linear, 3.0, 1.0e-5)
     mapping.p_mnl = nonlinear
     assert mapping._p is None  # pylint: disable=protected-access
 
 
-def test_accessors_with_only_linear_powerspectrum():
-    linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+def test_accessors_with_only_linear_powerspectrum() -> None:
+    linear = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+    )
     mapping = MappingNumCosmo(p_ml=linear)
     assert mapping._p is not None  # pylint: disable=protected-access
     mapping.p_ml = linear
     assert mapping.p_mnl is None
 
     # Change to a different linear power spectrum
-    other_linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncBBKS.new())
+    other_linear = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncBBKS.new()  # pylint: disable=no-value-for-parameter
+    )
     mapping.p_ml = other_linear
     assert mapping._p is not None  # pylint: disable=protected-access
     assert mapping.p_ml == other_linear
@@ -511,13 +537,16 @@ def test_accessors_with_only_linear_powerspectrum():
     assert mapping.p_mnl == nonlinear
 
 
-def test_mapping_ccl_args_bg_only():
+def test_mapping_ccl_args_bg_only() -> None:
     """Test the MappingNumCosmo class with background only."""
     mapping = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     assert mapping.p_ml is None
     assert mapping.p_mnl is None
 
-    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(
+        prim=Nc.HIPrimPowerLaw.new(),  # pylint: disable=no-value-for-parameter
+        reion=Nc.HIReionCamb.new(),  # pylint: disable=no-value-for-parameter
+    )
 
     mset = Ncm.MSet.new_array([cosmo])
     mset.prepare_fparam_map()
@@ -529,15 +558,20 @@ def test_mapping_ccl_args_bg_only():
     assert "pk_nonlin" not in ccl_args
 
 
-def test_mapping_ccl_args_bg_pk_ml():
+def test_mapping_ccl_args_bg_pk_ml() -> None:
     """Test the MappingNumCosmo class with background and pk_ml."""
     mapping = MappingNumCosmo(
         dist=Nc.Distance.new(6.0),
-        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
+        p_ml=Nc.PowspecMLTransfer.new(
+            Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+        ),
     )
     assert mapping.p_mnl is None
 
-    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(
+        prim=Nc.HIPrimPowerLaw.new(),  # pylint: disable=no-value-for-parameter
+        reion=Nc.HIReionCamb.new(),  # pylint: disable=no-value-for-parameter
+    )
 
     mset = Ncm.MSet.new_array([cosmo])
     mset.prepare_fparam_map()
@@ -549,9 +583,11 @@ def test_mapping_ccl_args_bg_pk_ml():
     assert "pk_nonlin" not in ccl_args
 
 
-def test_mapping_ccl_args_bg_pk_ml_pk_mnl():
+def test_mapping_ccl_args_bg_pk_ml_pk_mnl() -> None:
     """Test the MappingNumCosmo class with background, pk_ml and pk_mnl."""
-    p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    p_ml = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+    )
     mapping = MappingNumCosmo(
         dist=Nc.Distance.new(6.0),
         p_ml=p_ml,
@@ -560,7 +596,10 @@ def test_mapping_ccl_args_bg_pk_ml_pk_mnl():
     assert mapping.p_ml is not None
     assert mapping.p_mnl is not None
 
-    cosmo = Nc.HICosmoDEXcdm(prim=Nc.HIPrimPowerLaw.new(), reion=Nc.HIReionCamb.new())
+    cosmo = Nc.HICosmoDEXcdm(
+        prim=Nc.HIPrimPowerLaw.new(),  # pylint: disable=no-value-for-parameter
+        reion=Nc.HIReionCamb.new(),  # pylint: disable=no-value-for-parameter
+    )
 
     mset = Ncm.MSet.new_array([cosmo])
     mset.prepare_fparam_map()
@@ -572,9 +611,11 @@ def test_mapping_ccl_args_bg_pk_ml_pk_mnl():
     assert "pk_nonlin" in ccl_args
 
 
-def test_mapping_ccl_args_bg_pk_mnl():
+def test_mapping_ccl_args_bg_pk_mnl() -> None:
     """Test the MappingNumCosmo class with background, pk_ml and pk_mnl."""
-    p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    p_ml = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+    )
     with pytest.raises(
         AssertionError, match="PowspecML object must be provided when using PowspecMNL"
     ):

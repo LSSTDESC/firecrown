@@ -1,6 +1,7 @@
 """Tests for the symbol_reference_checker module."""
 
 import json
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -16,7 +17,7 @@ from firecrown.fctools.symbol_reference_checker import (
 runner = CliRunner()
 
 
-def test_extract_code_spans_simple():
+def test_extract_code_spans_simple() -> None:
     """Test extracting code spans from simple markdown."""
     content = "This is `code1` and `code2` in text."
     spans = extract_code_spans(content)
@@ -25,7 +26,7 @@ def test_extract_code_spans_simple():
     assert spans[1] == (1, "code2")
 
 
-def test_extract_code_spans_multiline():
+def test_extract_code_spans_multiline() -> None:
     """Test extracting code spans from multiple lines."""
     content = """Line 1 with `span1`
 Line 2 with `span2` and `span3`
@@ -39,14 +40,14 @@ Line 4 with `span4`"""
     assert spans[3] == (4, "span4")
 
 
-def test_extract_code_spans_empty():
+def test_extract_code_spans_empty() -> None:
     """Test extracting code spans from text without any."""
     content = "No code spans here at all."
     spans = extract_code_spans(content)
     assert len(spans) == 0
 
 
-def test_check_qmd_file_valid_symbols(tmp_path):
+def test_check_qmd_file_valid_symbols(tmp_path: Path) -> None:
     """Test checking a file with valid symbol references."""
     # Create a test .qmd file
     qmd_file = tmp_path / "test.qmd"
@@ -66,7 +67,7 @@ This mentions `firecrown.parameters.Parameter` and `Updatable`.
     assert len(errors) == 0
 
 
-def test_check_qmd_file_invalid_fully_qualified(tmp_path):
+def test_check_qmd_file_invalid_fully_qualified(tmp_path: Path) -> None:
     """Test checking a file with invalid fully-qualified symbol."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("""
@@ -83,7 +84,7 @@ This mentions `firecrown.parameters.Paramater` (typo).
     assert "Line 2" in errors[0]
 
 
-def test_check_qmd_file_invalid_unqualified(tmp_path):
+def test_check_qmd_file_invalid_unqualified(tmp_path: Path) -> None:
     """Test checking a file with invalid unqualified symbol."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("""
@@ -99,7 +100,7 @@ This mentions `Updateable` (typo, should be Updatable).
     assert "Updateable" in errors[0]
 
 
-def test_check_qmd_file_multiple_errors(tmp_path):
+def test_check_qmd_file_multiple_errors(tmp_path: Path) -> None:
     """Test that all errors are reported, not just the first."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("""
@@ -119,7 +120,7 @@ Line 3 has `InvalidClass3`
     assert any("InvalidClass3" in e for e in errors)
 
 
-def test_check_qmd_file_with_exclude_pattern(tmp_path):
+def test_check_qmd_file_with_exclude_pattern(tmp_path: Path) -> None:
     """Test that exclude pattern works."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("""
@@ -141,7 +142,7 @@ This has `firecrown.real.RealClass` which should be checked.
     assert len(errors_with_exclude) == 0
 
 
-def test_check_qmd_file_lowercase_code_not_checked(tmp_path):
+def test_check_qmd_file_lowercase_code_not_checked(tmp_path: Path) -> None:
     """Test that lowercase code spans are not checked as symbols."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("""
@@ -155,7 +156,7 @@ This has `some_function` and `another_var` which are lowercase.
     assert len(errors) == 0
 
 
-def test_check_qmd_file_partial_module_path(tmp_path):
+def test_check_qmd_file_partial_module_path(tmp_path: Path) -> None:
     """Test validation of partial module paths."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("""
@@ -171,7 +172,7 @@ Reference to `firecrown.likelihood` module.
     assert len(errors) == 0
 
 
-def test_main_success(tmp_path):
+def test_main_success(tmp_path: Path) -> None:
     """Test main function with valid symbols."""
     # Create test files
     qmd_file = tmp_path / "test.qmd"
@@ -189,7 +190,7 @@ def test_main_success(tmp_path):
     assert "No invalid symbol references" in result.stdout
 
 
-def test_main_with_errors(tmp_path):
+def test_main_with_errors(tmp_path: Path) -> None:
     """Test main function with invalid symbols."""
     # Create test files
     qmd_file = tmp_path / "test.qmd"
@@ -207,21 +208,22 @@ def test_main_with_errors(tmp_path):
     assert "firecrown.invalid.Symbol" in result.stderr
 
 
-def test_main_missing_symbol_map(tmp_path):
+def test_main_missing_symbol_map(tmp_path: Path) -> None:
     """Test main function with missing symbol map file."""
     result = runner.invoke(app, [str(tmp_path), str(tmp_path / "nonexistent.json")])
 
     assert result.exit_code != 0
 
 
-def test_validate_symbol_map_rejects_non_string_value():
+def test_validate_symbol_map_rejects_non_string_value() -> None:
+    symbol_map: dict[str, object] = {"symbol": 123}
     with pytest.raises(SystemExit) as exc_info:
-        _validate_symbol_map({"symbol": 123})
+        _validate_symbol_map(symbol_map)
 
     assert exc_info.value.code == 1
 
 
-def test_main_with_exclude_pattern(tmp_path):
+def test_main_with_exclude_pattern(tmp_path: Path) -> None:
     """Test main function with exclude pattern."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("Example: `firecrown.example.ExampleClass`")
@@ -241,7 +243,9 @@ def test_main_with_exclude_pattern(tmp_path):
     assert result.exit_code == 0
 
 
-def test_load_external_symbols_read_error(tmp_path, capsys):
+def test_load_external_symbols_read_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test _load_external_symbols handles OSError gracefully."""
     # pylint: disable=import-outside-toplevel
     from firecrown.fctools.symbol_reference_checker import (
@@ -263,7 +267,9 @@ def test_load_external_symbols_read_error(tmp_path, capsys):
     assert "Warning" in captured.err or captured.err == ""
 
 
-def test_load_external_symbols_unicode_error(tmp_path, capsys):
+def test_load_external_symbols_unicode_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test _load_external_symbols handles UnicodeDecodeError gracefully."""
     # pylint: disable=import-outside-toplevel
     from firecrown.fctools.symbol_reference_checker import (
@@ -284,7 +290,7 @@ def test_load_external_symbols_unicode_error(tmp_path, capsys):
     assert "Warning" in captured.err or captured.err == ""
 
 
-def test_load_external_symbols_with_comments_and_empty_lines(tmp_path):
+def test_load_external_symbols_with_comments_and_empty_lines(tmp_path: Path) -> None:
     """Test _load_external_symbols filters comments and empty lines."""
     # pylint: disable=import-outside-toplevel
     from firecrown.fctools.symbol_reference_checker import (
@@ -309,7 +315,9 @@ ValidSymbol3
     assert result == {"ValidSymbol1", "ValidSymbol2", "ValidSymbol3"}
 
 
-def test_compile_exclude_pattern_invalid_regex(capsys):
+def test_compile_exclude_pattern_invalid_regex(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Test _compile_exclude_pattern handles invalid regex."""
     # pylint: disable=import-outside-toplevel
     from firecrown.fctools.symbol_reference_checker import (
@@ -327,7 +335,9 @@ def test_compile_exclude_pattern_invalid_regex(capsys):
     assert "Warning" in captured.err
 
 
-def test_check_qmd_file_unqualified_symbol_also_fully_qualified(tmp_path):
+def test_check_qmd_file_unqualified_symbol_also_fully_qualified(
+    tmp_path: Path,
+) -> None:
     """Test unqualified symbol that exists in symbol map without dots.
 
     This tests the case where a symbol like `CustomClass` is in the symbol
@@ -350,7 +360,7 @@ def test_check_qmd_file_unqualified_symbol_also_fully_qualified(tmp_path):
     assert len(errors) == 0
 
 
-def test_main_with_external_symbols_file(tmp_path):
+def test_main_with_external_symbols_file(tmp_path: Path) -> None:
     """Test main function with external symbols file."""
     # Create test files
     qmd_file = tmp_path / "test.qmd"
@@ -378,7 +388,9 @@ def test_main_with_external_symbols_file(tmp_path):
     assert "No invalid symbol references" in result.stdout
 
 
-def test_check_qmd_file_with_invalid_exclude_pattern(tmp_path, capsys):
+def test_check_qmd_file_with_invalid_exclude_pattern(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test check_qmd_file handles invalid exclude pattern gracefully."""
     qmd_file = tmp_path / "test.qmd"
     qmd_file.write_text("Reference: `firecrown.invalid.Symbol`")
@@ -396,10 +408,8 @@ def test_check_qmd_file_with_invalid_exclude_pattern(tmp_path, capsys):
     assert "Warning" in captured.err
 
 
-def test_check_qmd_file_unqualified_not_in_fully_qualified():
+def test_check_qmd_file_unqualified_not_in_fully_qualified() -> None:
     """Test check_qmd_file with unqualified symbol not in fully_qualified set."""
-    from pathlib import Path  # pylint: disable=import-outside-toplevel
-
     qmd_file = Path("test.qmd")
     # Use an uppercase unqualified symbol that doesn't exist
     content = "Reference to `UnknownSymbol` in text."

@@ -28,14 +28,14 @@ CLUSTER_CASES: dict[str, tuple[type[AnalysisBuilder], dict[str, Any]]] = {
 
 
 @pytest.fixture(name="target_framework", params=Frameworks)
-def fixture_target_framework(request) -> Frameworks:
+def fixture_target_framework(request: pytest.FixtureRequest) -> Frameworks:
     """Generate a target framework for all frameworks."""
     return request.param
 
 
 @pytest.fixture(name="cluster_example", params=CLUSTER_CASES)
 def fixture_cluster_example(
-    request, target_framework: Frameworks, tmp_path: Path
+    request: pytest.FixtureRequest, target_framework: Frameworks, tmp_path: Path
 ) -> tuple[Path, Frameworks]:
     """Generate each cluster example for all frameworks."""
     example_cls, options = CLUSTER_CASES[request.param]

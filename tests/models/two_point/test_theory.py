@@ -12,24 +12,28 @@ from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import ApplyInterpolationWhen, TwoPointTheory
 from firecrown.updatable import ParamsMap
+from firecrown.updatable import UpdatableUsageRecord
 from firecrown.utils import ClIntegrationOptions
 
 # pylint: disable=protected-access
 
 
 @pytest.fixture(name="mock_source")
-def fixture_mock_source():
+def fixture_mock_source() -> Mock:
     """Create a mock source that behaves like a real Updatable Source."""
     source = Mock(spec=Source)
     source.sacc_tracer = "tracer_1"
     source.is_updated = Mock(return_value=False)
 
-    def update_side_effect(_params, _updated_record=None):
+    def update_side_effect(
+        _params: ParamsMap,
+        _updated_record: list[UpdatableUsageRecord] | None = None,
+    ) -> None:
         if source.is_updated():
             return  # Mimic Updatable: do nothing if already updated
         source.is_updated.return_value = True
 
-    def reset_side_effect():
+    def reset_side_effect() -> None:
         source.is_updated.return_value = False
 
     source.update = Mock(side_effect=update_side_effect)
@@ -38,18 +42,21 @@ def fixture_mock_source():
 
 
 @pytest.fixture(name="mock_source_pair")
-def fixture_mock_source_pair(mock_source):
+def fixture_mock_source_pair(mock_source: Mock) -> tuple[Mock, Mock]:
     """Create a pair of mock sources."""
     source2 = Mock(spec=Source)
     source2.sacc_tracer = "tracer_2"
     source2.is_updated = Mock(return_value=False)
 
-    def update_side_effect2(_params, _updated_record=None):
+    def update_side_effect2(
+        _params: ParamsMap,
+        _updated_record: list[UpdatableUsageRecord] | None = None,
+    ) -> None:
         if source2.is_updated():
             return
         source2.is_updated.return_value = True
 
-    def reset_side_effect2():
+    def reset_side_effect2() -> None:
         source2.is_updated.return_value = False
 
     source2.update = Mock(side_effect=update_side_effect2)
@@ -57,32 +64,7 @@ def fixture_mock_source_pair(mock_source):
     return (mock_source, source2)
 
 
-class FakeSource(Source):
-    """A minimal concrete Source implementation for testing."""
-
-    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
-        pass
-
-    def _read(self, sacc_data: sacc.Sacc) -> None:
-        pass
-
-    def _update_source(self, params: ParamsMap) -> None:
-        pass
-
-    def get_scale(self) -> float:
-        return 1.0
-
-    def create_tracers(self, tools: ModelingTools):
-        return []
-
-
-@pytest.fixture
-def source_pair():
-    """Create a pair of concrete FakeSource instances."""
-    return (FakeSource("tracer_1"), FakeSource("tracer_2"))
-
-
-def test_two_point_theory_initialization():
+def test_two_point_theory_initialization() -> None:
     """Test basic TwoPointTheory initialization."""
     source1 = Mock()
     source2 = Mock()
@@ -100,7 +82,7 @@ def test_two_point_theory_initialization():
     assert not theory.cells
 
 
-def test_two_point_theory_with_custom_interp_ells():
+def test_two_point_theory_with_custom_interp_ells() -> None:
     """Test TwoPointTheory with custom interpolation ells generator."""
     source1 = Mock()
     source2 = Mock()
@@ -117,7 +99,7 @@ def test_two_point_theory_with_custom_interp_ells():
     assert len(theory.ells_for_xi) > 0
 
 
-def test_two_point_theory_with_ell_or_theta_config():
+def test_two_point_theory_with_ell_or_theta_config() -> None:
     """Test TwoPointTheory initialization with ell_or_theta configuration."""
     source1 = Mock()
     source2 = Mock()
@@ -134,7 +116,7 @@ def test_two_point_theory_with_ell_or_theta_config():
     assert theory.ell_or_theta_config == ell_or_theta
 
 
-def test_two_point_theory_with_tracers():
+def test_two_point_theory_with_tracers() -> None:
     """Test TwoPointTheory initialization with explicit tracer names."""
     source1 = Mock()
     source2 = Mock()
@@ -149,7 +131,7 @@ def test_two_point_theory_with_tracers():
     assert theory.sacc_tracers == tracers
 
 
-def test_two_point_theory_with_int_options():
+def test_two_point_theory_with_int_options() -> None:
     """Test TwoPointTheory with integration options."""
     source1 = Mock()
     source2 = Mock()
@@ -167,7 +149,7 @@ def test_two_point_theory_with_int_options():
     assert theory.int_options == int_options
 
 
-def test_two_point_theory_with_apply_interp():
+def test_two_point_theory_with_apply_interp() -> None:
     """Test TwoPointTheory with custom apply_interp flag."""
     source1 = Mock()
     source2 = Mock()
@@ -181,7 +163,7 @@ def test_two_point_theory_with_apply_interp():
     assert theory.apply_interp == ApplyInterpolationWhen.ALL
 
 
-def test_two_point_theory_source0_property(mock_source_pair):
+def test_two_point_theory_source0_property(mock_source_pair: tuple[Mock, Mock]) -> None:
     """Test source0 property returns first source."""
     theory = TwoPointTheory(
         sacc_data_type="galaxy_density_cl",
@@ -191,7 +173,7 @@ def test_two_point_theory_source0_property(mock_source_pair):
     assert theory.source0 == mock_source_pair[0]
 
 
-def test_two_point_theory_source1_property(mock_source_pair):
+def test_two_point_theory_source1_property(mock_source_pair: tuple[Mock, Mock]) -> None:
     """Test source1 property returns second source."""
     theory = TwoPointTheory(
         sacc_data_type="galaxy_density_cl",
@@ -201,7 +183,7 @@ def test_two_point_theory_source1_property(mock_source_pair):
     assert theory.source1 == mock_source_pair[1]
 
 
-def test_two_point_theory_update(mock_source_pair):
+def test_two_point_theory_update(mock_source_pair: tuple[Mock, Mock]) -> None:
     """Test update method calls update on sources."""
     theory = TwoPointTheory(
         sacc_data_type="galaxy_density_cl",
@@ -216,7 +198,7 @@ def test_two_point_theory_update(mock_source_pair):
     assert mock_source_pair[1].is_updated()
 
 
-def test_two_point_theory_reset(mock_source_pair):
+def test_two_point_theory_reset(mock_source_pair: tuple[Mock, Mock]) -> None:
     """Test reset method calls reset on sources."""
     theory = TwoPointTheory(
         sacc_data_type="galaxy_density_cl",
@@ -236,7 +218,7 @@ def test_two_point_theory_reset(mock_source_pair):
     assert not mock_source_pair[1].is_updated()
 
 
-def test_two_point_theory_initialize_sources_different_sources():
+def test_two_point_theory_initialize_sources_different_sources() -> None:
     """Test initialize_sources with two different sources."""
     source1 = Mock()
     source1.sacc_tracer = "tracer_1"
@@ -256,7 +238,7 @@ def test_two_point_theory_initialize_sources_different_sources():
     assert theory.sacc_tracers == TracerNames("tracer_1", "tracer_2")
 
 
-def test_two_point_theory_initialize_sources_same_source():
+def test_two_point_theory_initialize_sources_same_source() -> None:
     """Test initialize_sources with the same source for both."""
     source = Mock()
     source.sacc_tracer = "tracer_1"
@@ -274,7 +256,7 @@ def test_two_point_theory_initialize_sources_same_source():
     assert theory.sacc_tracers == TracerNames("tracer_1", "tracer_1")
 
 
-def test_two_point_theory_get_tracers_and_scales_different_sources():
+def test_two_point_theory_get_tracers_and_scales_different_sources() -> None:
     """Test get_tracers_and_scales with different sources."""
     source1 = Mock()
     source1_tracers = [Mock(), Mock()]
@@ -300,7 +282,7 @@ def test_two_point_theory_get_tracers_and_scales_different_sources():
     assert scale1 == 2.0
 
 
-def test_two_point_theory_get_tracers_and_scales_same_source():
+def test_two_point_theory_get_tracers_and_scales_same_source() -> None:
     """Test get_tracers_and_scales with the same source."""
     source = Mock()
     source_tracers = [Mock(), Mock()]
@@ -325,7 +307,7 @@ def test_two_point_theory_get_tracers_and_scales_same_source():
     assert scale1 == 1.5
 
 
-def test_two_point_theory_generate_ells_for_interpolation():
+def test_two_point_theory_generate_ells_for_interpolation() -> None:
     """Test generate_ells_for_interpolation method."""
     source1 = Mock()
     source2 = Mock()

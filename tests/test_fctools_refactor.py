@@ -7,6 +7,7 @@ cyclomatic complexity. Covers timing data parsing and class code building.
 import contextlib
 import io
 import json
+from pathlib import Path
 
 from rich.console import Console
 
@@ -14,7 +15,7 @@ from firecrown.fctools import coverage_to_tsv as ctv
 from firecrown.fctools import print_code as pc
 
 
-def test_parse_duration_line(tmp_path):
+def test_parse_duration_line(tmp_path: Path) -> None:
     # private helper is nested; test via the public parse_timing_data API
     console = Console()
     tmp = tmp_path / "tmp_test_durations.txt"
@@ -28,7 +29,7 @@ def test_parse_duration_line(tmp_path):
     assert timings["tests/test_mod.py::test_func"] == 0.12
 
 
-def test_load_json_timing(tmp_path):
+def test_load_json_timing(tmp_path: Path) -> None:
     console = Console()
     data = {"tests": [{"nodeid": "tests/t.py::test_a", "duration": 0.5}]}
     p = tmp_path / "t.json"
@@ -46,7 +47,7 @@ class Dummy:
     A = 1
 
 
-def test_build_class_code():
+def test_build_class_code() -> None:
     # Capture stdout of the public display function and assert the content
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):

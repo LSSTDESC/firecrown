@@ -20,7 +20,7 @@ from firecrown.modeling_tools import (
 )
 
 
-def build_likelihood(params: NamedParameters):
+def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:
     """Return a ConstGaussian (likelihood) object."""
     sacc_data = sacc.Sacc()
 

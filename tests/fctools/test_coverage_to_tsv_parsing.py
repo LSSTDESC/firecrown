@@ -6,6 +6,7 @@ Tests the duration line parsing and timing file loading functions.
 # pylint: disable=missing-function-docstring
 
 import json
+from pathlib import Path
 
 import pytest
 from rich.console import Console
@@ -20,7 +21,7 @@ from firecrown.fctools.coverage_to_tsv import (
 # Tests for _parse_duration_line()
 
 
-def test_parse_duration_line_valid():
+def test_parse_duration_line_valid() -> None:
     line = "0.12s call tests/test_example.py::test_function"
     result = _parse_duration_line(line)
     assert result is not None
@@ -29,7 +30,7 @@ def test_parse_duration_line_valid():
     assert duration == 0.12
 
 
-def test_parse_duration_line_with_setup():
+def test_parse_duration_line_with_setup() -> None:
     line = "0.05s setup tests/test_example.py::test_function"
     result = _parse_duration_line(line)
     assert result is not None
@@ -38,7 +39,7 @@ def test_parse_duration_line_with_setup():
     assert duration == 0.05
 
 
-def test_parse_duration_line_with_teardown():
+def test_parse_duration_line_with_teardown() -> None:
     line = "0.03s teardown tests/test_example.py::test_function"
     result = _parse_duration_line(line)
     assert result is not None
@@ -47,7 +48,7 @@ def test_parse_duration_line_with_teardown():
     assert duration == 0.03
 
 
-def test_parse_duration_line_integer_duration():
+def test_parse_duration_line_integer_duration() -> None:
     line = "1s call tests/test_example.py::test_function"
     result = _parse_duration_line(line)
     assert result is not None
@@ -56,7 +57,7 @@ def test_parse_duration_line_integer_duration():
     assert duration == 1.0
 
 
-def test_parse_duration_line_no_phase():
+def test_parse_duration_line_no_phase() -> None:
     line = "0.25s tests/test_example.py::test_function"
     result = _parse_duration_line(line)
     assert result is not None
@@ -65,19 +66,19 @@ def test_parse_duration_line_no_phase():
     assert duration == 0.25
 
 
-def test_parse_duration_line_invalid():
+def test_parse_duration_line_invalid() -> None:
     line = "This is not a valid duration line"
     result = _parse_duration_line(line)
     assert result is None
 
 
-def test_parse_duration_line_no_duration():
+def test_parse_duration_line_no_duration() -> None:
     line = "tests/test_example.py::test_function"
     result = _parse_duration_line(line)
     assert result is None
 
 
-def test_parse_duration_line_invalid_duration_format():
+def test_parse_duration_line_invalid_duration_format() -> None:
     line = "abc call tests/test_example.py::test_function"
     result = _parse_duration_line(line)
     assert result is None
@@ -86,7 +87,7 @@ def test_parse_duration_line_invalid_duration_format():
 # Tests for _load_text_durations()
 
 
-def test_load_text_durations(tmp_path):
+def test_load_text_durations(tmp_path: Path) -> None:
     timing_file = tmp_path / "durations.txt"
     timing_file.write_text(
         "0.12s call tests/test_example.py::test_func1\n"
@@ -106,7 +107,7 @@ def test_load_text_durations(tmp_path):
     assert result["tests/test_example.py::test_func2"] == pytest.approx(0.08)
 
 
-def test_load_text_durations_empty_file(tmp_path):
+def test_load_text_durations_empty_file(tmp_path: Path) -> None:
     timing_file = tmp_path / "empty.txt"
     timing_file.write_text("")
 
@@ -114,7 +115,7 @@ def test_load_text_durations_empty_file(tmp_path):
     assert not result
 
 
-def test_load_text_durations_all_invalid(tmp_path):
+def test_load_text_durations_all_invalid(tmp_path: Path) -> None:
     timing_file = tmp_path / "invalid.txt"
     timing_file.write_text("Invalid line 1\nInvalid line 2\nInvalid line 3\n")
 
@@ -125,7 +126,7 @@ def test_load_text_durations_all_invalid(tmp_path):
 # Tests for _load_json_timing()
 
 
-def test_load_json_timing(tmp_path):
+def test_load_json_timing(tmp_path: Path) -> None:
     timing_file = tmp_path / "timing.json"
     data = {
         "tests": [
@@ -143,7 +144,7 @@ def test_load_json_timing(tmp_path):
     assert result["tests/test_b.py::test_three"] == 0.3
 
 
-def test_load_json_timing_missing_fields(tmp_path):
+def test_load_json_timing_missing_fields(tmp_path: Path) -> None:
     timing_file = tmp_path / "timing.json"
     data = {
         "tests": [
@@ -161,7 +162,7 @@ def test_load_json_timing_missing_fields(tmp_path):
     assert result["tests/test_b.py::test_two"] == 0.0
 
 
-def test_load_json_timing_invalid_duration(tmp_path):
+def test_load_json_timing_invalid_duration(tmp_path: Path) -> None:
     timing_file = tmp_path / "timing.json"
     data = {
         "tests": [
@@ -175,7 +176,7 @@ def test_load_json_timing_invalid_duration(tmp_path):
     assert result["tests/test_a.py::test_one"] == 0.0
 
 
-def test_load_json_timing_no_tests_key(tmp_path):
+def test_load_json_timing_no_tests_key(tmp_path: Path) -> None:
     timing_file = tmp_path / "timing.json"
     data = {"summary": "some data", "other_field": []}
     timing_file.write_text(json.dumps(data))
@@ -188,7 +189,7 @@ def test_load_json_timing_no_tests_key(tmp_path):
 # Tests for parse_timing_data()
 
 
-def test_parse_timing_data_json_format(tmp_path):
+def test_parse_timing_data_json_format(tmp_path: Path) -> None:
     console = Console()
     timing_file = tmp_path / "timing.json"
     data = {
@@ -203,7 +204,7 @@ def test_parse_timing_data_json_format(tmp_path):
     assert result["tests/test_a.py::test_one"] == 0.5
 
 
-def test_parse_timing_data_text_format(tmp_path):
+def test_parse_timing_data_text_format(tmp_path: Path) -> None:
     console = Console()
     timing_file = tmp_path / "durations.txt"
     timing_file.write_text("0.12s call tests/test_example.py::test_func\n")
@@ -213,20 +214,20 @@ def test_parse_timing_data_text_format(tmp_path):
     assert result["tests/test_example.py::test_func"] == pytest.approx(0.12)
 
 
-def test_parse_timing_data_none():
+def test_parse_timing_data_none() -> None:
     console = Console()
     result = parse_timing_data(console, None)
     assert not result
 
 
-def test_parse_timing_data_nonexistent_file(tmp_path):
+def test_parse_timing_data_nonexistent_file(tmp_path: Path) -> None:
     console = Console()
     timing_file = tmp_path / "nonexistent.json"
     result = parse_timing_data(console, timing_file)
     assert not result
 
 
-def test_parse_timing_data_json_decode_error_fallback(tmp_path):
+def test_parse_timing_data_json_decode_error_fallback(tmp_path: Path) -> None:
     console = Console()
     # File that's not valid JSON but has valid text durations
     timing_file = tmp_path / "mixed.txt"
@@ -238,14 +239,18 @@ def test_parse_timing_data_json_decode_error_fallback(tmp_path):
     assert result["tests/test_example.py::test_func"] == pytest.approx(0.15)
 
 
-def test_parse_timing_data_oserror_during_text_read(tmp_path, capsys, monkeypatch):
+def test_parse_timing_data_oserror_during_text_read(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     console = Console()
     # Create a file that will cause JSON parse error
     timing_file = tmp_path / "bad.txt"
     timing_file.write_text("not json")
 
     # Mock _load_text_durations to raise OSError
-    def mock_load_text(*args, **kwargs):
+    def mock_load_text(path: Path) -> dict[str, float]:
         raise OSError("Mocked error")
 
     monkeypatch.setattr(
@@ -259,13 +264,17 @@ def test_parse_timing_data_oserror_during_text_read(tmp_path, capsys, monkeypatc
     assert "Warning: Could not parse timing data" in captured.out
 
 
-def test_parse_timing_data_oserror_initial_read(tmp_path, capsys, monkeypatch):
+def test_parse_timing_data_oserror_initial_read(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     console = Console()
     timing_file = tmp_path / "test.json"
     timing_file.write_text("{}")
 
     # Mock _load_json_timing to raise OSError
-    def mock_load_json(*args, **kwargs):
+    def mock_load_json(path: Path) -> dict[str, float]:
         raise OSError("Cannot read file")
 
     monkeypatch.setattr(

@@ -15,7 +15,7 @@ from tests.updatable.updatable_test_support import MinimalUpdatable, SimpleUpdat
 # pylint: disable-msg=E1101
 
 
-def test_updatable_collection_record():
+def test_updatable_collection_record() -> None:
     """Test record creation for UpdatableCollection."""
     coll = UpdatableCollection([SimpleUpdatable("first"), MinimalUpdatable("second")])
 
@@ -36,7 +36,7 @@ def test_updatable_collection_record():
     assert second_record.sampler_params == ["a"]
 
 
-def test_updatable_collection_appends():
+def test_updatable_collection_appends() -> None:
     coll: UpdatableCollection[Updatable] = UpdatableCollection()
     assert len(coll) == 0
 
@@ -67,7 +67,7 @@ def test_updatable_collection_appends():
     )
 
 
-def test_updatable_collection_updates():
+def test_updatable_collection_updates() -> None:
     coll: UpdatableCollection[Updatable] = UpdatableCollection()
     assert len(coll) == 0
 
@@ -85,7 +85,7 @@ def test_updatable_collection_updates():
     assert first.y == 5.5
 
 
-def test_updatable_collection_rejects_nonupdatables():
+def test_updatable_collection_rejects_nonupdatables() -> None:
     coll: UpdatableCollection[Updatable] = UpdatableCollection()
     assert len(coll) == 0
 
@@ -94,7 +94,7 @@ def test_updatable_collection_rejects_nonupdatables():
     assert len(coll) == 0
 
 
-def test_updatable_collection_construction():
+def test_updatable_collection_construction() -> None:
     good_list = [SimpleUpdatable(), SimpleUpdatable()]
     good = UpdatableCollection(good_list)
     assert len(good) == 2
@@ -104,7 +104,7 @@ def test_updatable_collection_construction():
         _ = UpdatableCollection(bad_list)  # pylint: disable-msg=W0612
 
 
-def test_updatable_collection_insertion():
+def test_updatable_collection_insertion() -> None:
     x = UpdatableCollection([MinimalUpdatable()])
     assert len(x) == 1
     assert isinstance(x[0], MinimalUpdatable)
@@ -117,7 +117,7 @@ def test_updatable_collection_insertion():
         x[0] = 1
 
 
-def test_updatable_collection_is_updated():
+def test_updatable_collection_is_updated() -> None:
     obj: UpdatableCollection[Updatable] = UpdatableCollection([SimpleUpdatable()])
     new_params = {"x": -1.0, "y": 5.5}
 
@@ -126,13 +126,13 @@ def test_updatable_collection_is_updated():
     assert obj.is_updated()
 
 
-def test_updatablecollection_without_derived_parameters():
+def test_updatablecollection_without_derived_parameters() -> None:
     obj: UpdatableCollection[Updatable] = UpdatableCollection()
 
     assert obj.get_derived_parameters() is None
 
 
-def test_updatablecollection_with_items_without_derived_parameters():
+def test_updatablecollection_with_items_without_derived_parameters() -> None:
     """get_derived_parameters returns None when all items have no derived parameters."""
     obj: UpdatableCollection[Updatable] = UpdatableCollection()
 
@@ -155,7 +155,7 @@ def test_updatablecollection_with_items_without_derived_parameters():
     assert obj.get_derived_parameters() is None
 
 
-def test_collection_update_already_updated():
+def test_collection_update_already_updated() -> None:
     """Test calling update() twice on an UpdatableCollection.
 
     The second call should return early without updating items again
@@ -186,7 +186,7 @@ def test_collection_update_already_updated():
     assert obj2.a == 3.0
 
 
-def test_collection_reset_with_items():
+def test_collection_reset_with_items() -> None:
     """Test reset() on an UpdatableCollection with items.
 
     Verifies that reset() sets _updated to False and calls reset() on all

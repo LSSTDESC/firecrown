@@ -33,7 +33,7 @@ class LikelihoodThatThrowsUnhandledError(like.Likelihood):
         return -1.0
 
 
-def test_integration_error_generates_0_likelihood():
+def test_integration_error_generates_0_likelihood() -> None:
     likelihood = LikelihoodThatThrowsIntegrationError()
     with pytest.warns(
         UserWarning,
@@ -42,13 +42,13 @@ def test_integration_error_generates_0_likelihood():
         assert likelihood.compute_loglike_for_sampling(like.ModelingTools()) == -np.inf
 
 
-def test_other_error_propagates():
+def test_other_error_propagates() -> None:
     likelihood = LikelihoodThatThrowsUnhandledError()
     with pytest.raises(RuntimeError):
         likelihood.compute_loglike_for_sampling(like.ModelingTools())
 
 
-def test_factory_returns_updated_likelihood():
+def test_factory_returns_updated_likelihood() -> None:
     """Test warning when factory returns an already-updated likelihood."""
 
     class PreUpdatedLikelihood(like.Likelihood):
@@ -60,7 +60,7 @@ def test_factory_returns_updated_likelihood():
         def compute_loglike(self, tools: ModelingTools) -> float:
             return 0.0
 
-    def build_likelihood(_build_parameters: NamedParameters):
+    def build_likelihood(_build_parameters: NamedParameters) -> PreUpdatedLikelihood:
         """Factory that returns an updated likelihood."""
         likelihood = PreUpdatedLikelihood()
         # Pre-update the likelihood before returning it
@@ -80,7 +80,7 @@ def test_factory_returns_updated_likelihood():
         assert not likelihood.is_updated()
 
 
-def test_factory_returns_updated_tools():
+def test_factory_returns_updated_tools() -> None:
     """Test warning when factory returns already-updated tools."""
 
     class TestLikelihood(like.Likelihood):
@@ -92,7 +92,9 @@ def test_factory_returns_updated_tools():
         def compute_loglike(self, tools: ModelingTools) -> float:
             return 0.0
 
-    def build_likelihood(_build_parameters: NamedParameters):
+    def build_likelihood(
+        _build_parameters: NamedParameters,
+    ) -> tuple[TestLikelihood, ModelingTools]:
         """Factory that returns an updated tools object."""
         likelihood = TestLikelihood()
         tools = ModelingTools()

@@ -6,6 +6,7 @@ Tests ExampleClusterCounts example generator and build_likelihood execution.
 import importlib.util
 import sys
 from pathlib import Path
+from typing import TypedDict, Unpack
 from unittest.mock import patch
 
 import pytest
@@ -26,8 +27,25 @@ from firecrown.likelihood import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 
 
-def make_builder(tmp_path: Path, **kwargs) -> ExampleClusterCounts:
-    """Create a builder without running the generation workflow."""
+class _BuilderKwargs(TypedDict, total=False):
+    """Optional constructor arguments exercised by these tests."""
+
+    prefix: str
+    dataset: ClusterDataset
+    use_cluster_counts: bool
+    use_mean_log_mass: bool
+    cosmology_spec: Path
+
+
+def make_builder(
+    tmp_path: Path, **kwargs: Unpack[_BuilderKwargs]
+) -> ExampleClusterCounts:
+    """Create a builder without running the generation workflow.
+
+    :param tmp_path: Output directory for the builder.
+    :param kwargs: Optional builder settings used by the test.
+    :returns: Builder with generation suppressed.
+    """
     with patch.object(ExampleClusterCounts, "_proceed_generation"):
         return ExampleClusterCounts(
             output_path=tmp_path, target_framework=Frameworks.COSMOSIS, **kwargs
