@@ -68,7 +68,8 @@ if [[ ! -f "$prefix/.firecrown-csl-built" ]] || [[ ! -d "$csl_dir" ]]; then
 fi
 
 if [[ ! -f "$prefix/.firecrown-editable-installed" ]]; then
-    conda run --prefix "$prefix" \
+    echo "Installing Firecrown into $prefix"
+    conda run --no-capture-output --prefix "$prefix" \
         python -m pip install --no-deps --editable "$repo_root"
     touch "$prefix/.firecrown-editable-installed"
 fi
