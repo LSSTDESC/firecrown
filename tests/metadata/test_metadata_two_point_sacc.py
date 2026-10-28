@@ -75,11 +75,8 @@ from tests._types import (
 class SaccRealThreeTracerFixture:
     """Real SACC data with an intentionally invalid three-tracer correlation.
 
-    Frozen bindings leave SACC, mappings, and arrays mutable. Array dtypes do not
-    enforce semantic roles, shapes, units, or a shared redshift grid.
-
     :param sacc_data: SACC data retaining the three-tracer rejection input.
-    :param distributions: Independent sampled distributions keyed by tracer name.
+    :param distributions: Input redshift distributions keyed by tracer name.
     """
 
     sacc_data: sacc.Sacc
@@ -90,11 +87,8 @@ class SaccRealThreeTracerFixture:
 class SaccHarmonicThreeTracerFixture:
     """Harmonic SACC data with an intentionally invalid three-tracer correlation.
 
-    Frozen bindings leave SACC, mappings, and arrays mutable. Array dtypes do not
-    enforce semantic roles, shapes, units, or a shared redshift grid.
-
     :param sacc_data: SACC data retaining the three-tracer rejection input.
-    :param distributions: Independent sampled distributions keyed by tracer name.
+    :param distributions: Input redshift distributions keyed by tracer name.
     """
 
     sacc_data: sacc.Sacc
@@ -105,13 +99,10 @@ class SaccHarmonicThreeTracerFixture:
 class SaccInvalidDataTypeFixture:
     """SACC data and raw inputs for an intentionally invalid data type.
 
-    Frozen bindings leave SACC, mappings, and arrays mutable. The raw values
-    have no asserted physical spectrum interpretation.
-
     :param sacc_data: SACC data retaining the unsupported data type.
     :param distributions: Sampled redshift distributions keyed by tracer name.
     :param ells: Integer multipole coordinates used for the data points.
-    :param values: Raw values used for the invalid data points.
+    :param values: Raw values for the invalid data points, with no physical meaning.
     """
 
     sacc_data: sacc.Sacc
@@ -161,7 +152,7 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(
 def fixture_sacc_galaxy_xis_three_tracers() -> SaccRealThreeTracerFixture:
     """Build unwindowed real-space SACC data with a three-tracer correlation.
 
-    :returns: SACC data and independent src0/lens0/lens1 distributions sharing
+    :returns: SACC data and input src0/lens0/lens1 distributions sharing
         their original redshift grid and retaining distinct number densities.
     """
     sacc_data = sacc.Sacc()
@@ -203,7 +194,7 @@ def fixture_sacc_galaxy_xis_three_tracers() -> SaccRealThreeTracerFixture:
 def fixture_sacc_galaxy_cells_three_tracers() -> SaccHarmonicThreeTracerFixture:
     """Build unwindowed harmonic SACC data with a three-tracer correlation.
 
-    :returns: SACC data and independent src0/lens0/lens1 distributions sharing
+    :returns: SACC data and input src0/lens0/lens1 distributions sharing
         their original redshift grid and retaining distinct number densities.
     """
     sacc_data = sacc.Sacc()
@@ -244,7 +235,7 @@ def fixture_sacc_galaxy_cells_three_tracers() -> SaccHarmonicThreeTracerFixture:
 def test_extract_all_tracers_cells(
     sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Extract harmonic tracer distributions matching independent expectations.
+    """Extract harmonic tracer distributions matching the fixture inputs.
 
     :param sacc_galaxy_cells: Harmonic SACC data and named expected distributions.
     """
@@ -262,7 +253,7 @@ def test_extract_all_tracers_cells(
 def test_extract_all_tracers_xis(
     sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    """Extract real tracer distributions matching independent expectations.
+    """Extract real tracer distributions matching the fixture inputs.
 
     :param sacc_galaxy_xis: Real SACC data and named expected distributions.
     """
@@ -682,7 +673,7 @@ def test_extract_all_metadata_index_harmonics_by_type(
 def test_extract_all_metadata_index_reals(
     sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    """Extract real metadata indices for every independently generated spectrum.
+    """Extract real metadata indices for every input spectrum.
 
     :param sacc_galaxy_xis: Real SACC data and expected spectra.
     """
@@ -737,7 +728,7 @@ def test_extract_all_data_types_three_tracers_reals(
 ) -> None:
     """Reject real-space metadata for a correlation containing three tracers.
 
-    :param sacc_galaxy_xis_three_tracers: Real SACC data and named independent
+    :param sacc_galaxy_xis_three_tracers: Real SACC data and input
         redshift distributions for src0, lens0, and lens1.
     """
     sacc_data = sacc_galaxy_xis_three_tracers.sacc_data
@@ -757,7 +748,7 @@ def test_extract_all_data_types_three_tracers_harmonics(
 ) -> None:
     """Reject harmonic metadata for a correlation containing three tracers.
 
-    :param sacc_galaxy_cells_three_tracers: Harmonic SACC data and named independent
+    :param sacc_galaxy_cells_three_tracers: Harmonic SACC data and input
         redshift distributions for src0, lens0, and lens1.
     """
     sacc_data = sacc_galaxy_cells_three_tracers.sacc_data
@@ -884,7 +875,7 @@ def test_make_reals(
 def test_extract_all_harmonic_data(
     sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    """Extract consistent harmonic measurements matching independent expectations.
+    """Extract consistent harmonic measurements matching the fixture inputs.
 
     :param sacc_galaxy_cells: Harmonic SACC data and named expected spectra.
     """
@@ -911,7 +902,7 @@ def test_extract_all_harmonic_data(
 def test_extract_all_harmonic_with_window_data(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    """Extract windowed measurements matching independent support and bandpowers.
+    """Extract windowed measurements matching the input support and bandpowers.
 
     :param sacc_galaxy_cwindows: Windowed SACC data and named expected spectra.
     """
@@ -943,7 +934,7 @@ def test_extract_all_harmonic_with_window_data(
 def test_extract_all_real_data(
     sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    """Extract consistent real measurements matching independent expectations.
+    """Extract consistent real measurements matching the fixture inputs.
 
     :param sacc_galaxy_xis: Real SACC data and named expected spectra.
     """
@@ -996,7 +987,7 @@ def test_constructor_harmonic_data(
     sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    """Construct TwoPoint statistics matching independently generated measurements.
+    """Construct TwoPoint statistics matching the input harmonic measurements.
 
     :param sacc_galaxy_cells: Harmonic SACC data and expected spectra.
     :param tp_factory: Factory for the statistics' sources.
@@ -1027,7 +1018,7 @@ def test_constructor_harmonic_with_window_metadata(
 ) -> None:
     """Construct TwoPoint statistics from extracted windowed harmonic metadata.
 
-    :param sacc_galaxy_cwindows: Windowed SACC data and independent windows.
+    :param sacc_galaxy_cwindows: Windowed SACC data and its input windows.
     :param tp_factory: Factory for the statistics' sources.
     """
     sacc_data = sacc_galaxy_cwindows.sacc_data
@@ -1252,7 +1243,7 @@ def test_constructor_harmonic_with_window_data(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    """Construct TwoPoint statistics matching independent bandpowers and windows.
+    """Construct TwoPoint statistics matching the input bandpowers and windows.
 
     :param sacc_galaxy_cwindows: Windowed SACC data and named expected spectra.
     :param tp_factory: Factory for the statistics' sources.
@@ -1312,7 +1303,7 @@ def test_constructor_reals_data(
     sacc_galaxy_xis: SaccGalaxyRealFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    """Construct TwoPoint statistics matching independently generated real data.
+    """Construct TwoPoint statistics matching the input real measurements.
 
     :param sacc_galaxy_xis: Real SACC data and expected spectra.
     :param tp_factory: Factory for the statistics' sources.
@@ -1510,7 +1501,7 @@ def test_extract_all_data_harmonic_no_cov(
 ) -> None:
     """Reject missing covariance without mutating the shared harmonic fixture.
 
-    :param sacc_galaxy_cells: Shared harmonic SACC data and independent expectations.
+    :param sacc_galaxy_cells: Shared harmonic SACC data and named expectations.
     """
     shared_sacc = sacc_galaxy_cells.sacc_data
     shared_covariance = shared_sacc.covariance
@@ -1534,7 +1525,7 @@ def test_extract_all_data_real_no_cov(
 ) -> None:
     """Reject missing covariance without mutating the shared real fixture.
 
-    :param sacc_galaxy_xis: Shared real SACC data and independent expectations.
+    :param sacc_galaxy_xis: Shared real SACC data and named expectations.
     """
     shared_sacc = sacc_galaxy_xis.sacc_data
     shared_covariance = shared_sacc.covariance

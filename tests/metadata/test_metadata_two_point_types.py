@@ -204,7 +204,7 @@ def test_extract_all_tracers_types_cells(
 ) -> None:
     """Verify harmonic tracers have the expected lens and source measurements.
 
-    :param sacc_galaxy_cells: Harmonic SACC data with named independent expectations.
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_cells.sacc_data
 
@@ -244,7 +244,7 @@ def test_extract_all_tracers_types_reals(
 ) -> None:
     """Verify real tracers retain their lens and source measurement meanings.
 
-    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_xis.sacc_data
 
@@ -290,7 +290,7 @@ def test_extract_all_tracers_types_cells_include_maybe(
 ) -> None:
     """Verify repeated harmonic measured-type extraction returns equal results.
 
-    :param sacc_galaxy_cells: Harmonic SACC data with named independent expectations.
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_cells.sacc_data
 
@@ -318,7 +318,7 @@ def test_extract_all_tracers_types_xi_thetas_include_maybe(
 ) -> None:
     """Verify repeated real measured-type extraction returns equal results.
 
-    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_xis.sacc_data
 
@@ -412,7 +412,7 @@ def test_check_two_point_consistence_harmonic_mixing_cov(
 ) -> None:
     """Verify harmonic consistency rejects measurements with mixed covariance names.
 
-    :param sacc_galaxy_cells: Harmonic SACC data with named independent expectations.
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_cells.sacc_data
 
@@ -435,7 +435,7 @@ def test_check_two_point_consistence_real_mixing_cov(
 ) -> None:
     """Verify real consistency rejects measurements with mixed covariance names.
 
-    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_xis.sacc_data
 
@@ -457,7 +457,7 @@ def test_check_two_point_consistence_harmonic_non_unique_indices(
 ) -> None:
     """Verify harmonic consistency rejects repeated indices within a measurement.
 
-    :param sacc_galaxy_cells: Harmonic SACC data with named independent expectations.
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_cells.sacc_data
 
@@ -479,7 +479,7 @@ def test_check_two_point_consistence_real_non_unique_indices(
 ) -> None:
     """Verify real consistency rejects repeated indices within a measurement.
 
-    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_xis.sacc_data
 
@@ -500,7 +500,7 @@ def test_check_two_point_consistence_harmonic_indices_overlap(
 ) -> None:
     """Verify harmonic consistency rejects indices shared between measurements.
 
-    :param sacc_galaxy_cells: Harmonic SACC data with named independent expectations.
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_cells.sacc_data
 
@@ -522,7 +522,7 @@ def test_check_two_point_consistence_real_indices_overlap(
 ) -> None:
     """Verify real consistency rejects indices shared between measurements.
 
-    :param sacc_galaxy_xis: Real SACC data with named independent expectations.
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_xis.sacc_data
 
@@ -704,7 +704,7 @@ def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
     This test verifies that when allow_mixed_types=True, the function permits
     tracers to have multiple measurement types without raising an error.
 
-    :param sacc_galaxy_cells: Harmonic SACC data with named independent expectations.
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_cells.sacc_data
 
@@ -906,7 +906,7 @@ def test_extract_all_measured_types_allow_mixed_types_vs_false(
     an error (after potential auto-correction attempts), while with
     allow_mixed_types=True, we get results without error.
 
-    :param sacc_galaxy_cells: Harmonic SACC data with named independent expectations.
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
     sacc_data = sacc_galaxy_cells.sacc_data
 

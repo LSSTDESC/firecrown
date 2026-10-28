@@ -1,7 +1,6 @@
 """Shared types for test fixtures.
 
-Frozen records bind named fields, but do not freeze nested arrays, maps, or SACC.
-Array annotations specify dtype, not semantic role, shape, or physical units.
+Expected arrays retain the inputs supplied to SACC, or copies of those inputs.
 """
 
 from dataclasses import dataclass
@@ -17,7 +16,7 @@ from firecrown.metadata_types import TracerNames
 
 @dataclass(frozen=True, kw_only=True)
 class SampledRedshiftDistribution:
-    """Independent sampled redshift coordinates and unnormalized number density.
+    """Sampled redshift coordinates and unnormalized number density.
 
     :param z: Sampled redshift coordinates.
     :param dndz: Number-density values on the redshift grid; not normalized.
@@ -29,7 +28,7 @@ class SampledRedshiftDistribution:
 
 @dataclass(frozen=True, kw_only=True)
 class SaccGalaxyDistributionFixture:
-    """SACC tracer data and independently sampled redshift distributions.
+    """SACC tracer data and its sampled redshift distributions.
 
     :param sacc_data: SACC data used by production extraction and construction.
     :param distributions: Redshift distributions keyed by tracer name.
@@ -41,7 +40,7 @@ class SaccGalaxyDistributionFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class SaccHarmonicCrossBinFixture:
-    """Harmonic cross-bin SACC data and independent redshift expectations.
+    """Harmonic cross-bin SACC data and expected redshift distributions.
 
     Both tracer distributions share their original redshift coordinate array,
     but retain distinct unnormalized number densities. No measurement metadata
@@ -57,7 +56,7 @@ class SaccHarmonicCrossBinFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class SaccRealCrossBinFixture:
-    """Real cross-bin SACC data and independent redshift expectations.
+    """Real cross-bin SACC data and expected redshift distributions.
 
     Both tracer distributions share their original redshift coordinate array,
     but retain distinct unnormalized number densities. No measurement metadata
@@ -73,7 +72,7 @@ class SaccRealCrossBinFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class HarmonicAngularPowerSpectrum:
-    """Independent unwindowed harmonic coordinates and synthetic observations.
+    """Unwindowed harmonic coordinates and synthetic observations.
 
     :param ells: Integer multipoles for the synthetic observations.
     :param cells: Synthetic observed values, not survey data or theory predictions.
@@ -85,7 +84,7 @@ class HarmonicAngularPowerSpectrum:
 
 @dataclass(frozen=True, kw_only=True)
 class SaccGalaxyHarmonicFixture:
-    """Harmonic SACC data with independently generated named expectations.
+    """Harmonic SACC data with named expected distributions and spectra.
 
     :param sacc_data: SACC data used by production extraction and construction.
     :param distributions: Redshift distributions keyed by tracer name.
@@ -99,9 +98,9 @@ class SaccGalaxyHarmonicFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class RealAngularCorrelation:
-    """Independent unwindowed angular coordinates and synthetic observations.
+    """Unwindowed angular coordinates and synthetic observations.
 
-    :param thetas: Angular coordinates for the observations; no unit is enforced.
+    :param thetas: Angular coordinates for the observations.
     :param xis: Synthetic correlations, not survey data or theory predictions.
     """
 
@@ -111,7 +110,7 @@ class RealAngularCorrelation:
 
 @dataclass(frozen=True, kw_only=True)
 class SaccGalaxyRealFixture:
-    """Real SACC data with independently generated named expectations.
+    """Real SACC data with named expected distributions and correlations.
 
     :param sacc_data: SACC data used by production extraction and construction.
     :param distributions: Redshift distributions keyed by tracer name.
@@ -125,7 +124,7 @@ class SaccGalaxyRealFixture:
 
 @dataclass(frozen=True, kw_only=True)
 class WindowedAngularPowerSpectrum:
-    """Independent window support, synthetic bandpowers, and their shared window.
+    """Window support, synthetic bandpowers, and their shared window.
 
     Support multipoles need not match the number of bandpowers.
     SACC observation labels are weighted support sums, not the support grid
@@ -145,7 +144,7 @@ class WindowedAngularPowerSpectrum:
 
 @dataclass(frozen=True, kw_only=True)
 class SaccGalaxyWindowedFixture:
-    """Windowed SACC data with independently generated named expectations.
+    """Windowed SACC data with named expected distributions and spectra.
 
     :param sacc_data: SACC data used by production extraction and construction.
     :param distributions: Redshift distributions keyed by tracer name.

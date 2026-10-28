@@ -399,14 +399,9 @@ def fixture_all_real_bins() -> list[TomographicBin]:
 class HarmonicWindowFunction:
     """Harmonic window with its ell grid, weight matrix, and band labels.
 
-    The weight matrix has one row per ell in the grid and one column per band.
-    Named fields and dtype annotations do not check weight-matrix dimensions,
-    shapes, same-dtype swaps between arrays, or physical units.
-
     :param ell_grid: Integer multipoles on which the window weights are defined.
     :param weights: Weight matrix with one row per ell and one column per band.
-    :param band_labels: Float labels, one per weight column; TwoPointHarmonic checks
-        their one-dimensional shape and count, not their values or physical meaning.
+    :param band_labels: Float labels, one per weight column.
     """
 
     ell_grid: npt.NDArray[np.int64]
@@ -885,7 +880,7 @@ def fixture_sacc_galaxy_xis_src0_lens0() -> SaccRealCrossBinFixture:
 
 @pytest.fixture(name="sacc_galaxy_cells", scope="module")
 def fixture_sacc_galaxy_cells() -> SaccGalaxyHarmonicFixture:
-    """Build unwindowed harmonic SACC data and independent named expectations.
+    """Build unwindowed harmonic SACC data and named expectations.
 
     Module-scoped because SACC objects are expensive to create. Consumers must
     copy SACC before mutation; expected grids remain shared between records.
@@ -954,7 +949,7 @@ def fixture_sacc_galaxy_cells() -> SaccGalaxyHarmonicFixture:
 
 @pytest.fixture(name="sacc_galaxy_cwindows", scope="module")
 def fixture_sacc_galaxy_cwindows() -> SaccGalaxyWindowedFixture:
-    """Build windowed SACC data and independent named expectations.
+    """Build windowed SACC data and named expectations.
 
     Module-scoped because SACC objects are expensive to create. Expected grids
     remain shared between records, and windows are shared with SACC data points.
@@ -1061,7 +1056,7 @@ def fixture_sacc_galaxy_cwindows() -> SaccGalaxyWindowedFixture:
 
 @pytest.fixture(name="sacc_galaxy_xis", scope="module")
 def fixture_sacc_galaxy_xis() -> SaccGalaxyRealFixture:
-    """Build unwindowed real SACC data and independent named expectations.
+    """Build unwindowed real SACC data and named expectations.
 
     Module-scoped because SACC objects are expensive to create. Consumers must
     copy SACC before mutation; expected grids remain shared between records.
@@ -1142,7 +1137,7 @@ def fixture_sacc_galaxy_xis() -> SaccGalaxyRealFixture:
 
 @pytest.fixture(name="sacc_galaxy_xis_inverted")
 def fixture_sacc_galaxy_xis_inverted() -> SaccGalaxyRealFixture:
-    """Build inverted real SACC data and independent named expectations.
+    """Build inverted real SACC data and named expectations.
 
     Preserve the intentionally reversed tracer conventions for correction tests.
     Expected grids remain shared between records.

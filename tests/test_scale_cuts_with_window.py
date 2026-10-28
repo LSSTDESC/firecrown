@@ -28,9 +28,6 @@ from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 class ScaleCutWindowFunction:
     """Window weights, support multipoles, and geometric bin centers.
 
-    Frozen bindings leave the arrays mutable. Names and dtype annotations do not
-    enforce matrix dimensions, shapes, same-dtype array swaps, or physical units.
-
     :param weights: Column-normalized weights, one row per support multipole and
         one column per bin.
     :param support_ells: Integer multipoles on which the window is sampled.
@@ -76,12 +73,12 @@ def fixture_window_function() -> ScaleCutWindowFunction:
 
 @dataclass(frozen=True, kw_only=True)
 class ScaleCutBandpowerPrediction:
-    """Independent CCL bandpower predictions and their scale-cut window context.
+    """CCL bandpowers used as SACC measurements and their scale-cut window.
 
     :param bandpowers: CCL predictions projected through the normalized window,
         one value per bin, also used as the fixture's SACC measurements.
     :param window: Shared normalized weights, support multipoles, and geometric
-        bin centers; frozen bindings do not freeze its arrays or check shapes.
+        bin centers.
     """
 
     bandpowers: npt.NDArray[np.float64]
@@ -90,13 +87,10 @@ class ScaleCutBandpowerPrediction:
 
 @dataclass(frozen=True, kw_only=True)
 class ScaleCutSaccFixture:
-    """Cosmic-shear SACC data with independent predictions and their cosmology.
-
-    Frozen bindings leave SACC, the spectrum mapping, and nested arrays mutable.
-    Names and dtype annotations do not check same-dtype swaps, shapes, or units.
+    """Cosmic-shear SACC data with its input CCL bandpowers and cosmology.
 
     :param sacc_data: Windowed SACC measurements for production likelihood loading.
-    :param spectra: Independent CCL predictions keyed by ordered tracer-pair names.
+    :param spectra: Input CCL bandpowers keyed by ordered tracer-pair names.
     :param cosmology: Cosmology used to generate the CCL tracers and predictions.
     """
 
@@ -112,7 +106,7 @@ def fixture_minimal_3x2pt_sacc(
     """Generate SACC data with window functions for cosmic shear only.
 
     :param window_function_data: Window weights, support, and observation centers.
-    :returns: SACC data, independent CCL bandpowers with window data, and cosmology.
+    :returns: SACC data, input CCL bandpowers with window data, and cosmology.
     """
     sacc_data = sacc.Sacc()
 
@@ -192,7 +186,7 @@ def test_scale_cuts_with_bandpower_window_label(
 ) -> None:
     """Test scale cuts selected by bandpower window labels.
 
-    :param minimal_3x2pt_sacc: SACC data, independent CCL predictions, and cosmology.
+    :param minimal_3x2pt_sacc: SACC data, input CCL bandpowers, and cosmology.
     :param cut: Ordered tracer names and upper multipole threshold.
     :param tmp_path: Directory for the SACC file loaded by the likelihood factory.
     """
@@ -278,7 +272,7 @@ def test_scale_cuts_with_bandpower_window_support(
 ) -> None:
     """Test scale cuts selected by cumulative bandpower window support.
 
-    :param minimal_3x2pt_sacc: SACC data, independent CCL predictions, and cosmology.
+    :param minimal_3x2pt_sacc: SACC data, input CCL bandpowers, and cosmology.
     :param cut: Ordered tracer names and upper multipole threshold.
     :param method: Filter method and required fraction of window support.
     :param tmp_path: Directory for the SACC file loaded by the likelihood factory.
