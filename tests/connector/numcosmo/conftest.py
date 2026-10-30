@@ -6,16 +6,21 @@ from typing import cast
 import pytest
 from numcosmo_py import GObject, Nc, Ncm
 
+from tests._types import NumCosmoCosmologyFixture
+
+# NumCosmo's introspected static constructors and enum members confuse Pylint.
+# Keep the corresponding suppressions local to the affected calls below.
+
 
 @pytest.fixture(name="numcosmo_cosmo_xcdm")
-def fixture_numcosmo_cosmo_xcdm():
+def fixture_numcosmo_cosmo_xcdm() -> NumCosmoCosmologyFixture:
     """Create a NumCosmo cosmology instance of XCDM."""
-    prim = Nc.HIPrimPowerLaw.new()
+    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
     prim.param_set_by_name(  # pylint: disable=no-member
         "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
     )
     prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
-    reion = Nc.HIReionCamb.new()
+    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
     bbn = Nc.BBNParametrized.new()
     bbn.param_set_by_name("Yp", 0.2454)  # pylint: disable=no-member
 
@@ -31,7 +36,9 @@ def fixture_numcosmo_cosmo_xcdm():
 
     reion.set_z_from_tau(0.0561)  # pylint: disable=no-member
 
-    p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    p_ml = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+    )
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
     dist = Nc.Distance.new(6.0)
     dist.comoving_distance_spline.set_reltol(1.0e-5)  # pylint: disable=no-member
@@ -40,14 +47,14 @@ def fixture_numcosmo_cosmo_xcdm():
 
 
 @pytest.fixture(name="numcosmo_cosmo_xcdm_no_nu")
-def fixture_numcosmo_cosmo_xcdm_no_nu():
+def fixture_numcosmo_cosmo_xcdm_no_nu() -> NumCosmoCosmologyFixture:
     """Create a NumCosmo cosmology instance of XCDM without neutrinos."""
-    prim = Nc.HIPrimPowerLaw.new()
+    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
     prim.param_set_by_name(  # pylint: disable=no-member
         "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
     )
     prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
-    reion = Nc.HIReionCamb.new()
+    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
     bbn = Nc.BBNParametrized.new()
     bbn.param_set_by_name("Yp", 0.2454)  # pylint: disable=no-member
 
@@ -62,7 +69,9 @@ def fixture_numcosmo_cosmo_xcdm_no_nu():
 
     reion.set_z_from_tau(0.0561)  # pylint: disable=no-member
 
-    p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    p_ml = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+    )
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
     dist = Nc.Distance.new(6.0)
     dist.comoving_distance_spline.set_reltol(1.0e-5)  # pylint: disable=no-member
@@ -71,16 +80,16 @@ def fixture_numcosmo_cosmo_xcdm_no_nu():
 
 
 @pytest.fixture(name="numcosmo_cosmo_cpl")
-def fixture_numcosmo_cosmo_cpl():
+def fixture_numcosmo_cosmo_cpl() -> NumCosmoCosmologyFixture:
     """Create a NumCosmo cosmology instance using CPL parametrization for the dark
     energy equation of state."""
 
-    prim = Nc.HIPrimPowerLaw.new()
+    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
     prim.param_set_by_name(  # pylint: disable=no-member
         "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
     )
     prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
-    reion = Nc.HIReionCamb.new()
+    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
     bbn = Nc.BBNParametrized.new()
     bbn.param_set_by_name("Yp", 0.2454)  # pylint: disable=no-member
 
@@ -96,7 +105,9 @@ def fixture_numcosmo_cosmo_cpl():
 
     reion.set_z_from_tau(0.0561)  # pylint: disable=no-member
 
-    p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    p_ml = Nc.PowspecMLTransfer.new(
+        Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+    )
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
     dist = Nc.Distance.new(6.0)
     dist.comoving_distance_spline.set_reltol(1.0e-5)  # pylint: disable=no-member
@@ -105,7 +116,7 @@ def fixture_numcosmo_cosmo_cpl():
 
 
 @pytest.fixture(name="nc_model_trivial", scope="session")
-def fixture_nc_model_trivial():
+def fixture_nc_model_trivial() -> type[Ncm.Model]:
     """Create a NumCosmoModel instance."""
     my_model_trivial_yaml = r"""
 NcmModelBuilder:
@@ -123,7 +134,7 @@ NcmModelBuilder:
         default-value: 0.1
         fit-type: 0
 """
-    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)  # pylint: disable=no-member
     mb_model: Ncm.ModelBuilder = cast(
         Ncm.ModelBuilder,
         ser.from_yaml(my_model_trivial_yaml),  # pylint: disable=no-member

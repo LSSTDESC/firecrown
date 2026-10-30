@@ -15,7 +15,7 @@ from firecrown.updatable import ParamsMap
 
 
 @pytest.fixture
-def mock_tools():
+def mock_tools() -> Mock:
     """Create a mock ModelingTools object."""
     tools = Mock(spec=ModelingTools)
     mock_cosmo = Mock(spec=pyccl.Cosmology)
@@ -34,7 +34,7 @@ def mock_tools():
 
 
 @pytest.fixture
-def sample_tracer_args():
+def sample_tracer_args() -> wl.WeakLensingArgs:
     """Create sample WeakLensingArgs for testing."""
     z = np.linspace(0.1, 2.0, 50)
     dndz = np.exp(-(((z - 0.5) / 0.2) ** 2))
@@ -49,7 +49,7 @@ def sample_tracer_args():
 
 
 @pytest.fixture
-def mock_sacc_data():
+def mock_sacc_data() -> Mock:
     """Create a mock SACC data object."""
     mock_sacc = Mock(spec=sacc.Sacc)
     mock_tracer = Mock()
@@ -59,14 +59,16 @@ def mock_sacc_data():
     return mock_sacc
 
 
-def test_multiplicative_shear_bias_init():
+def test_multiplicative_shear_bias_init() -> None:
     """Test MultiplicativeShearBias initialization."""
     systematic = wl.MultiplicativeShearBias("test_tracer")
     assert hasattr(systematic, "mult_bias")
     assert hasattr(systematic, "parameter_prefix")
 
 
-def test_multiplicative_shear_bias_apply(mock_tools, sample_tracer_args):
+def test_multiplicative_shear_bias_apply(
+    mock_tools: Mock, sample_tracer_args: wl.WeakLensingArgs
+) -> None:
     """Test MultiplicativeShearBias apply method - covers line 112."""
     systematic = wl.MultiplicativeShearBias("test_tracer")
     # Update parameter values using ParamsMap
@@ -82,7 +84,7 @@ def test_multiplicative_shear_bias_apply(mock_tools, sample_tracer_args):
     assert result.dndz is sample_tracer_args.dndz
 
 
-def test_linear_alignment_systematic_init_default():
+def test_linear_alignment_systematic_init_default() -> None:
     """Test LinearAlignmentSystematic default initialization."""
     systematic = wl.LinearAlignmentSystematic()
     assert hasattr(systematic, "ia_bias")
@@ -91,7 +93,7 @@ def test_linear_alignment_systematic_init_default():
     assert hasattr(systematic, "z_piv")
 
 
-def test_linear_alignment_systematic_init_with_tracer():
+def test_linear_alignment_systematic_init_with_tracer() -> None:
     """Test LinearAlignmentSystematic initialization with tracer."""
     systematic = wl.LinearAlignmentSystematic("test_tracer", alphag=2.0)
     assert hasattr(systematic, "ia_bias")
@@ -99,8 +101,10 @@ def test_linear_alignment_systematic_init_with_tracer():
 
 @patch("pyccl.growth_factor")
 def test_linear_alignment_systematic_apply(
-    mock_growth_factor, mock_tools, sample_tracer_args
-):
+    mock_growth_factor: Mock,
+    mock_tools: Mock,
+    sample_tracer_args: wl.WeakLensingArgs,
+) -> None:
     mock_growth_factor.return_value = 0.8
 
     systematic = wl.LinearAlignmentSystematic("test_tracer")
@@ -126,7 +130,7 @@ def test_linear_alignment_systematic_apply(
     mock_growth_factor.assert_called()
 
 
-def test_massdep_linear_alignment_systematic_init_default():
+def test_massdep_linear_alignment_systematic_init_default() -> None:
     """Test MassDependentLinearAlignmentSystematic default initialization."""
     systematic = wl.MassDependentLinearAlignmentSystematic()
     assert hasattr(systematic, "ia_amplitude")
@@ -135,7 +139,9 @@ def test_massdep_linear_alignment_systematic_init_default():
     assert hasattr(systematic, "log10_average_halo_mass")
 
 
-def test_massdep_linear_alignment_systematic_apply(mock_tools, sample_tracer_args):
+def test_massdep_linear_alignment_systematic_apply(
+    mock_tools: Mock, sample_tracer_args: wl.WeakLensingArgs
+) -> None:
     systematic = wl.MassDependentLinearAlignmentSystematic("test_tracer")
     # Update parameter values using ParamsMap
     params = ParamsMap(
@@ -156,7 +162,7 @@ def test_massdep_linear_alignment_systematic_apply(mock_tools, sample_tracer_arg
     assert np.array_equal(result.ia_bias[0], sample_tracer_args.z)
 
 
-def test_tatt_alignment_systematic_init_default():
+def test_tatt_alignment_systematic_init_default() -> None:
     """Test TattAlignmentSystematic default initialization."""
     systematic = wl.TattAlignmentSystematic()
     assert hasattr(systematic, "ia_a_1")
@@ -164,7 +170,7 @@ def test_tatt_alignment_systematic_init_default():
     assert hasattr(systematic, "ia_a_d")
 
 
-def test_tatt_alignment_systematic_init_with_z_dependence():
+def test_tatt_alignment_systematic_init_with_z_dependence() -> None:
     """Test TattAlignmentSystematic with z dependence enabled."""
     systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     assert hasattr(systematic, "ia_a_1")
@@ -172,8 +178,10 @@ def test_tatt_alignment_systematic_init_with_z_dependence():
 
 @patch("pyccl.nl_pt.translate_IA_norm")
 def test_tatt_alignment_systematic_apply(
-    mock_translate_ia, mock_tools, sample_tracer_args
-):
+    mock_translate_ia: Mock,
+    mock_tools: Mock,
+    sample_tracer_args: wl.WeakLensingArgs,
+) -> None:
     """Test TattAlignmentSystematic apply method."""
     # Mock the translate_IA_norm function return values
     c_1 = np.ones_like(sample_tracer_args.z) * 0.1
@@ -212,21 +220,23 @@ def test_tatt_alignment_systematic_apply(
     assert len(result.ia_pt_c_2) == 2
 
 
-def test_hm_alignment_systematic_init():
+def test_hm_alignment_systematic_init() -> None:
     """Test HMAlignmentSystematic initialization - covers lines 326, 328, 331."""
     systematic = wl.HMAlignmentSystematic()
     assert hasattr(systematic, "ia_a_1h")
     assert hasattr(systematic, "ia_a_2h")
 
 
-def test_hm_alignment_systematic_init_with_tracer():
+def test_hm_alignment_systematic_init_with_tracer() -> None:
     """Test HMAlignmentSystematic initialization with ignored tracer parameter."""
     systematic = wl.HMAlignmentSystematic("ignored_tracer")
     assert hasattr(systematic, "ia_a_1h")
     assert hasattr(systematic, "ia_a_2h")
 
 
-def test_hm_alignment_systematic_apply(mock_tools, sample_tracer_args):
+def test_hm_alignment_systematic_apply(
+    mock_tools: Mock, sample_tracer_args: wl.WeakLensingArgs
+) -> None:
     """Test HMAlignmentSystematic apply method - covers line 344."""
     systematic = wl.HMAlignmentSystematic()
     # Update parameter values using ParamsMap
@@ -249,14 +259,14 @@ def test_hm_alignment_systematic_apply(mock_tools, sample_tracer_args):
 class TestWeakLensing:
     """Test WeakLensing source class."""
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test WeakLensing initialization."""
         weak_lensing = wl.WeakLensing(sacc_tracer="test_tracer", scale=2.0)
         assert weak_lensing.sacc_tracer == "test_tracer"
         assert weak_lensing.scale == 2.0
         assert weak_lensing.current_tracer_args is None
 
-    def test_create_ready(self):
+    def test_create_ready(self) -> None:
         """Test WeakLensing.create_ready class method."""
         zdist = TomographicBin(
             bin_name="test_bin",
@@ -270,7 +280,7 @@ class TestWeakLensing:
         assert hasattr(weak_lensing, "tracer_args")
         assert weak_lensing.tracer_args.ia_bias is None
 
-    def test_read(self, mock_sacc_data):
+    def test_read(self, mock_sacc_data: Mock) -> None:
         """Test WeakLensing _read method."""
         weak_lensing = wl.WeakLensing(sacc_tracer="test_tracer")
         weak_lensing._read(mock_sacc_data)
@@ -280,7 +290,7 @@ class TestWeakLensing:
         mock_sacc_data.get_tracer.assert_called_with("test_tracer")
 
     @patch("pyccl.WeakLensingTracer")
-    def test_create_tracers_basic(self, mock_wl_tracer, mock_tools):
+    def test_create_tracers_basic(self, mock_wl_tracer: Mock, mock_tools: Mock) -> None:
         """Test WeakLensing create_tracers with basic configuration."""
         mock_ccl_tracer = Mock()
         mock_wl_tracer.return_value = mock_ccl_tracer
@@ -300,7 +310,9 @@ class TestWeakLensing:
 
     @patch("pyccl.nl_pt.PTIntrinsicAlignmentTracer")
     @patch("pyccl.WeakLensingTracer")
-    def test_create_tracers_with_pt(self, mock_wl_tracer, mock_pt_tracer, mock_tools):
+    def test_create_tracers_with_pt(
+        self, mock_wl_tracer: Mock, mock_pt_tracer: Mock, mock_tools: Mock
+    ) -> None:
         """Test WeakLensing create_tracers with PT - covers lines 450-452, 455."""
         mock_ccl_tracer = Mock()
         mock_wl_tracer.return_value = mock_ccl_tracer
@@ -332,8 +344,8 @@ class TestWeakLensing:
     @patch("pyccl.halos.SatelliteShearHOD")
     @patch("pyccl.WeakLensingTracer")
     def test_create_tracers_with_hm(
-        self, mock_wl_tracer, mock_halo_profile, mock_tools
-    ):
+        self, mock_wl_tracer: Mock, mock_halo_profile: Mock, mock_tools: Mock
+    ) -> None:
         """Test WeakLensing create_tracers with HM - covers lines 462, 469, 472."""
         mock_ccl_tracer = Mock()
         mock_wl_tracer.return_value = mock_ccl_tracer
@@ -364,7 +376,7 @@ class TestWeakLensing:
         assert hasattr(mock_profile, "ia_a_2h")
         assert mock_profile.ia_a_2h == 1.0
 
-    def test_get_scale(self):
+    def test_get_scale(self) -> None:
         """Test WeakLensing get_scale method."""
         weak_lensing = wl.WeakLensing(sacc_tracer="test_tracer", scale=2.0)
         weak_lensing.current_tracer_args = wl.WeakLensingArgs(
@@ -375,7 +387,7 @@ class TestWeakLensing:
 
         assert weak_lensing.get_scale() == 3.0
 
-    def test_update_with_systematics(self):
+    def test_update_with_systematics(self) -> None:
         """Test WeakLensing update method with systematics - covers line 398."""
         systematic = wl.MultiplicativeShearBias("test_tracer")
         weak_lensing = wl.WeakLensing(
@@ -389,7 +401,9 @@ class TestWeakLensing:
         assert weak_lensing.systematics is not None
 
     @patch("pyccl.WeakLensingTracer")
-    def test_create_tracers_with_systematics(self, mock_wl_tracer, mock_tools):
+    def test_create_tracers_with_systematics(
+        self, mock_wl_tracer: Mock, mock_tools: Mock
+    ) -> None:
         """Test WeakLensing create_tracers with systematics - covers line 421."""
         mock_ccl_tracer = Mock()
         mock_wl_tracer.return_value = mock_ccl_tracer
@@ -417,20 +431,20 @@ class TestWeakLensing:
         assert weak_lensing.current_tracer_args.scale == 1.1  # 1.0 * (1 + 0.1)
 
 
-def test_multiplicative_shear_bias_factory():
+def test_multiplicative_shear_bias_factory() -> None:
     """Test MultiplicativeShearBiasFactory."""
     factory = wl.MultiplicativeShearBiasFactory()
     bias = factory.create("test_bin")
     assert isinstance(bias, wl.MultiplicativeShearBias)
 
 
-def test_multiplicative_shear_bias_factory_global_error():
+def test_multiplicative_shear_bias_factory_global_error() -> None:
     factory = wl.MultiplicativeShearBiasFactory()
     with pytest.raises(ValueError, match="MultiplicativeShearBias cannot be global"):
         factory.create_global()
 
 
-def test_linear_alignment_factory():
+def test_linear_alignment_factory() -> None:
     """Test LinearAlignmentSystematicFactory."""
     factory = wl.LinearAlignmentSystematicFactory(alphag=2.0)
     systematic = factory.create("test_bin")
@@ -440,7 +454,7 @@ def test_linear_alignment_factory():
     assert isinstance(global_systematic, wl.LinearAlignmentSystematic)
 
 
-def test_tatt_alignment_factory():
+def test_tatt_alignment_factory() -> None:
     """Test TattAlignmentSystematicFactory."""
     factory = wl.TattAlignmentSystematicFactory(include_z_dependence=True)
     systematic = factory.create("test_bin")
@@ -450,7 +464,7 @@ def test_tatt_alignment_factory():
     assert isinstance(global_systematic, wl.TattAlignmentSystematic)
 
 
-def test_weak_lensing_factory():
+def test_weak_lensing_factory() -> None:
     """Test WeakLensingFactory."""
     factory = wl.WeakLensingFactory(
         per_bin_systematics=[wl.MultiplicativeShearBiasFactory()],
@@ -473,7 +487,7 @@ def test_weak_lensing_factory():
     assert weak_lensing is wl2
 
 
-def test_weak_lensing_factory_from_metadata():
+def test_weak_lensing_factory_from_metadata() -> None:
     """Test WeakLensingFactory create_from_metadata_only."""
     factory = wl.WeakLensingFactory()
 
@@ -486,26 +500,26 @@ def test_weak_lensing_factory_from_metadata():
     assert weak_lensing is wl2
 
 
-def test_photoz_shift():
+def test_photoz_shift() -> None:
     """Test PhotoZShift systematic."""
     systematic = wl.PhotoZShift("test_tracer")
     assert hasattr(systematic, "delta_z")
 
 
-def test_photoz_shift_and_stretch():
+def test_photoz_shift_and_stretch() -> None:
     """Test PhotoZShiftandStretch systematic."""
     systematic = wl.PhotoZShiftandStretch("test_tracer")
     assert hasattr(systematic, "delta_z")
     assert hasattr(systematic, "sigma_z")
 
 
-def test_select_field():
+def test_select_field() -> None:
     """Test SelectField systematic."""
     systematic = wl.SelectField()
     assert hasattr(systematic, "field")
 
 
-def test_weak_lensing_args_immutable():
+def test_weak_lensing_args_immutable() -> None:
     """Test that WeakLensingArgs is immutable (frozen dataclass)."""
     args = wl.WeakLensingArgs(
         z=np.array([0.1, 0.5, 1.0]),
@@ -520,7 +534,7 @@ def test_weak_lensing_args_immutable():
         args.scale = 2.0  # type: ignore[misc]
 
 
-def test_systematic_with_none_tracer():
+def test_systematic_with_none_tracer() -> None:
     """Test systematics with None tracer name."""
     # LinearAlignmentSystematic should accept None tracer
     systematic = wl.LinearAlignmentSystematic(sacc_tracer=None)
@@ -532,7 +546,9 @@ def test_systematic_with_none_tracer():
 
 
 @patch("pyccl.growth_factor")
-def test_linear_alignment_complex_calculation(mock_growth_factor, mock_tools):
+def test_linear_alignment_complex_calculation(
+    mock_growth_factor: Mock, mock_tools: Mock
+) -> None:
     """Test LinearAlignmentSystematic with complex parameter values."""
     mock_growth_factor.return_value = np.array([0.7, 0.8, 0.9])
 

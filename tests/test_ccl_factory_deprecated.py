@@ -14,7 +14,7 @@ import sys
 import pytest
 
 
-def test_ccl_factory_deprecation_warning():
+def test_ccl_factory_deprecation_warning() -> None:
     """Test that importing ccl_factory emits DeprecationWarning.
 
     This must be the first test that imports the module, as subsequent imports
@@ -34,7 +34,7 @@ def test_ccl_factory_deprecation_warning():
         assert firecrown.ccl_factory is not None  # Verify import succeeded
 
 
-def test_ccl_factory_deprecation_warning_content():
+def test_ccl_factory_deprecation_warning_content() -> None:
     """Test the deprecation warning mentions modeling_tools.
 
     This test relies on module caching, so it won't see the warning.
@@ -48,7 +48,7 @@ def test_ccl_factory_deprecation_warning_content():
     # If we get here without error, the import worked
 
 
-def test_all_items_importable():
+def test_all_items_importable() -> None:
     """Test that all __all__ items can be imported from deprecated package."""
     # pylint: disable=import-outside-toplevel
     from firecrown.ccl_factory import (
@@ -81,7 +81,7 @@ def test_all_items_importable():
 @pytest.mark.filterwarnings(
     r"ignore:firecrown\.ccl_factory is deprecated.*:DeprecationWarning"
 )
-def test_items_identical_to_new_location():
+def test_items_identical_to_new_location() -> None:
     """Test that imported items are the same objects as in modeling_tools."""
     # pylint: disable=import-outside-toplevel
     # Import from both locations
@@ -141,7 +141,7 @@ def test_items_identical_to_new_location():
     assert OldPowerSpec is PowerSpec
 
 
-def test_module_import_as_alias():
+def test_module_import_as_alias() -> None:
     """Test importing the module with an alias."""
     # pylint: disable=import-outside-toplevel
     import firecrown.ccl_factory as fac
@@ -152,7 +152,7 @@ def test_module_import_as_alias():
     assert hasattr(fac, "CCLCreationMode")
 
 
-def test_ccl_factory_all_list():
+def test_ccl_factory_all_list() -> None:
     """Test that __all__ is preserved in deprecated module."""
     # pylint: disable=import-outside-toplevel
     import firecrown.ccl_factory
@@ -173,7 +173,7 @@ def test_ccl_factory_all_list():
     assert set(firecrown.ccl_factory.__all__) == set(expected_all)
 
 
-def test_ccl_factory_functional():
+def test_ccl_factory_functional() -> None:
     """Test that CCLFactory from deprecated module is functional."""
     # pylint: disable=import-outside-toplevel
     from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter

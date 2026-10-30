@@ -11,7 +11,7 @@ import firecrown.modeling_tools as mt
 import firecrown.updatable as fp
 
 
-def test_creation_nc_magnification_bias_systematic():
+def test_creation_nc_magnification_bias_systematic() -> None:
     sys = nc_sys.MagnificationBiasSystematic(sacc_tracer="lens0")
     assert sys.parameter_prefix == "lens0"
     assert sys.eta is None
@@ -23,7 +23,7 @@ def test_creation_nc_magnification_bias_systematic():
 
 def test_update_nc_magnification_bias_systematic(
     tools_with_vanilla_cosmology: mt.ModelingTools,
-):
+) -> None:
     sys = nc_sys.MagnificationBiasSystematic(sacc_tracer="lens0")
     assert sys.parameter_prefix == "lens0"
     sys.update(
@@ -61,7 +61,7 @@ def test_update_nc_magnification_bias_systematic(
 
 def test_update_nc_magnification_bias_systematic_with_mag_bias(
     tools_with_vanilla_cosmology: mt.ModelingTools,
-):
+) -> None:
     sys = nc_sys.MagnificationBiasSystematic(sacc_tracer="lens0")
     assert sys.parameter_prefix == "lens0"
     sys.update(

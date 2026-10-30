@@ -8,7 +8,7 @@ Fixtures defined here are available to any test in Firecrown.
 import ast
 import sys
 from itertools import product
-from typing import assert_never
+from typing import Callable, assert_never
 
 import numpy as np
 import numpy.typing as npt
@@ -43,6 +43,11 @@ from firecrown.metadata_types import (
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap, get_default_params_map
 from firecrown.utils import upper_triangle_indices
+from tests._types import (
+    RedshiftDistribution,
+    SaccGalaxyWindowedFixture,
+    WindowedAngularPowerSpectrum,
+)
 
 # Helper function for creating AST ClassDef nodes across Python versions
 if sys.version_info >= (3, 12):
@@ -83,7 +88,7 @@ else:
         )
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add handling of firecrown-specific options for the pytest test runner.
 
     --runslow: used to run tests marked as slow, which are otherwise not run.
@@ -100,7 +105,7 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """Add new markers that can be set on pytest tests.
 
     Use the marker `slow` for any test that takes more than a second to run.
@@ -110,7 +115,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
     """Apply our special markers and option handling for pytest."""
 
     if not config.getoption("--example"):
@@ -120,7 +127,7 @@ def pytest_collection_modifyitems(config, items):
         _skip_tests(items, "slow", "need --runslow option to run")
 
 
-def _skip_tests(items, keyword, reason):
+def _skip_tests(items: list[pytest.Item], keyword: str, reason: str) -> None:
     """Helper method to skip tests based on a marker name."""
 
     tests_to_skip = pytest.mark.skip(reason=reason)
@@ -228,7 +235,7 @@ def fixture_tools_with_vanilla_cosmology() -> ModelingTools:
 
 
 @pytest.fixture(name="harmonic_bin_1")
-def fixture_harmonic_bin_1(request) -> TomographicBin:
+def fixture_harmonic_bin_1(request: pytest.FixtureRequest) -> TomographicBin:
     """Generate an TomographicBin object with 5 bins."""
     return request.param
 
@@ -327,7 +334,7 @@ def make_many_harmonic_bins() -> list[TomographicBin]:
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
-def fixture_real_bin_1(request) -> TomographicBin:
+def fixture_real_bin_1(request: pytest.FixtureRequest) -> TomographicBin:
     """Generate an TomographicBin object with 5 bins."""
     x = TomographicBin(
         bin_name="bin_1",
@@ -348,7 +355,7 @@ def fixture_real_bin_1(request) -> TomographicBin:
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
-def fixture_real_bin_2(request) -> TomographicBin:
+def fixture_real_bin_2(request: pytest.FixtureRequest) -> TomographicBin:
     """Generate an TomographicBin object with 3 bins."""
     x = TomographicBin(
         bin_name="bin_2",
@@ -584,9 +591,7 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0", scope="module")
-def fixture_sacc_galaxy_cells_src0_src0() -> (
-    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
-):
+def fixture_sacc_galaxy_cells_src0_src0() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -602,7 +607,13 @@ def fixture_sacc_galaxy_cells_src0_src0() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src1", scope="module")
@@ -635,9 +646,7 @@ def fixture_sacc_galaxy_cells_src0_src1() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens0", scope="module")
-def fixture_sacc_galaxy_cells_lens0_lens0() -> (
-    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
-):
+def fixture_sacc_galaxy_cells_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -653,7 +662,13 @@ def fixture_sacc_galaxy_cells_lens0_lens0() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="lens0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.COUNTS},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens1")
@@ -684,9 +699,7 @@ def fixture_sacc_galaxy_cells_lens0_lens1() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0")
-def fixture_sacc_galaxy_xis_lens0_lens0() -> (
-    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
-):
+def fixture_sacc_galaxy_xis_lens0_lens0() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -702,7 +715,13 @@ def fixture_sacc_galaxy_xis_lens0_lens0() -> (
     cov = np.diag(np.ones_like(xis) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="lens0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.COUNTS},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens1")
@@ -866,14 +885,7 @@ def fixture_sacc_galaxy_cells() -> tuple[
 
 
 @pytest.fixture(name="sacc_galaxy_cwindows", scope="module")
-def fixture_sacc_galaxy_cwindows() -> tuple[
-    sacc.Sacc,
-    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-    dict[
-        tuple[TracerNames, str],
-        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-    ],
-]:
+def fixture_sacc_galaxy_cwindows() -> SaccGalaxyWindowedFixture:
     """Fixture for a SACC data with window functions.
 
     Module-scoped because SACC objects are expensive to create and are
@@ -888,11 +900,8 @@ def fixture_sacc_galaxy_cwindows() -> tuple[
     src_bins_centers = np.linspace(0.25, 0.75, 5)
     lens_bins_centers = np.linspace(0.1, 0.6, 5)
 
-    tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
-    tracer_pairs: dict[
-        tuple[TracerNames, str],
-        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
-    ] = {}
+    tracers: dict[str, RedshiftDistribution] = {}
+    tracer_pairs: dict[tuple[TracerNames, str], WindowedAngularPowerSpectrum] = {}
 
     for i, mn in enumerate(src_bins_centers):
         dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
@@ -1176,9 +1185,7 @@ def fixture_sacc_galaxy_cells_order_convention() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_data")
-def fixture_sacc_galaxy_cells_src0_src0_no_data() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
+def fixture_sacc_galaxy_cells_src0_src0_no_data() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -1187,32 +1194,38 @@ def fixture_sacc_galaxy_cells_src0_src0_no_data() -> (
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
-@pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_no_data")
-def fixture_sacc_galaxy_xis_lens0_lens0_no_data() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
+@pytest.fixture(name="sacc_galaxy_lens0_no_two_point_data")
+def fixture_sacc_galaxy_lens0_no_two_point_data() -> sacc.Sacc:
+    """Provide lens0 redshift information without measured two-point data.
+
+    No angular separations or correlation measurements are stored.
+
+    :returns: A SACC object containing only the lens0 redshift tracer.
+    """
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz)
 
-    return sacc_data, z, thetas
+    return sacc_data
 
 
 # Two-point related SACC data fixtures with window functions
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_window")
-def fixture_sacc_galaxy_cells_src0_src0_window() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
+def fixture_sacc_galaxy_cells_src0_src0_window() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data with a window function."""
     sacc_data = sacc.Sacc()
 
@@ -1233,13 +1246,17 @@ def fixture_sacc_galaxy_cells_src0_src0_window() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_window")
-def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
+def fixture_sacc_galaxy_cells_src0_src0_no_window() -> tuple[sacc.Sacc, TomographicBin]:
     """Fixture for a SACC data without a window function."""
     sacc_data = sacc.Sacc()
 
@@ -1255,7 +1272,13 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
-    return sacc_data, z, dndz
+    expected_bin = TomographicBin(
+        bin_name="src0",
+        z=z.copy(),
+        dndz=dndz.copy(),
+        measurements={Galaxies.SHEAR_E},
+    )
+    return sacc_data, expected_bin
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_real")
@@ -1321,7 +1344,7 @@ def fixture_tp_factory_missing_counts(
 # Optimized fixtures that eliminate "incompatible measurements" skips
 
 
-def _discover_measurements_by_space():
+def _discover_measurements_by_space() -> tuple[list[Measurement], list[Measurement]]:
     """Automatically discover all measurements that support real/harmonic space.
 
     This function dynamically finds all measurement types from the enums,
@@ -1355,7 +1378,10 @@ def _discover_measurements_by_space():
     return real_measurements, harmonic_measurements
 
 
-def _generate_compatible_pairs(measurements, compatibility_func):
+def _generate_compatible_pairs(
+    measurements: list[Measurement],
+    compatibility_func: Callable[[Measurement, Measurement], bool],
+) -> list[tuple[Measurement, Measurement]]:
     """Generate all valid measurement pairs for a given compatibility function."""
     return [
         (m1, m2)
@@ -1376,7 +1402,9 @@ _VALID_HARMONIC_MEASUREMENT_PAIRS = _generate_compatible_pairs(
 )
 
 
-def _create_measurement_pair_ids(pairs):
+def _create_measurement_pair_ids(
+    pairs: list[tuple[Measurement, Measurement]],
+) -> list[str]:
     """Create human-readable test IDs for measurement pairs."""
     return [f"{m1.name.lower()}-{m2.name.lower()}" for m1, m2 in pairs]
 
@@ -1386,7 +1414,9 @@ def _create_measurement_pair_ids(pairs):
     params=_VALID_REAL_MEASUREMENT_PAIRS,
     ids=_create_measurement_pair_ids(_VALID_REAL_MEASUREMENT_PAIRS),
 )
-def fixture_optimized_real_measurement_pair(request):
+def fixture_optimized_real_measurement_pair(
+    request: pytest.FixtureRequest,
+) -> tuple[Measurement, Measurement]:
     """Generate only valid real-space measurement pairs.
 
     Eliminates all "incompatible measurements" skips by pre-filtering
@@ -1401,7 +1431,9 @@ def fixture_optimized_real_measurement_pair(request):
     params=_VALID_HARMONIC_MEASUREMENT_PAIRS,
     ids=_create_measurement_pair_ids(_VALID_HARMONIC_MEASUREMENT_PAIRS),
 )
-def fixture_optimized_harmonic_measurement_pair(request):
+def fixture_optimized_harmonic_measurement_pair(
+    request: pytest.FixtureRequest,
+) -> tuple[Galaxies | CMB, Galaxies | CMB]:
     """Generate only valid harmonic-space measurement pairs.
 
     Eliminates all "incompatible measurements" skips by pre-filtering
@@ -1412,7 +1444,9 @@ def fixture_optimized_harmonic_measurement_pair(request):
 
 
 @pytest.fixture(name="optimized_real_two_point_xy")
-def fixture_optimized_real_two_point_xy(optimized_real_measurement_pair) -> TwoPointXY:
+def fixture_optimized_real_two_point_xy(
+    optimized_real_measurement_pair: tuple[Measurement, Measurement],
+) -> TwoPointXY:
     """Generate TwoPointXY for real space with zero skipped tests.
 
     Uses auto-discovered valid measurement pairs, eliminating all
@@ -1440,7 +1474,7 @@ def fixture_optimized_real_two_point_xy(optimized_real_measurement_pair) -> TwoP
 
 @pytest.fixture(name="optimized_harmonic_two_point_xy")
 def fixture_optimized_harmonic_two_point_xy(
-    optimized_harmonic_measurement_pair,
+    optimized_harmonic_measurement_pair: tuple[Galaxies | CMB, Galaxies | CMB],
 ) -> TwoPointXY:
     """Generate TwoPointXY for harmonic space with zero skipped tests.
 

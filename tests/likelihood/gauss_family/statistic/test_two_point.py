@@ -3,6 +3,7 @@ Tests for the TwoPoint module.
 """
 
 import re
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -50,7 +51,7 @@ from firecrown.updatable import ParamsMap, get_default_params_map
 
 
 @pytest.fixture(name="include_rsd", params=[True, False], ids=["rsd", "no_rsd"])
-def fixture_include_rsd(request) -> bool:
+def fixture_include_rsd(request: pytest.FixtureRequest) -> bool:
     """Return whether to include RSD in the test."""
     return request.param
 
@@ -90,18 +91,20 @@ def fixture_two_point_without_window(
 
 
 @pytest.fixture(name="apply_interp_when", params=list(tp.ApplyInterpolationWhen))
-def fixture_apply_interp_when(request) -> tp.ApplyInterpolationWhen:
+def fixture_apply_interp_when(
+    request: pytest.FixtureRequest,
+) -> tp.ApplyInterpolationWhen:
     return request.param
 
 
 @pytest.fixture(name="window_fixture", params=["with_window", "no_window"])
-def fixture_window_data(request):
+def fixture_window_data(request: pytest.FixtureRequest) -> str:
     """Parameterized fixture for window vs no-window test data."""
     return request.param
 
 
 @pytest.fixture(name="binning_type", params=["lin", "log"])
-def fixture_binning_type(request) -> str:
+def fixture_binning_type(request: pytest.FixtureRequest) -> str:
     """Parameterized fixture for binning types."""
     return request.param
 
@@ -153,15 +156,15 @@ def test_tracer_names() -> None:
 
 def test_two_point_src0_src0_window_parameterized(
     window_fixture: str,
-    sacc_galaxy_cells_src0_src0_window,
-    sacc_galaxy_cells_src0_src0_no_window,
+    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_no_window: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
     """Test TwoPoint theory calculations are repeatable for both window scenarios."""
     if window_fixture == "with_window":
-        sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+        sacc_data, _ = sacc_galaxy_cells_src0_src0_window
         expected_window = True
     else:  # no_window
-        sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
+        sacc_data, _ = sacc_galaxy_cells_src0_src0_no_window
         expected_window = False
 
     src0 = WeakLensing(sacc_tracer="src0")
@@ -212,10 +215,11 @@ def test_two_point_generate_ell_or_theta() -> None:
 
 
 def test_two_point_src0_src0_no_data_binning(
-    sacc_galaxy_cells_src0_src0_no_data, binning_type: str
+    sacc_galaxy_cells_src0_src0_no_data: tuple[sacc.Sacc, TomographicBin],
+    binning_type: str,
 ) -> None:
     """Test TwoPoint with different binning types when no data is present."""
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -243,12 +247,18 @@ def test_two_point_src0_src0_no_data_binning(
     assert all(statistic.ells <= 100)
 
 
-def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_no_data
+def test_two_point_lens0_lens0_generates_configured_thetas_without_measurements(
+    sacc_galaxy_lens0_no_two_point_data: sacc.Sacc,
+) -> None:
+    """Generate a configured angular grid when correlation measurements are absent.
 
-    src0 = NumberCounts(sacc_tracer="lens0")
+    This tests statistic setup, not a physical correlation prediction.
 
-    ell_config: EllOrThetaConfig = {
+    :param sacc_galaxy_lens0_no_two_point_data: Redshift tracer without two-point data.
+    """
+    lens0 = NumberCounts(sacc_tracer="lens0")
+
+    theta_config: EllOrThetaConfig = {
         "minimum": 0.0,
         "maximum": 1.0,
         "n": 5,
@@ -257,12 +267,12 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
 
     statistic = tp.TwoPoint(
         "galaxy_density_xi",
-        src0,
-        src0,
-        ell_or_theta=ell_config,
+        lens0,
+        lens0,
+        ell_or_theta=theta_config,
     )
     with pytest.warns(UserWarning):
-        statistic.read(sacc_data)
+        statistic.read(sacc_galaxy_lens0_no_two_point_data)
 
     assert statistic.window is None
     assert statistic.ells is None
@@ -277,7 +287,7 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
     maximum=floats(min_value=51, max_value=1000),
     n=integers(min_value=2, max_value=20),
 )
-def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
+def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int) -> None:
     """Test that generated ells are always within specified bounds using hypothesis."""
     # Skip invalid cases
     assume(minimum < maximum)
@@ -306,7 +316,9 @@ def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
     maximum=floats(min_value=0.6, max_value=2.0),
     n=integers(min_value=2, max_value=15),
 )
-def test_theta_generation_bounds_property(minimum: float, maximum: float, n: int):
+def test_theta_generation_bounds_property(
+    minimum: float, maximum: float, n: int
+) -> None:
     """Generated thetas are always within specified bounds using hypothesis."""
     # Skip invalid cases
     assume(minimum < maximum)
@@ -331,8 +343,10 @@ def test_two_point_theory_construction() -> None:
     assert theory.source1 is src0
 
 
-def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0
+def test_two_point_lens0_lens0_config(
+    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_xis_lens0_lens0
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
@@ -363,8 +377,10 @@ def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
     statistic.compute_theory_vector(tools)
 
 
-def test_two_point_src0_src0_no_data_error(sacc_galaxy_cells_src0_src0_no_data) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
+def test_two_point_src0_src0_no_data_error(
+    sacc_galaxy_cells_src0_src0_no_data: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -380,14 +396,16 @@ def test_two_point_src0_src0_no_data_error(sacc_galaxy_cells_src0_src0_no_data) 
             statistic.read(sacc_data)
 
 
-def test_two_point_lens0_lens0_no_data_error(
-    sacc_galaxy_xis_lens0_lens0_no_data,
+def test_two_point_lens0_lens0_requires_theta_config_without_measurements(
+    sacc_galaxy_lens0_no_two_point_data: sacc.Sacc,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_no_data
+    """Reject setup without correlation measurements or a theta configuration.
 
-    src0 = NumberCounts(sacc_tracer="lens0")
+    :param sacc_galaxy_lens0_no_two_point_data: Redshift tracer without two-point data.
+    """
+    lens0 = NumberCounts(sacc_tracer="lens0")
 
-    statistic = tp.TwoPoint("galaxy_density_xi", src0, src0)
+    statistic = tp.TwoPoint("galaxy_density_xi", lens0, lens0)
     with pytest.warns(UserWarning, match="Empty index selected"):
         with pytest.raises(
             RuntimeError,
@@ -396,13 +414,13 @@ def test_two_point_lens0_lens0_no_data_error(
                 "and no input theta values were given"
             ),
         ):
-            statistic.read(sacc_data)
+            statistic.read(sacc_galaxy_lens0_no_two_point_data)
 
 
 def test_two_point_src0_src0_data_and_conf_warn(
-    sacc_galaxy_cells_src0_src0_window,
+    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_window
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -424,8 +442,10 @@ def test_two_point_src0_src0_data_and_conf_warn(
         statistic.read(sacc_data)
 
 
-def test_two_point_lens0_lens0_data_and_conf_warn(sacc_galaxy_xis_lens0_lens0) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0
+def test_two_point_lens0_lens0_data_and_conf_warn(
+    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+) -> None:
+    sacc_data, _ = sacc_galaxy_xis_lens0_lens0
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
@@ -644,7 +664,7 @@ class ModelWithApplyInterpWhen(BaseModel):
     apply_interp_when: tp.ApplyInterpolationWhen
 
 
-def test_apply_interp_when_serialization_default():
+def test_apply_interp_when_serialization_default() -> None:
     model = ModelWithApplyInterpWhen(
         apply_interp_when=tp.ApplyInterpolationWhen.DEFAULT
     )
@@ -657,7 +677,7 @@ def test_apply_interp_when_serialization_default():
     assert model.apply_interp_when == tp.ApplyInterpolationWhen.DEFAULT
 
 
-def test_apply_interp_when_serialization_all():
+def test_apply_interp_when_serialization_all() -> None:
     model = ModelWithApplyInterpWhen(apply_interp_when=tp.ApplyInterpolationWhen.ALL)
     assert model.apply_interp_when == tp.ApplyInterpolationWhen.ALL
 
@@ -668,7 +688,7 @@ def test_apply_interp_when_serialization_all():
     assert model.apply_interp_when == tp.ApplyInterpolationWhen.ALL
 
 
-def test_apply_interp_when_serialization_none():
+def test_apply_interp_when_serialization_none() -> None:
     model = ModelWithApplyInterpWhen(apply_interp_when=tp.ApplyInterpolationWhen.NONE)
     assert model.apply_interp_when == tp.ApplyInterpolationWhen.NONE
 
@@ -679,7 +699,9 @@ def test_apply_interp_when_serialization_none():
     assert model.apply_interp_when == tp.ApplyInterpolationWhen.NONE
 
 
-def test_apply_interp_when_serialization(apply_interp_when: tp.ApplyInterpolationWhen):
+def test_apply_interp_when_serialization(
+    apply_interp_when: tp.ApplyInterpolationWhen,
+) -> None:
     model = ModelWithApplyInterpWhen(apply_interp_when=apply_interp_when)
     assert model.apply_interp_when == apply_interp_when
 
@@ -690,7 +712,7 @@ def test_apply_interp_when_serialization(apply_interp_when: tp.ApplyInterpolatio
     assert model.apply_interp_when == apply_interp_when
 
 
-def test_apply_interp_when_serialization_error():
+def test_apply_interp_when_serialization_error() -> None:
     with pytest.raises(
         TypeError, match="Cannot parse ApplyInterpolationWhen from value: None"
     ):
@@ -704,12 +726,12 @@ def test_apply_interp_when_serialization_error():
 
 
 def test_two_point_src0_src0_window_aiw(
-    sacc_galaxy_cells_src0_src0_window: tuple[object, ...],
+    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
     """This test also makes sure that TwoPoint theory calculations are
     repeatable."""
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_window
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -738,10 +760,10 @@ def test_two_point_src0_src0_window_aiw(
 
 
 def test_two_point_src0_src0_no_window_aiw(
-    sacc_galaxy_cells_src0_src0_no_window: tuple[object, ...],
+    sacc_galaxy_cells_src0_src0_no_window: tuple[sacc.Sacc, TomographicBin],
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
+    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_window
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -800,7 +822,7 @@ def test_two_point_src0_src0_real_aiw(
         assert len(cells) != len(statistic.theory.ells_for_xi)
 
 
-def test_calculate_pk_with_halo_model():
+def test_calculate_pk_with_halo_model() -> None:
     """Test calculate_pk function when tracers have halo model (covers line 126)."""
     from unittest.mock import Mock, patch
 
@@ -863,7 +885,7 @@ def test_calculate_pk_with_halo_model():
         tools.has_pk.assert_called_once_with("test_pk")
 
 
-def test_two_point_normalize_window_default():
+def test_two_point_normalize_window_default() -> None:
     """Test that TwoPoint.normalize_window defaults to True."""
     source = NumberCounts(sacc_tracer="lens_0")
     two_point = tp.TwoPoint(
@@ -874,7 +896,7 @@ def test_two_point_normalize_window_default():
     assert two_point.normalize_window is True
 
 
-def test_two_point_normalize_window_false():
+def test_two_point_normalize_window_false() -> None:
     """Test that TwoPoint.normalize_window can be set to False."""
     source = NumberCounts(sacc_tracer="lens_0")
     two_point = tp.TwoPoint(
@@ -886,7 +908,7 @@ def test_two_point_normalize_window_false():
     assert two_point.normalize_window is False
 
 
-def test_two_point_normalize_window_true_explicit():
+def test_two_point_normalize_window_true_explicit() -> None:
     """Test that TwoPoint.normalize_window can be explicitly set to True."""
     source = NumberCounts(sacc_tracer="lens_0")
     two_point = tp.TwoPoint(
@@ -899,7 +921,7 @@ def test_two_point_normalize_window_true_explicit():
 
 
 @pytest.fixture(name="sacc_with_window_for_two_point")
-def fixture_sacc_with_window_for_two_point(tmp_path):
+def fixture_sacc_with_window_for_two_point(tmp_path: Path) -> sacc.Sacc:
     """Create a SACC file with window functions for TwoPoint testing."""
     import pyccl
 
@@ -952,7 +974,9 @@ def fixture_sacc_with_window_for_two_point(tmp_path):
     return sacc_data
 
 
-def test_two_point_normalize_window_used_in_read(sacc_with_window_for_two_point):
+def test_two_point_normalize_window_used_in_read(
+    sacc_with_window_for_two_point: sacc.Sacc,
+) -> None:
     """Test that normalize_window is actually used during read."""
     # Use SACC data with window functions from fixture
     sacc_data = sacc_with_window_for_two_point

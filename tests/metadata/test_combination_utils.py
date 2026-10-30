@@ -22,7 +22,7 @@ def fixture_sample_combinations(
     return make_all_photoz_bin_combinations(all_harmonic_bins)
 
 
-def test_filter_two_point_combinations_empty_input():
+def test_filter_two_point_combinations_empty_input() -> None:
     """Test filtering with an empty input list."""
     selector = mt.AutoNameBinPairSelector()
     result = filter_two_point_combinations([], selector)
@@ -31,7 +31,7 @@ def test_filter_two_point_combinations_empty_input():
 
 def test_filter_two_point_combinations_all_pass(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering where all combinations pass the selector."""
     # Create a selector that accepts everything
     # Using OR of complementary selectors
@@ -46,7 +46,7 @@ def test_filter_two_point_combinations_all_pass(
 
 def test_filter_two_point_combinations_none_pass(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering where no combinations pass the selector."""
     # Create a selector that rejects everything by using contradictory conditions
     selector = mt.AutoNameBinPairSelector() & mt.CrossNameBinPairSelector()
@@ -60,7 +60,7 @@ def test_filter_two_point_combinations_none_pass(
 
 def test_filter_two_point_combinations_auto_name(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering with AutoNameBinPairSelector."""
     selector = mt.AutoNameBinPairSelector()
 
@@ -78,7 +78,7 @@ def test_filter_two_point_combinations_auto_name(
 
 def test_filter_two_point_combinations_cross_name(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering with CrossNameBinPairSelector."""
     selector = mt.CrossNameBinPairSelector()
 
@@ -96,7 +96,7 @@ def test_filter_two_point_combinations_cross_name(
 
 def test_filter_two_point_combinations_source_selector(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering with SourceBinPairSelector."""
     selector = mt.SourceBinPairSelector()
 
@@ -111,7 +111,7 @@ def test_filter_two_point_combinations_source_selector(
 
 def test_filter_two_point_combinations_lens_selector(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering with LensBinPairSelector."""
     selector = mt.LensBinPairSelector()
 
@@ -126,7 +126,7 @@ def test_filter_two_point_combinations_lens_selector(
 
 def test_filter_two_point_combinations_composite_and(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering with composite AND selector."""
     selector = mt.AutoNameBinPairSelector() & mt.SourceBinPairSelector()
 
@@ -144,7 +144,7 @@ def test_filter_two_point_combinations_composite_and(
 
 def test_filter_two_point_combinations_composite_or(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering with composite OR selector."""
     selector = (mt.AutoNameBinPairSelector() & mt.SourceBinPairSelector()) | (
         mt.AutoNameBinPairSelector() & mt.LensBinPairSelector()
@@ -171,7 +171,7 @@ def test_filter_two_point_combinations_composite_or(
 
 def test_filter_two_point_combinations_not_selector(
     sample_combinations: list[mt.TwoPointXY],
-):
+) -> None:
     """Test filtering with NOT selector."""
     selector = ~mt.AutoNameBinPairSelector()
 
@@ -182,7 +182,7 @@ def test_filter_two_point_combinations_not_selector(
         assert combo.x.bin_name != combo.y.bin_name
 
 
-def test_filter_two_point_combinations_named_selector():
+def test_filter_two_point_combinations_named_selector() -> None:
     """Test filtering with NamedBinPairSelector."""
     # Create specific bins for this test
     bin1 = mt.TomographicBin(
@@ -217,7 +217,7 @@ def test_filter_two_point_combinations_named_selector():
     assert result[0].y.bin_name == "bin_2"
 
 
-def test_filter_two_point_combinations_preserves_order():
+def test_filter_two_point_combinations_preserves_order() -> None:
     """Test that filtering preserves the original order of combinations."""
     # Create bins with specific names to control ordering
     bins = [
@@ -248,7 +248,7 @@ def test_filter_two_point_combinations_preserves_order():
     assert result == expected_order
 
 
-def test_filter_two_point_combinations_auto_measurement():
+def test_filter_two_point_combinations_auto_measurement() -> None:
     """Test filtering with AutoMeasurementBinPairSelector."""
     bin1 = mt.TomographicBin(
         bin_name="bin_1",
@@ -273,7 +273,7 @@ def test_filter_two_point_combinations_auto_measurement():
         assert combo.x_measurement == combo.y_measurement
 
 
-def test_filter_two_point_combinations_cross_measurement():
+def test_filter_two_point_combinations_cross_measurement() -> None:
     """Test filtering with CrossMeasurementBinPairSelector."""
     bin1 = mt.TomographicBin(
         bin_name="bin_1",
@@ -292,7 +292,7 @@ def test_filter_two_point_combinations_cross_measurement():
         assert combo.x_measurement != combo.y_measurement
 
 
-def test_filter_two_point_combinations_complex_selector():
+def test_filter_two_point_combinations_complex_selector() -> None:
     """Test filtering with a complex nested selector."""
     bins = [
         mt.TomographicBin(
@@ -329,7 +329,7 @@ def test_filter_two_point_combinations_complex_selector():
         assert auto_source or cross_lens
 
 
-def test_filter_two_point_combinations_triple_negation():
+def test_filter_two_point_combinations_triple_negation() -> None:
     """Test filtering with triple negation selector."""
     bins = [
         mt.TomographicBin(
@@ -352,7 +352,7 @@ def test_filter_two_point_combinations_triple_negation():
         assert combo.x.bin_name != combo.y.bin_name
 
 
-def test_filter_two_point_combinations_with_real_vs_harmonic():
+def test_filter_two_point_combinations_with_real_vs_harmonic() -> None:
     """Test that filter_two_point_combinations.
 
     Test that filter_two_point_combinations works with different measurement
@@ -378,7 +378,7 @@ def test_filter_two_point_combinations_with_real_vs_harmonic():
     assert result[0].y_measurement == mt.Galaxies.SHEAR_E
 
 
-def test_filter_two_point_combinations_left_right_measurement_selectors():
+def test_filter_two_point_combinations_left_right_measurement_selectors() -> None:
     """Test filtering with SourceLensBinPairSelector."""
     bin1 = mt.TomographicBin(
         bin_name="src",
@@ -408,7 +408,7 @@ def test_filter_two_point_combinations_left_right_measurement_selectors():
     assert result[0].y_measurement in mt.GALAXY_LENS_TYPES
 
 
-def test_filter_two_point_combinations_idempotent():
+def test_filter_two_point_combinations_idempotent() -> None:
     """Test that applying the same filter twice gives the same result."""
     bins = [
         mt.TomographicBin(
@@ -430,7 +430,7 @@ def test_filter_two_point_combinations_idempotent():
     assert result1 == result2
 
 
-def test_filter_two_point_combinations_commutative_and():
+def test_filter_two_point_combinations_commutative_and() -> None:
     """Test that AND selector is commutative."""
     bins = [
         mt.TomographicBin(
@@ -453,7 +453,7 @@ def test_filter_two_point_combinations_commutative_and():
     assert result1 == result2
 
 
-def test_filter_two_point_combinations_commutative_or():
+def test_filter_two_point_combinations_commutative_or() -> None:
     """Test that OR selector is commutative."""
     bins = [
         mt.TomographicBin(

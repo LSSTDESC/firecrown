@@ -15,7 +15,7 @@ from firecrown.updatable import ParamsMap
 VECTOR_CLASSES = (firecrown.data_types.TheoryVector, firecrown.data_types.DataVector)
 
 
-def test_vector_create():
+def test_vector_create() -> None:
     vals = np.random.random_sample((10,))
     assert isinstance(vals, np.ndarray)
     assert vals.dtype == np.float64
@@ -27,7 +27,7 @@ def test_vector_create():
         assert np.array_equal(vals, result)
 
 
-def test_vector_from_list():
+def test_vector_from_list() -> None:
     vals = [1.5, 2.5, -3.0, 10.0]
     assert isinstance(vals, list)
     assert len(vals) == 4
@@ -39,7 +39,7 @@ def test_vector_from_list():
             assert result[i] == val
 
 
-def test_vector_slicing():
+def test_vector_slicing() -> None:
     for cls in VECTOR_CLASSES:
         vec = cls.create(np.random.random_sample((12,)))
         assert isinstance(vec, cls)
@@ -48,7 +48,7 @@ def test_vector_slicing():
         assert isinstance(middle_part, cls)
 
 
-def test_vector_copying():
+def test_vector_copying() -> None:
     for cls in VECTOR_CLASSES:
         vec = cls.create(np.random.random_sample((12,)))
         assert isinstance(vec, cls)
@@ -58,7 +58,7 @@ def test_vector_copying():
         assert isinstance(vec_copy, cls)
 
 
-def test_excplicit_vector_construction():
+def test_excplicit_vector_construction() -> None:
     for cls in VECTOR_CLASSES:
         vec = cls(shape=(4,), dtype=np.float64)
         assert isinstance(vec, cls)
@@ -66,7 +66,7 @@ def test_excplicit_vector_construction():
         assert vec.dtype == np.float64
 
 
-def test_ufunc_on_vector():
+def test_ufunc_on_vector() -> None:
     data = np.array([0.0, 0.25, 0.50])
     expected = np.sin(data)
     for cls in VECTOR_CLASSES:
@@ -76,7 +76,7 @@ def test_ufunc_on_vector():
         assert np.array_equal(result, expected)
 
 
-def test_vector_residuals():
+def test_vector_residuals() -> None:
     theory = firecrown.data_types.TheoryVector.from_list([1.0, 2.0, 3.0])
     data = firecrown.data_types.DataVector.from_list([1.1, 2.1, 3.1])
     difference = firecrown.data_types.residuals(data, theory)
@@ -87,7 +87,7 @@ def test_vector_residuals():
 
 def test_guarded_statistic_read_only_once(
     sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: list[stat.TrivialStatistic]
-):
+) -> None:
     gs = stat.GuardedStatistic(trivial_stats.pop())
     assert not gs.statistic.ready
     gs.read(sacc_data_for_trivial_stat)
@@ -100,13 +100,15 @@ def test_guarded_statistic_read_only_once(
 
 def test_guarded_static_read_data_vector(
     sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: list[stat.TrivialStatistic]
-):
+) -> None:
     gs = stat.GuardedStatistic(trivial_stats.pop())
     gs.read(sacc_data_for_trivial_stat)
     assert_allclose(gs.get_data_vector(), [1.0, 4.0, -3.0])
 
 
-def test_guarded_statistic_get_data_before_read(trivial_stats):
+def test_guarded_statistic_get_data_before_read(
+    trivial_stats: list[stat.TrivialStatistic],
+) -> None:
     s = trivial_stats.pop()
     with pytest.raises(
         stat.StatisticUnreadError,
@@ -117,13 +119,13 @@ def test_guarded_statistic_get_data_before_read(trivial_stats):
         _ = g.get_data_vector()
 
 
-def test_statistic_get_data_vector_before_read():
+def test_statistic_get_data_vector_before_read() -> None:
     s = stat.TrivialStatistic()
     with pytest.raises(AssertionError):
         _ = s.get_data_vector()
 
 
-def test_guarded_statiistic_compute_theory_before_read():
+def test_guarded_statiistic_compute_theory_before_read() -> None:
     gs = stat.GuardedStatistic(stat.TrivialStatistic())
     with pytest.raises(
         RuntimeError,
@@ -132,13 +134,15 @@ def test_guarded_statiistic_compute_theory_before_read():
         gs.compute_theory_vector(ModelingTools())
 
 
-def test_statistic_get_data_vector_after_read(sacc_data_for_trivial_stat):
+def test_statistic_get_data_vector_after_read(
+    sacc_data_for_trivial_stat: sacc.Sacc,
+) -> None:
     s = stat.TrivialStatistic()
     s.read(sacc_data_for_trivial_stat)
     assert_allclose(s.get_data_vector(), [1.0, 4.0, -3.0])
 
 
-def test_statistic_get_theory_vector_before_compute():
+def test_statistic_get_theory_vector_before_compute() -> None:
     s = stat.TrivialStatistic()
     with pytest.raises(
         RuntimeError, match="The theory for statistic .* has not been computed yet\\."
@@ -146,7 +150,9 @@ def test_statistic_get_theory_vector_before_compute():
         _ = s.get_theory_vector()
 
 
-def test_statistic_get_theory_vector_after_compute(sacc_data_for_trivial_stat):
+def test_statistic_get_theory_vector_after_compute(
+    sacc_data_for_trivial_stat: sacc.Sacc,
+) -> None:
     s = stat.TrivialStatistic()
     s.read(sacc_data_for_trivial_stat)
     s.update(ParamsMap(mean=10.5))
@@ -154,7 +160,9 @@ def test_statistic_get_theory_vector_after_compute(sacc_data_for_trivial_stat):
     assert_allclose(s.get_theory_vector(), [10.5, 10.5, 10.5])
 
 
-def test_statistic_get_theory_vector_after_reset(sacc_data_for_trivial_stat):
+def test_statistic_get_theory_vector_after_reset(
+    sacc_data_for_trivial_stat: sacc.Sacc,
+) -> None:
     s = stat.TrivialStatistic()
     s.read(sacc_data_for_trivial_stat)
     s.update(ParamsMap(mean=10.5))
@@ -166,7 +174,7 @@ def test_statistic_get_theory_vector_after_reset(sacc_data_for_trivial_stat):
         _ = s.get_theory_vector()
 
 
-def test_statistic_compute_theory_vector_before_read():
+def test_statistic_compute_theory_vector_before_read() -> None:
     s = stat.TrivialStatistic()
     with pytest.raises(
         RuntimeError,
@@ -175,7 +183,9 @@ def test_statistic_compute_theory_vector_before_read():
         s.compute_theory_vector(ModelingTools())
 
 
-def test_statistic_compute_theory_vector_before_update(sacc_data_for_trivial_stat):
+def test_statistic_compute_theory_vector_before_update(
+    sacc_data_for_trivial_stat: sacc.Sacc,
+) -> None:
     s = stat.TrivialStatistic()
     s.read(sacc_data_for_trivial_stat)
     with pytest.raises(
@@ -185,7 +195,9 @@ def test_statistic_compute_theory_vector_before_update(sacc_data_for_trivial_sta
         s.compute_theory_vector(ModelingTools())
 
 
-def test_statistic_compute_theory_vector_after_update(sacc_data_for_trivial_stat):
+def test_statistic_compute_theory_vector_after_update(
+    sacc_data_for_trivial_stat: sacc.Sacc,
+) -> None:
     s = stat.TrivialStatistic()
     s.read(sacc_data_for_trivial_stat)
     s.update(ParamsMap(mean=10.5))

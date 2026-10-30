@@ -9,7 +9,7 @@ from firecrown.models.cluster import (
 )
 
 
-def test_create_deltasigma_data():
+def test_create_deltasigma_data() -> None:
     s = sacc.Sacc()
     dsd = ShearData(s)
 
@@ -23,7 +23,9 @@ def test_create_deltasigma_data():
     assert dsd._radius_index == 3
 
 
-def test_get_survey_tracer_missing_survey_name(cluster_sacc_data: sacc.Sacc):
+def test_get_survey_tracer_missing_survey_name(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     dsd = ShearData(cluster_sacc_data)
     with pytest.raises(
         ValueError,
@@ -32,7 +34,9 @@ def test_get_survey_tracer_missing_survey_name(cluster_sacc_data: sacc.Sacc):
         dsd.get_survey_tracer("the_black_lodge")
 
 
-def test_get_survey_tracer_wrong_tracer_type(cluster_sacc_data: sacc.Sacc):
+def test_get_survey_tracer_wrong_tracer_type(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     dsd = ShearData(cluster_sacc_data)
     with pytest.raises(
         ValueError,
@@ -65,14 +69,16 @@ def test_wrong_tracer_number(cluster_sacc_data: sacc.Sacc) -> None:
         dsd._all_bin_combinations_for_data_type(cs, tracers_n)
 
 
-def test_get_survey_tracer_returns_survey_tracer(cluster_sacc_data: sacc.Sacc):
+def test_get_survey_tracer_returns_survey_tracer(
+    cluster_sacc_data: sacc.Sacc,
+) -> None:
     dsd = ShearData(cluster_sacc_data)
     survey = dsd.get_survey_tracer("my_survey")
     assert survey is not None
     assert isinstance(survey, sacc.tracers.SurveyTracer)
 
 
-def test_get_bin_edges_cluster_radius(cluster_sacc_data: sacc.Sacc):
+def test_get_bin_edges_cluster_radius(cluster_sacc_data: sacc.Sacc) -> None:
     dsd = ShearData(cluster_sacc_data)
     bins = dsd.get_bin_edges("my_survey", ClusterProperty.DELTASIGMA)
     assert len(bins) == 2
@@ -80,7 +86,7 @@ def test_get_bin_edges_cluster_radius(cluster_sacc_data: sacc.Sacc):
 
 def test_observed_data_and_indices_by_survey_cluster_deltasigma(
     cluster_sacc_data: sacc.Sacc,
-):
+) -> None:
     dsd = ShearData(cluster_sacc_data)
     data, indices = dsd.get_observed_data_and_indices_by_survey(
         "my_survey", ClusterProperty.DELTASIGMA
@@ -89,7 +95,7 @@ def test_observed_data_and_indices_by_survey_cluster_deltasigma(
     assert len(indices) == 2
 
 
-def test_get_bin_edges_cluster_shear(cluster_sacc_data: sacc.Sacc):
+def test_get_bin_edges_cluster_shear(cluster_sacc_data: sacc.Sacc) -> None:
     dsd = ShearData(cluster_sacc_data)
     bins = dsd.get_bin_edges("my_survey", ClusterProperty.SHEAR)
     assert len(bins) == 2
@@ -97,7 +103,7 @@ def test_get_bin_edges_cluster_shear(cluster_sacc_data: sacc.Sacc):
 
 def test_observed_data_and_indices_by_survey_cluster_shear(
     cluster_sacc_data: sacc.Sacc,
-):
+) -> None:
     dsd = ShearData(cluster_sacc_data)
     data, indices = dsd.get_observed_data_and_indices_by_survey(
         "my_survey", ClusterProperty.SHEAR
@@ -106,7 +112,7 @@ def test_observed_data_and_indices_by_survey_cluster_shear(
     assert len(indices) == 2
 
 
-def test_observed_data_and_indices_wrong_property():
+def test_observed_data_and_indices_wrong_property() -> None:
     """Test error when wrong property used with ShearData."""
     s = sacc.Sacc()
     ads = ShearData(s)
@@ -122,7 +128,7 @@ def test_observed_data_and_indices_wrong_property():
 
 def test_observed_data_and_indices_both_deltasigma_and_shear(
     cluster_sacc_data: sacc.Sacc,
-):
+) -> None:
     """Ensure error is raised if both DELTASIGMA and SHEAR are requested at once."""
     dsd = ShearData(cluster_sacc_data)
     with pytest.raises(

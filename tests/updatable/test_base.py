@@ -3,6 +3,7 @@
 from itertools import permutations
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from firecrown import updatable
@@ -24,13 +25,13 @@ from tests.updatable.updatable_test_support import (
 # pylint: disable-msg=E1101
 
 
-def test_get_params_names():
+def test_get_params_names() -> None:
     obj = SimpleUpdatable()
     found_names = obj.get_params_names()
     assert set(found_names) == {"x", "y"}
 
 
-def test_simple_updatable():
+def test_simple_updatable() -> None:
     obj = SimpleUpdatable()
     expected_params = RequiredParameters(
         [
@@ -52,7 +53,7 @@ def test_simple_updatable():
     assert obj.is_updated()
 
 
-def test_set_sampler_parameter():
+def test_set_sampler_parameter() -> None:
     my_updatable = MinimalUpdatable()
     my_param = updatable.register_new_updatable_parameter(default_value=42.0)
     my_param.set_fullname(prefix=None, name="the_meaning_of_life")
@@ -62,7 +63,7 @@ def test_set_sampler_parameter():
     assert my_updatable.the_meaning_of_life is None
 
 
-def test_set_sampler_parameter_rejects_internal_parameter():
+def test_set_sampler_parameter_rejects_internal_parameter() -> None:
     my_updatable = MinimalUpdatable()
     my_param = updatable.register_new_updatable_parameter(
         value=42.0, default_value=41.0
@@ -72,7 +73,7 @@ def test_set_sampler_parameter_rejects_internal_parameter():
         my_updatable.set_sampler_parameter(my_param)  # type: ignore[arg-type]
 
 
-def test_set_sampler_parameter_rejects_duplicates():
+def test_set_sampler_parameter_rejects_duplicates() -> None:
     my_updatable = MinimalUpdatable()
     my_param = updatable.register_new_updatable_parameter(default_value=42.0)
     my_param.set_fullname(prefix=None, name="the_meaning_of_life")
@@ -85,7 +86,7 @@ def test_set_sampler_parameter_rejects_duplicates():
         my_updatable.set_sampler_parameter(my_param_same)
 
 
-def test_set_internal_parameter():
+def test_set_internal_parameter() -> None:
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
         "the_meaning_of_life",
@@ -96,7 +97,7 @@ def test_set_internal_parameter():
     assert my_updatable.the_meaning_of_life == 1.0
 
 
-def test_set_parameter_using_internal_parameter():
+def test_set_parameter_using_internal_parameter() -> None:
     my_updatable = MinimalUpdatable()
     ip = updatable.InternalParameter(2112)
     my_updatable.set_parameter("epic_Rush_album", ip)
@@ -105,7 +106,7 @@ def test_set_parameter_using_internal_parameter():
     assert my_updatable.epic_Rush_album == 2112
 
 
-def test_set_internal_parameter_rejects_sampler_parameter():
+def test_set_internal_parameter_rejects_sampler_parameter() -> None:
     my_updatable = MinimalUpdatable()
     with pytest.raises(TypeError):
         my_updatable.set_internal_parameter(
@@ -116,7 +117,7 @@ def test_set_internal_parameter_rejects_sampler_parameter():
         )
 
 
-def test_set_internal_parameter_rejects_duplicates():
+def test_set_internal_parameter_rejects_duplicates() -> None:
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
         "the_meaning_of_life",
@@ -130,7 +131,7 @@ def test_set_internal_parameter_rejects_duplicates():
         )
 
 
-def test_set_parameter():
+def test_set_parameter() -> None:
     my_updatable = MinimalUpdatable()
     my_updatable.set_parameter(
         "the_meaning_of_life",
@@ -148,7 +149,7 @@ def test_set_parameter():
     assert my_updatable.no_meaning_of_life is None
 
 
-def test_update_rejects_internal_parameters():
+def test_update_rejects_internal_parameters() -> None:
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
         "the_meaning_of_life",
@@ -167,7 +168,7 @@ def test_update_rejects_internal_parameters():
     assert my_updatable.the_meaning_of_life == 2.0
 
 
-def test_setattr_with_list_of_updatables():
+def test_setattr_with_list_of_updatables() -> None:
     """Test setting an attribute to a list of Updatable objects.
 
     This tests the code path in __setattr__ that handles iterables containing
@@ -195,7 +196,7 @@ def test_setattr_with_list_of_updatables():
     assert child2.a == 4.0
 
 
-def test_update_already_updated_with_updated_record():
+def test_update_already_updated_with_updated_record() -> None:
     """Test calling update() twice with updated_record parameter.
 
     When an object is already updated and update() is called again with
@@ -222,7 +223,7 @@ def test_update_already_updated_with_updated_record():
     assert updated_records2[0].internal_params == []
 
 
-def test_update_already_updated_without_record():
+def test_update_already_updated_without_record() -> None:
     """Test calling update() twice without updated_record parameter.
 
     When an object is already updated and update() is called again without
@@ -249,7 +250,7 @@ def test_update_already_updated_without_record():
     assert obj.y == 2.0
 
 
-def test_reset_when_not_updated():
+def test_reset_when_not_updated() -> None:
     """Test calling reset() on an object that hasn't been updated.
 
     Should return early without doing anything (lines 234-235 in _base.py).
@@ -270,7 +271,7 @@ def test_reset_when_not_updated():
     assert obj.y is None
 
 
-def test_reset_with_nested_updatables_and_sampler_params():
+def test_reset_with_nested_updatables_and_sampler_params() -> None:
     """Test reset() with nested updatables and sampler parameters.
 
     Verifies that reset():
@@ -306,7 +307,7 @@ def test_reset_with_nested_updatables_and_sampler_params():
     assert child.a is None
 
 
-def test_tuple_attribute_adds_to_updatables():
+def test_tuple_attribute_adds_to_updatables() -> None:
     """Test that setting a tuple attribute adds Updatable elements to _updatables.
 
     When an Updatable container has an attribute set to an iterable containing
@@ -327,7 +328,9 @@ def test_tuple_attribute_adds_to_updatables():
 
 
 @pytest.fixture(name="nested_updatables", params=permutations(range(3)))
-def fixture_nested_updatables(request):
+def fixture_nested_updatables(
+    request: pytest.FixtureRequest,
+) -> npt.NDArray[np.object_]:
     updatables = np.array(
         [MinimalUpdatable(), SimpleUpdatable(), UpdatableWithDerived()]
     )
@@ -340,7 +343,9 @@ def fixture_nested_updatables(request):
     return updatables
 
 
-def test_nesting_updatables_missing_parameters(nested_updatables):
+def test_nesting_updatables_missing_parameters(
+    nested_updatables: npt.NDArray[np.object_],
+) -> None:
     base = nested_updatables[0]
     assert isinstance(base, Updatable)
 
@@ -373,7 +378,9 @@ def test_nesting_updatables_missing_parameters(nested_updatables):
         assert my_updatable.is_updated()
 
 
-def test_nesting_updatables_required_parameters(nested_updatables):
+def test_nesting_updatables_required_parameters(
+    nested_updatables: npt.NDArray[np.object_],
+) -> None:
     base = nested_updatables[0]
     assert isinstance(base, Updatable)
 
@@ -388,7 +395,9 @@ def test_nesting_updatables_required_parameters(nested_updatables):
     )
 
 
-def test_nesting_updatables_derived_parameters(nested_updatables):
+def test_nesting_updatables_derived_parameters(
+    nested_updatables: npt.NDArray[np.object_],
+) -> None:
     base = nested_updatables[0]
     assert isinstance(base, Updatable)
 

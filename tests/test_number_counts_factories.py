@@ -32,7 +32,7 @@ def fixture_nc_sys_factory() -> nc_factories.NumberCountsSystematicFactory:
     return nc_factories.PhotoZShiftFactory()
 
 
-def test_photozshift_not_applied_to_photometic_measurement():
+def test_photozshift_not_applied_to_photometic_measurement() -> None:
 
     factory = nc_factories.PhotoZShiftFactory()
     assert factory is not None

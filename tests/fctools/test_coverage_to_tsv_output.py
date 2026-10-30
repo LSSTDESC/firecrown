@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from firecrown.fctools.coverage_to_tsv import CoverageRecord, main, write_tsv_file
 
 from . import match_wrapped
@@ -17,7 +19,7 @@ from . import match_wrapped
 # Tests for write_tsv_file()
 
 
-def test_write_tsv_file(tmp_path):
+def test_write_tsv_file(tmp_path: Path) -> None:
     output_file = tmp_path / "output.tsv"
     data = [
         CoverageRecord(
@@ -59,7 +61,7 @@ def test_write_tsv_file(tmp_path):
     assert data_row[-1] == "0.25"
 
 
-def test_write_tsv_file_no_timing(tmp_path):
+def test_write_tsv_file_no_timing(tmp_path: Path) -> None:
     output_file = tmp_path / "output.tsv"
     data = [
         CoverageRecord(
@@ -102,7 +104,7 @@ def test_write_tsv_file_no_timing(tmp_path):
     assert data_row[-2] == "100.0"
 
 
-def test_write_tsv_file_multiple_records(tmp_path):
+def test_write_tsv_file_multiple_records(tmp_path: Path) -> None:
     output_file = tmp_path / "output.tsv"
     data = [
         CoverageRecord(
@@ -154,7 +156,7 @@ def test_write_tsv_file_multiple_records(tmp_path):
 # Tests for main()
 
 
-def test_main_basic(tmp_path):
+def test_main_basic(tmp_path: Path) -> None:
     # Create input file
     input_file = tmp_path / "coverage.json"
     coverage_data = {
@@ -204,7 +206,7 @@ def test_main_basic(tmp_path):
     assert match_wrapped(result.stdout, "Records written: 1")
 
 
-def test_main_with_timing(tmp_path):
+def test_main_with_timing(tmp_path: Path) -> None:
     # Create input file
     input_file = tmp_path / "coverage.json"
     coverage_data = {
@@ -268,7 +270,9 @@ def test_main_with_timing(tmp_path):
     assert match_wrapped(result.stdout, "Records with timing data:")
 
 
-def test_main_default_output_filename(tmp_path, monkeypatch):
+def test_main_default_output_filename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # Get absolute path to script before changing directory
     script_path = Path("firecrown/fctools/coverage_to_tsv.py").absolute()
 
@@ -317,7 +321,7 @@ def test_main_default_output_filename(tmp_path, monkeypatch):
     assert Path("coverage_data.tsv").exists()
 
 
-def test_main_nonexistent_input(tmp_path):
+def test_main_nonexistent_input(tmp_path: Path) -> None:
     input_file = tmp_path / "nonexistent.json"
     output_file = tmp_path / "output.tsv"
 
@@ -334,7 +338,7 @@ def test_main_nonexistent_input(tmp_path):
     assert match_wrapped(result.stderr.lower(), "does not exist")
 
 
-def test_main_invalid_json(tmp_path):
+def test_main_invalid_json(tmp_path: Path) -> None:
     input_file = tmp_path / "invalid.json"
     input_file.write_text("This is not valid JSON")
 
@@ -352,7 +356,7 @@ def test_main_invalid_json(tmp_path):
     assert "ERROR" in result.stderr
 
 
-def test_main_missing_expected_key(tmp_path):
+def test_main_missing_expected_key(tmp_path: Path) -> None:
     input_file = tmp_path / "bad_structure.json"
     # Missing 'files' key that code expects
     input_file.write_text('{"other_key": "value"}')
@@ -372,7 +376,7 @@ def test_main_missing_expected_key(tmp_path):
     assert match_wrapped(result.stdout, "Records written: 0")
 
 
-def test_main_write_error(tmp_path):
+def test_main_write_error(tmp_path: Path) -> None:
     input_file = tmp_path / "coverage.json"
     coverage_data = {
         "files": {
@@ -420,7 +424,7 @@ def test_main_write_error(tmp_path):
     assert match_wrapped(result.stdout, "Error: File operation failed")
 
 
-def test_main_timing_file_not_found(tmp_path):
+def test_main_timing_file_not_found(tmp_path: Path) -> None:
     input_file = tmp_path / "coverage.json"
     coverage_data = {
         "files": {
@@ -476,7 +480,7 @@ def test_main_timing_file_not_found(tmp_path):
 # Tests for main() function called directly (for coverage of console output)
 
 
-def test_main_direct_basic(tmp_path, capsys):
+def test_main_direct_basic(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Test main function called directly for coverage of success path console output.
 
     This test calls main() directly (not via subprocess) to ensure coverage
@@ -538,7 +542,9 @@ def test_main_direct_basic(tmp_path, capsys):
     assert match_wrapped(captured.out, "Records written: 1")
 
 
-def test_main_direct_with_timing(tmp_path, capsys):
+def test_main_direct_with_timing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main function with timing data for coverage of timing-related output.
 
     Tests the branch where timing_data is not None (lines 367-370).

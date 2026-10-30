@@ -10,7 +10,7 @@ method when necessary.
 import io
 from contextlib import redirect_stdout
 from pathlib import Path
-from typing import cast
+from typing import Callable, NoReturn, Protocol, cast
 
 import pytest
 import requests
@@ -19,6 +19,17 @@ from rich.console import Console
 from typer.testing import CliRunner
 
 from firecrown.fctools import link_checker
+
+
+class RateLimitedResponse(Protocol):
+    """Response members read by the link checker's HTTP 429 handling."""
+
+    status_code: int
+    reason: str
+
+    def raise_for_status(self) -> None:
+        """Raise for an unsuccessful response."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @pytest.fixture(name="site_dir")
@@ -53,7 +64,9 @@ def fixture_sample_site(site_dir: Path) -> Path:
 
 
 @pytest.fixture(name="mock_requests_ok")
-def fixture_mock_requests_ok(monkeypatch):
+def fixture_mock_requests_ok(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[..., object]:
     """Mock ``requests.Session.get``.
 
     Mock to return a simple HTML page containing id 'extid'.
@@ -62,15 +75,20 @@ def fixture_mock_requests_ok(monkeypatch):
     class FakeResp:
         """Fake response object for requests.get()."""
 
-        def __init__(self, content: str):
+        def __init__(self, content: str) -> None:
             """Initialize with given content string."""
             self.content = content.encode("utf-8")
 
-        def raise_for_status(self):
+        def raise_for_status(self) -> None:
             """Simulate a successful response."""
             return None
 
-    def _fake_get(_self, _url, timeout=None, **_kwargs):
+    def _fake_get(
+        _self: requests.Session,
+        _url: str,
+        timeout: int | None = None,
+        **_kwargs: object,
+    ) -> FakeResp:
         assert timeout is not None
         return FakeResp('<html><body><div id="extid"></div></body></html>')
 
@@ -78,18 +96,18 @@ def fixture_mock_requests_ok(monkeypatch):
     return _fake_get
 
 
-def make_429_response(_: str):
+def make_429_response(_: str) -> RateLimitedResponse:
     """Factory to create a mock response that raises HTTPError for 429."""
 
     class Fake429Resp:
         """Fake response object for requests.get() that returns 429."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Create fake response."""
             self.status_code = 429
             self.reason = "Too Many Requests"
 
-        def raise_for_status(self):
+        def raise_for_status(self) -> None:
             """Simulate HTTP 429 error."""
             http_error = requests.HTTPError("429 Client Error: Too Many Requests")
             # Test double: only status_code is read by the code under test.
@@ -99,7 +117,7 @@ def make_429_response(_: str):
     return Fake429Resp()
 
 
-def test_extract_ids_basic(site_dir: Path):
+def test_extract_ids_basic(site_dir: Path) -> None:
     """Test extraction of ids from a simple HTML file."""
     html = site_dir / "page.html"
     html.write_text(
@@ -115,7 +133,7 @@ def test_extract_ids_basic(site_dir: Path):
     assert ids == {"one", "two"}
 
 
-def test_check_anchors_local_ok(site_dir: Path):
+def test_check_anchors_local_ok(site_dir: Path) -> None:
     # target page with an id
     b = site_dir / "b.html"
     b.write_text("<html><body><h1 id=sec>Section</h1></body></html>")
@@ -140,7 +158,9 @@ def test_check_anchors_local_ok(site_dir: Path):
     assert sc.invalid_anchors == 0
 
 
-def test_check_anchors_missing_anchor_returns_failure_and_main_exit(site_dir: Path):
+def test_check_anchors_missing_anchor_returns_failure_and_main_exit(
+    site_dir: Path,
+) -> None:
     # target without the requested id
     b = site_dir / "b.html"
     b.write_text("<html><body><h1>Section</h1></body></html>")
@@ -155,7 +175,11 @@ def test_check_anchors_missing_anchor_returns_failure_and_main_exit(site_dir: Pa
     assert code != 0
 
 
-def test_main_uses_full_broken_link_output_in_ci(site_dir: Path, monkeypatch, capsys):
+def test_main_uses_full_broken_link_output_in_ci(
+    site_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """CI output should include complete source and target values."""
     monkeypatch.setenv("CI", "true")
     source = site_dir / "a-very-long-source-file-name.html"
@@ -174,7 +198,11 @@ def test_main_uses_full_broken_link_output_in_ci(site_dir: Path, monkeypatch, ca
     assert "Reason: file missing" in captured.out
 
 
-def test_main_can_use_table_output_in_ci(site_dir: Path, monkeypatch, capsys):
+def test_main_can_use_table_output_in_ci(
+    site_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """The table output remains available when explicitly requested."""
     monkeypatch.setenv("CI", "true")
     (site_dir / "source.html").write_text('<a href="missing.html#frag">broken</a>')
@@ -194,14 +222,16 @@ def test_main_can_use_table_output_in_ci(site_dir: Path, monkeypatch, capsys):
 
 
 def test_skip_external_prevents_download_and_allows_success(
-    site_dir: Path, monkeypatch
-):
+    site_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # source linking to an external URL with fragment
     a = site_dir / "a.html"
     a.write_text('<a href="http://example.invalid/page.html#frag">ext</a>')
 
     # Simulate requests raising if called (network would fail)
-    def _raise_get(self, url, timeout=None):
+    def _raise_get(
+        self: requests.Session, url: str, timeout: object = None
+    ) -> NoReturn:
         raise requests.RequestException("no network in tests")
 
     monkeypatch.setattr(requests.Session, "get", _raise_get)
@@ -242,7 +272,7 @@ def test_skip_external_prevents_download_and_allows_success(
 )
 def test_parametrized_link_scenarios(
     sample_site: Path, fname: str, content: str, expected: int
-):
+) -> None:
     (sample_site / fname).write_text(content)
     code = link_checker.main(
         sample_site, download_timeout=1, verbose=False, skip_external=True
@@ -250,7 +280,9 @@ def test_parametrized_link_scenarios(
     assert code == expected
 
 
-def test_external_download_with_mock(sample_site: Path, mock_requests_ok):
+def test_external_download_with_mock(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     # external link to page with id extid; mocked response supplies that id
     assert mock_requests_ok is not None  # to avoid unused variable warning
     (sample_site / "ext.html").write_text(
@@ -262,12 +294,14 @@ def test_external_download_with_mock(sample_site: Path, mock_requests_ok):
     assert code == 0
 
 
-def test_external_download_fails_when_get_raises(sample_site: Path, monkeypatch):
+def test_external_download_fails_when_get_raises(
+    sample_site: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     (sample_site / "ext2.html").write_text(
         '<a href="http://example.invalid/page.html#extid">ext</a>'
     )
 
-    def _raise(self, url, timeout=None):
+    def _raise(self: requests.Session, url: str, timeout: object = None) -> NoReturn:
         raise requests.RequestException("simulated network error")
 
     monkeypatch.setattr(requests.Session, "get", _raise)
@@ -277,7 +311,9 @@ def test_external_download_fails_when_get_raises(sample_site: Path, monkeypatch)
     assert code != 0
 
 
-def test_download_url_writes_file_when_ok(sample_site: Path, mock_requests_ok):
+def test_download_url_writes_file_when_ok(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     console = Console(record=True)
     sc = link_checker.SiteChecker(
@@ -306,14 +342,26 @@ def test_download_url_writes_file_when_ok(sample_site: Path, mock_requests_ok):
     ],
 )
 def test_download_url_handles_failure_and_returns_path(
-    sample_site: Path, monkeypatch, exc_type, exc_msg, status_code
-):
+    sample_site: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    exc_type: type[requests.RequestException],
+    exc_msg: str,
+    status_code: int | None,
+) -> None:
     console = Console(record=True)
 
-    def _raise(_self, _url, _timeout=None, **_kwargs):
+    def _raise(
+        _self: requests.Session,
+        _url: str,
+        _timeout: object = None,
+        **_kwargs: object,
+    ) -> NoReturn:
         if status_code is not None:
             exc = exc_type(exc_msg)
-            exc.response = type("FakeResp", (), {"status_code": status_code})()
+            # Only status_code is read from this deliberately minimal response.
+            exc.response = cast(
+                Response, type("FakeResp", (), {"status_code": status_code})()
+            )
         else:
             exc = exc_type(exc_msg)
         raise exc
@@ -339,11 +387,15 @@ def test_download_url_handles_failure_and_returns_path(
         sc.close()
 
 
-def test_download_url_records_429_error(sample_site: Path, monkeypatch):
+def test_download_url_records_429_error(
+    sample_site: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that _download_url records 429 errors in rate_limited_urls dict."""
     console = Console(record=True)
 
-    def _raise_429(self, url, _=None, **_kwargs):
+    def _raise_429(
+        self: requests.Session, url: str, _: object = None, **_kwargs: object
+    ) -> RateLimitedResponse:
         assert self is not None  # to silence pylint
         resp = make_429_response(url)
         return resp
@@ -376,13 +428,17 @@ def test_download_url_records_429_error(sample_site: Path, monkeypatch):
         sc.close()
 
 
-def test_rate_limited_links_dont_count_as_invalid(sample_site: Path, monkeypatch):
+def test_rate_limited_links_dont_count_as_invalid(
+    sample_site: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that 429 rate-limited links don't increment invalid_links counter."""
     (sample_site / "link.html").write_text(
         '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
     )
 
-    def _raise_429(self, url, _=None, **_kwargs):
+    def _raise_429(
+        self: requests.Session, url: str, _: object = None, **_kwargs: object
+    ) -> RateLimitedResponse:
         assert self is not None  # to silence pylint
         resp = make_429_response(url)
         return resp
@@ -410,13 +466,17 @@ def test_rate_limited_links_dont_count_as_invalid(sample_site: Path, monkeypatch
     assert any("en.wikipedia.org" in u for u in sc.rate_limited_urls)
 
 
-def test_main_returns_zero_for_429_failures_only(site_dir: Path, monkeypatch):
+def test_main_returns_zero_for_429_failures_only(
+    site_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that main() returns 0 when only 429 failures occur (not broken links)."""
     (site_dir / "link.html").write_text(
         '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
     )
 
-    def _raise_429(self, url, _=None, **_kwargs):
+    def _raise_429(
+        self: requests.Session, url: str, _: object = None, **_kwargs: object
+    ) -> RateLimitedResponse:
         assert self is not None  # to silence pylint
         resp = make_429_response(url)
         return resp
@@ -430,7 +490,9 @@ def test_main_returns_zero_for_429_failures_only(site_dir: Path, monkeypatch):
     assert code == 0
 
 
-def test_mixed_429_and_real_failure_uses_404_exit_code(site_dir: Path, monkeypatch):
+def test_mixed_429_and_real_failure_uses_404_exit_code(
+    site_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that a mix of 429 and real failures uses the real failure exit code."""
     # Create a real broken link (missing file)
     (site_dir / "link.html").write_text('<a href="missing.html">broken</a>')
@@ -439,7 +501,9 @@ def test_mixed_429_and_real_failure_uses_404_exit_code(site_dir: Path, monkeypat
         '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
     )
 
-    def _raise_or_404(self, url, _=None, **_kwargs):
+    def _raise_or_404(
+        self: requests.Session, url: str, _: object = None, **_kwargs: object
+    ) -> RateLimitedResponse | None:
         assert self is not None  # to silence pylint
         if "en.wikipedia.org" in url:
             resp = make_429_response(url)
@@ -456,13 +520,17 @@ def test_mixed_429_and_real_failure_uses_404_exit_code(site_dir: Path, monkeypat
     assert code != 0
 
 
-def test_rate_limited_urls_appear_in_report(sample_site: Path, monkeypatch):
+def test_rate_limited_urls_appear_in_report(
+    sample_site: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that rate-limited URLs appear in verbose output."""
     (sample_site / "link.html").write_text(
         '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
     )
 
-    def _raise_429(self, url, _=None, **_kwargs):
+    def _raise_429(
+        self: requests.Session, url: str, _: object = None, **_kwargs: object
+    ) -> RateLimitedResponse:
         assert self is not None  # to silence pylint
         resp = make_429_response(url)
         return resp
@@ -486,7 +554,9 @@ def test_rate_limited_urls_appear_in_report(sample_site: Path, monkeypatch):
     assert "wikipedia" in out.lower()
 
 
-def test_429_responses_are_cached_like_other_failures(sample_site: Path, monkeypatch):
+def test_429_responses_are_cached_like_other_failures(
+    sample_site: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test that 429 responses get cached like other failed downloads."""
     (sample_site / "link.html").write_text(
         '<a href="http://en.wikipedia.org/wiki/Abstract_type">wiki</a>'
@@ -494,7 +564,9 @@ def test_429_responses_are_cached_like_other_failures(sample_site: Path, monkeyp
 
     call_count = 0
 
-    def _raise_429_count(self, url, _=None, **_kwargs):
+    def _raise_429_count(
+        self: requests.Session, url: str, _: object = None, **_kwargs: object
+    ) -> RateLimitedResponse:
         assert self is not None  # to silence pylint
         nonlocal call_count
         call_count += 1
@@ -528,7 +600,7 @@ def test_429_responses_are_cached_like_other_failures(sample_site: Path, monkeyp
     assert "http://en.wikipedia.org/wiki/Abstract_type" in sc.downloaded_files
 
 
-def test_normalize_fragment_only(sample_site: Path):
+def test_normalize_fragment_only(sample_site: Path) -> None:
     console = Console()
     sc = link_checker.SiteChecker(
         sample_site,
@@ -549,7 +621,7 @@ def test_normalize_fragment_only(sample_site: Path):
         sc.close()
 
 
-def test_missing_file_reports_file_missing(sample_site: Path):
+def test_missing_file_reports_file_missing(sample_site: Path) -> None:
     # source linking to a missing file
     (sample_site / "src.html").write_text('<a href="nope.html">bad</a>')
     console = Console()
@@ -569,13 +641,17 @@ def test_missing_file_reports_file_missing(sample_site: Path):
     assert any(r == "file missing" for _, _, r in missing)
 
 
-def test_unreachable_external_is_reported(sample_site: Path, monkeypatch):
+def test_unreachable_external_is_reported(
+    sample_site: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # external link with download failing
     (sample_site / "ext3.html").write_text(
         '<a href="http://example.invalid/page.html#frag">ext</a>'
     )
 
-    def _raise(self, url, timeout=None, **_kwargs):
+    def _raise(
+        self: requests.Session, url: str, timeout: object = None, **_kwargs: object
+    ) -> NoReturn:
         raise requests.RequestException("boom")
 
     monkeypatch.setattr(requests.Session, "get", _raise)
@@ -598,7 +674,7 @@ def test_unreachable_external_is_reported(sample_site: Path, monkeypatch):
     assert any(r == "unreachable link" for _, _, r in missing)
 
 
-def test_ignore_non_html_files(sample_site: Path):
+def test_ignore_non_html_files(sample_site: Path) -> None:
     # create a non-HTML file with a link
     (sample_site / "file.txt").write_text('<a href="page.html#p1">ok</a>')
 
@@ -624,8 +700,8 @@ def test_ignore_non_html_files(sample_site: Path):
 
 
 def test_downloading_same_url_multiple_times_uses_cache(
-    sample_site: Path, mock_requests_ok
-):
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     console = Console(record=True)
     sc = link_checker.SiteChecker(
@@ -654,8 +730,8 @@ def test_downloading_same_url_multiple_times_uses_cache(
 
 
 def test_normalize_href_with_url_multiple_times_uses_cache(
-    sample_site: Path, mock_requests_ok
-):
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     console = Console(record=True)
     sc = link_checker.SiteChecker(
@@ -685,7 +761,9 @@ def test_normalize_href_with_url_multiple_times_uses_cache(
         sc.close()
 
 
-def test_page_with_id_with_no_value(sample_site: Path, mock_requests_ok):
+def test_page_with_id_with_no_value(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     # Create a page with an element that has an id attribute with no value
     (sample_site / "idless.html").write_text("<html><body><div id></div></body></html>")
@@ -711,7 +789,9 @@ def test_page_with_id_with_no_value(sample_site: Path, mock_requests_ok):
     assert sc.invalid_anchors == 0
 
 
-def test_page_with_name_with_no_value(sample_site: Path, mock_requests_ok):
+def test_page_with_name_with_no_value(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     # Create a page with an element that has a name attribute with no value
     (sample_site / "nameless.html").write_text("<html><body><a name></a></body></html>")
@@ -737,7 +817,9 @@ def test_page_with_name_with_no_value(sample_site: Path, mock_requests_ok):
     assert sc.invalid_anchors == 0
 
 
-def test_page_with_href_with_no_value(sample_site: Path, mock_requests_ok):
+def test_page_with_href_with_no_value(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     # Create a page with a link that has an href attribute with no value
     (sample_site / "hrefless.html").write_text("<html><body><a href></a></body></html>")
@@ -763,7 +845,9 @@ def test_page_with_href_with_no_value(sample_site: Path, mock_requests_ok):
     assert sc.invalid_anchors == 0
 
 
-def test_skipping_external_links_verbose_output(sample_site: Path, mock_requests_ok):
+def test_skipping_external_links_verbose_output(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     # Create a page with an external link
     (sample_site / "external.html").write_text(
@@ -790,7 +874,9 @@ def test_skipping_external_links_verbose_output(sample_site: Path, mock_requests
     assert "Skipping external link" in out
 
 
-def test_page_with_multiple_ids(sample_site: Path, mock_requests_ok):
+def test_page_with_multiple_ids(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     # Create a page with multiple elements having ids
     (sample_site / "multiid.html").write_text(
@@ -824,8 +910,8 @@ def test_page_with_multiple_ids(sample_site: Path, mock_requests_ok):
 
 
 def test_page_with_links_with_same_url_and_different_fragments(
-    sample_site: Path, mock_requests_ok
-):
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     # Create a page with multiple links to the same URL but different fragments
     (sample_site / "links.html").write_text(
@@ -861,8 +947,8 @@ def test_page_with_links_with_same_url_and_different_fragments(
 
 
 def test_link_without_fragment_is_handled_correctly(
-    sample_site: Path, mock_requests_ok
-):
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     # Create a page with a link without a fragment
     (sample_site / "nolinkfrag.html").write_text(
@@ -890,7 +976,9 @@ def test_link_without_fragment_is_handled_correctly(
     assert sc.invalid_anchors == 0
 
 
-def test_cli_runner_exit_codes(sample_site: Path, mock_requests_ok):
+def test_cli_runner_exit_codes(
+    sample_site: Path, mock_requests_ok: Callable[..., object]
+) -> None:
     assert mock_requests_ok is not None  # to avoid unused variable warning
     runner = CliRunner()
 

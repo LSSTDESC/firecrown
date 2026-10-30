@@ -20,7 +20,7 @@ from firecrown.metadata_types._sacc_type_string import (
 )
 
 
-def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = np.array(np.ones_like(ells) * 1.1, dtype=np.float64)
     indices = np.arange(100)
@@ -42,7 +42,9 @@ def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
     assert tpm.covariance_name == covariance_name
 
 
-def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_two_point_cwindow_with_data(
+    harmonic_two_point_xy: TwoPointXY,
+) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.zeros((100, 4), dtype=np.float64)
     # Create a window with 4 bins, each containing 25 elements with a weight of 1.0.
@@ -83,7 +85,7 @@ def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY
     assert tpm.covariance_name == covariance_name
 
 
-def test_two_point_xi_theta_with_data(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_xi_theta_with_data(optimized_real_two_point_xy: TwoPointXY) -> None:
     thetas = np.linspace(0.0, 1.0, 100, dtype=np.float64)
     data = np.array(np.zeros(100) + 1.1, dtype=np.float64)
     indices = np.arange(100)
@@ -107,7 +109,9 @@ def test_two_point_xi_theta_with_data(optimized_real_two_point_xy: TwoPointXY):
     assert tpm.covariance_name == covariance_name
 
 
-def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_cells_with_invalid_data_size(
+    harmonic_two_point_xy: TwoPointXY,
+) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = np.array(np.zeros(101) + 1.1, dtype=np.float64)
     indices = np.arange(101)
@@ -125,7 +129,9 @@ def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointX
         )
 
 
-def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_cwindow_with_invalid_data_size(
+    harmonic_two_point_xy: TwoPointXY,
+) -> None:
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
     window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
@@ -154,7 +160,7 @@ def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPoin
 
 def test_two_point_xi_theta_with_invalid_data_size(
     optimized_real_two_point_xy: TwoPointXY,
-):
+) -> None:
     thetas = np.linspace(0.0, 1.0, 100, dtype=np.float64)
     data = np.array(np.zeros(101) + 1.1, dtype=np.float64)
     indices = np.arange(101)
@@ -172,7 +178,9 @@ def test_two_point_xi_theta_with_invalid_data_size(
         )
 
 
-def test_two_point_measurement_invalid_data(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_measurement_invalid_data(
+    optimized_real_two_point_xy: TwoPointXY,
+) -> None:
     thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
     data = np.array([1, 2, 3, 4, 5], dtype=np.float64).reshape(-1, 1)
     indices = np.array([1, 2, 3, 4, 5])
@@ -189,7 +197,9 @@ def test_two_point_measurement_invalid_data(optimized_real_two_point_xy: TwoPoin
         )
 
 
-def test_two_point_measurement_invalid_indices(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_measurement_invalid_indices(
+    optimized_real_two_point_xy: TwoPointXY,
+) -> None:
     thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
     data = np.array([1, 2, 3, 4, 5])
     indices = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
@@ -206,7 +216,7 @@ def test_two_point_measurement_invalid_indices(optimized_real_two_point_xy: TwoP
         )
 
 
-def test_two_point_measurement_eq(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_measurement_eq(optimized_real_two_point_xy: TwoPointXY) -> None:
     thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
     data = np.array([1, 2, 3, 4, 5])
     indices = np.array([1, 2, 3, 4, 5])
@@ -226,7 +236,7 @@ def test_two_point_measurement_eq(optimized_real_two_point_xy: TwoPointXY):
     assert measure_1 == measure_2
 
 
-def test_two_point_measurement_neq(optimized_real_two_point_xy: TwoPointXY):
+def test_two_point_measurement_neq(optimized_real_two_point_xy: TwoPointXY) -> None:
     thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
     data = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
     indices = np.array([1, 2, 3, 4, 5])
@@ -274,7 +284,7 @@ def test_two_point_measurement_neq(optimized_real_two_point_xy: TwoPointXY):
 
 def test_two_point_measurement_neq_other_type(
     optimized_real_two_point_xy: TwoPointXY,
-):
+) -> None:
     thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
     measurement = TwoPointMeasurement(
         data=np.array([1.0, 2.0, 3.0, 4.0, 5.0]),
