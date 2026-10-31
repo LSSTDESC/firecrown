@@ -448,7 +448,6 @@ class ConstGaussianPM(ConstGaussian):
 
         V = np.zeros((len(row_src_idx), len(lens_tracers)))
         valid = (row_lens_idx >= 0) & (row_src_idx >= 0)
-        beta_rows = np.zeros(valid.sum(), dtype=np.float64)
         beta_rows = betas[row_lens_idx[valid], row_src_idx[valid]]
         V[valid, row_lens_idx[valid]] = beta_rows / (theta[valid] ** 2)
         return V
