@@ -11,11 +11,13 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
+from firecrown._integer_arrays import _IntBit, _as_int64
+from firecrown._source_arrays import _NBit, _RealArray, _as_float64
 from firecrown.metadata_types import TwoPointHarmonic, TwoPointReal
 from firecrown.utils import YAMLSerializable
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, init=False)
 class TwoPointMeasurement(YAMLSerializable):
     """Class defining the data for a two-point measurement.
 
@@ -30,6 +32,29 @@ class TwoPointMeasurement(YAMLSerializable):
     indices: npt.NDArray[np.int64]
     covariance_name: str
     metadata: TwoPointReal | TwoPointHarmonic
+
+    def __init__(
+        self,
+        *,
+        data: _RealArray[_NBit],
+        indices: npt.NDArray[np.integer[_IntBit]],
+        covariance_name: str,
+        metadata: TwoPointReal | TwoPointHarmonic,
+    ) -> None:
+        """Store float64 values and checked int64 covariance indices.
+
+        :param data: Real integer or floating measured two-point values; conforming
+            arrays are shared. Boolean, complex, string, object and masked arrays
+            are rejected.
+        :param indices: Integer positions in the covariance matrix.
+        :param covariance_name: Name of the associated covariance matrix.
+        :param metadata: Real or harmonic measurement metadata.
+        """
+        object.__setattr__(self, "data", _as_float64(data))
+        object.__setattr__(self, "indices", _as_int64(indices))
+        object.__setattr__(self, "covariance_name", covariance_name)
+        object.__setattr__(self, "metadata", metadata)
+        self.__post_init__()
 
     def __post_init__(self) -> None:
         """Make sure the data and indices have the same shape."""

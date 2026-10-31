@@ -17,9 +17,15 @@ def fixture_target_framework(request: pytest.FixtureRequest) -> Frameworks:
 
 @pytest.fixture(name="cmb_cross_example")
 def fixture_cmb_cross_example(
-    target_framework: Frameworks, tmp_path: Path
+    target_framework: Frameworks,
+    tmp_path: Path,
 ) -> tuple[Path, Frameworks]:
-    """Generate the CMB cross-correlation example for all frameworks."""
+    """Generate configurations for each supported framework.
+
+    :param target_framework: External framework under test.
+    :param tmp_path: Temporary output directory.
+    :returns: Output directory and selected framework.
+    """
     ExampleCMBCross(
         output_path=tmp_path,
         prefix="cmb_cross",
@@ -28,18 +34,14 @@ def fixture_cmb_cross_example(
         n_z_points=100,
         target_framework=target_framework,
     )
-
     return tmp_path, target_framework
 
 
 @pytest.mark.example
 def test_cmb_cross_run(cmb_cross_example: tuple[Path, Frameworks]) -> None:
-    """Run each framework's generated configuration end-to-end.
+    """Run fractional example sampling through each framework's public route.
 
-    This is what actually exercises the background/distance splines out to
-    the CMB lensing source redshift (z~1100); a framework whose pipeline
-    doesn't reach far enough would fail here with a ValueError, even though
-    the SACC/likelihood-construction unit tests pass.
+    :param cmb_cross_example: Generated framework configuration.
     """
     output_path, framework = cmb_cross_example
     match framework:

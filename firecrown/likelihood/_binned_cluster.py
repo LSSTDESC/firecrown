@@ -73,7 +73,7 @@ class BinnedCluster(Statistic, ABC):
             self.survey_name, self.cluster_properties
         )
         self.data_vector = DataVector.from_list(data)
-        self.sacc_indices = np.array(indices)
+        self.sacc_indices = np.array(indices, dtype=np.int64)
 
         self.bins = sacc_adapter.get_bin_edges(
             self.survey_name, self.cluster_properties

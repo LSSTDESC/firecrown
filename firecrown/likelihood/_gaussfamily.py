@@ -7,7 +7,7 @@ from abc import ABC
 from collections.abc import Callable, Sequence
 from enum import Enum
 from functools import wraps
-from typing import TypeVar, final
+from typing import TypeVar, cast, final
 
 import numpy as np
 import numpy.typing as npt
@@ -15,6 +15,7 @@ import sacc
 import scipy.linalg
 from typing_extensions import ParamSpec
 
+from firecrown._integer_arrays import _as_int64
 from firecrown.likelihood_base import (
     GuardedStatistic,
     Likelihood,
@@ -41,6 +42,7 @@ class State(Enum):
 
 T = TypeVar("T")
 P = ParamSpec("P")
+_NBit = TypeVar("_NBit", bound=npt.NBitBase)
 
 
 # See https://peps.python.org/pep-0612/ and
@@ -176,12 +178,16 @@ class GaussFamily(Likelihood, ABC):
 
     @classmethod
     def create_ready(
-        cls, statistics: Sequence[Statistic], covariance: npt.NDArray[np.float64]
+        cls,
+        statistics: Sequence[Statistic],
+        covariance: npt.NDArray[np.integer[_NBit] | np.floating[_NBit]],
     ) -> GaussFamily:
         """Create a GaussFamily object in the READY state.
 
         :param statistics: A list of statistics to be include in chisquared calculations
-        :param covariance: The covariance matrix of the statistics
+        :param covariance: Real integer or floating covariance. Values are converted
+            to float64 before computation; conversion may lose precision. Boolean,
+            complex, string, object, structured and masked arrays are rejected.
         :returns: A ready GaussFamily object
         """
         obj = cls(statistics)
@@ -244,7 +250,9 @@ class GaussFamily(Likelihood, ABC):
 
         self._set_covariance(covariance)
 
-    def _set_covariance(self, covariance: npt.NDArray[np.float64]) -> None:
+    def _set_covariance(
+        self, covariance: npt.NDArray[np.integer[_NBit] | np.floating[_NBit]]
+    ) -> None:
         """Set the covariance matrix.
 
         This method is used to set the covariance matrix and perform the
@@ -263,12 +271,12 @@ class GaussFamily(Likelihood, ABC):
                 raise RuntimeError(
                     f"The statistic {stat.statistic} has no sacc_indices."
                 )
-            indices_list.append(stat.statistic.sacc_indices.copy())
+            indices_list.append(_as_int64(stat.statistic.sacc_indices))
             data_vector_list.append(stat.statistic.get_data_vector())
 
-        indices = np.concatenate(indices_list).astype(int)
+        indices = np.concatenate(indices_list)
         data_vector = np.concatenate(data_vector_list)
-        cov = np.zeros((len(indices), len(indices)))
+        cov = np.zeros((len(indices), len(indices)), dtype=np.float64)
 
         largest_index = int(np.max(indices))
 
@@ -283,15 +291,22 @@ class GaussFamily(Likelihood, ABC):
                 f"{(largest_index + 1, largest_index + 1)}."
             )
 
+        if np.ma.isMaskedArray(covariance):
+            raise TypeError("Covariance values must not be masked.")
+        if covariance.dtype.kind not in "iuf":
+            raise TypeError("Covariance must have a real integer or floating dtype.")
+        covariance_values = np.asarray(covariance, dtype=np.float64)
+
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):
-                cov[new_i, new_j] = covariance[old_i, old_j]
+                cov[new_i, new_j] = covariance_values[old_i, old_j]
 
         self.data_vector = data_vector
         self.cov_index_map = {old_i: new_i for new_i, old_i in enumerate(indices)}
         self.cov = cov
-        self.cholesky = scipy.linalg.cholesky(self.cov, lower=True).astype(np.float64)
-        self.inv_cov = np.linalg.inv(cov).astype(np.float64)
+        self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
+        # NumPy's inverse annotation loses precision even for float64 input.
+        self.inv_cov = cast(npt.NDArray[np.float64], np.linalg.inv(cov))
 
     @final
     @enforce_states(
@@ -334,10 +349,10 @@ class GaussFamily(Likelihood, ABC):
     def get_data_vector(self) -> npt.NDArray[np.float64]:
         """Get the data vector from all statistics in the right order.
 
-        :returns: The data vector
+        :returns: An independent copy of the collected float64 data vector.
         """
         assert self.data_vector is not None
-        return self.data_vector.astype(np.float64)
+        return self.data_vector.copy()
 
     @final
     @enforce_states(
@@ -366,12 +381,12 @@ class GaussFamily(Likelihood, ABC):
     def get_theory_vector(self) -> npt.NDArray[np.float64]:
         """Get the already-computed theory vector from all statistics.
 
-        :returns: The theory vector, with all statistics in the right order
+        :returns: An independent float64 copy, with all statistics in the right order.
         """
         assert (
             self.theory_vector is not None
         ), "theory_vector is None after compute_theory_vector() has been called"
-        return self.theory_vector.astype(np.float64)
+        return self.theory_vector.copy()
 
     @final
     @enforce_states(
@@ -471,7 +486,7 @@ class GaussFamily(Likelihood, ABC):
         :returns: the chi-squared
         """
         theory_vector, data_vector = self._get_theory_and_data(tools)
-        residuals = np.array(data_vector - theory_vector, dtype=np.float64)
+        residuals = data_vector - theory_vector
         return self.compute_chisq_impl(residuals)
 
     @enforce_states(
@@ -497,9 +512,13 @@ class GaussFamily(Likelihood, ABC):
         sacc_indices_list = []
         for stat in statistic:
             assert stat.sacc_indices is not None
-            sacc_indices_list.append(stat.sacc_indices.copy())
+            sacc_indices_list.append(_as_int64(stat.sacc_indices))
 
-        sacc_indices = np.concatenate(sacc_indices_list)
+        sacc_indices = (
+            np.concatenate(sacc_indices_list)
+            if sacc_indices_list
+            else np.empty(0, dtype=np.int64)
+        )
 
         return sacc_indices
 

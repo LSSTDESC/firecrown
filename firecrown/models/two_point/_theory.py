@@ -53,7 +53,7 @@ class TwoPointTheory(Updatable):
         self.ell_or_theta_config: None | EllOrThetaConfig = None
         self.window: None | npt.NDArray[np.float64] = None
         self.sacc_tracers = tracers
-        self.ells: None | npt.NDArray[np.int64] = None
+        self.ells: None | npt.NDArray[np.int64] | npt.NDArray[np.float64] = None
         self.thetas: None | npt.NDArray[np.float64] = None
         self.mean_ells: None | npt.NDArray[np.float64] = None
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
@@ -129,6 +129,12 @@ class TwoPointTheory(Updatable):
     def generate_ells_for_interpolation(self) -> npt.NDArray[np.int64]:
         """Generate ells for interpolation."""
         assert self.ells is not None
-        min_ell = int(np.min(self.ells))
-        max_ell = int(np.max(self.ells))
+        # The generator requires the grid to straddle its linear/log midpoint.
+        # Expand fractional target bounds outward without rounding target values.
+        min_ell = min(
+            int(np.floor(np.min(self.ells))), self.interp_ells_gen.midpoint - 1
+        )
+        max_ell = max(
+            int(np.ceil(np.max(self.ells))), self.interp_ells_gen.midpoint + 1
+        )
         return self.interp_ells_gen.generate(min_ell, max_ell)
