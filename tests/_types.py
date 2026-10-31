@@ -38,6 +38,9 @@ class SaccGalaxyDistributionFixture:
     distributions: dict[str, SampledRedshiftDistribution]
 
 
+# Harmonic and real-space cross-bin records have distinct types because they
+# represent different physical observables. Their shared fields can evolve
+# independently as fixture values become more physically realistic.
 @dataclass(frozen=True, kw_only=True)
 class SaccHarmonicCrossBinFixture:
     """Harmonic cross-bin SACC data and expected redshift distributions.

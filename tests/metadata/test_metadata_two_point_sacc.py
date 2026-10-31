@@ -71,6 +71,9 @@ from tests._types import (
 # pylint: disable=too-many-lines
 
 
+# These rejection fixtures retain distinct harmonic and real-space types so
+# their values can evolve to reflect the respective physical observables while
+# preserving the intentionally invalid three-tracer inputs.
 @dataclass(frozen=True, kw_only=True)
 class SaccRealThreeTracerFixture:
     """Real SACC data with an intentionally invalid three-tracer correlation.
