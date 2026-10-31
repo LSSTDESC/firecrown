@@ -48,6 +48,12 @@ from firecrown.metadata_types import (
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import TwoPointTheory
 from firecrown.updatable import ParamsMap, get_default_params_map
+from tests._types import (
+    SaccGalaxyDistributionFixture,
+    SaccGalaxyHarmonicFixture,
+    SaccGalaxyRealFixture,
+    SaccGalaxyWindowedFixture,
+)
 
 
 @pytest.fixture(name="include_rsd", params=[True, False], ids=["rsd", "no_rsd"])
@@ -156,15 +162,15 @@ def test_tracer_names() -> None:
 
 def test_two_point_src0_src0_window_parameterized(
     window_fixture: str,
-    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
-    sacc_galaxy_cells_src0_src0_no_window: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_window: SaccGalaxyWindowedFixture,
+    sacc_galaxy_cells_src0_src0_no_window: SaccGalaxyHarmonicFixture,
 ) -> None:
     """Test TwoPoint theory calculations are repeatable for both window scenarios."""
     if window_fixture == "with_window":
-        sacc_data, _ = sacc_galaxy_cells_src0_src0_window
+        sacc_data = sacc_galaxy_cells_src0_src0_window.sacc_data
         expected_window = True
     else:  # no_window
-        sacc_data, _ = sacc_galaxy_cells_src0_src0_no_window
+        sacc_data = sacc_galaxy_cells_src0_src0_no_window.sacc_data
         expected_window = False
 
     src0 = WeakLensing(sacc_tracer="src0")
@@ -215,11 +221,11 @@ def test_two_point_generate_ell_or_theta() -> None:
 
 
 def test_two_point_src0_src0_no_data_binning(
-    sacc_galaxy_cells_src0_src0_no_data: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_no_data: SaccGalaxyDistributionFixture,
     binning_type: str,
 ) -> None:
     """Test TwoPoint with different binning types when no data is present."""
-    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_data
+    sacc_data = sacc_galaxy_cells_src0_src0_no_data.sacc_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -344,9 +350,9 @@ def test_two_point_theory_construction() -> None:
 
 
 def test_two_point_lens0_lens0_config(
-    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_xis_lens0_lens0: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_xis_lens0_lens0
+    sacc_data = sacc_galaxy_xis_lens0_lens0.sacc_data
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
@@ -378,9 +384,9 @@ def test_two_point_lens0_lens0_config(
 
 
 def test_two_point_src0_src0_no_data_error(
-    sacc_galaxy_cells_src0_src0_no_data: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_no_data: SaccGalaxyDistributionFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_data
+    sacc_data = sacc_galaxy_cells_src0_src0_no_data.sacc_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -418,9 +424,9 @@ def test_two_point_lens0_lens0_requires_theta_config_without_measurements(
 
 
 def test_two_point_src0_src0_data_and_conf_warn(
-    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_window: SaccGalaxyWindowedFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0_window
+    sacc_data = sacc_galaxy_cells_src0_src0_window.sacc_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -443,9 +449,9 @@ def test_two_point_src0_src0_data_and_conf_warn(
 
 
 def test_two_point_lens0_lens0_data_and_conf_warn(
-    sacc_galaxy_xis_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_xis_lens0_lens0: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_xis_lens0_lens0
+    sacc_data = sacc_galaxy_xis_lens0_lens0.sacc_data
 
     src0 = NumberCounts(sacc_tracer="lens0")
 
@@ -726,12 +732,12 @@ def test_apply_interp_when_serialization_error() -> None:
 
 
 def test_two_point_src0_src0_window_aiw(
-    sacc_galaxy_cells_src0_src0_window: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_window: SaccGalaxyWindowedFixture,
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
     """This test also makes sure that TwoPoint theory calculations are
     repeatable."""
-    sacc_data, _ = sacc_galaxy_cells_src0_src0_window
+    sacc_data = sacc_galaxy_cells_src0_src0_window.sacc_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -760,10 +766,10 @@ def test_two_point_src0_src0_window_aiw(
 
 
 def test_two_point_src0_src0_no_window_aiw(
-    sacc_galaxy_cells_src0_src0_no_window: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0_no_window: SaccGalaxyHarmonicFixture,
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0_no_window
+    sacc_data = sacc_galaxy_cells_src0_src0_no_window.sacc_data
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -794,10 +800,19 @@ def test_two_point_src0_src0_no_window_aiw(
 
 
 def test_two_point_src0_src0_real_aiw(
-    sacc_galaxy_xis_lens0_lens0_real: tuple[object, ...],
+    sacc_galaxy_xis_lens0_lens0_real: SaccGalaxyRealFixture,
     apply_interp_when: tp.ApplyInterpolationWhen,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_real
+    """Check a real-space lens0-lens0 TwoPoint computes a finite theory vector.
+
+    Reads the SACC data from the real-space fixture and computes the theory
+    vector. The cell count matches ``ells_for_xi`` only when the REAL
+    interpolation flag is set. The redshift and angular arrays are unused.
+
+    :param sacc_galaxy_xis_lens0_lens0_real: Real-space SACC fixture.
+    :param apply_interp_when: When to apply interpolation.
+    """
+    sacc_data = sacc_galaxy_xis_lens0_lens0_real.sacc_data
 
     lens0 = WeakLensing(sacc_tracer="lens0")
     statistic = tp.TwoPoint(
