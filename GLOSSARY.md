@@ -36,8 +36,8 @@ The target-dependent interpretation of a completed static public API comparison:
 
 ## SACC Test Language
 
-**Independent SACC expectation**:
-A reference redshift distribution or measured angular spectrum specified alongside SACC data, rather than reconstructed through Firecrown's production extraction or theory calculations. Independence describes the reference's origin, not whether its underlying arrays share storage with the SACC data.
+**SACC fixture expectation**:
+A reference redshift distribution or angular spectrum retaining the inputs supplied to SACC, or copies of those inputs, for comparison with extracted results.
 
 **Synthetic SACC observation**:
 A supplied test value for a recognized SACC observable, such as an angular power spectrum, angular correlation, or windowed bandpower. It is neither a survey measurement nor necessarily a theory prediction or physically plausible realization; a value with an unknown data-type label has no established observable interpretation.
