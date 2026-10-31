@@ -8,7 +8,7 @@ SHELL := /bin/bash
 .ONESHELL:
 
 .PHONY: help format lint typecheck test test-coverage test-example test-integration test-slow \
-	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
+	test-all clean clean-docs clean-coverage clean-build clean-cache docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
 	lint-pylint-tests lint-pylint-tools lint-mypy pre-commit install all-checks \
 	test-updatable test-utils test-parameters test-modeling-tools \
@@ -74,14 +74,6 @@ UNIT_COVERAGE_FILES := $(UNIT_COVERAGE_UPDATABLE) \
 	$(UNIT_COVERAGE_MODELS_CLUSTER) \
 	$(UNIT_COVERAGE_MODELS_TWO_POINT)
 
-# Patterns to preserve during 'make clean'
-CLEAN_EXCLUDES := --exclude=.venv \
-                  --exclude=venv \
-                  --exclude=env \
-                  --exclude=.env \
-                  --exclude=.vscode \
-                  --exclude=.agent \
-                  --exclude=.amazonq
 AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
 # Tutorial configuration
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
@@ -138,7 +130,7 @@ help:  ## Show common developer targets
 	@echo ""
 	@echo "Other useful targets:"
 	@echo "  make help-all        - Show all available targets"
-	@echo "  make clean           - Remove all generated files"
+	@echo "  make clean           - Remove the documented build, coverage, docs, and cache outputs"
 	@echo ""
 
 help-all:  ## Show this help message
@@ -403,17 +395,35 @@ docs-rtd-check: tutorials  ## Verify subtitle placeholders are resolved
 
 ##@ Cleaning
 
+ifneq ($(filter clean clean-docs,$(MAKECMDGOALS)),)
+clean-cache: | clean-docs
+endif
+
 clean-coverage:  ## Remove coverage reports
-	git clean -fdX $(CLEAN_EXCLUDES) -- coverage.json coverage.xml .coverage .coverage.* $(HTMLCOV_DIR)
+	rm -f -- .coverage .coverage.* coverage.xml coverage.json coverage_*.json
+	rm -rf -- htmlcov htmlcov_* covdata
 
 clean-docs:  ## Remove built documentation
-	git clean -fdX $(CLEAN_EXCLUDES) -- $(DOCS_BUILD_DIR) $(TUTORIAL_OUTPUT_DIR) $(AUTOAPI_BUILD_DIR) $(TUTORIAL_DIR)/.quarto $(TUTORIAL_DIR)/_site
+	rm -f -- docs/warnings.txt
+	rm -rf -- docs/_build docs/_static docs/autoapi tutorial/.quarto tutorial/_site
 
 clean-build:  ## Remove build artifacts
-	git clean -fdX $(CLEAN_EXCLUDES) -- build/ dist/ *.egg-info/ firecrown/fctools/__pycache__ tests/__pycache__
+	rm -rf -- build dist firecrown.egg-info
 
-clean:  ## Remove all generated files (using .gitignore as truth)
-	git clean -fdX $(CLEAN_EXCLUDES)
+clean-cache:  ## Remove test, lint, and Python bytecode caches
+	rm -rf -- .pytest_cache .mypy_cache .ruff_cache .hypothesis __pycache__
+	@for root in firecrown tests tools pylint_plugins docs tutorial .github/scripts; do
+		if [[ -d "$$root" && ! -L "$$root" ]]; then
+			find "$$root" -type d \( \
+				\( -name '.*' -o -name env -o -name venv -o -name ENV \
+					-o -exec test -f '{}/pyvenv.cfg' \; \
+					-o -exec test -d '{}/conda-meta' \; \) -prune \
+				-o \( -name __pycache__ -prune -exec rm -rf -- {} + \) \
+			\)
+		fi
+	done
+
+clean: clean-coverage clean-docs clean-build clean-cache  ## Remove documented generated outputs
 
 ##@ Pre-commit
 
