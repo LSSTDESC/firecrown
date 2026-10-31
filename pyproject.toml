@@ -1,5 +1,7 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+# setuptools-scm 10.3.4 / vcs-versioning 2.6.0 deadlocks in git check-attr
+# on macOS. Pin the working build tool until an upstream fix is verified.
+requires = ["setuptools", "setuptools-scm==9.2.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
