@@ -29,7 +29,7 @@ jobs:
         run: |
           git check-ref-format "refs/heads/$BASE_BRANCH"
           git fetch origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH"
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install Griffe
@@ -55,7 +55,7 @@ jobs:
           exit "$result"
       - name: Upload PR API report
         if: ${{ always() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: public-api-report-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -89,7 +89,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: tools/publish_api_report.py
           sparse-checkout-cone-mode: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Create or update API report comment
