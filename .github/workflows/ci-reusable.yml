@@ -332,7 +332,7 @@ jobs:
           fi
       - name: Upload temporary CI diagnostics
         if: ${{ always() && matrix.coverage == true }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: ci-diagnostics-${{ steps.ci-tests.outputs.artifact-ref }}-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/ci-diagnostics/
