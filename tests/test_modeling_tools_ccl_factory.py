@@ -21,6 +21,7 @@ from firecrown.modeling_tools import (
     CCLSplineParams,
     ModelingTools,
     MuSigmaModel,
+    PowerSpec,
     PoweSpecAmplitudeParameter,
 )
 from firecrown.updatable import ParamsMap, get_default_params_map
@@ -160,15 +161,17 @@ PK_ARRAY = (
     * (1 / (1 + (K_GRID / (0.1 * 0.05)) ** (3 * 0.96)) * A_GRID)
 )
 
-BACKGROUND = {
+BACKGROUND: CCLCalculatorArgs = {
     "background": {"a": A_ARRAY, "chi": CHI_ARRAY, "h_over_h0": H_OVER_H0_ARRAY}
 }
 
-PK_LINEAR = {
+# Partial fragments: no existing schema describes a single calculator-argument
+# key, and a new partial variant is out of scope, so keep the open mapping.
+PK_LINEAR: dict[str, PowerSpec] = {
     "pk_linear": {"k": K_ARRAY, "a": A_ARRAY, "delta_matter:delta_matter": PK_ARRAY}
 }
 
-PK_NONLIN = {
+PK_NONLIN: dict[str, PowerSpec] = {
     "pk_nonlin": {
         "k": np.linspace(0.1, 1.0, 100),
         "a": np.linspace(0.1, 1.0, 100),
