@@ -1,8 +1,16 @@
 # Firecrown Language
 
-Terms used when assessing Firecrown dependencies, release compatibility, and scientific test expectations.
+Terms used when writing scientific likelihoods and assessing Firecrown dependencies and the compatibility of releases and pull requests.
 
 ## Language
+
+**Normalize (normalization)**:
+Rescale a distribution so that its integral over its domain is one. This is a change to the distribution's scale, not a conversion of its numeric representation.
+_Avoid_: Using normalize or normalization to mean dtype conversion.
+
+**Dtype conversion**:
+Conversion of numerical values to a consistent numeric type without intentionally rescaling their physical values. It may round values or lose information when the destination type cannot represent them exactly.
+_Avoid_: Normalize, normalization, dtype normalization.
 
 **Public API path**:
 A Firecrown import path with no underscore-prefixed module component and a non-underscored exported name. In a public module, every non-underscored accessible name is public, including names imported from elsewhere; names listed in that module's `__all__` are explicitly public, and removing one from `__all__` is a public change even if it remains directly accessible.

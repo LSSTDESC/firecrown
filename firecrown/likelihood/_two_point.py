@@ -21,6 +21,8 @@ from pydantic import (
 
 import firecrown.generators as gen
 import firecrown.metadata_types as mdt
+from firecrown._integer_arrays import _as_int64, _as_multipole_array
+from firecrown._source_arrays import _as_float64
 from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
 from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceFactory
 from firecrown.likelihood.number_counts import NumberCounts, NumberCountsFactory
@@ -62,7 +64,7 @@ from firecrown.utils import (
 
 
 def calculate_angular_cl(
-    ells: npt.NDArray[np.int64],
+    ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
     pk_name: str,
     scale0: float,
     scale1: float,
@@ -82,6 +84,7 @@ def calculate_angular_cl(
     :param tracer1: The second tracer to use.
     :returns: The angular multipole moments.
     """
+    ells = _as_multipole_array(ells)
     pk = calculate_pk(pk_name, tools, tracer0, tracer1)
     cosmo_in = tools.get_ccl_cosmology()
     result = (
@@ -163,7 +166,7 @@ class TwoPoint(Statistic):
         return self.theory.sacc_tracers
 
     @property
-    def ells(self) -> None | npt.NDArray[np.int64]:
+    def ells(self) -> None | npt.NDArray[np.int64] | npt.NDArray[np.float64]:
         """Backwards compatibility for ells."""
         return self.theory.ells
 
@@ -435,13 +438,15 @@ class TwoPoint(Statistic):
         ells_cells_indices: (
             None
             | tuple[
-                npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]
+                npt.NDArray[np.int64] | npt.NDArray[np.float64],
+                npt.NDArray[np.float64],
+                npt.NDArray[np.int64],
             ]
         ),
         sacc_data: sacc.Sacc,
     ) -> tuple[
         npt.NDArray[np.float64],
-        npt.NDArray[np.int64],
+        npt.NDArray[np.int64] | npt.NDArray[np.float64],
         npt.NDArray[np.int64] | None,
         npt.NDArray[np.float64] | None,
     ]:
@@ -453,8 +458,10 @@ class TwoPoint(Statistic):
         :returns: The ells, the cells and the indices, and window function if
             there is one.
         """
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64]
         if ells_cells_indices is not None:
-            ells, Cells, sacc_indices = ells_cells_indices
+            input_ells, Cells, sacc_indices = ells_cells_indices
+            sacc_indices = _as_int64(sacc_indices)
             if self.theory.ell_or_theta_config is not None:
                 # If we have data from our construction, and also have data in the
                 # SACC object, emit a warning and use the information read from the
@@ -476,6 +483,8 @@ class TwoPoint(Statistic):
                 # interpolation.
                 assert replacement_ells is not None
                 ells = replacement_ells
+            else:
+                ells = _as_multipole_array(input_ells)
         else:
             if self.theory.ell_or_theta_config is None:
                 # The SACC file has no data points, just a tracer, in this case we
@@ -488,13 +497,9 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
                 )
-            # TODO(bug): generate_ells_cells returns float64 bin centers, not
-            # rounded int64 ell values (unlike LogLinearElls.generate()). This
-            # silences mypy only until that generator is fixed to emit integer
-            # ells; ells consumed here must be true integer multipoles.
-            ells, Cells = gen.generate_ells_cells(  # type: ignore[assignment]
-                self.theory.ell_or_theta_config
-            )
+            # Generated bin centers are real sampling coordinates.
+            input_ells, Cells = gen.generate_ells_cells(self.theory.ell_or_theta_config)
+            ells = _as_multipole_array(input_ells)
             sacc_indices = None
 
             # When generating the ells and Cells we do not have a window function
@@ -607,7 +612,7 @@ class TwoPoint(Statistic):
 
     def _compute_cells_all_orders(
         self,
-        ells: npt.NDArray[np.int64],
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
         scale0: float,
         scale1: float,
         tools: ModelingTools,
@@ -642,7 +647,7 @@ class TwoPoint(Statistic):
 
     def _compute_cells_interpolated(
         self,
-        ells: npt.NDArray[np.int64],
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
         ells_for_interpolation: npt.NDArray[np.int64],
         scale0: float,
         scale1: float,
@@ -682,7 +687,7 @@ class TwoPoint(Statistic):
 
     def compute_cells(
         self,
-        ells: npt.NDArray[np.int64],
+        ells: npt.NDArray[np.int64] | npt.NDArray[np.float64],
         scale0: float,
         scale1: float,
         tools: ModelingTools,
@@ -696,6 +701,7 @@ class TwoPoint(Statistic):
         interpolate is True, it will interpolate the power spectrum to the ells
         provided.
         """
+        ells = _as_multipole_array(ells)
         if interpolate:
             # ells_for_interpolation are true ells (and thus integral).
             # These are the values at which we will have CCL calculate the "exact"
@@ -745,17 +751,25 @@ def read_reals(
     common_length = len(thetas)
     if common_length == 0:
         return None
-    sacc_indices = np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
+    sacc_indices = _as_int64(
+        np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
+    )
     assert sacc_indices is not None  # Needed for mypy
     assert len(sacc_indices) == common_length
-    return thetas, xis, sacc_indices
+    # Convert real angular coordinates once, so later arithmetic is float64.
+    return _as_float64(thetas), xis, sacc_indices
 
 
 def read_ell_cells(
     theory: TwoPointTheory,
     sacc_data: sacc.Sacc,
 ) -> (
-    None | tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
+    None
+    | tuple[
+        npt.NDArray[np.int64] | npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.int64],
+    ]
 ):
     """Read and return ell and Cell.
 
@@ -774,7 +788,9 @@ def read_ell_cells(
     common_length = len(ells)
     if common_length == 0:
         return None
-    sacc_indices = np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
+    sacc_indices = _as_int64(
+        np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
+    )
     assert sacc_indices is not None  # Needed for mypy
     assert len(sacc_indices) == common_length
     return ells, cells, sacc_indices

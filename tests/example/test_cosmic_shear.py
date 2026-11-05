@@ -23,21 +23,32 @@ def fixture_use_absolute_path(request: pytest.FixtureRequest) -> bool:
 
 @pytest.fixture(name="cosmic_shear_example")
 def fixture_cosmic_shear_example(
-    target_framework: Frameworks, use_absolute_path: bool, tmp_path: Path
+    target_framework: Frameworks,
+    use_absolute_path: bool,
+    tmp_path: Path,
 ) -> tuple[Path, Frameworks]:
-    """Generate cosmic shear example for all frameworks and path types."""
+    """Generate configurations for each supported framework.
+
+    :param target_framework: External framework under test.
+    :param use_absolute_path: Select absolute or relative generated paths.
+    :param tmp_path: Temporary output directory.
+    :returns: Output directory and selected framework.
+    """
     ExampleCosmicShear(
         output_path=tmp_path,
         prefix="cosmic_shear",
         target_framework=target_framework,
         use_absolute_path=use_absolute_path,
     )
-
     return tmp_path, target_framework
 
 
 @pytest.mark.example
 def test_cosmic_shear_run(cosmic_shear_example: tuple[Path, Frameworks]) -> None:
+    """Run the example's fractional sampling through each framework.
+
+    :param cosmic_shear_example: Generated framework configuration.
+    """
     output_path, framework = cosmic_shear_example
     match framework:
         case Frameworks.COSMOSIS:
