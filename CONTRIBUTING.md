@@ -40,6 +40,26 @@ To maintain high code quality and consistency, we use several automated tools. W
 | `make docs` | Build and verify all documentation (tutorials + API) | When changing tutorials or docstrings |
 | `make pre-commit` | A comprehensive check: format, lint, docs-verify, and full tests | Recommended pre-push check |
 
+### Cleaning generated files
+
+`make clean` removes only the outputs listed below.
+Local conda environments, including `.conda-env`, and unrelated ignored or
+untracked files outside those outputs are left alone. Do not keep personal files
+inside the listed output directories, which are removed entirely.
+
+- `make clean-build`: `build`, `dist`, and `firecrown.egg-info`.
+- `make clean-docs`: `docs/_build`, `docs/_static`, `docs/autoapi`,
+  `docs/warnings.txt`, `tutorial/.quarto`, and `tutorial/_site`.
+- `make clean-coverage`: `.coverage`, `.coverage.*`, `coverage.xml`, `covdata`,
+  `coverage.json`, `coverage_*.json`, `htmlcov`, and `htmlcov_*`, including
+  reports for all `COVERAGE_ID` values that produce these names.
+- `make clean-cache`: the top-level `.pytest_cache`, `.mypy_cache`,
+  `.ruff_cache`, `.hypothesis`, and `__pycache__` directories, plus nested
+  `__pycache__` directories under `firecrown`, `tests`, `tools`,
+  `pylint_plugins`, `docs`, `tutorial`, and `.github/scripts`. Hidden
+  directories, symbolic links, and recognized virtual or conda environments
+  are not traversed.
+
 ### Dependencies
 
 `environment.yml`, `requires-python`, and the `dependencies` list in
