@@ -2,8 +2,6 @@
 
 from typing import Tuple
 
-import numpy as np
-import numpy.typing as npt
 import pyccl
 import sacc
 
@@ -16,6 +14,7 @@ from firecrown.likelihood.number_counts._systematics import (
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import calculate_pk
 from firecrown.updatable import get_default_params_map
+from tests._types import SaccRealCrossBinFixture
 
 
 def make_twopoint_with_optional_systematics(
@@ -79,17 +78,16 @@ def make_twopoint_with_optional_systematics(
 
 
 def test_calculate_pk(
-    sacc_galaxy_xis_lens0_lens1: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_xis_lens0_lens1: SaccRealCrossBinFixture,
 ) -> None:
+    """Preserve power-spectrum symmetry when only one source has PT systematics.
+
+    :param sacc_galaxy_xis_lens0_lens1: Lens-lens real SACC data and expectations.
+    """
     # Set up a TwoPoint object in which the first source has a PT systematic
     # and the second source doe not have a PT systematic.
 
-    sacc_data, _, _, _ = sacc_galaxy_xis_lens0_lens1
+    sacc_data = sacc_galaxy_xis_lens0_lens1.sacc_data
 
     a, b, _, tools = make_twopoint_with_optional_systematics(sacc_data, True, False)
 
