@@ -53,7 +53,6 @@ from firecrown.models.two_point import (
 from firecrown.updatable import UpdatableCollection
 from firecrown.utils import (
     ClIntegrationOptions,
-    cached_angular_cl,
     make_log_interpolator,
 )
 
@@ -85,13 +84,14 @@ def calculate_angular_cl(
     pk = calculate_pk(pk_name, tools, tracer0, tracer1)
     cosmo_in = tools.get_ccl_cosmology()
     result = (
-        cached_angular_cl(
-            tools.get_ccl_cosmology(),
-            (tracer0.ccl_tracer, tracer1.ccl_tracer),
-            tuple(ells.ravel().tolist()),
+        pyccl.angular_cl(
+            cosmo_in,
+            tracer0.ccl_tracer,
+            tracer1.ccl_tracer,
+            ells.ravel(),
             p_of_k_a=pk,
             p_of_k_a_lin=cosmo_in.get_linear_power(),
-            int_options=int_options,
+            **(int_options.get_angular_cl_args() if int_options else {}),
         )
         * scale0
         * scale1
