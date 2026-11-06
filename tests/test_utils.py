@@ -574,9 +574,10 @@ def test_cached_angular_cl(tools_with_vanilla_cosmology: ModelingTools) -> None:
 
     ells = tuple([10, 20, 30])
 
-    cl = cached_angular_cl(
-        cosmo, (tracer1, tracer2), ells, p_of_k_a="delta_matter:delta_matter"
-    )
+    with pytest.warns(DeprecationWarning, match="cached_angular_cl.*deprecated"):
+        cl = cached_angular_cl(
+            cosmo, (tracer1, tracer2), ells, p_of_k_a="delta_matter:delta_matter"
+        )
     assert len(cl) == len(ells)
     assert np.all(np.isfinite(cl))
 
@@ -597,13 +598,14 @@ def test_cached_angular_cl_with_options(
         method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_SPLINE
     )
 
-    cl = cached_angular_cl(
-        cosmo,
-        (tracer1, tracer2),
-        ells,
-        p_of_k_a="delta_matter:delta_matter",
-        int_options=int_options,
-    )
+    with pytest.warns(DeprecationWarning, match="cached_angular_cl.*deprecated"):
+        cl = cached_angular_cl(
+            cosmo,
+            (tracer1, tracer2),
+            ells,
+            p_of_k_a="delta_matter:delta_matter",
+            int_options=int_options,
+        )
     assert len(cl) == len(ells)
     assert np.all(np.isfinite(cl))
 

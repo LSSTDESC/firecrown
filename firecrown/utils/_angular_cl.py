@@ -1,7 +1,7 @@
 """Angular power spectrum utilities for Firecrown."""
 
-import functools
-from collections.abc import Callable, Sequence
+import warnings
+from collections.abc import Sequence
 from enum import Enum, auto
 from typing import Annotated
 
@@ -169,24 +169,34 @@ class ClIntegrationOptions(BaseModel):
                 assert_never(unreachable_method)
 
 
-@functools.lru_cache(maxsize=128)
 def cached_angular_cl(
     cosmo: pyccl.Cosmology,
     tracers: tuple[pyccl.Tracer, pyccl.Tracer],
     ells: tuple[int, ...],
-    p_of_k_a: Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]] | None = None,
+    p_of_k_a: pyccl.Pk2D | str | None = None,
     p_of_k_a_lin: pyccl.Pk2D | str | None = None,
     int_options: ClIntegrationOptions | None = None,
 ) -> npt.NDArray[np.float64]:
-    """Wrapper for pyccl.angular_cl, with automatic caching.
+    """Wrapper for pyccl.angular_cl.
+
+    This function is deprecated and will be removed in a future version of
+    Firecrown. It no longer caches results, because the cache was rarely or
+    never hit and the cost of hashing its arguments was significant. Call
+    `pyccl.angular_cl` directly instead.
 
     :param cosmo: the current cosmology
     :param tracers: tracers indicating the measurements to be correlated
     :param ells: ell values at which to calculate the power spectrum
-    :param p_of_k_a: function that computes the power spectrum
-    :param l_limber: the maximum ell for the non-limber integration
+    :param p_of_k_a: the power spectrum to project, or the name of a stored one
     :param p_of_k_a_lin: function that returns the linear power spectrum
+    :param int_options: options controlling the integration method
     """
+    warnings.warn(
+        "The function `cached_angular_cl` is deprecated and will be removed in "
+        "a future version of Firecrown. Use `pyccl.angular_cl` directly instead.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
     return pyccl.angular_cl(
         cosmo,
         tracers[0],
