@@ -170,8 +170,8 @@ class GaussFamily(Likelihood, ABC):
         self.cholesky: None | npt.NDArray[np.float64] = None
         self.inv_cov: None | npt.NDArray[np.float64] = None
         self.cov_index_map: None | dict[int, int] = None
-        self.theory_vector: None | npt.NDArray[np.double] = None
-        self.data_vector: None | npt.NDArray[np.double] = None
+        self.theory_vector: None | npt.NDArray[np.float64] = None
+        self.data_vector: None | npt.NDArray[np.float64] = None
         self._use_cholesky_for_chisq: bool = use_cholesky
 
     @classmethod
