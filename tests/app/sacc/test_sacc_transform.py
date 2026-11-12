@@ -672,16 +672,27 @@ class TestTransformErrorHandling:
         s.add_tracer("NZ", "lens0", z, dndz, quantity="galaxy_density")
 
         ells = np.array([10, 20, 30])
-        Cells = np.zeros_like(ells)
 
         # Add auto-correlations to establish measurement types
         # src0 × src0 → SHEAR_E
-        s.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
+        # Preserve exact support: SACC add_ell_cl casts tags to float.
+        for ell_value, cell_value in zip(ells, np.zeros_like(ells)):
+            s.add_data_point(
+                "galaxy_shear_cl_ee", ("src0", "src0"), cell_value, ell=ell_value
+            )
         # lens0 × lens0 → COUNTS
-        s.add_ell_cl("galaxy_density_cl", "lens0", "lens0", ells, Cells)
+        # Preserve exact support: SACC add_ell_cl casts tags to float.
+        for ell_value, cell_value in zip(ells, np.zeros_like(ells)):
+            s.add_data_point(
+                "galaxy_density_cl", ("lens0", "lens0"), cell_value, ell=ell_value
+            )
         # Add cross-correlation with WRONG tracer order (lens0, src0)
         # This violates convention: SHEAR_E < COUNTS means src0 must come first
-        s.add_ell_cl("galaxy_shearDensity_cl_e", "lens0", "src0", ells, Cells)
+        # Preserve exact support: SACC add_ell_cl casts tags to float.
+        for ell_value, cell_value in zip(ells, np.zeros_like(ells)):
+            s.add_data_point(
+                "galaxy_shearDensity_cl_e", ("lens0", "src0"), cell_value, ell=ell_value
+            )
 
         input_file: Path = tmp_path / "test_order.fits"
         output_file: Path = tmp_path / "test_order_out.fits"

@@ -8,12 +8,14 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
+
 from firecrown.app.analysis import (
     FrameworkCosmology,
     Frameworks,
 )
 from firecrown.app.examples._cosmic_shear import ExampleCosmicShear
-from firecrown.likelihood import ConstGaussian, NamedParameters
+from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
 from firecrown.modeling_tools import ModelingTools
 
 
@@ -157,7 +159,10 @@ class TestExampleCosmicShear:
         )
 
     def test_build_likelihood_execution(self, tmp_path: Path) -> None:
-        """Test that build_likelihood from template executes successfully."""
+        """Build both templates using the example's fractional sampling grid.
+
+        :param tmp_path: Temporary directory for generated files.
+        """
         # Generate real SACC file and factory
         builder = ExampleCosmicShear(
             output_path=tmp_path,
@@ -181,6 +186,12 @@ class TestExampleCosmicShear:
         assert isinstance(likelihood_orig, ConstGaussian)
         assert isinstance(modeling_tools_orig, ModelingTools)
         assert len(likelihood_orig.statistics) == 3  # n_bins * (n_bins + 1) / 2
+        assert any(
+            isinstance(guard.statistic, TwoPoint)
+            and guard.statistic.ells is not None
+            and np.any(guard.statistic.ells % 1 != 0)
+            for guard in likelihood_orig.statistics
+        )
 
         # Test 2: Load and execute the COPIED template module
         spec = importlib.util.spec_from_file_location("test_factory", factory_file)

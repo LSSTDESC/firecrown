@@ -100,7 +100,7 @@ class TwoPointBinFilterCollection(BaseModel):
             case TwoPointFilterMethod.LABEL:
                 assert tpm.metadata.window_ells is not None
                 match_obs = self.run_bin_filter(bin_filter, tpm.metadata.window_ells)
-                match_elements = np.ones_like(tpm.metadata.ells, dtype=bool)
+                match_elements = np.ones_like(tpm.metadata.ells, dtype=np.bool_)
                 return match_elements, match_obs
             case TwoPointFilterMethod.SUPPORT:
                 assert tpm.metadata.window is not None

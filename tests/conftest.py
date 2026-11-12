@@ -634,8 +634,14 @@ def fixture_sacc_galaxy_cells_src0_src0() -> SaccGalaxyHarmonicFixture:
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    Cells: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=ells.shape[0]))
-    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
+    Cells: npt.NDArray[np.float64] = np.asarray(
+        np.random.normal(size=ells.shape[0]), dtype=np.float64
+    )
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("src0", "src0"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -671,8 +677,12 @@ def fixture_sacc_galaxy_cells_src0_src1() -> SaccHarmonicCrossBinFixture:
     dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.7) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src1", z, dndz1)
 
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src1", ells, Cells)
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("src0", "src1"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -700,8 +710,14 @@ def fixture_sacc_galaxy_cells_lens0_lens0() -> SaccGalaxyHarmonicFixture:
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz)
 
-    Cells: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=ells.shape[0]))
-    sacc_data.add_ell_cl("galaxy_density_cl", "lens0", "lens0", ells, Cells)
+    Cells: npt.NDArray[np.float64] = np.asarray(
+        np.random.normal(size=ells.shape[0]), dtype=np.float64
+    )
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_density_cl", ("lens0", "lens0"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -735,8 +751,12 @@ def fixture_sacc_galaxy_cells_lens0_lens1() -> SaccHarmonicCrossBinFixture:
     dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.6) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens1", z, dndz1)
 
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_density_cl", "lens0", "lens1", ells, Cells)
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_density_cl", ("lens0", "lens1"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -831,8 +851,12 @@ def fixture_sacc_galaxy_cells_src0_lens0() -> SaccHarmonicCrossBinFixture:
     dndz1: npt.NDArray[np.float64] = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens0", z, dndz1)
 
-    Cells = np.random.normal(size=ells.shape[0])
-    sacc_data.add_ell_cl("galaxy_shearDensity_cl_e", "src0", "lens0", ells, Cells)
+    Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shearDensity_cl_e", ("src0", "lens0"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
@@ -909,36 +933,48 @@ def fixture_sacc_galaxy_cells() -> SaccGalaxyHarmonicFixture:
         sacc_data.add_tracer("NZ", f"lens{i}", z, dndz)
         tracers[f"lens{i}"] = SampledRedshiftDistribution(z=z, dndz=dndz)
 
-    dv = []
-
     for i, j in upper_triangle_indices(len(src_bins_centers)):
         Cells: npt.NDArray[np.float64] = np.array(np.random.normal(size=ells.shape[0]))
-        sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"src{i}", f"src{j}", ells, Cells)
+        # Preserve exact support: SACC add_ell_cl casts tags to float.
+        for ell_value, cell_value in zip(ells, Cells):
+            sacc_data.add_data_point(
+                "galaxy_shear_cl_ee", (f"src{i}", f"src{j}"), cell_value, ell=ell_value
+            )
         tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_cl_ee")] = (
             HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
         )
-        dv.append(Cells)
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
         Cells = np.array(np.random.normal(size=ells.shape[0]))
-        sacc_data.add_ell_cl("galaxy_density_cl", f"lens{i}", f"lens{j}", ells, Cells)
+        # Preserve exact support: SACC add_ell_cl casts tags to float.
+        for ell_value, cell_value in zip(ells, Cells):
+            sacc_data.add_data_point(
+                "galaxy_density_cl", (f"lens{i}", f"lens{j}"), cell_value, ell=ell_value
+            )
         tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_cl")] = (
             HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
         )
-        dv.append(Cells)
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
         Cells = np.array(np.random.normal(size=ells.shape[0]))
-        sacc_data.add_ell_cl(
-            "galaxy_shearDensity_cl_e", f"src{i}", f"lens{j}", ells, Cells
-        )
+        # Preserve exact support: SACC add_ell_cl casts tags to float.
+        for ell_value, cell_value in zip(ells, Cells):
+            sacc_data.add_data_point(
+                "galaxy_shearDensity_cl_e",
+                (f"src{i}", f"lens{j}"),
+                cell_value,
+                ell=ell_value,
+            )
         tracer_pairs[
             (TracerNames(f"src{i}", f"lens{j}"), "galaxy_shearDensity_cl_e")
         ] = HarmonicAngularPowerSpectrum(ells=ells, cells=Cells)
-        dv.append(Cells)
 
-    delta_v = np.concatenate(dv, axis=0)
-    cov = np.diag(np.ones_like(delta_v) * 0.01)
+    cov = np.diag(
+        np.ones_like(
+            np.concatenate([spectrum.cells for spectrum in tracer_pairs.values()])
+        )
+        * 0.01
+    )
 
     sacc_data.add_covariance(cov)
 
@@ -1228,7 +1264,11 @@ def fixture_sacc_galaxy_cells_order_convention() -> sacc.Sacc:
     sacc_data.add_tracer("NZ", "bin0", z, dndz)
     sacc_data.add_tracer("NZ", "bin1", z, dndz)
     Cells = np.array(np.random.normal(size=ells.shape[0]))
-    sacc_data.add_ell_cl("galaxy_shearDensity_cl_e", "bin0", "bin1", ells, Cells)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shearDensity_cl_e", ("bin0", "bin1"), cell_value, ell=ell_value
+        )
     cov = np.diag(np.zeros(len(ells)) + 0.01)
 
     sacc_data.add_covariance(cov)
@@ -1295,7 +1335,9 @@ def fixture_sacc_galaxy_cells_src0_src0_window() -> SaccGalaxyWindowedFixture:
     # Making a diagonal window function
     window = sacc.BandpowerWindow(ells, np.diag(np.ones_like(ells)))
 
-    Cells: npt.NDArray[np.float64] = np.asarray(np.random.normal(size=ells.shape[0]))
+    Cells: npt.NDArray[np.float64] = np.asarray(
+        np.random.normal(size=ells.shape[0]), dtype=np.float64
+    )
     sacc_data.add_ell_cl(
         "galaxy_shear_cl_ee", "src0", "src0", ells, Cells, window=window
     )
@@ -1333,7 +1375,11 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window() -> SaccGalaxyHarmonicFixture
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
     Cells = np.array(np.random.normal(size=ells.shape[0]))
-    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
+    # Preserve exact support: SACC add_ell_cl casts tags to float.
+    for ell_value, cell_value in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("src0", "src0"), cell_value, ell=ell_value
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
