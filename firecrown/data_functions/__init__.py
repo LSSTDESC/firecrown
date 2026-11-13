@@ -5,6 +5,7 @@ It contains functions to manipulate two-point data objects.
 
 # Utility functions
 # Data extraction functions
+from firecrown.data_functions._binned_clusters import extract_all_binned_cluster_data
 from firecrown.data_functions._extraction import (
     extract_all_harmonic_data,
     extract_all_real_data,
@@ -48,6 +49,7 @@ __all__ = [
     # Data extraction functions
     "extract_all_harmonic_data",
     "extract_all_real_data",
+    "extract_all_binned_cluster_data",
     # Filtering functionality
     "TwoPointBinFilterCollection",
 ]
