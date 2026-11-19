@@ -112,6 +112,7 @@ Optionally, add a demo program:
 -   `cmb_cross`: cosmic shear cross-correlated with CMB lensing
 -   `des_y1_3x2pt`: DES Y1 3x2pt, with the factory function chosen by `--factory-type`
 -   `sn_srd`: SRD supernovae
+-   `sn_cosmic_shear`: SRD supernovae and synthetic cosmic shear, returned as a list of likelihoods
 -   `cluster_counts`: cluster counts and mean mass, simulated or SDSS
 -   `cluster_shear`: cluster counts with stacked weak lensing profiles
 

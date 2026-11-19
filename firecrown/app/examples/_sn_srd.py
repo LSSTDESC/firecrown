@@ -26,6 +26,22 @@ from ..analysis import (
 from . import _sn_srd_template
 
 
+def sn_srd_magnitude_parameter() -> Parameter:
+    """Return the supernova absolute magnitude parameter of the SRD sample.
+
+    :returns: Free parameter sn_ddf_sample_M with a Gaussian prior
+    """
+    return Parameter(
+        name="sn_ddf_sample_M",
+        symbol=r"\mathcal{M}",
+        lower_bound=-20.0,
+        upper_bound=-19.0,
+        default_value=-19.3,
+        free=True,
+        prior=PriorGaussian(mean=-19.4, sigma=0.05),
+    )
+
+
 @dataclass
 class ExampleSupernovaSRD(AnalysisBuilder):
     """Supernova SRD analysis example.
@@ -90,17 +106,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
             Model(
                 name=f"firecrown_{self.prefix}",
                 description="Model for SN SRD example",
-                parameters=[
-                    Parameter(
-                        name="sn_ddf_sample_M",
-                        symbol=r"\mathcal{M}",
-                        lower_bound=-20.0,
-                        upper_bound=-19.0,
-                        default_value=-19.3,
-                        free=True,
-                        prior=PriorGaussian(mean=-19.4, sigma=0.05),
-                    )
-                ],
+                parameters=[sn_srd_magnitude_parameter()],
             )
         ]
 

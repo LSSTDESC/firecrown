@@ -21,6 +21,9 @@ All of them use the `ConstGaussian` likelihood.
 
 * `sn_srd` uses the LSST DESC SRD supernova data with the `Supernova` statistic.
 
+* `sn_cosmic_shear` combines the `sn_srd` supernova data with the synthetic data of `cosmic_shear`, which it configures with the same options.
+  Its factory function returns the two likelihoods as a list, and Firecrown sums their log-likelihoods in a `SumLikelihood`; the sum is the log-likelihood of independent data sets.
+
 * `cluster_counts` demonstrates the `BinnedClusterNumberCounts` statistic, fitting cluster counts and the mean cluster mass in bins of redshift and richness.
   The data are either a cluster catalog simulated with NumCosmo or the SDSS redMaPPer measurements of Costanzi et al. (2019), selected with `--dataset`.
 
