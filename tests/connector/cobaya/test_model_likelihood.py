@@ -341,6 +341,45 @@ def test_derived_parameter_likelihood(fiducial_params):
     assert logpost.derived[0] == 1.0
 
 
+def test_loglike_without_derived_in_pure_ccl_mode() -> None:
+    """Cobaya's minimize sampler evaluates the likelihood with _derived=None.
+
+    Without a theory component, no component requires derived parameters, and
+    Model.loglike(return_derived=False), the call of minimize, passes _derived=None.
+    """
+    pure_ccl_params = {
+        "n_s": 0.96,
+        "Omega_b": 0.048,
+        "Omega_k": 0.0,
+        "Omega_c": 0.26,
+        "Neff": 3.046,
+        "T_CMB": 2.7255,
+        "wa": 0.0,
+        "m_nu": 0.06,
+        "h": 0.7,
+        "w0": -1.0,
+        "sigma8": 0.8,
+    }
+    info_fiducial = {
+        "params": pure_ccl_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lkscript_pure_ccl.py",
+                "input_style": "CAMB",
+            }
+        },
+    }
+
+    model_fiducial = get_model(info_fiducial)
+    with mock.patch.object(
+        LikelihoodConnector, "logp", autospec=True, side_effect=LikelihoodConnector.logp
+    ) as logp:
+        loglike = model_fiducial.loglike({}, return_derived=False)
+    assert logp.call_args.kwargs["_derived"] is None
+    assert loglike == -3.0
+
+
 def _factory_as(_: NamedParameters):
     return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
         ccl_factory=ccl_factory.CCLFactory(

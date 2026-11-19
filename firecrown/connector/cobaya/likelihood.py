@@ -370,13 +370,12 @@ class LikelihoodConnector(Likelihood):
             self.tools.reset()
             raise
 
-        # Handling of derived parameters for Cobaya
-        assert _derived is not None
-
+        # Cobaya passes _derived=None when it needs no derived parameters (minimize).
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
-        for section, name, val in derived_params_collection:
-            _derived[f"{section}__{name}"] = val
+        if _derived is not None:
+            for section, name, val in derived_params_collection:
+                _derived[f"{section}__{name}"] = val
 
         self.likelihood.reset()
         self.tools.reset()
