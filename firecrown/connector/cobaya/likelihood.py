@@ -371,9 +371,9 @@ class LikelihoodConnector(Likelihood):
             raise
 
         # Cobaya passes _derived=None when it needs no derived parameters (minimize).
-        derived_params_collection = self.likelihood.get_derived_parameters()
-        assert derived_params_collection is not None
         if _derived is not None:
+            derived_params_collection = self.likelihood.get_derived_parameters()
+            assert derived_params_collection is not None
             for section, name, val in derived_params_collection:
                 _derived[f"{section}__{name}"] = val
 
