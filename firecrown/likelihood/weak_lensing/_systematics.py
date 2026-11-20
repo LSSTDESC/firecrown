@@ -372,24 +372,24 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         )
         if not ia_a_d_is_bta:
             self.ia_zpiv_d: float = cast(
-            float,
-            register_new_updatable_parameter(
+                float,
+                register_new_updatable_parameter(
                     value=(
-                    
-                    None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
-                
-                ),
+                        None if include_z_dependence
+                        else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
+                    ),
                     default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
-            ),
+                ),
             )
             self.ia_alphaz_d: float = cast(
-            float,
-            register_new_updatable_parameter(
+                float,
+                register_new_updatable_parameter(
                     value=(
-                        None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
+                        None if include_z_dependence
+                        else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
                     ),
                     default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D,
-            ),
+                ),
             )
 
     def apply(
