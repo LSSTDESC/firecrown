@@ -4,6 +4,9 @@ This module contains functions used to manipulate two-point metadata, including
 extracting metadata from a sacc file and creating new metadata objects.
 """
 
+from firecrown.metadata_functions._binned_clusters import (
+    extract_all_binned_cluster_metadata_indices,
+)
 from firecrown.metadata_functions._combination_utils import (
     filter_two_point_combinations,
     make_all_photoz_bin_combinations,
@@ -67,4 +70,5 @@ __all__ = [
     "filter_two_point_combinations",
     "make_two_point_xy",
     "measurements_from_index",
+    "extract_all_binned_cluster_metadata_indices",
 ]

@@ -5,12 +5,14 @@ This module contains data types definitions.
 
 from __future__ import annotations
 
+from firecrown.data_types._binned_clusters import BinnedClusterMeasurement
 from firecrown.data_types._measurement import TwoPointMeasurement
 from firecrown.data_types._utils import residuals
 from firecrown.data_types._vectors import DataVector, TheoryVector
 
 __all__ = [
     "TwoPointMeasurement",
+    "BinnedClusterMeasurement",
     "DataVector",
     "TheoryVector",
     "residuals",

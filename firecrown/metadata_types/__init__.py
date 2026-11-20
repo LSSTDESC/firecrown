@@ -60,6 +60,12 @@ from firecrown.metadata_types._pair_selector import (
     ProjectedFieldPair,
     register_bin_pair_selector,
 )
+from firecrown.metadata_types._binned_clusters import (
+    BinnedClusterMetadata,
+    BinnedClusterObservable,
+    ClusterBin,
+    ClusterSurvey,
+)
 from firecrown.metadata_types._sacc_type_string import MEASURED_TYPE_STRING_MAP
 from firecrown.metadata_types._two_point_types import (
     TwoPointCorrelationSpace,
@@ -104,6 +110,11 @@ __all__ = [
     "TwoPointReal",
     "TwoPointCorrelationSpace",
     "TwoPointFilterMethod",
+    # Binned cluster types
+    "BinnedClusterObservable",
+    "ClusterSurvey",
+    "ClusterBin",
+    "BinnedClusterMetadata",
     # Compatibility function (public)
     "measurement_is_compatible",
     "measurement_is_compatible_harmonic",
