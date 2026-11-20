@@ -1,6 +1,6 @@
-# Firecrown API, Dependency, and Release Language
+# Firecrown Language
 
-Terms used when assessing Firecrown dependencies and the compatibility of releases and pull requests.
+Terms used when assessing Firecrown dependencies, release compatibility, and scientific test expectations.
 
 ## Language
 
@@ -33,3 +33,11 @@ An advisory, technically non-blocking sample of environment rebuildability for a
 
 **API policy verdict**:
 The target-dependent interpretation of a completed static public API comparison: no detected breaking changes, informational breaking changes on `master`, or rejection of detected breaking changes on a support target. The verdict is distinct from whether analysis and reporting succeeded; missing analysis or reporting is not evidence of compatibility, and no detected breaks does not establish complete behavioral compatibility.
+
+## SACC Test Language
+
+**SACC fixture expectation**:
+A reference redshift distribution or angular spectrum retaining the inputs supplied to SACC, or copies of those inputs, for comparison with extracted results.
+
+**Synthetic SACC observation**:
+A supplied test value for a recognized SACC observable, such as an angular power spectrum, angular correlation, or windowed bandpower. It is neither a survey measurement nor necessarily a theory prediction or physically plausible realization; a value with an unknown data-type label has no established observable interpretation.

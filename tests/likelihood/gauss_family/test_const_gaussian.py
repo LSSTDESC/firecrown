@@ -522,7 +522,12 @@ def test_create_ready(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Create a ready Gaussian likelihood from extracted windowed measurements.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data for measurement extraction.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
     two_points = TwoPoint.from_measurement(two_point_harmonics, tp_factory)
@@ -537,7 +542,12 @@ def test_create_ready_wrong_size(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
     tp_factory: TwoPointFactory,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Reject a covariance too small for the extracted windowed measurements.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data for measurement extraction.
+    :param tp_factory: Factory for the statistics' sources.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
     two_points = TwoPoint.from_measurement(two_point_harmonics, tp_factory)

@@ -30,9 +30,9 @@ from firecrown.likelihood._source import (
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.likelihood.weak_lensing import WeakLensingArgs
 from firecrown.metadata_functions import extract_all_tracers_tomographic_bins
-from firecrown.metadata_types import TomographicBin
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import ParamsMap, get_default_params
+from tests._types import SaccGalaxyHarmonicFixture
 
 
 @pytest.fixture(
@@ -188,16 +188,17 @@ def test_trivial_source_select_field() -> None:
 
 
 def test_weak_lensing_source_init(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
     tools_with_vanilla_cosmology: ModelingTools,
 ) -> None:
-    sacc_data, expected_bin = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
+    expected_distribution = sacc_galaxy_cells_src0_src0.distributions["src0"]
 
     source = wl.WeakLensing(sacc_tracer="src0")
     source.read(sacc_data)
 
-    assert_allclose(source.tracer_args.z, expected_bin.z)
-    assert_allclose(source.tracer_args.dndz, expected_bin.dndz)
+    assert_allclose(source.tracer_args.z, expected_distribution.z)
+    assert_allclose(source.tracer_args.dndz, expected_distribution.dndz)
     source.update(ParamsMap())
     ts = source.get_tracers(tools_with_vanilla_cosmology)
     assert len(ts) == 1
@@ -207,9 +208,9 @@ def test_weak_lensing_source_init(
 
 
 def test_weak_lensing_source_create_ready(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -225,9 +226,9 @@ def test_weak_lensing_source_create_ready(
 
 
 def test_weak_lensing_source_factory(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -244,9 +245,9 @@ def test_weak_lensing_source_factory(
 
 
 def test_weak_lensing_source_factory_cache(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -260,10 +261,10 @@ def test_weak_lensing_source_factory_cache(
 
 @pytest.mark.parametrize("include_z_dependence", [True, False])
 def test_weak_lensing_source_factory_global_systematics(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
     include_z_dependence: bool,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
@@ -293,9 +294,9 @@ def test_weak_lensing_source_factory_global_systematics(
 
 
 def test_weak_lensing_source_init_wrong_name(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
 
     source = wl.WeakLensing(sacc_tracer="src10")
     with pytest.raises(KeyError, match="src10"):
@@ -303,17 +304,18 @@ def test_weak_lensing_source_init_wrong_name(
 
 
 def test_number_counts_source_init(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
     tools_with_vanilla_cosmology: ModelingTools,
 ) -> None:
 
-    sacc_data, expected_bin = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
+    expected_distribution = sacc_galaxy_cells_lens0_lens0.distributions["lens0"]
 
     source = nc.NumberCounts(sacc_tracer="lens0")
     source.read(sacc_data)
 
-    assert_allclose(source.tracer_args.z, expected_bin.z)
-    assert_allclose(source.tracer_args.dndz, expected_bin.dndz)
+    assert_allclose(source.tracer_args.z, expected_distribution.z)
+    assert_allclose(source.tracer_args.dndz, expected_distribution.dndz)
     source.update(ParamsMap(lens0_bias=1.1))
     dp = source.get_derived_parameters()
     assert dp is not None
@@ -323,9 +325,9 @@ def test_number_counts_source_init(
 
 
 def test_number_counts_source_create_ready(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -341,9 +343,9 @@ def test_number_counts_source_create_ready(
 
 
 def test_number_counts_source_factory(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -360,9 +362,9 @@ def test_number_counts_source_factory(
 
 
 def test_number_counts_source_factory_cache(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -375,9 +377,9 @@ def test_number_counts_source_factory_cache(
 
 
 def test_number_counts_source_factory_global_systematics(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
 
     all_tracers = extract_all_tracers_tomographic_bins(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
@@ -403,9 +405,9 @@ def test_number_counts_source_factory_global_systematics(
 
 
 def test_number_counts_source_init_wrong_name(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
 
     source = nc.NumberCounts(sacc_tracer="lens10")
     with pytest.raises(KeyError, match="lens10"):

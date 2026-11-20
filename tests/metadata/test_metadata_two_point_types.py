@@ -9,7 +9,6 @@ from itertools import chain, product
 from unittest.mock import MagicMock
 
 import numpy as np
-import numpy.typing as npt
 import pytest
 import sacc
 import sacc_name_mapping as snm
@@ -34,7 +33,6 @@ from firecrown.metadata_types import (
     Clusters,
     Galaxies,
     Measurement,
-    TomographicBin,
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
@@ -62,7 +60,12 @@ from firecrown.metadata_types._sacc_type_string import (
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
-from tests._types import SaccGalaxyWindowedFixture
+from tests._types import (
+    SaccGalaxyHarmonicFixture,
+    SaccGalaxyRealFixture,
+    SaccGalaxyWindowedFixture,
+    SaccRealCrossBinFixture,
+)
 
 
 def test_order_enums() -> None:
@@ -197,16 +200,13 @@ def test_measurement_is_compatible() -> None:
 
 
 def test_extract_all_tracers_types_cells(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Verify harmonic tracers have the expected lens and source measurements.
+
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     tracers, _ = extract_all_measured_types(sacc_data)
 
@@ -222,7 +222,11 @@ def test_extract_all_tracers_types_cells(
 def test_extract_all_tracers_types_cwindows(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Verify windowed tracers retain their lens and source measurement meanings.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     tracers, _ = extract_all_measured_types(sacc_data)
 
@@ -236,16 +240,13 @@ def test_extract_all_tracers_types_cwindows(
 
 
 def test_extract_all_tracers_types_reals(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real tracers retain their lens and source measurement meanings.
+
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tracers, _ = extract_all_measured_types(sacc_data)
 
@@ -262,16 +263,13 @@ def test_extract_all_tracers_types_reals(
 
 
 def test_extract_all_tracers_types_reals_inverted(
-    sacc_galaxy_xis_inverted: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis_inverted: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_inverted
+    """Correct inverted real tracer conventions while preserving measurement types.
+
+    :param sacc_galaxy_xis_inverted: Inverted real SACC data and named expectations.
+    """
+    sacc_data = sacc_galaxy_xis_inverted.sacc_data
 
     with pytest.warns(DeprecationWarning, match="AUTO-CORRECTION PERFORMED"):
         tracers, _ = extract_all_measured_types(sacc_data)
@@ -288,16 +286,13 @@ def test_extract_all_tracers_types_reals_inverted(
 
 
 def test_extract_all_tracers_types_cells_include_maybe(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Verify repeated harmonic measured-type extraction returns equal results.
+
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     assert extract_all_measured_types(sacc_data) == extract_all_measured_types(
         sacc_data
@@ -307,7 +302,11 @@ def test_extract_all_tracers_types_cells_include_maybe(
 def test_extract_all_tracers_types_cwindows_include_maybe(
     sacc_galaxy_cwindows: SaccGalaxyWindowedFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cwindows
+    """Verify repeated windowed measured-type extraction returns equal results.
+
+    :param sacc_galaxy_cwindows: Windowed SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cwindows.sacc_data
 
     assert extract_all_measured_types(sacc_data) == extract_all_measured_types(
         sacc_data
@@ -315,16 +314,13 @@ def test_extract_all_tracers_types_cwindows_include_maybe(
 
 
 def test_extract_all_tracers_types_xi_thetas_include_maybe(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify repeated real measured-type extraction returns equal results.
+
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     assert extract_all_measured_types(sacc_data) == extract_all_measured_types(
         sacc_data
@@ -412,16 +408,13 @@ def test_check_two_point_consistence_real_harmonic(
 
 
 def test_check_two_point_consistence_harmonic_mixing_cov(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Verify harmonic consistency rejects measurements with mixed covariance names.
+
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     tpms = extract_all_harmonic_data(sacc_data)
 
@@ -438,16 +431,13 @@ def test_check_two_point_consistence_harmonic_mixing_cov(
 
 
 def test_check_two_point_consistence_real_mixing_cov(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real consistency rejects measurements with mixed covariance names.
+
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tpms = extract_all_real_data(sacc_data)
     tpms[0] = replace(tpms[0], covariance_name="wrong_cov_name")
@@ -463,16 +453,13 @@ def test_check_two_point_consistence_real_mixing_cov(
 
 
 def test_check_two_point_consistence_harmonic_non_unique_indices(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Verify harmonic consistency rejects repeated indices within a measurement.
+
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     tpms = extract_all_harmonic_data(sacc_data)
 
@@ -488,16 +475,13 @@ def test_check_two_point_consistence_harmonic_non_unique_indices(
 
 
 def test_check_two_point_consistence_real_non_unique_indices(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real consistency rejects repeated indices within a measurement.
+
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tpms = extract_all_real_data(sacc_data)
     new_indices = tpms[0].indices
@@ -512,16 +496,13 @@ def test_check_two_point_consistence_real_non_unique_indices(
 
 
 def test_check_two_point_consistence_harmonic_indices_overlap(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells
+    """Verify harmonic consistency rejects indices shared between measurements.
+
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     tpms = extract_all_harmonic_data(sacc_data)
 
@@ -537,16 +518,13 @@ def test_check_two_point_consistence_harmonic_indices_overlap(
 
 
 def test_check_two_point_consistence_real_indices_overlap(
-    sacc_galaxy_xis: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_xis: SaccGalaxyRealFixture,
 ) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis
+    """Verify real consistency rejects indices shared between measurements.
+
+    :param sacc_galaxy_xis: Real SACC data with named expectations.
+    """
+    sacc_data = sacc_galaxy_xis.sacc_data
 
     tpms = extract_all_real_data(sacc_data)
 
@@ -719,21 +697,16 @@ def test_measurements_types_multiple_galaxy_and_cmb() -> None:
 
 
 def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
     """Test extract_all_measured_types with allow_mixed_types=True on mixed tracers.
 
     This test verifies that when allow_mixed_types=True, the function permits
     tracers to have multiple measurement types without raising an error.
+
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
-    sacc_data, _, _ = sacc_galaxy_cells
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # This should NOT raise an error even though src/lens tracers may have
     # mixed types from different measurement combinations
@@ -747,14 +720,14 @@ def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
 
 
 def test_extract_all_measured_mixed_types_galaxy_only(
-    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_src0_src0: SaccGalaxyHarmonicFixture,
 ) -> None:
     """Test extract_all_measured_types with allow_mixed_types=True on single type.
 
     This test verifies that tracers with only one measurement type work
     correctly with allow_mixed_types=True.
     """
-    sacc_data, _ = sacc_galaxy_cells_src0_src0
+    sacc_data = sacc_galaxy_cells_src0_src0.sacc_data
 
     result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
@@ -763,14 +736,14 @@ def test_extract_all_measured_mixed_types_galaxy_only(
 
 
 def test_extract_all_measured_mixed_types_density_only(
-    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, TomographicBin],
+    sacc_galaxy_cells_lens0_lens0: SaccGalaxyHarmonicFixture,
 ) -> None:
     """Test extract_all_measured_types with allow_mixed_types=True on density.
 
     Verifies that galaxy density (COUNTS) measurements work correctly
     with allow_mixed_types=True.
     """
-    sacc_data, _ = sacc_galaxy_cells_lens0_lens0
+    sacc_data = sacc_galaxy_cells_lens0_lens0.sacc_data
 
     result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
@@ -779,19 +752,16 @@ def test_extract_all_measured_mixed_types_density_only(
 
 
 def test_extract_all_measured_mixed_types_mixed_real_space(
-    sacc_galaxy_xis_src0_lens0: tuple[
-        sacc.Sacc,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-    ],
+    sacc_galaxy_xis_src0_lens0: SaccRealCrossBinFixture,
 ) -> None:
     """Test extract_all_measured_types with allow_mixed_types=True on real-space data.
 
     This test verifies behavior with real-space data (xi correlations)
     when mixed types are allowed.
+
+    :param sacc_galaxy_xis_src0_lens0: Source-lens real SACC data and expectations.
     """
-    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0
+    sacc_data = sacc_galaxy_xis_src0_lens0.sacc_data
 
     result, _ = extract_all_measured_types(sacc_data, allow_mixed_types=True)
 
@@ -928,22 +898,17 @@ def test_extract_all_measured_mixed_types_multiple_measurements_same_tracer() ->
 
 
 def test_extract_all_measured_types_allow_mixed_types_vs_false(
-    sacc_galaxy_cells: tuple[
-        sacc.Sacc,
-        dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
-        dict[
-            tuple[TracerNames, str],
-            tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
-        ],
-    ],
+    sacc_galaxy_cells: SaccGalaxyHarmonicFixture,
 ) -> None:
     """Test the difference between allow_mixed_types=True and False.
 
     This test verifies that with allow_mixed_types=False, we may get
     an error (after potential auto-correction attempts), while with
     allow_mixed_types=True, we get results without error.
+
+    :param sacc_galaxy_cells: Harmonic SACC data with named expectations.
     """
-    sacc_data, _, _ = sacc_galaxy_cells
+    sacc_data = sacc_galaxy_cells.sacc_data
 
     # Try with allow_mixed_types=True - should work without error
     result_true = extract_all_measured_types(sacc_data, allow_mixed_types=True)
