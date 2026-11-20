@@ -258,7 +258,7 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
             ** self.ia_mass_scaling
         )
 
-        ia_bias_array = np.full_like(tracer_arg.z, pref)
+        ia_bias_array = np.full_like(tracer_arg.z, pref, dtype=np.float64)
 
         return replace(
             tracer_arg,

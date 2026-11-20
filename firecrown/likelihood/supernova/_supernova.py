@@ -63,7 +63,7 @@ class Supernova(Statistic):
         z = np.array([dp.get_tag("z") for dp in data_points])
         self.a = np.array(1.0 / (1.0 + z), dtype=np.float64)
         self.data_vector = DataVector.from_list([dp.value for dp in data_points])
-        self.sacc_indices = np.arange(len(self.data_vector))
+        self.sacc_indices = np.arange(len(self.data_vector), dtype=np.int64)
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:

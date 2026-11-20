@@ -32,8 +32,11 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
     if params.get_string("projection") == "harmonic":
         two_point = TwoPoint("galaxy_density_cl", source0=src0, source1=src0)
         ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
-        Cells = np.random.normal(size=ells.shape[0])
-        sacc_data.add_ell_cl("galaxy_density_cl", "lens0", "lens0", ells, Cells)
+        Cells = np.array(np.random.normal(size=ells.shape[0]), dtype=np.float64)
+        for ell, cell in zip(ells, Cells):
+            sacc_data.add_data_point(
+                "galaxy_density_cl", ("lens0", "lens0"), cell, ell=ell
+            )
         cov = np.diag(np.ones_like(Cells) * 0.01)
         sacc_data.add_covariance(cov)
     elif params.get_string("projection") == "real":

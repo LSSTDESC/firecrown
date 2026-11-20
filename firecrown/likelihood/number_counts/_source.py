@@ -146,8 +146,8 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         # pylint: disable=unexpected-keyword-arg
         self.tracer_args = NumberCountsArgs(
             scale=self.scale,
-            z=np.array([]),
-            dndz=np.array([]),
+            z=np.array([], dtype=np.float64),
+            dndz=np.array([], dtype=np.float64),
             bias=None,
             mag_bias=None,
         )
@@ -163,7 +163,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         :returns: a tuple of tracers and the updated tracer_args
         """
         tracer_args = self.tracer_args
-        tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
+        tracer_args = replace(
+            tracer_args, bias=self.bias * np.ones_like(tracer_args.z, dtype=np.float64)
+        )
 
         ccl_cosmo = tools.get_ccl_cosmology()
         for systematic in self.systematics:
@@ -212,7 +214,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
                 ccl_cosmo,
                 has_rsd=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                bias=(tracer_args.z, np.ones_like(tracer_args.z)),
+                bias=(tracer_args.z, np.ones_like(tracer_args.z, dtype=np.float64)),
             )
             nc_pt_tracer = Tracer(
                 ccl_nc_dummy_tracer, tracer_name="galaxies", pt_tracer=nc_pt_tracer

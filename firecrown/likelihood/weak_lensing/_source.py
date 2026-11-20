@@ -83,7 +83,10 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         """
         # pylint: disable=unexpected-keyword-arg
         self.tracer_args = WeakLensingArgs(
-            scale=self.scale, z=np.array([]), dndz=np.array([]), ia_bias=None
+            scale=self.scale,
+            z=np.array([], dtype=np.float64),
+            dndz=np.array([], dtype=np.float64),
+            ia_bias=None,
         )
         # pylint: enable=unexpected-keyword-arg
 
@@ -117,7 +120,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
                 has_shear=False,
                 use_A_ia=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
+                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z, dtype=np.float64)),
             )
             ia_tracer = Tracer(
                 ccl_wl_dummy_tracer, tracer_name="intrinsic_pt", pt_tracer=ia_pt_tracer
@@ -135,7 +138,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
                 has_shear=False,
                 use_A_ia=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
+                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z, dtype=np.float64)),
             )
             ia_tracer = Tracer(
                 ccl_wl_dummy_tracer,

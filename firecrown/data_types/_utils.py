@@ -15,7 +15,11 @@ def residuals(data: DataVector, theory: TheoryVector) -> npt.NDArray[np.float64]
     """Return a bare np.ndarray with the difference between `data` and `theory`.
 
     This is to be preferred to using arithmetic on the vectors directly.
+
+    :param data: Observations stored as float64 values.
+    :param theory: Predictions stored as float64 values.
+    :returns: An ordinary float64 array containing data minus theory.
     """
     assert isinstance(data, DataVector)
     assert isinstance(theory, TheoryVector)
-    return (data - theory).view(np.ndarray)
+    return np.asarray(data) - np.asarray(theory)

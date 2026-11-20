@@ -1025,7 +1025,7 @@ auto_both_selector = AutoBinPairSelector()
 auto_both_pairs = make_binned_two_point_filtered(all_bins, auto_both_selector)
 
 # Create harmonic-space metadata
-ells = np.unique(np.geomspace(2, 2000, 128).astype(int))
+ells = np.unique(np.geomspace(2, 2000, 128).astype(np.int64))
 auto_harmonic_metadata = [TwoPointHarmonic(XY=xy, ells=ells) for xy in auto_both_pairs]
 
 print(f"Auto-correlation harmonic metadata: {len(auto_harmonic_metadata)}")
