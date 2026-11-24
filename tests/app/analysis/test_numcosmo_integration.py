@@ -22,7 +22,8 @@ from firecrown.app.analysis._types import (
     PriorGaussian,
     PriorUniform,
 )
-from firecrown.likelihood import NamedParameters
+from firecrown.connector.numcosmo import NumCosmoData
+from firecrown.likelihood import NamedParameters, SumLikelihood
 
 
 @pytest.fixture(name="numcosmo_init", scope="session")
@@ -634,3 +635,64 @@ class TestWriteConfigSerialization:
         assert cosmo is not None
         assert prim is not None
         assert reion is not None
+
+
+def test_write_config_with_likelihood_list(numcosmo_init: bool, tmp_path: Path) -> None:
+    """A factory returning a list of likelihoods yields a NumCosmoData dataset."""
+    assert numcosmo_init
+
+    factory_file = tmp_path / "factory_list.py"
+    factory_file.write_text("""
+import sacc
+import numpy as np
+from firecrown.likelihood.number_counts import NumberCounts
+from firecrown.likelihood import ConstGaussian, TwoPoint
+
+
+def _likelihood(tracer):
+    lens = NumberCounts(sacc_tracer=tracer)
+    sacc_data = sacc.Sacc()
+    sacc_data.add_tracer(
+        "NZ", tracer, np.array([0.1, 0.2, 0.3]), np.array([0.0, 1.0, 0.0])
+    )
+    sacc_data.add_ell_cl(
+        "galaxy_density_cl",
+        tracer,
+        tracer,
+        np.array([10, 20, 30]),
+        np.array([1.0, 2.0, 3.0]),
+    )
+    sacc_data.add_covariance(np.eye(3) * 0.1)
+    likelihood = ConstGaussian(
+        statistics=[TwoPoint("galaxy_density_cl", source0=lens, source1=lens)]
+    )
+    likelihood.read(sacc_data)
+    return likelihood
+
+
+def build_likelihood(_):
+    return [_likelihood("lens0"), _likelihood("lens1")]
+""".strip())
+
+    gen = NumCosmoConfigGenerator(
+        output_path=tmp_path,
+        prefix="test_list",
+        use_absolute_path=True,
+        cosmo_spec=CCLCosmologySpec.vanilla_lcdm(),
+        required_cosmology=FrameworkCosmology.NONLINEAR,
+    )
+    gen.factory_source = factory_file
+    gen.build_parameters = NamedParameters({})
+    gen.write_config()
+
+    yaml_file = tmp_path / "numcosmo_test_list.yaml"
+    # pylint: disable-next=no-member
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+    experiment = ser.dict_str_from_yaml_file(yaml_file.as_posix())
+
+    likelihood_obj = experiment.get("likelihood")
+    assert isinstance(likelihood_obj, Ncm.Likelihood)
+    data = likelihood_obj.peek_dataset().get_data(0)
+    assert isinstance(data, NumCosmoData)
+    assert isinstance(data.likelihood, SumLikelihood)
+    assert len(data.likelihood.likelihoods) == 2
