@@ -1,8 +1,6 @@
 # Python Code Style
 
-These rules apply to Python code and tests in this repository. The second-brain
-tool configuration implements the automated checks for that package. Pyright
-remains configured for editor feedback.
+These rules apply to Python code and tests in this repository.
 
 ## Required checks
 
