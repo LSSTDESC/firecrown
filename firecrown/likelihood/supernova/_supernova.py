@@ -1,4 +1,4 @@
-"""Supernova statistic support."""
+"""Type Ia supernova statistic support."""
 
 from __future__ import annotations
 
@@ -17,17 +17,27 @@ SNIA_DEFAULT_M = -19.2
 
 
 class Supernova(Statistic):
-    """A statistic representing the distance modulus for a single supernova.
+    """A statistic for Type Ia supernova apparent-magnitude measurements.
 
-    This statistic that applies an additive shift M to a supernova's distance
-    modulus.
+    The observed values are compared with apparent magnitudes predicted as
+    :math:`m = M + \\mu`, where :math:`M` is the absolute magnitude and
+    :math:`\\mu` is the cosmological distance modulus.
+
+    Redshifts are read from the SACC data and converted to scale factors using
+    :math:`a = 1 / (1 + z)`. Only the scale factors are retained internally.
+
+    The statistic must be initialized by calling :meth:`read` before it is used.
     """
 
     def __init__(self, sacc_tracer: str) -> None:
-        """Initialize a Supernova object.
+        """Initialize a Type Ia supernova statistic.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        The named tracer must be a :class:`~sacc.tracers.MiscTracer`. The tracer
+        name is also used as the parameter prefix, so the sampler-defined
+        absolute-magnitude parameter is named ``<sacc_tracer>_M``. Its default
+        value is :data:`SNIA_DEFAULT_M`.
+
+        :param sacc_tracer: name of the supernova tracer in the SACC file.
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
@@ -37,14 +47,20 @@ class Supernova(Statistic):
         self.M = register_new_updatable_parameter(default_value=SNIA_DEFAULT_M)
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the data for this statistic from the SACC file.
+        """Read the supernova measurements and redshifts from a SACC object.
 
-        :param sacc_data: The data in the sacc format.
+        The SACC object must contain the configured
+        :class:`~sacc.tracers.MiscTracer` and at least one data point with data
+        type ``supernova_distance_mu``, the tracer tuple ``(sacc_tracer,)``, and a
+        ``z`` tag. The data point values and scale factors are retained in the
+        order in which SACC returns the matching data points.
+
+        :param sacc_data: SACC data object containing the supernova measurements.
+        :raises ValueError: if the named tracer is absent or is not a
+            :class:`~sacc.tracers.MiscTracer`.
+        :raises AssertionError: if no matching data points are present.
         """
-        # We do not actually need the tracer, but we want to make sure the SACC
-        # data contains this tracer.
-        # TODO: remove the work-around when the new version of SACC supporting
-        # sacc.Sacc.has_tracer is available.
+        # Validate the tracer even though only its name is needed for data lookup.
         try:
             tracer = sacc_data.get_tracer(self.sacc_tracer)
         except KeyError as exc:
@@ -67,18 +83,25 @@ class Supernova(Statistic):
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
-        """Return the data vector; raise exception if there is none.
+        """Return the observed supernova apparent magnitudes.
 
-        :returns: The data vector.
+        :returns: the data vector populated by :meth:`read`.
+        :raises AssertionError: if :meth:`read` has not populated the data vector.
         """
         assert self.data_vector is not None
         return self.data_vector
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute SNIa distance statistic using CCL.
+        """Compute predicted apparent magnitudes using CCL.
 
-        :param tools: the modeling tools used to compute the theory vector.
-        :returns: The computed theory vector.
+        This method uses the scale factors loaded by :meth:`read` and the current
+        sampler value of ``M`` to evaluate :math:`m = M + \\mu` at each supernova.
+        It is normally called through
+        :meth:`~firecrown.likelihood_base.Statistic.compute_theory_vector` after
+        the statistic has been read and updated with parameters.
+
+        :param tools: modeling tools providing the CCL cosmology.
+        :returns: predicted apparent magnitudes in SACC data-point order.
         """
         ccl_cosmo = tools.get_ccl_cosmology()
         prediction = self.M + pyccl.distance_modulus(ccl_cosmo, self.a)
