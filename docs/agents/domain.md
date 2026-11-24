@@ -1,34 +1,35 @@
 # Domain Docs
 
-## Layout and Consumer Rules
+How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-This repo uses the existing single-context layout:
+## Before exploring, read these
 
-- `GLOSSARY.md` at the repository root holds domain terminology.
-- `docs/adr/` holds architectural decisions.
+- **`GLOSSARY.md`** at the repo root.
+- **`docs/adr/`**: read ADRs that touch the area you're about to work in.
+- For CI signal-boundary work, read `docs/adr/0001-pr-ci-signal-boundaries.md`.
 
-Before exploring the codebase, read `GLOSSARY.md` and the ADRs relevant
-to the work. For CI signal-boundary work, read
-`docs/adr/0001-pr-ci-signal-boundaries.md`.
+If either location is absent, **proceed silently**. Don't flag its absence or suggest creating it upfront. The `/domain-modeling` skill creates domain documents lazily when terms or decisions are actually resolved.
 
-Preserve these locations and their existing contents during setup.
-No `CONTEXT-MAP.md` or per-package context layout is needed.
+## File structure
 
-If a domain document is absent, proceed silently rather than proposing
-placeholder documentation. `/domain-modeling` creates domain documents
-when terminology or decisions are actually resolved.
+This is a single-context repository:
 
-## Use the Glossary's Vocabulary
+```
+/
+├── GLOSSARY.md
+├── docs/adr/
+│   └── 0001-pr-ci-signal-boundaries.md
+└── firecrown/
+```
 
-Use concepts as defined in `GLOSSARY.md` in ticket titles, proposals,
-hypotheses, and test names. Avoid substituting synonyms that change
-their meaning.
+No `GLOSSARY-MAP.md` or per-package glossary layout is needed.
 
-If a needed concept is absent, reconsider the terminology or note the
-gap for `/domain-modeling`.
+## Use the glossary's vocabulary
 
-## Flag ADR Conflicts
+When output names a domain concept, use the term as defined in `GLOSSARY.md`. Don't drift to synonyms that change its meaning.
 
-Explicitly identify any proposal that contradicts an existing ADR,
-including the ADR reference and the reason to reconsider it. Do not
-silently override a recorded decision.
+If a needed concept isn't in the glossary yet, that's a signal: either the terminology doesn't match the project or there's a real gap to note for `/domain-modeling`.
+
+## Flag ADR conflicts
+
+If an output contradicts an existing ADR, surface the conflict explicitly, including the ADR and the reason to reconsider it. Don't silently override a recorded decision.

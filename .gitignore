@@ -163,7 +163,6 @@ coverage.json
 .headroom
 .kilo
 plans/
-AGENTS.md
 .github/prompts/
 .github/skills/
 .kilocode
