@@ -50,6 +50,9 @@ readme = { file = "README.md", content-type = "text/markdown" }
 
 [project.urls]
 Homepage = "https://github.com/LSSTDESC/firecrown"
+Documentation = "https://firecrown.readthedocs.io/en/latest/"
+Tutorials = "https://firecrown.readthedocs.io/en/latest/_static/index.html"
+Cookbook = "https://firecrown.readthedocs.io/en/latest/_static/cookbook/index.html"
 
 [tool.setuptools.packages.find]
 include = ["firecrown*"]

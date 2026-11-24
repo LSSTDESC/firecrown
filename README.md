@@ -7,9 +7,12 @@ Firecrown
 Firecrown is a Python package that provides the DESC *framework* to implement likelihoods, as well as specific likelihood implementations.
 Firecrown is intended to be usable *from* external statistical analysis tools.
 
-See the [documentation](https://firecrown.readthedocs.io/en/latest/) for more details and installation instructions.
+## Documentation
 
-See also our [Tutorial Site](https://firecrown.readthedocs.io/en/latest/_static/index.html).
+- [Tutorials](https://firecrown.readthedocs.io/en/latest/_static/index.html): the introductory article and step-by-step guides to tomographic bins, two-point statistics, and systematics.
+- [Cookbook](https://firecrown.readthedocs.io/en/latest/_static/cookbook/index.html): short recipes, each downloadable as a Jupyter notebook.
+- [Main documentation](https://firecrown.readthedocs.io/en/latest/): installation instructions, usage with Cobaya, CosmoSIS, and NumCosmo, and the API reference.
+- Examples: the command `firecrown examples` generates example analyses and lists them when run without arguments; see [Using Firecrown](https://firecrown.readthedocs.io/en/latest/basic_usage.html).
 
 ## Contributing
 
