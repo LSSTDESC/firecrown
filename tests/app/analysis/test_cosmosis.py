@@ -187,6 +187,13 @@ class TestFormatFloat:
             result = format_float(value)
             assert "." in result or "e" in result
 
+    def test_format_float_round_trip(self) -> None:
+        """Test that formatted floats read back as the same value."""
+        test_values = [0.2664315, 0.0491685, 0.6727, 1.23885511, 2.1e-9, 1.0 / 3.0]
+        for value in test_values:
+            assert float(format_float(value)) == value
+        assert format_float(0.2664315) == "0.2664315"
+
 
 class TestAddCosmologyModules:
     """Tests for _add_cosmology_modules function."""

@@ -28,7 +28,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v4.0.1
+        uses: conda-incubator/setup-miniconda@v4.1.0
         with:
           miniforge-version: latest
           python-version: "3.12"
@@ -113,7 +113,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload drift log
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: pr-rebuild-drift-log
           path: pr-rebuild-drift.log
