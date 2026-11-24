@@ -1,5 +1,6 @@
 """Data models for likelihood factory configuration."""
 
+from collections.abc import Sequence
 from pathlib import Path
 
 import sacc
@@ -15,14 +16,35 @@ from firecrown.data_functions import (
     extract_all_real_data,
 )
 
-# The following two imports from private modules are needed
+# The following imports from private modules are needed
 # to avoid circular dependencies.
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._two_point import TwoPointFactory
-from firecrown.likelihood_base import Likelihood
+from firecrown.likelihood.clusters._binned_cluster_factory import (
+    BinnedClusterFactory,
+)
+from firecrown.likelihood_base import Likelihood, Statistic
 from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.modeling_tools import CCLFactory
 from firecrown.utils import ensure_path, load_sacc_data
+
+
+def _add_cluster_statistics(
+    statistics: Sequence[Statistic],
+    sacc_data: sacc.Sacc,
+    cluster_factory: BinnedClusterFactory | None,
+) -> Sequence[Statistic]:
+    """Append the cluster statistics requested for a likelihood.
+
+    :param statistics: The two-point statistics already built.
+    :param sacc_data: The SACC file containing the data.
+    :param cluster_factory: The binned cluster factory, or None.
+
+    :returns: The statistics, followed by the cluster statistics.
+    """
+    if cluster_factory is None:
+        return statistics
+    return [*statistics, *cluster_factory.from_sacc(sacc_data)]
 
 
 def _build_two_point_likelihood_harmonic(
@@ -30,6 +52,7 @@ def _build_two_point_likelihood_harmonic(
     two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
     normalize: bool = True,
+    cluster_factory: BinnedClusterFactory | None = None,
 ) -> Likelihood:
     """Build a likelihood object for two-point statistics in harmonic space.
 
@@ -42,6 +65,8 @@ def _build_two_point_likelihood_harmonic(
     :param two_point_factory: The two-point statistic factory.
     :param filters: Optional filters to apply to the two-point measurements.
     :param normalize: If True, normalize the window function weights to sum to 1.
+    :param cluster_factory: Optional binned cluster factory whose statistics are
+        added to the same likelihood.
 
     :returns: A likelihood object for two-point statistics in harmonic space.
     """
@@ -54,9 +79,11 @@ def _build_two_point_likelihood_harmonic(
     if filters is not None:
         tpms = filters(tpms)
 
-    two_points = two_point_factory.from_measurement(tpms)
+    statistics = _add_cluster_statistics(
+        two_point_factory.from_measurement(tpms), sacc_data, cluster_factory
+    )
     assert sacc_data.covariance is not None
-    likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
+    likelihood = ConstGaussian.create_ready(statistics, sacc_data.covariance.dense)
 
     return likelihood
 
@@ -65,6 +92,7 @@ def _build_two_point_likelihood_real(
     sacc_data: sacc.Sacc,
     two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
+    cluster_factory: BinnedClusterFactory | None = None,
 ) -> Likelihood:
     """Build a likelihood object for two-point statistics in real space.
 
@@ -74,8 +102,10 @@ def _build_two_point_likelihood_real(
     by combining the SACC file with the specified statistic factories.
 
     :param sacc_data: The SACC file containing the data.
-    :param wl_factory: The weak lensing statistic factory.
-    :param nc_factory: The number counts statistic factory.
+    :param two_point_factory: The two-point statistic factory.
+    :param filters: Optional filters to apply to the two-point measurements.
+    :param cluster_factory: Optional binned cluster factory whose statistics are
+        added to the same likelihood.
 
     :returns: A likelihood object for two-point statistics in real space.
     """
@@ -88,11 +118,31 @@ def _build_two_point_likelihood_real(
     if filters is not None:
         tpms = filters(tpms)
 
-    two_points = two_point_factory.from_measurement(tpms)
+    statistics = _add_cluster_statistics(
+        two_point_factory.from_measurement(tpms), sacc_data, cluster_factory
+    )
     assert sacc_data.covariance is not None
-    likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
+    likelihood = ConstGaussian.create_ready(statistics, sacc_data.covariance.dense)
 
     return likelihood
+
+
+def _build_cluster_likelihood(
+    sacc_data: sacc.Sacc, cluster_factory: BinnedClusterFactory
+) -> Likelihood:
+    """Build a likelihood object for binned cluster statistics.
+
+    :param sacc_data: The SACC file containing the data.
+    :param cluster_factory: The binned cluster factory of all cluster samples.
+
+    :returns: A likelihood object for the cluster statistics.
+    """
+    statistics = cluster_factory.from_sacc(sacc_data)
+    if sacc_data.covariance is None:
+        raise ValueError(
+            "The SACC data has no covariance; one is required to build the likelihood."
+        )
+    return ConstGaussian.create_ready(statistics, sacc_data.covariance.dense)
 
 
 class DataSourceSacc(BaseModel):
@@ -138,11 +188,16 @@ class DataSourceSacc(BaseModel):
 
 
 class TwoPointExperiment(BaseModel):
-    """Model for the two-point experiment in a likelihood configuration."""
+    """Model for the two-point experiment in a likelihood configuration.
+
+    A binned cluster factory may be added; its statistics enter the same
+    Gaussian likelihood, using the covariance stored in the SACC file.
+    """
 
     two_point_factory: TwoPointFactory
     data_source: DataSourceSacc
     ccl_factory: CCLFactory | None = None
+    cluster_factory: BinnedClusterFactory | None = None
 
     def model_post_init(self, _: object, /) -> None:
         """Initialize the TwoPointExperiment object."""
@@ -171,7 +226,10 @@ class TwoPointExperiment(BaseModel):
         match self.two_point_factory.correlation_space:
             case TwoPointCorrelationSpace.REAL:
                 likelihood = _build_two_point_likelihood_real(
-                    sacc_data, self.two_point_factory, filters=self.data_source.filters
+                    sacc_data,
+                    self.two_point_factory,
+                    filters=self.data_source.filters,
+                    cluster_factory=self.cluster_factory,
                 )
             case TwoPointCorrelationSpace.HARMONIC:
                 likelihood = _build_two_point_likelihood_harmonic(
@@ -179,8 +237,48 @@ class TwoPointExperiment(BaseModel):
                     self.two_point_factory,
                     filters=self.data_source.filters,
                     normalize=self.data_source.normalize_window,
+                    cluster_factory=self.cluster_factory,
                 )
             case _ as unreachable:
                 assert_never(unreachable)
         assert likelihood is not None
         return likelihood
+
+
+class ClusterExperiment(BaseModel):
+    """Model for a binned galaxy cluster experiment in a likelihood configuration.
+
+    The likelihood is a :class:`ConstGaussian` over the statistics of the
+    cluster factory, using the covariance stored in the SACC file.
+    """
+
+    cluster_factory: BinnedClusterFactory
+    data_source: DataSourceSacc
+    ccl_factory: CCLFactory | None = None
+
+    def model_post_init(self, _: object, /) -> None:
+        """Initialize the ClusterExperiment object."""
+        if self.ccl_factory is None:
+            self.ccl_factory = CCLFactory()
+
+    @classmethod
+    def load_from_yaml(cls, file: str | Path) -> "ClusterExperiment":
+        """Load a ClusterExperiment object from a YAML file."""
+        filepath = ensure_path(file)
+
+        with open(filepath, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+            experiment = cls.model_validate(config, strict=True)
+
+        # Record the file directory
+        experiment.data_source.set_path(filepath.parent)
+        return experiment
+
+    def make_likelihood(self) -> Likelihood:
+        """Create a likelihood object for binned cluster statistics from a SACC file."""
+        if self.data_source.filters is not None:
+            raise ValueError(
+                "Two-point filters cannot be applied to a cluster experiment."
+            )
+        sacc_data = self.data_source.get_sacc_data()
+        return _build_cluster_likelihood(sacc_data, self.cluster_factory)

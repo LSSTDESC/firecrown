@@ -22,9 +22,11 @@ from firecrown.app.examples._cluster_counts import (
     ClusterDataset,
     ExampleClusterCounts,
 )
-from firecrown.app.examples._cluster_data import SDSS_SURVEY_NAME
-from firecrown.likelihood import ConstGaussian
+from firecrown.app.examples._cluster_data import SDSS_SURVEY_NAME, ClusterFactoryType
+from firecrown.likelihood import ConstGaussian, Likelihood
+from firecrown.likelihood.factories import ClusterExperiment, build_cluster_likelihood
 from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import ParamsMap, get_default_params_map
 
 
 class _BuilderKwargs(TypedDict, total=False):
@@ -35,6 +37,7 @@ class _BuilderKwargs(TypedDict, total=False):
     use_cluster_counts: bool
     use_mean_log_mass: bool
     cosmology_spec: Path
+    factory_type: ClusterFactoryType
 
 
 def make_builder(
@@ -201,3 +204,84 @@ def test_build_likelihood_single_observable(
 
     assert isinstance(likelihood, ConstGaussian)
     assert len(likelihood.get_data_vector()) == 5
+
+
+def chi_squared(
+    likelihood: Likelihood, tools: ModelingTools, params: ParamsMap
+) -> float:
+    """Evaluate a likelihood and return its chi-squared.
+
+    :param likelihood: Likelihood to evaluate.
+    :param tools: Modeling tools of the likelihood.
+    :param params: Parameter values.
+    :returns: The chi-squared.
+    """
+    tools.update(params)
+    tools.prepare()
+    likelihood.update(params)
+    assert isinstance(likelihood, ConstGaussian)
+    return likelihood.compute_chisq(tools)
+
+
+def test_generate_factory_yaml(tmp_path: Path) -> None:
+    """The YAML factory type writes a cluster experiment and names its builder."""
+    builder = make_builder(
+        tmp_path, prefix="test_cc", factory_type=ClusterFactoryType.YAML
+    )
+    sacc_file = tmp_path / "test_cc.sacc"
+
+    result = builder.generate_factory(tmp_path, sacc_file)
+    params = builder.get_build_parameters(sacc_file)
+
+    assert result == "firecrown.likelihood.factories.build_cluster_likelihood"
+    experiment = ClusterExperiment.load_from_yaml(tmp_path / "test_cc_experiment.yaml")
+    (factory,) = experiment.cluster_factory.abundance_factories
+    assert factory.survey_name == SIMULATED_SURVEY_NAME
+    assert factory.observables == ["counts", "mass"]
+    assert params.get_string("likelihood_config") == "test_cc_experiment.yaml"
+    assert ("Factory type", "yaml") in builder.get_options_desc()
+
+
+@pytest.mark.parametrize(
+    "use_cluster_counts,use_mean_log_mass", [(True, True), (True, False), (False, True)]
+)
+def test_yaml_likelihood_matches_python(
+    tmp_path: Path,
+    use_cluster_counts: bool,
+    use_mean_log_mass: bool,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The YAML experiment reproduces the likelihood of the Python factory."""
+    monkeypatch.chdir(tmp_path)
+    python_builder = make_builder(
+        tmp_path,
+        dataset=ClusterDataset.SDSS,
+        use_cluster_counts=use_cluster_counts,
+        use_mean_log_mass=use_mean_log_mass,
+    )
+    yaml_builder = make_builder(
+        tmp_path,
+        dataset=ClusterDataset.SDSS,
+        use_cluster_counts=use_cluster_counts,
+        use_mean_log_mass=use_mean_log_mass,
+        factory_type=ClusterFactoryType.YAML,
+    )
+    sacc_file = python_builder.generate_sacc(tmp_path)
+    yaml_builder.generate_factory(tmp_path, sacc_file)
+
+    # pylint: disable-next=import-outside-toplevel
+    from firecrown.app.examples import _cluster_counts_template
+
+    expected, tools = _cluster_counts_template.build_likelihood(
+        python_builder.get_build_parameters(sacc_file)
+    )
+    likelihood, yaml_tools = build_cluster_likelihood(
+        yaml_builder.get_build_parameters(sacc_file)
+    )
+
+    assert isinstance(likelihood, ConstGaussian)
+    assert (likelihood.get_data_vector() == expected.get_data_vector()).all()
+    params = get_default_params_map(tools, expected)
+    assert chi_squared(likelihood, yaml_tools, params) == pytest.approx(
+        chi_squared(expected, tools, params)
+    )

@@ -17,6 +17,8 @@ Likelihood Types:
     - :class:`BinnedCluster`: Binned cluster statistics base class
     - :class:`BinnedClusterNumberCounts`: Cluster abundance likelihoods
     - :class:`BinnedClusterShearProfile`: Cluster weak lensing likelihoods
+    - :class:`BinnedClusterFactory`: Factory building the binned cluster
+      statistics of all cluster samples
     - :class:`Supernova`: Supernova distance modulus likelihoods
     - :class:`UpdatableClusterObjects`: Connector for creating Firecrown
     - cluster updatables from external code
@@ -24,17 +26,11 @@ Likelihood Types:
 Subpackages:
     - :mod:`weak_lensing`: Weak lensing systematics and sources
     - :mod:`number_counts`: Galaxy number counts systematics and sources
+    - :mod:`clusters`: Binned cluster statistics and their factories
     - :mod:`supernova`: Supernova-specific implementations
     - :mod:`factories`: Factory functions for creating likelihood components
 """
 
-from firecrown.likelihood._binned_cluster import BinnedCluster
-from firecrown.likelihood._binned_cluster_number_counts import (
-    BinnedClusterNumberCounts,
-)
-from firecrown.likelihood._binned_cluster_number_counts_shear import (
-    BinnedClusterShearProfile,
-)
 from firecrown.likelihood._cmb import (
     CMBConvergence,
     CMBConvergenceArgs,
@@ -49,7 +45,13 @@ from firecrown.likelihood._likelihood import (
 )
 from firecrown.likelihood._student_t import StudentT
 from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
-from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
+from firecrown.likelihood.clusters import (
+    BinnedCluster,
+    BinnedClusterFactory,
+    BinnedClusterNumberCounts,
+    BinnedClusterShearProfile,
+    UpdatableClusterObjects,
+)
 from firecrown.likelihood.supernova._supernova import Supernova
 from firecrown.likelihood_base import (
     Likelihood,
@@ -64,7 +66,7 @@ from firecrown.likelihood_base import (
     TrivialStatistic,
 )
 
-from . import factories, number_counts, supernova, weak_lensing
+from . import clusters, factories, number_counts, supernova, weak_lensing
 
 __all__ = [
     "Likelihood",
@@ -81,6 +83,7 @@ __all__ = [
     "TwoPoint",
     "TwoPointFactory",
     "BinnedCluster",
+    "BinnedClusterFactory",
     "BinnedClusterNumberCounts",
     "BinnedClusterShearProfile",
     "Supernova",
@@ -95,6 +98,7 @@ __all__ = [
     "SourceSystematic",
     "Statistic",
     "TrivialStatistic",
+    "clusters",
     "weak_lensing",
     "number_counts",
     "factories",

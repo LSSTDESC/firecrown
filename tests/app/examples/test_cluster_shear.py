@@ -13,13 +13,18 @@ import pytest
 from firecrown.app.analysis import CCLCosmologySpec, FrameworkCosmology, Frameworks
 from firecrown.app.examples import EXAMPLES_LIST
 from firecrown.app.examples import _cluster_shear_template
-from firecrown.app.examples._cluster_data import SIM_Z_RANGE, ClusterCatalog
+from firecrown.app.examples._cluster_data import (
+    SIM_Z_RANGE,
+    ClusterCatalog,
+    ClusterFactoryType,
+)
 from firecrown.app.examples._cluster_shear import (
     SIMULATED_SURVEY_NAME,
     ClusterProfile,
     ExampleClusterShear,
 )
 from firecrown.likelihood import ConstGaussian, NamedParameters
+from firecrown.likelihood.factories import build_cluster_likelihood
 from firecrown.modeling_tools import ModelingTools
 
 
@@ -29,6 +34,7 @@ class _BuilderKwargs(TypedDict, total=False):
     prefix: str
     profile: ClusterProfile
     cosmology_spec: Path
+    factory_type: ClusterFactoryType
 
 
 def make_builder(
@@ -126,6 +132,7 @@ def test_build_likelihood_execution(
 
     factory_file = builder.generate_factory(tmp_path, sacc_file)
     assert factory_file == tmp_path / "test_cs_factory.py"
+    assert isinstance(factory_file, Path)
     assert factory_file.exists()
 
     params = builder.get_build_parameters(sacc_file)
@@ -187,3 +194,33 @@ def test_cosmology_spec_override(tmp_path: Path) -> None:
     builder = make_builder(tmp_path, cosmology_spec=spec_file)
 
     assert builder.cosmology_analysis_spec() == CCLCosmologySpec.vanilla_lcdm()
+
+
+@pytest.mark.parametrize("profile", list(ClusterProfile))
+def test_yaml_likelihood_matches_python(
+    tmp_path: Path,
+    sacc_file: Path,
+    profile: ClusterProfile,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The YAML experiment has the data and parameters of the Python factory."""
+    monkeypatch.chdir(sacc_file.parent)
+    python_builder = make_builder(tmp_path, profile=profile)
+    yaml_builder = make_builder(
+        tmp_path, profile=profile, factory_type=ClusterFactoryType.YAML
+    )
+
+    result = yaml_builder.generate_factory(sacc_file.parent, sacc_file)
+    expected, _ = _cluster_shear_template.build_likelihood(
+        python_builder.get_build_parameters(sacc_file)
+    )
+    likelihood, _ = build_cluster_likelihood(
+        yaml_builder.get_build_parameters(sacc_file)
+    )
+
+    assert result == "firecrown.likelihood.factories.build_cluster_likelihood"
+    assert isinstance(likelihood, ConstGaussian)
+    assert (likelihood.get_data_vector() == expected.get_data_vector()).all()
+    assert set(likelihood.required_parameters().get_params_names()) == set(
+        expected.required_parameters().get_params_names()
+    )

@@ -5,6 +5,7 @@ lensing profiles, using a cluster catalog simulated with NumCosmo and NFW
 profiles computed with CLMM.
 """
 
+import textwrap
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -26,8 +27,11 @@ from ..analysis import (
 from . import _cluster_shear_template
 from ._cluster_data import (
     PROFILE_CONCENTRATION,
+    PROFILE_SOURCE_ZMAX,
     PROFILE_Z_INF,
+    ClusterFactoryType,
     bin_catalog,
+    cluster_model_yaml,
     fiducial_cosmology_spec,
     shear_sacc,
     simulate_catalog,
@@ -94,6 +98,15 @@ class ExampleClusterShear(AnalysisBuilder):
         typer.Option(help="Random seed for the simulated catalog", show_default=True),
     ] = 2
 
+    factory_type: Annotated[
+        ClusterFactoryType,
+        typer.Option(
+            help="Build the likelihood with a Python factory or a YAML experiment",
+            show_default=True,
+            case_sensitive=False,
+        ),
+    ] = ClusterFactoryType.PYTHON
+
     def generate_sacc(self, output_path: Path) -> Path:
         """Simulate clusters and their lensing profiles in SACC format.
 
@@ -118,23 +131,94 @@ class ExampleClusterShear(AnalysisBuilder):
         sacc_data.save_fits(sacc_full_file, overwrite=True)
         return sacc_full_file
 
-    def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
-        """Copy the cluster shear factory template.
+    def generate_factory(self, output_path: Path, sacc: Path) -> str | Path:
+        """Copy the cluster shear factory template or write a YAML experiment.
 
         :param output_path: Output directory
-        :param _sacc: SACC file path (unused)
-        :returns: Path to factory file
+        :param sacc: SACC file path, referenced by the YAML experiment
+        :returns: Path to the factory file, or the builder of the YAML experiment
         """
+        if self.factory_type == ClusterFactoryType.YAML:
+            output_file = output_path / f"{self.prefix}_experiment.yaml"
+            output_file.write_text(self._get_yaml_config(sacc))
+            return "firecrown.likelihood.factories.build_cluster_likelihood"
         output_file = output_path / f"{self.prefix}_factory.py"
         copy_template(_cluster_shear_template, output_file)
         return output_file
 
+    def _get_yaml_config(self, sacc: Path) -> str:
+        """Return the cluster experiment YAML of the selected observables.
+
+        DeltaSigma uses the exact recipe with h-adaptive cubature and the reduced
+        shear the grid recipe, as in the factory template. When counts or mean
+        masses are fitted, both factories share one model through a YAML anchor.
+
+        :param sacc: SACC file path
+        :returns: YAML configuration as string
+        """
+        sacc_path_str = (
+            sacc.absolute().as_posix() if self.use_absolute_path else sacc.name
+        )
+        delta_sigma = self.profile == ClusterProfile.DELTA_SIGMA
+        model = textwrap.indent(
+            cluster_model_yaml(
+                binned=delta_sigma, integral_method="h_v" if delta_sigma else None
+            ),
+            " " * 8,
+        )
+        observables = [
+            name
+            for name, used in (
+                ("counts", self.use_cluster_counts),
+                ("mass", self.use_mean_log_mass),
+            )
+            if used
+        ]
+        config = f"""---
+
+data_source:
+  sacc_data_file: {sacc_path_str}
+
+cluster_factory:
+"""
+        lensing_model = f"      model:\n{model}"
+        if observables:
+            config += f"""  abundance_factories:
+    - survey_name: {SIMULATED_SURVEY_NAME}
+      observables: [{", ".join(observables)}]
+      model: &model
+{model}"""
+            lensing_model = "      model: *model\n"
+        config += f"""  lensing_factories:
+    - survey_name: {SIMULATED_SURVEY_NAME}
+      observable: {"deltasigma" if delta_sigma else "shear"}
+      cluster_concentration: {PROFILE_CONCENTRATION}
+"""
+        if not delta_sigma:
+            config += (
+                f"      lensing_efficiency: {{z_inf: {PROFILE_Z_INF}, "
+                f"z_max: {PROFILE_SOURCE_ZMAX}, interpolate: true}}\n"
+            )
+        return config + lensing_model
+
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
-        """Return the SACC file, survey name, profile and selected observables.
+        """Return the build parameters of the Python or YAML likelihood.
 
         :param sacc_path: Path to the SACC data file
         :returns: Named parameters for the likelihood factory
         """
+        if self.factory_type == ClusterFactoryType.YAML:
+            experiment_path = sacc_path.parent / f"{self.prefix}_experiment.yaml"
+            return NamedParameters(
+                {
+                    "sacc_file": self.get_sacc_file(sacc_path),
+                    "likelihood_config": (
+                        experiment_path.absolute().as_posix()
+                        if self.use_absolute_path
+                        else experiment_path.name
+                    ),
+                }
+            )
         return NamedParameters(
             {
                 "sacc_file": self.get_sacc_file(sacc_path),
@@ -209,4 +293,5 @@ class ExampleClusterShear(AnalysisBuilder):
             ("Cluster counts", f"{self.use_cluster_counts}"),
             ("Mean log mass", f"{self.use_mean_log_mass}"),
             ("Seed", f"{self.seed}"),
+            ("Factory type", self.factory_type.value),
         ]

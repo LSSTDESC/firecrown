@@ -14,9 +14,17 @@ These functions are particularly useful when the full set of statistics present 
 SACC file is being used without the need for complex customization.
 """
 
+from firecrown.likelihood.clusters._binned_cluster_factory import BinnedClusterFactory
 from firecrown.likelihood._two_point import TwoPointFactory
-from firecrown.likelihood.factories._builders import build_two_point_likelihood
-from firecrown.likelihood.factories._models import DataSourceSacc, TwoPointExperiment
+from firecrown.likelihood.factories._builders import (
+    build_cluster_likelihood,
+    build_two_point_likelihood,
+)
+from firecrown.likelihood.factories._models import (
+    ClusterExperiment,
+    DataSourceSacc,
+    TwoPointExperiment,
+)
 from firecrown.utils import load_sacc_data
 
 __all__ = [
@@ -25,8 +33,11 @@ __all__ = [
     # Data models
     "DataSourceSacc",
     "TwoPointExperiment",
+    "ClusterExperiment",
     # Likelihood builders
     "build_two_point_likelihood",
-    # Two-point factory
+    "build_cluster_likelihood",
+    # Statistic factories
     "TwoPointFactory",
+    "BinnedClusterFactory",
 ]

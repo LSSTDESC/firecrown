@@ -98,6 +98,7 @@ class UpdatableParameters(Updatable):
         self,
         recipe_attribute_name: str,
         updatable_parameters: Iterable[str],
+        parameter_prefix: None | str = None,
     ) -> None:
         """Create an :class:`UpdatableParameters` helper.
 
@@ -105,8 +106,10 @@ class UpdatableParameters(Updatable):
             recipe that identifies the cluster object.
         :param updatable_parameters: Names of the updatable parameters to
             register.
+        :param parameter_prefix: Optional prefix prepended to every parameter
+            name, giving ``{prefix}_{recipe_attribute_name}_{parameter}``.
         """
-        super().__init__()
+        super().__init__(parameter_prefix=parameter_prefix)
         self.recipe_attribute_name = recipe_attribute_name
         self.updatable_parameters = list(updatable_parameters)
 
@@ -120,8 +123,13 @@ class UpdatableParameters(Updatable):
             ``parameters`` mapping.
         """
         for par_name in self.updatable_parameters:
+            default_value = cluster_object.parameters[par_name]
+            # crow stores some defaults as int (cluster_concentration is -1 when
+            # unset); ParamsMap only accepts float values.
+            if isinstance(default_value, int) and not isinstance(default_value, bool):
+                default_value = float(default_value)
             registered_parameter = register_new_updatable_parameter(
-                default_value=cluster_object.parameters[par_name]
+                default_value=default_value
             )
             setattr(
                 self,
@@ -150,6 +158,11 @@ class UpdatableClusterObjects(Updatable):
     :ivar cluster_objects_configs: Sequence of configuration dictionaries
         describing which parameters of each cluster object will be updated.
 
+    Parameter names are ``{recipe_attribute_name}_{parameter}``; when a
+    ``parameter_prefix`` is given they become
+    ``{parameter_prefix}_{recipe_attribute_name}_{parameter}``, which lets
+    several cluster samples carry independent parameters.
+
     Example configuration::
 
         cluster_objects_configs = (
@@ -176,14 +189,17 @@ class UpdatableClusterObjects(Updatable):
     def __init__(
         self,
         cluster_objects_configs: Sequence[_ClusterObjectConfig],
+        parameter_prefix: None | str = None,
     ) -> None:
         """Create an :class:`UpdatableClusterObjects` helper.
 
         :param cluster_objects_configs: Configuration describing which
             attributes on a cluster recipe should be treated as updatable
             cluster objects.
+        :param parameter_prefix: Optional prefix applied to every registered
+            parameter name.
         """
-        super().__init__()
+        super().__init__(parameter_prefix=parameter_prefix)
         self.cluster_objects_configs = list(cluster_objects_configs)
         self.my_updatables: UpdatableCollection[UpdatableParameters] = (
             UpdatableCollection()
@@ -193,6 +209,7 @@ class UpdatableClusterObjects(Updatable):
             updatable_parameters = UpdatableParameters(
                 conf["recipe_attribute_name"],
                 conf["parameters"],
+                parameter_prefix=parameter_prefix,
             )
             setattr(
                 self,

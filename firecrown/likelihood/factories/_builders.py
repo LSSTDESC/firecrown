@@ -1,8 +1,33 @@
 """Factory methods for creating Likelihood objects from configuration."""
 
-from firecrown.likelihood.factories._models import TwoPointExperiment
+from firecrown.likelihood.factories._models import (
+    ClusterExperiment,
+    TwoPointExperiment,
+)
 from firecrown.likelihood_base import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
+
+
+def build_cluster_likelihood(
+    build_parameters: NamedParameters,
+) -> tuple[Likelihood, ModelingTools]:
+    """Build a likelihood object for binned cluster statistics from a SACC file.
+
+    This function creates a likelihood object for binned cluster number counts,
+    mean masses and lensing profiles using a SACC file and a set of binned cluster
+    factories described in a YAML file (see :class:`ClusterExperiment`).
+
+    :param build_parameters: A NamedParameters object containing the following
+        parameters:
+        - likelihood_config: A YAML file describing the cluster experiment.
+    """
+    likelihood_config_file = build_parameters.get_string("likelihood_config")
+    exp = ClusterExperiment.load_from_yaml(likelihood_config_file)
+    modeling_tools = ModelingTools(ccl_factory=exp.ccl_factory)
+
+    likelihood = exp.make_likelihood()
+
+    return likelihood, modeling_tools
 
 
 def build_two_point_likelihood(

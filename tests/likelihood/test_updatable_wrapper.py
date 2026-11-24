@@ -1,8 +1,8 @@
-"""Tests for firecrown.likelihood._updatable_wrapper."""
+"""Tests for firecrown.likelihood.clusters._updatable_wrapper."""
 
 import pytest
 
-from firecrown.likelihood._updatable_wrapper import (
+from firecrown.likelihood.clusters._updatable_wrapper import (
     UpdatableClusterObjects,
     _ClusterObjectConfig,
     _is_cluster_object_with_parameters,

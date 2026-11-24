@@ -6,7 +6,7 @@ import sacc
 from crow.properties import ClusterProperty
 
 from firecrown.data_types import TheoryVector
-from firecrown.likelihood._binned_cluster import BinnedCluster
+from firecrown.likelihood.clusters._binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import AbundanceData
 

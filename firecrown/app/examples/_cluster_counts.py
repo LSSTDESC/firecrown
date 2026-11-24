@@ -5,6 +5,7 @@ a cluster catalog simulated with NumCosmo or the SDSS redMaPPer measurements
 of Costanzi et al. (2019).
 """
 
+import textwrap
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -26,7 +27,9 @@ from ..analysis import (
 from . import _cluster_counts_template
 from ._cluster_data import (
     SDSS_SURVEY_NAME,
+    ClusterFactoryType,
     bin_catalog,
+    cluster_model_yaml,
     counts_sacc,
     fiducial_cosmology_spec,
     sdss_sacc,
@@ -97,6 +100,15 @@ class ExampleClusterCounts(AnalysisBuilder):
         ),
     ] = 32
 
+    factory_type: Annotated[
+        ClusterFactoryType,
+        typer.Option(
+            help="Build the likelihood with a Python factory or a YAML experiment",
+            show_default=True,
+            case_sensitive=False,
+        ),
+    ] = ClusterFactoryType.PYTHON
+
     def __post_init__(self) -> None:
         """Validate the selected observables and run the generation workflow."""
         if not (self.use_cluster_counts or self.use_mean_log_mass):
@@ -124,23 +136,69 @@ class ExampleClusterCounts(AnalysisBuilder):
         sacc_data.save_fits(sacc_full_file, overwrite=True)
         return sacc_full_file
 
-    def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
-        """Copy the cluster counts factory template.
+    def generate_factory(self, output_path: Path, sacc: Path) -> str | Path:
+        """Copy the cluster counts factory template or write a YAML experiment.
 
         :param output_path: Output directory
-        :param _sacc: SACC file path (unused)
-        :returns: Path to factory file
+        :param sacc: SACC file path, referenced by the YAML experiment
+        :returns: Path to the factory file, or the builder of the YAML experiment
         """
+        if self.factory_type == ClusterFactoryType.YAML:
+            output_file = output_path / f"{self.prefix}_experiment.yaml"
+            output_file.write_text(self._get_yaml_config(sacc))
+            return "firecrown.likelihood.factories.build_cluster_likelihood"
         output_file = output_path / f"{self.prefix}_factory.py"
         copy_template(_cluster_counts_template, output_file)
         return output_file
 
+    def _get_yaml_config(self, sacc: Path) -> str:
+        """Return the cluster experiment YAML of the selected observables.
+
+        :param sacc: SACC file path
+        :returns: YAML configuration as string
+        """
+        sacc_path_str = (
+            sacc.absolute().as_posix() if self.use_absolute_path else sacc.name
+        )
+        observables = [
+            name
+            for name, used in (
+                ("counts", self.use_cluster_counts),
+                ("mass", self.use_mean_log_mass),
+            )
+            if used
+        ]
+        model = textwrap.indent(cluster_model_yaml(binned=True), " " * 8)
+        return f"""---
+
+data_source:
+  sacc_data_file: {sacc_path_str}
+
+cluster_factory:
+  abundance_factories:
+    - survey_name: {self._survey_name()}
+      observables: [{", ".join(observables)}]
+      model:
+{model}"""
+
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
-        """Return the SACC file, survey name and selected observables.
+        """Return the build parameters of the Python or YAML likelihood.
 
         :param sacc_path: Path to the SACC data file
         :returns: Named parameters for the likelihood factory
         """
+        if self.factory_type == ClusterFactoryType.YAML:
+            experiment_path = sacc_path.parent / f"{self.prefix}_experiment.yaml"
+            return NamedParameters(
+                {
+                    "sacc_file": self.get_sacc_file(sacc_path),
+                    "likelihood_config": (
+                        experiment_path.absolute().as_posix()
+                        if self.use_absolute_path
+                        else experiment_path.name
+                    ),
+                }
+            )
         return NamedParameters(
             {
                 "sacc_file": self.get_sacc_file(sacc_path),
@@ -193,6 +251,7 @@ class ExampleClusterCounts(AnalysisBuilder):
             ("Data set", self.dataset.value),
             ("Cluster counts", f"{self.use_cluster_counts}"),
             ("Mean log mass", f"{self.use_mean_log_mass}"),
+            ("Factory type", self.factory_type.value),
         ]
         if self.dataset == ClusterDataset.NUMCOSMO:
             options.append(("Seed", f"{self.seed}"))

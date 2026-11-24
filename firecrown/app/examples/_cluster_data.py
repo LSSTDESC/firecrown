@@ -10,6 +10,7 @@ import itertools
 import math
 import os
 from dataclasses import dataclass
+from enum import StrEnum
 
 import numpy as np
 import numpy.typing as npt
@@ -45,6 +46,47 @@ PROFILE_Z_INF = 10.0
 PROFILE_SOURCE_ZMAX = 5.0
 
 SDSS_SURVEY_NAME = "SDSSCluster_redshift_richness"
+
+# crow model of the example likelihoods, as in the factory templates.
+MODEL_PIVOT_MASS = 14.625862906
+MODEL_PIVOT_REDSHIFT = 0.6
+MODEL_MASS_INTERVAL = (12.0, 17.0)
+MODEL_TRUE_Z_INTERVAL = (0.1, 2.0)
+
+
+class ClusterFactoryType(StrEnum):
+    """How the cluster examples build their likelihood."""
+
+    PYTHON = "python"
+    YAML = "yaml"
+
+
+def cluster_model_yaml(*, binned: bool, integral_method: str | None = None) -> str:
+    """Return the YAML of the crow model of the example likelihoods.
+
+    :param binned: use the exact recipe with the binned mass-richness relation;
+        otherwise the grid recipe with the unbinned relation
+    :param integral_method: cubature of the exact recipe, or None for crow's
+    :returns: the YAML mapping of a ClusterModelFactory
+    """
+    if binned:
+        mass_distribution = "MurataBinnedFactory"
+        recipe = "type: ExactBinnedClusterRecipeFactory"
+        if integral_method is not None:
+            recipe += f"\n  integral_method: {integral_method}"
+    else:
+        mass_distribution = "MurataUnbinnedFactory"
+        recipe = "type: GridBinnedClusterRecipeFactory"
+    return f"""halo_mass_function: {{name: Tinker08, mass_def: 200c}}
+mass_distribution:
+  type: {mass_distribution}
+  pivot_log_mass: {MODEL_PIVOT_MASS}
+  pivot_redshift: {MODEL_PIVOT_REDSHIFT}
+recipe:
+  {recipe}
+  mass_interval: [{MODEL_MASS_INTERVAL[0]}, {MODEL_MASS_INTERVAL[1]}]
+  true_z_interval: [{MODEL_TRUE_Z_INTERVAL[0]}, {MODEL_TRUE_Z_INTERVAL[1]}]
+"""
 
 
 def fiducial_cosmology_spec() -> CCLCosmologySpec:

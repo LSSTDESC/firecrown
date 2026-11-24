@@ -14,7 +14,7 @@ from crow.recipes.binned_parent import (
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood._updatable_wrapper import (
+from firecrown.likelihood.clusters._updatable_wrapper import (
     UpdatableClusterObjects,
     _ClusterObjectConfig,
 )
@@ -31,6 +31,7 @@ class BinnedCluster(Statistic, ABC):
         survey_name: str,
         cluster_recipe: BinnedClusterRecipe,
         systematics: None | list[SourceSystematic] = None,
+        parameter_prefix: None | str = None,
     ) -> None:
         """Initialize this statistic.
 
@@ -38,8 +39,12 @@ class BinnedCluster(Statistic, ABC):
         :param survey_name: The name of the survey to use.
         :param cluster_recipe: The cluster recipe to use.
         :param systematics: The systematics to apply to this statistic.
+        :param parameter_prefix: Optional prefix for the parameters of the
+            cluster recipe, e.g. ``"redmapper"`` turns ``mass_distribution_mu0``
+            into ``redmapper_mass_distribution_mu0``. Use it when several
+            cluster samples need independent parameters.
         """
-        super().__init__()
+        super().__init__(parameter_prefix=parameter_prefix)
         self.systematics = systematics or []
         self.theory_vector: None | TheoryVector = None
         self.cluster_properties = cluster_properties
@@ -63,7 +68,9 @@ class BinnedCluster(Statistic, ABC):
                         "has_cosmo": hasattr(_rec_attr, "cosmo"),
                     }
                 )
-        self.updatable_parameters = UpdatableClusterObjects(cluster_objects_configs)
+        self.updatable_parameters = UpdatableClusterObjects(
+            cluster_objects_configs, parameter_prefix=self.parameter_prefix
+        )
 
     def _read(self, cluster_data: ClusterData) -> None:
         sacc_adapter = cluster_data
