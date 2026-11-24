@@ -13,6 +13,7 @@ Likelihood Types:
     - :class:`ConstGaussian`: Constant covariance Gaussian likelihood
     - :class:`GaussFamily`: Gaussian family likelihoods
     - :class:`StudentT`: Student-t distributed likelihood
+    - :class:`SumLikelihood`: Sum of the log-likelihoods of independent likelihoods
     - :class:`TwoPoint`: Two-point correlation statistics
     - :class:`BinnedCluster`: Binned cluster statistics base class
     - :class:`BinnedClusterNumberCounts`: Cluster abundance likelihoods
@@ -48,6 +49,7 @@ from firecrown.likelihood._likelihood import (
     load_likelihood_from_module_type,
 )
 from firecrown.likelihood._student_t import StudentT
+from firecrown.likelihood._sum import SumLikelihood
 from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
 from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
 from firecrown.likelihood.supernova._supernova import Supernova
@@ -75,6 +77,7 @@ __all__ = [
     "GaussFamily",
     "State",
     "StudentT",
+    "SumLikelihood",
     "UpdatableClusterObjects",
     "ConstGaussianPM",
     "PointMassData",

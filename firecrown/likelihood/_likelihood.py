@@ -60,6 +60,7 @@ import types
 import warnings
 
 # Import base classes from _base.py
+from firecrown.likelihood._sum import SumLikelihood
 from firecrown.likelihood_base import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 
@@ -72,7 +73,10 @@ def load_likelihood_from_module_type(
     """Loads a likelihood from a module type.
 
     After loading, this method returns a tuple of the likelihood and
-    the modeling tools.
+    the modeling tools. The factory function returns a likelihood, a list of
+    likelihoods, or a tuple of either with a :class:`ModelingTools`. A list of
+    likelihoods is wrapped in a :class:`SumLikelihood`, whose log-likelihood is
+    the sum of the components' log-likelihoods.
 
     This function is used by both :meth:`load_likelihood_from_script` and
     :meth:`load_likelihood_from_module`. It is not intended to be called
@@ -111,6 +115,8 @@ def load_likelihood_from_module_type(
         else:
             likelihood = build_return
             tools = ModelingTools()
+        if isinstance(likelihood, list):
+            likelihood = SumLikelihood(likelihood)
 
     if not isinstance(likelihood, Likelihood):
         raise TypeError(

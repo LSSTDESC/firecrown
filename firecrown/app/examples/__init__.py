@@ -11,6 +11,7 @@ from ._cluster_shear import ClusterProfile, ExampleClusterShear
 from ._cmb_cross import ExampleCMBCross
 from ._cosmic_shear import ExampleCosmicShear
 from ._des_y1_3x2pt import DESY1FactoryType, ExampleDESY13x2pt
+from ._sn_cosmic_shear import ExampleSNCosmicShear
 from ._sn_srd import ExampleSupernovaSRD
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     "ClusterDataset",
     "ClusterProfile",
     "ExampleSupernovaSRD",
+    "ExampleSNCosmicShear",
     "ExampleDESY13x2pt",
     "DESY1FactoryType",
 ]
@@ -30,6 +32,7 @@ EXAMPLES_LIST: dict[str, type[AnalysisBuilder]] = {
     "cosmic_shear": ExampleCosmicShear,
     "cmb_cross": ExampleCMBCross,
     "sn_srd": ExampleSupernovaSRD,
+    "sn_cosmic_shear": ExampleSNCosmicShear,
     "des_y1_3x2pt": ExampleDESY13x2pt,
     "cluster_counts": ExampleClusterCounts,
     "cluster_shear": ExampleClusterShear,
