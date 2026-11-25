@@ -1,6 +1,7 @@
 # Firecrown Language
 
-Terms used when assessing Firecrown dependencies, release compatibility, and scientific test expectations.
+Terms used in Firecrown's tutorials, likelihood modeling, SACC data handling,
+release compatibility, and scientific test expectations.
 
 ## Language
 
@@ -33,6 +34,72 @@ An advisory, technically non-blocking sample of environment rebuildability for a
 
 **API policy verdict**:
 The target-dependent interpretation of a completed static public API comparison: no detected breaking changes, informational breaking changes on `master`, or rejection of detected breaking changes on a support target. The verdict is distinct from whether analysis and reporting succeeded; missing analysis or reporting is not evidence of compatibility, and no detected breaks does not establish complete behavioral compatibility.
+
+## Tutorial and Analysis Language
+
+**Statistic**:
+A scientific quantity represented in a likelihood by observed values and model predictions.
+
+**Data vector**:
+The ordered observed or supplied values for the selected statistic entries.
+
+**Theory vector**:
+The ordered model predictions corresponding one-for-one to a data vector.
+
+**Source**:
+A Firecrown model component that describes a projected observable and supplies one or more CCL tracers for a two-point statistic.
+_Avoid_: source galaxy, galaxy sample
+
+**CCL tracer**:
+A `pyccl.Tracer` describing one contribution of a projected observable to an angular spectrum.
+_Avoid_: Source, SACC tracer
+
+**Systematic**:
+An effect represented in a likelihood model because it changes the relation between the inferred observable and its idealized theoretical counterpart.
+_Avoid_: modeling choice
+
+**Modeling choice**:
+A selected prescription or assumption used to predict an observable. A choice's placement in a `Source` or in `ModelingTools` does not by itself determine whether it is also a systematic.
+_Avoid_: systematic
+
+**Tomographic bin**:
+A named galaxy-bin descriptor containing a redshift grid, an inferred redshift distribution, and the measurement types available for that bin.
+_Avoid_: inferred redshift distribution
+
+**Inferred redshift distribution**:
+The estimated distribution of true redshift for a selected population, sampled on a redshift grid; commonly represented as `dN/dz` or `n(z)`.
+_Avoid_: tomographic bin
+
+**Lens sample**:
+A foreground galaxy population whose density or clustering provides the lensing or clustering field in a two-point analysis. The role does not by itself enforce redshift ordering.
+
+**Source-galaxy sample**:
+A background galaxy population whose shapes provide a weak-lensing shear measurement. The role does not by itself enforce redshift ordering or imply a Firecrown `Source`.
+_Avoid_: Source
+
+**Harmonic space**:
+The representation of a two-point measurement by multipole coordinate `ell`.
+
+**Real space**:
+The representation of a two-point measurement by angular-separation coordinate `theta`.
+_Avoid_: configuration space, angular-correlation space
+
+**Scale cut**:
+An inclusive rule that selects two-point measurements by the statistic's native coordinate: `ell` in harmonic space or `theta` in real space. For windowed bandpowers, an observation may also be retained or removed according to window support.
+_Avoid_: physical-distance cut
+
+**SACC structural metadata**:
+Descriptors of SACC tracer identities, bin combinations, data types, layouts, coordinates, and indices.
+_Avoid_: metadata for SACC measurements or calibration
+
+**SACC measurement**:
+An extracted measured value sequence together with its structural metadata and covariance indices.
+
+**SACC calibration**:
+Redshift-distribution inputs attached to SACC tracers, such as sampled `dN/dz` values.
+
+**SACC covariance**:
+The covariance matrix associated with SACC measurement entries.
 
 ## SACC Test Language
 
