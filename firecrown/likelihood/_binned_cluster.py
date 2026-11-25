@@ -23,7 +23,7 @@ from firecrown.models.cluster import ClusterData, SaccBin
 
 
 class BinnedCluster(Statistic, ABC):
-    """A statistic representing clusters in a z, mass bin."""
+    """Base statistic component for binned cluster counts and properties."""
 
     def __init__(
         self,
@@ -80,9 +80,9 @@ class BinnedCluster(Statistic, ABC):
         )
 
     def get_data_vector(self) -> DataVector:
-        """Gets the statistic data vector.
+        """Return this statistic's data vector.
 
-        :returns: The statistic data vector.
+        :returns: The data vector.
         """
         assert self.data_vector is not None
         return self.data_vector

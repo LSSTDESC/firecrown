@@ -1,7 +1,7 @@
-"""Gaussian Family Statistic Module.
+"""Statistic compatibility exports.
 
-The Statistic class describing objects that implement methods to compute the
-data and theory vectors for a :class:`GaussFamily` subclass.
+The :class:`Statistic` base class describes components that expose observed
+values as data vectors and compute corresponding theory vectors for likelihoods.
 """
 
 from __future__ import annotations

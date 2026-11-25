@@ -7,8 +7,11 @@ release compatibility, and scientific test expectations.
 
 ### 1.1 Likelihood and Model Components
 
+**Observable**:
+A physical quantity or field whose observed value or statistical summary can be compared with a model prediction. Examples include galaxy number density, weak-lensing shear, CMB lensing convergence, supernova apparent magnitude, and a binned cluster count or property.
+
 **Statistic**:
-A scientific quantity represented in a likelihood by observed values and model predictions.
+A Firecrown model component that represents either an observable or a statistical summary derived from one or more observables. It exposes the corresponding observed values as a data vector and computes model predictions as a theory vector. Examples include a supernova apparent magnitude, a binned cluster count, a binned cluster shear profile, and a two-point correlation of galaxy number density or weak-lensing shear.
 
 **Data vector**:
 The ordered observed or supplied values for the selected statistic entries.

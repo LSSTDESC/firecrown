@@ -19,10 +19,10 @@ from firecrown.models.cluster import ShearData
 
 
 class BinnedClusterShearProfile(BinnedCluster):
-    """The Binned Cluster Delta Sigma statistic.
+    """Statistic component for binned cluster shear and excess-density profiles.
 
-    This class will make a prediction for the shear of clusters in a z, mass,
-    radial bin and compare that prediction to the data provided in the sacc file.
+    This component predicts selected cluster lensing profiles in redshift,
+    mass-proxy, and radial bins for comparison with SACC data.
     """
 
     def read(self, sacc_data: sacc.Sacc) -> None:
@@ -39,7 +39,7 @@ class BinnedClusterShearProfile(BinnedCluster):
         super().read(sacc_data)
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a statistic from sources, concrete implementation."""
+        """Compute this statistic's theory vector."""
         theory_vector_list: list[float] = []
         self.updatable_parameters.export_all_parameters(
             self.cluster_recipe, tools.get_ccl_cosmology()
@@ -60,11 +60,10 @@ class BinnedClusterShearProfile(BinnedCluster):
         self,
         cluster_properties: ClusterProperty,
     ) -> list[float]:
-        """Computes the mean deltasigma of clusters in each bin.
+        """Compute the mean selected cluster lensing property in each bin.
 
-        Using the data from the sacc file, this function evaluates the likelihood for
-        a single point of the parameter space, and returns the predicted
-        mean deltasigma of the clusters in each bin.
+        Using the bins read from SACC, this method returns the predicted mean
+        value of the selected lensing property in each bin.
         """
         grouped = self._group_bins_by_edges()
 

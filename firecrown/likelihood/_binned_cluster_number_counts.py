@@ -12,7 +12,7 @@ from firecrown.models.cluster import AbundanceData
 
 
 class BinnedClusterNumberCounts(BinnedCluster):
-    """A statistic representing the number of clusters in a z, mass bin."""
+    """Statistic component for cluster counts and properties in redshift-mass bins."""
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic and mark it as ready for use.
@@ -28,10 +28,10 @@ class BinnedClusterNumberCounts(BinnedCluster):
         super().read(sacc_data)
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a statistic from sources, concrete implementation.
+        """Compute this statistic's theory vector.
 
-        :param tools: The modeling tools used to compute the statistic.
-        :returns: The computed statistic.
+        :param tools: The modeling tools used to compute the theory vector.
+        :returns: The computed theory vector.
         """
         self.updatable_parameters.export_all_parameters(
             self.cluster_recipe, tools.get_ccl_cosmology()
@@ -64,11 +64,10 @@ class BinnedClusterNumberCounts(BinnedCluster):
         cluster_counts: list[float],
         cluster_properties: ClusterProperty,
     ) -> list[float]:
-        """Computes the mean mass of clusters in each bin.
+        """Compute the mean selected cluster property in each bin.
 
-        Using the data from the sacc file, this function evaluates the likelihood for
-        a single point of the parameter space, and returns the predicted mean mass of
-        the clusters in each bin.
+        Using the bins read from SACC, this method returns the predicted mean
+        value of each selected property in each bin.
 
         :param cluster_counts: The number of clusters in each bin.
         :param cluster_properties: The cluster observables to use.

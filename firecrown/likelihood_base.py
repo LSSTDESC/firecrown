@@ -368,13 +368,13 @@ class StatisticUnreadError(RuntimeError):
 
 
 class Statistic(Updatable):
-    """The abstract base class for all physics-related statistics.
+    """The abstract base class for Firecrown statistic components.
 
-    Statistics read data from a SACC object as part of a multi-phase
-    initialization. They manage a :class:`DataVector` and, given a
-    :class:`ModelingTools` object, can compute a :class:`TheoryVector`.
-
-    Statistics represent things like two-point functions and mass functions.
+    A statistic represents either an observable or a statistical summary derived
+    from one or more observables. It reads observed values from a SACC object as
+    part of a multi-phase initialization, exposes them in a
+    :class:`DataVector`, and, given a :class:`ModelingTools` object, computes a
+    corresponding :class:`TheoryVector`.
     """
 
     def __init__(self, parameter_prefix: None | str = None):
@@ -430,14 +430,14 @@ class Statistic(Updatable):
 
     @abstractmethod
     def get_data_vector(self) -> DataVector:
-        """Gets the statistic data vector.
+        """Return this statistic's data vector.
 
         :returns: The data vector.
         """
 
     @final
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a statistic from sources, applying any systematics.
+        """Compute this statistic's theory vector.
 
         :param tools: the modeling tools used to compute the theory vector.
         :returns: The computed theory vector.
@@ -453,7 +453,7 @@ class Statistic(Updatable):
 
     @abstractmethod
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a statistic from sources, concrete implementation."""
+        """Compute this statistic's theory vector."""
 
     def get_theory_vector(self) -> TheoryVector:
         """Returns the last computed theory vector.
@@ -611,9 +611,9 @@ class SourceSystematic(Updatable):
 
 
 class Source(Updatable):
-    """Abstract base class for all observables that can be correlated.
+    """Model component describing a projected observable for a two-point statistic.
 
-    Sources are used in the creation of two-point functions.
+    Sources supply the CCL tracers used to compute two-point statistics.
     """
 
     cosmo_hash: None | int

@@ -17,7 +17,7 @@ SNIA_DEFAULT_M = -19.2
 
 
 class Supernova(Statistic):
-    """A statistic for Type Ia supernova apparent-magnitude measurements.
+    r"""A statistic for Type Ia supernova apparent-magnitude measurements.
 
     The observed values are compared with apparent magnitudes predicted as
     :math:`m = M + \\mu`, where :math:`M` is the absolute magnitude and
@@ -92,7 +92,7 @@ class Supernova(Statistic):
         return self.data_vector
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute predicted apparent magnitudes using CCL.
+        r"""Compute predicted apparent magnitudes using CCL.
 
         This method uses the scale factors loaded by :meth:`read` and the current
         sampler value of ``M`` to evaluate :math:`m = M + \\mu` at each supernova.

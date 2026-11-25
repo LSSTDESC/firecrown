@@ -5,19 +5,21 @@ implementations for various cosmological observables.
 
 Core Components:
     - :class:`Likelihood`: Abstract base class for all likelihoods
-    - :class:`Statistic`: Base class for observable statistics
-    - :class:`Source`: Infrastructure for data sources and systematics
+    - :class:`Statistic`: Base class for statistic model components
+    - :class:`Source`: Model components describing projected observables
     - Likelihood loading utilities
 
-Likelihood Types:
+Likelihoods:
     - :class:`ConstGaussian`: Constant covariance Gaussian likelihood
     - :class:`GaussFamily`: Gaussian family likelihoods
     - :class:`StudentT`: Student-t distributed likelihood
+
+Statistics:
     - :class:`TwoPoint`: Two-point correlation statistics
     - :class:`BinnedCluster`: Binned cluster statistics base class
-    - :class:`BinnedClusterNumberCounts`: Cluster abundance likelihoods
-    - :class:`BinnedClusterShearProfile`: Cluster weak lensing likelihoods
-    - :class:`Supernova`: Supernova distance modulus likelihoods
+    - :class:`BinnedClusterNumberCounts`: Cluster count and property statistics
+    - :class:`BinnedClusterShearProfile`: Cluster shear-profile statistics
+    - :class:`Supernova`: Supernova apparent-magnitude statistics
     - :class:`UpdatableClusterObjects`: Connector for creating Firecrown
     - cluster updatables from external code
 

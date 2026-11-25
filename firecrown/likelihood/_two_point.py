@@ -103,14 +103,16 @@ def calculate_angular_cl(
 class TwoPoint(Statistic):
     """A two-point statistic.
 
-    A two-point statistic represents the correlation between two measurements.
-    If the same source is used twice, this produces an autocorrelation.
+    A two-point statistic component represents a statistical correlation
+    between two projected observables. If the same Source is used twice, the
+    statistic is an autocorrelation.
 
     This class supports various two-point statistics including shear correlation
     functions, galaxy-shear correlation functions, and galaxy clustering
     statistics in both harmonic and real space.
 
-    The `sacc_data_type` parameter specifies the type of two-point statistic.
+    The `sacc_data_type` parameter specifies the SACC data type represented by
+    the statistic.
     Valid SACC data types map to CCL correlation function types or power spectra:
 
     * `galaxy_density_cl`: CCL angular power spectrum (cl)
@@ -124,8 +126,8 @@ class TwoPoint(Statistic):
     * `cmbGalaxy_convergenceShear_xi_t`: CCL position-shear cross-correlation (gl)
 
     The `ell_or_theta` parameter allows generating ell or theta values for
-    computing statistics when the corresponding data is not present in the SACC
-    file. It accepts a dictionary with keys: `minimum` (float), `maximum`
+    computing the theory vector when the corresponding data is not present in
+    the SACC file. It accepts a dictionary with keys: `minimum` (float), `maximum`
     (float), `n` (int), and `binning` (str, 'log' or 'lin').
 
     The `ell_for_xi` parameter configures ell values for computing power spectra
@@ -512,10 +514,10 @@ class TwoPoint(Statistic):
         self._data = value
 
     def compute_theory_vector_real_space(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a two-point statistic in real space.
+        """Compute this two-point statistic's theory vector in real space.
 
-        This method computes the two-point statistic in real space. It first computes
-        the Cl's in harmonic space and then translates them to real space using CCL.
+        This method first computes the Cl's in harmonic space and then translates
+        them to real space using CCL.
         """
         assert self.theory.ccl_kind != "cl"
         assert self.theory.thetas is not None
@@ -549,11 +551,10 @@ class TwoPoint(Statistic):
     def compute_theory_vector_harmonic_space(
         self, tools: ModelingTools
     ) -> TheoryVector:
-        """Compute a two-point statistic in harmonic space.
+        """Compute this two-point statistic's theory vector in harmonic space.
 
-        This method computes the two-point statistic in harmonic space. It computes
-        either the Cl's at the ells provided by the SACC file or the ells required
-        for the window function.
+        This method computes either the Cl's at the ells provided by the SACC file
+        or the ells required for the window function.
         """
         assert self.theory.ccl_kind == "cl"
         assert self.theory.ells is not None
@@ -599,7 +600,7 @@ class TwoPoint(Statistic):
         return TheoryVector.create(theory_vector)
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a two-point statistic from sources."""
+        """Compute this two-point statistic's theory vector from its sources."""
         if self.theory.ccl_kind == "cl":
             return self.compute_theory_vector_harmonic_space(tools)
 
