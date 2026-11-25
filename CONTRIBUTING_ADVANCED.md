@@ -179,15 +179,15 @@ come from the branch named in `ref`.
 
 Firecrown uses `conda-lock` to generate reproducible lockfiles stored in `.github/conda-lock/`. The lockfiles use the unified multi-platform format (`py{version}.conda-lock.yml`) which bundles all supported Python versions (3.12-3.14) and platforms (linux-64, osx-arm64) in a single file per Python version.
 
-**Generating lockfiles**: Run `make conda-lock` to regenerate all lockfiles and, from them, the validated pins in `dependencies-validated.yaml`. Because the lockfiles are solved from the generated `environment.yml`, run `make deps-sync` first whenever `dependencies.yaml` has changed; `make deps-check` reports it if you forget. This requires `conda-lock==4.0.2` installed in your development environment:
+**Generating lockfiles**: Run `make conda-lock` to regenerate all lockfiles and, from them, the validated pins in `dependencies-validated.yaml`. Because the lockfiles are solved from the generated `environment.yml`, run `make deps-sync` first whenever `dependencies.yaml` has changed; `make deps-check` reports it if you forget. This requires `conda-lock==4.0.5` installed in your development environment:
 
 ```bash
-pip install conda-lock==4.0.2
+pip install conda-lock==4.0.5
 ```
 
 **Verifying lockfiles**: Before pushing, run `make conda-lock-check` to confirm the lockfiles and `dependencies-validated.yaml` match the current `environment.yml` and git HEAD.
 
-**CI behavior**: CI jobs install `conda-lock` via `python -m pip install conda-lock==4.0.2` and use `conda-lock install` to create environments from the lockfiles. This ensures pip dependencies (`cobaya`, `isitgr`, `lsstdesc-crow`, `pygobject-stubs`) are resolved and installed as part of the locked environment, not as a separate step.
+**CI behavior**: CI jobs install `conda-lock` via `python -m pip install conda-lock==4.0.5` and use `conda-lock install` to create environments from the lockfiles. This ensures pip dependencies (`cobaya`, `isitgr`, `lsstdesc-crow`, `pygobject-stubs`) are resolved and installed as part of the locked environment, not as a separate step.
 
 **Cache keys**: CI uses lockfile hashes in cache keys (e.g., `conda-Linux-X64-py3.12-lock-{hash}-v34-lint`) to invalidate caches when dependencies change.
 
