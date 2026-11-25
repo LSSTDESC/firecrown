@@ -9,7 +9,7 @@ dependencies:
   - camb <2.0
   - clmm
   - compilers # two-phase cosmosis-standard-library installation
-  - cosmosis >=3.0,<3.26 # 3.26 .mod files need gfortran 15; camb <2.0 holds compilers at 14
+  - cosmosis >=3.0
   - cosmosis-build-standard-library
   - coverage
   - deno # quarto rendering
@@ -26,7 +26,7 @@ dependencies:
   - lsstdesc-crow
   - matplotlib-base # firecrown sacc view
   - mypy
-  - numcosmo >=0.28,<1.0
+  - numcosmo >=0.30,<1.0
   - numpy >=2.0,<2.4
   - packaging # required by cobaya and isitgr, which are installed from PyPI
   - pandas # required by cobaya, which is installed from PyPI; also the tutorials
@@ -62,7 +62,6 @@ dependencies:
   - sphinx-rtd-theme
   - sphinxcontrib-apidoc
   - sympy # required by isitgr, which is installed from PyPI
-  - tabulate # imported by numcosmo_py's CLI but not declared by conda-forge's numcosmo 0.28.0; remove once numcosmo declares it
   - tqdm # required by cobaya, which is installed from PyPI
   - typer
   - types-pyyaml
