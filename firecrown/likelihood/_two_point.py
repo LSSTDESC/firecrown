@@ -74,11 +74,11 @@ def calculate_angular_cl(
 
     :param ells: The angular wavenumbers at which to compute the power spectrum.
     :param pk_name: The name of the power spectrum to return.
-    :param scale0: The scale factor for the first tracer.
-    :param scale1: The scale factor for the second tracer.
+    :param scale0: The scale factor for the first Firecrown tracer.
+    :param scale1: The scale factor for the second Firecrown tracer.
     :param tools: The modeling tools to use.
-    :param tracer0: The first tracer to use.
-    :param tracer1: The second tracer to use.
+    :param tracer0: The first Firecrown tracer.
+    :param tracer1: The second Firecrown tracer.
     :returns: The angular multipole moments.
     """
     pk = calculate_pk(pk_name, tools, tracer0, tracer1)
@@ -281,11 +281,8 @@ class TwoPoint(Statistic):
 
         :returns: A TwoPoint statistic.
         """
-        # metadata.XY.x/Y are typed as Tracer (protocol). In this code path we
-        # expect concrete TomographicBin instances (with redshift arrays). Use
-        # runtime isinstance checks and raise an informative error if this is
-        # not the case — this both documents the assumption and narrows the
-        # type for the type checker.
+        # metadata.XY.x/y contain ProjectedField metadata. Factories select the
+        # concrete Source implementation from that metadata and its measurement.
         source0 = use_source_factory(
             metadata.XY.x, metadata.XY.x_measurement, tp_factory
         )

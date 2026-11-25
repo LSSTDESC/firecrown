@@ -33,8 +33,8 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     ):
         """Initialize the WeakLensing object.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         :param scale: the scale of the source. This is used to scale the shear
             power spectrum.
         :param systematics: a list of WeakLensingSystematic objects to apply to
@@ -54,7 +54,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         tomographic_bin: TomographicBin,
         systematics: None | list[SourceGalaxySystematic[WeakLensingArgs]] = None,
     ) -> WeakLensing:
-        """Create a WeakLensing object with the given tracer name and scale."""
+        """Create a WeakLensing Source from a SACC tracer name."""
         obj = cls(sacc_tracer=tomographic_bin.bin_name, systematics=systematics)
         # pylint: disable=unexpected-keyword-arg
         obj.tracer_args = WeakLensingArgs(

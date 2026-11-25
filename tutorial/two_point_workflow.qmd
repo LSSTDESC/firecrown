@@ -106,7 +106,7 @@ The [[likelihood|TwoPointFactory]] builds [[likelihood|TwoPoint]] objects by:
 2. Delegating to appropriate source factories:
    - [[metadata_types|Galaxies.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
    - [[metadata_types|Galaxies.SHEAR_E]] / [[metadata_types|Galaxies.SHEAR_T]] / ... → [[likelihood.weak_lensing|WeakLensingFactory]]
-3. Applying modeling choices (systematics, tracers, scales)
+3. Applying modeling choices to the `Source` objects (systematics and scales)
 
 Each TwoPoint object can be constructed from:
 
@@ -119,7 +119,7 @@ Each TwoPoint object can be constructed from:
 
 Restrict analysis to physically valid ranges where your models are accurate:
 
-- Define valid scale ranges per tracer combination
+- Define valid scale ranges per SACC tracer-name combination
 - Use [[data_functions|TwoPointBinFilterCollection]] for flexible filtering
 # Tutorial Reference {#sec-tutorial-reference}
 

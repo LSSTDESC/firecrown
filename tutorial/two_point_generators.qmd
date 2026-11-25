@@ -82,7 +82,7 @@ Markdown(df.to_markdown())
 You now have metadata for all LSST Year 1 two-point statistics. The key outputs are:
 
 - **`all_y1_bins`**: Redshift distributions for all lens and source bins
-- **`all_two_point_xy`**: All possible tracer pair combinations
+- **`all_two_point_xy`**: All possible SACC tracer-name pair combinations
 - **`all_two_point_cells`**: Complete harmonic-space metadata (layouts)
 
 These metadata objects contain no observational data—they describe the structure of measurements you want to analyze.

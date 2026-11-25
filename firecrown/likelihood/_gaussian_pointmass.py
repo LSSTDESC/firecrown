@@ -153,8 +153,8 @@ class ConstGaussianPM(ConstGaussian):
         """Extract galaxy_shearDensity_xi_t pairs from data.
 
         :param data_types: Array of data types
-        :param lens_keys: Array of lens tracer keys
-        :param src_keys: Array of source tracer keys
+        :param lens_keys: Array of lens-sample SACC tracer names
+        :param src_keys: Array of source-galaxy SACC tracer names
         :returns: Tuple of (xi_rows, xi_pairs)
         """
         assert (
@@ -177,8 +177,8 @@ class ConstGaussianPM(ConstGaussian):
 
         :param xi_pairs: Array of (lens, source) tracer pairs
         :param xi_rows: Row indices for xi_t data
-        :param lens_keys: Array of lens tracer keys
-        :param src_keys: Array of source tracer keys
+        :param lens_keys: Array of lens-sample SACC tracer names
+        :param src_keys: Array of source-galaxy SACC tracer names
         :returns: Tuple of (lens_tracers, src_tracers, row_lens_idx, row_src_idx)
         """
         lens_tracers = list(np.unique(xi_pairs[:, 0]))
@@ -200,7 +200,7 @@ class ConstGaussianPM(ConstGaussian):
         :returns: Tuple of (z_l, z_s) redshift arrays
         """
         # Use the first xi_t statistic as the template for N(z) grid,
-        # assuming all the lens/source tracers share the same N(z) sampling
+        # assuming all lens/source SACC tracers share the same N(z) sampling
         sacc_types = [
             s.statistic.sacc_data_type  # type: ignore[attr-defined]
             for s in self.statistics
@@ -230,13 +230,13 @@ class ConstGaussianPM(ConstGaussian):
         z_l = z_l_arr[0]
         z_s = z_s_arr[0]
 
-        # Double-check that all the tracers share the same N(z) sampling
+        # Double-check that all SACC tracers share the same N(z) sampling
         assert all(
             np.array_equal(z_l, z_l_tracer) for z_l_tracer in z_l_arr
-        ), "N(z) sampling must be the same for all lens tracers."
+        ), "N(z) sampling must be the same for all lens-sample SACC tracers."
         assert all(
             np.array_equal(z_s, z_s_tracer) for z_s_tracer in z_s_arr
-        ), "N(z) sampling must be the same for all source tracers."
+        ), "N(z) sampling must be the same for all source-galaxy SACC tracers."
 
         return z_l, z_s
 
@@ -249,8 +249,8 @@ class ConstGaussianPM(ConstGaussian):
     ) -> tuple[np.ndarray, np.ndarray]:
         """Compute normalized dN/dz distributions for all tracers.
 
-        :param lens_tracers: List of lens tracer names
-        :param src_tracers: List of source tracer names
+        :param lens_tracers: List of lens-sample SACC tracer names
+        :param src_tracers: List of source-galaxy SACC tracer names
         :param z_l: Lens redshift grid
         :param z_s: Source redshift grid
         :returns: Tuple of (nzL_norm, nzS_norm) normalized dN/dz arrays
@@ -349,7 +349,7 @@ class ConstGaussianPM(ConstGaussian):
         """Get a statistic for a given tracer.
 
         :param tracer: The tracer name
-        :param is_lens: True for lens tracer, False for source tracer
+        :param is_lens: True for a lens sample, False for a source-galaxy sample
         :returns: The GuardedStatistic for this tracer
         """
         source_attr = "source0" if is_lens else "source1"
@@ -367,18 +367,18 @@ class ConstGaussianPM(ConstGaussian):
         raise StopIteration(f"No {tracer_type} statistic found for {tracer}")
 
     def _get_lens_statistic(self, lens_tracer: str) -> GuardedStatistic:
-        """Get a statistic for a given lens tracer.
+        """Get a statistic for a lens sample's SACC tracer name.
 
-        :param lens_tracer: The lens tracer name
-        :returns: The GuardedStatistic for this lens tracer
+        :param lens_tracer: The lens-sample SACC tracer name
+        :returns: The GuardedStatistic for this lens sample
         """
         return self._get_statistic(lens_tracer, is_lens=True)
 
     def _get_src_statistic(self, src_tracer: str) -> GuardedStatistic:
-        """Get a statistic for a given source tracer.
+        """Get a statistic for a source-galaxy sample's SACC tracer name.
 
-        :param src_tracer: The source tracer name
-        :returns: The GuardedStatistic for this source tracer
+        :param src_tracer: The source-galaxy SACC tracer name
+        :returns: The GuardedStatistic for this source-galaxy sample
         """
         return self._get_statistic(src_tracer, is_lens=False)
 

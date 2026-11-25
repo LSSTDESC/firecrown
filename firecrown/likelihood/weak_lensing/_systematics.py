@@ -61,8 +61,8 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     def __init__(self, sacc_tracer: str) -> None:
         """Create a MultiplicativeShearBias object that uses the named tracer.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
@@ -116,8 +116,8 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     def __init__(self, sacc_tracer: None | str = None, alphag: None | float = 1.0):
         """Create a LinearAlignmentSystematic object, using the specified tracer name.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
@@ -205,8 +205,8 @@ class MassDependentLinearAlignmentSystematic(WeakLensingSystematic):
     def __init__(self, sacc_tracer: None | str = None):
         """Create a MassDependentLinearAlignmentSystematic object.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
@@ -307,8 +307,8 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     ):
         """Create a TattAlignmentSystematic object, using the specified tracer name.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
         self.ia_a_1 = register_new_updatable_parameter(
@@ -428,8 +428,8 @@ class HMAlignmentSystematic(WeakLensingSystematic):
     def __init__(self, _: None | str = None):
         """Create a HMAlignmentSystematic object, using the specified tracer name.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         """
         super().__init__()
 

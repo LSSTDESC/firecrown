@@ -611,18 +611,19 @@ class SourceSystematic(Updatable):
 
 
 class Source(Updatable):
-    """Model component describing a projected observable for a two-point statistic.
+    """Model component associated with one SACC tracer name.
 
-    Sources supply the CCL tracers used to compute two-point statistics.
+    A source describes a projected observable and creates one or more Firecrown
+    tracers for a two-point statistic.
     """
 
     cosmo_hash: None | int
     tracers: Sequence[Tracer]
 
     def __init__(self, sacc_tracer: str) -> None:
-        """Create a Source object that uses the named tracer.
+        """Create a Source object associated with the named SACC tracer.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+        :param sacc_tracer: The SACC tracer name. This is used
             as a prefix for its parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
@@ -664,8 +665,8 @@ class Source(Updatable):
     def _update(self, params: ParamsMap) -> None:
         """Implementation of Updatable interface method `_update`.
 
-        This clears the current hash and tracer, and calls the abstract method
-        `_update_source`, which must be implemented in all subclasses.
+        This clears cached cosmology and tracer data. It then calls
+        `_update_source`, which subclasses must implement.
 
         :param params: the parameters to be used for the update
         """
@@ -682,20 +683,20 @@ class Source(Updatable):
 
     @abstractmethod
     def create_tracers(self, tools: ModelingTools) -> tuple[Sequence[Tracer], object]:
-        """Abstract method to create tracers for this Source.
+        """Create Firecrown tracers for this Source.
 
-        :param tools: The modeling tools used for creating the tracers
+        :param tools: The modeling tools used for creating the Firecrown tracers.
         """
 
     @final
     def get_tracers(self, tools: ModelingTools) -> Sequence[Tracer]:
-        """Return the tracer for the given cosmology.
+        """Return the Firecrown tracers for the given cosmology.
 
         This method caches its result, so if called a second time with the same
         cosmology, no calculation needs to be done.
 
-        :param tools: The modeling tools used for creating the tracers
-        :returns: the list of tracers
+        :param tools: The modeling tools used for creating the Firecrown tracers.
+        :returns: The Firecrown tracers.
         """
         ccl_cosmo = tools.get_ccl_cosmology()
 
@@ -709,15 +710,16 @@ class Source(Updatable):
 
 
 class Tracer:
-    """Extending the pyccl.Tracer object with additional information.
+    """Wrap a CCL tracer with Firecrown model information.
 
-    Bundles together a pyccl.Tracer object with optional information about the
-    underlying 3D field, or a pyccl.nl_pt.PTTracer and halo profiles.
+    Bundles a :class:`pyccl.Tracer` with a tracer component name and optional
+    information about the underlying 3D field, perturbation theory, and
+    halo-model calculations.
     """
 
     @staticmethod
     def determine_field_name(field: None | str, tracer: None | str) -> str:
-        """Gets a field name for a tracer.
+        """Get a field name for a Firecrown tracer.
 
         This function encapsulates the policy for determining the value to be
         assigned to the :attr:`field` attribute of a :class:`Tracer`.
@@ -726,7 +728,7 @@ class Tracer:
         defining the initialization policy.
 
         :param field: the (stub) name of the field
-        :param tracer: the name of the tracer
+        :param tracer: the tracer component name
         :returns: the full name of the field
         """
         if field is not None:
@@ -744,21 +746,21 @@ class Tracer:
         halo_profile: None | pyccl.halos.HaloProfile = None,
         halo_2pt: None | pyccl.halos.Profile2pt = None,
     ):
-        """Initialize a new Tracer based on the provided tracer.
+        """Initialize a Firecrown Tracer from a CCL tracer.
 
-        Note that the :class:`pyccl.Tracer` is not copied; we store a reference to the
-        original tracer. Be careful not to accidentally share :class:`pyccl.Tracer`s.
+        The :class:`pyccl.Tracer` is not copied; this object stores a reference
+        to it.
 
-        If no tracer_name is supplied, then the tracer_name is set to the name of the
-        :class:`pyccl.Tracer` class that was used.
+        If no tracer component name is supplied, the component name is set to
+        the name of the :class:`pyccl.Tracer` class.
 
         If no `field` is given, then the attribute :attr:`field` is set to either
         (1) the tracer_name, if one was given, or (2) 'delta_matter'.
 
-        :param tracer: the pyccl.Tracer used as the basis for this Tracer.
-        :param tracer_name: optional name of the tracer.
-        :param field: optional name of the field associated with the tracer.
-        :param pt_tracer: optional non-linear perturbation theory tracer.
+        :param tracer: the CCL tracer wrapped by this object.
+        :param tracer_name: optional tracer component name.
+        :param field: optional name of the associated 3D field.
+        :param pt_tracer: optional non-linear perturbation-theory tracer.
         """
         assert tracer is not None
         self.ccl_tracer = tracer
@@ -812,10 +814,10 @@ class SourceGalaxySystematic(SourceSystematic, Generic[_SourceGalaxyArgsT]):
     ) -> _SourceGalaxyArgsT:
         """Apply method to include systematics in the tracer_arg.
 
-        :param tools: the modeling tools use to update the tracer arg
-        :param tracer_arg: the original source galaxy tracer arg to which we
-           apply the systematic.
-        :returns: a new source galaxy tracer arg with the systematic applied
+        :param tools: The modeling tools used to update the source argument.
+        :param tracer_arg: The original Source argument to which the systematic
+           is applied.
+        :returns: A new Source argument with the systematic applied.
         """
 
 
@@ -943,10 +945,10 @@ class SourceGalaxyPhotoZShift(
     """
 
     def __init__(self, sacc_tracer: str, active: bool = True) -> None:
-        """Create a PhotoZShift object, using the specified tracer name.
+        """Create a PhotoZShift object using the specified SACC tracer name.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         :param active: whether to use and active or passive transformation
         """
         super().__init__(parameter_prefix=sacc_tracer)
@@ -967,10 +969,10 @@ class SourceGalaxyPhotoZShift(
     ) -> _SourceGalaxyArgsT:
         """Apply a shift to the photo-z distribution of a source.
 
-        :param tools: the modeling tools use to update the tracer arg
-        :param tracer_arg: the original source galaxy tracer arg to which we
-            apply the systematic.
-        :returns: a new source galaxy tracer arg with the systematic applied
+        :param tools: The modeling tools used to update the Source argument.
+        :param tracer_arg: The original Source argument to which the systematic
+            is applied.
+        :returns: A new Source argument with the systematic applied.
         """
         new_z, new_dndz = self._transform(
             tracer_arg.z, tracer_arg.dndz, self.delta_z, 1.0
@@ -993,11 +995,11 @@ class PhotoZShiftFactory(BaseModel):
     ] = "PhotoZShiftFactory"
 
     def create(self, bin_name: str) -> PhotoZShift:
-        """Create a PhotoZShift object with the given tracer name."""
+        """Create a PhotoZShift object for the given SACC tracer name."""
         return PhotoZShift(bin_name)
 
     def create_global(self) -> PhotoZShift:
-        """Create a PhotoZShift object with the given tracer name."""
+        """Create a global PhotoZShift object."""
         raise ValueError("PhotoZShift cannot be global.")
 
 
@@ -1023,10 +1025,10 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
     """
 
     def __init__(self, sacc_tracer: str, active: bool = True) -> None:
-        """Create a PhotoZShift object, using the specified tracer name.
+        """Create a PhotoZShift object using the specified SACC tracer name.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         :param active: whether to use and active or passive transformation
         """
         super().__init__(sacc_tracer)
@@ -1068,11 +1070,11 @@ class PhotoZShiftandStretchFactory(BaseModel):
     ] = "PhotoZShiftandStretchFactory"
 
     def create(self, bin_name: str) -> PhotoZShiftandStretch:
-        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        """Create a PhotoZShiftandStretch object for a SACC tracer name."""
         return PhotoZShiftandStretch(bin_name)
 
     def create_global(self) -> PhotoZShiftandStretch:
-        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        """Create a global PhotoZShiftandStretch object."""
         raise ValueError("PhotoZShiftandStretch cannot be global.")
 
 
@@ -1089,7 +1091,7 @@ class SourceGalaxySelectField(
     def __init__(self, field: str = "delta_matter"):
         """Specify which 3D field should be used when computing angular power spectra.
 
-        :param field: the name of the 3D field that is associated to the tracer.
+        :param field: The 3D field associated with the projected observable.
         """
         super().__init__()
         self.field = field
@@ -1097,12 +1099,12 @@ class SourceGalaxySelectField(
     def apply(
         self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
     ) -> _SourceGalaxyArgsT:
-        """Apply method to include systematics in the tracer_arg.
+        """Select the 3D field in the Source argument.
 
-        :param tools: the modeling tools used to update the tracer_arg
-        :param tracer_arg: the original source galaxy tracer arg to which we
-            apply the systematics.
-        :returns: a new source galaxy tracer arg with the systematic applied
+        :param tools: The modeling tools used to update the Source argument.
+        :param tracer_arg: The original Source argument to which the systematic
+            is applied.
+        :returns: A new Source argument with the systematic applied.
         """
         return replace(tracer_arg, field=self.field)
 
@@ -1120,8 +1122,8 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT], ABC):
     ):
         """Initialize the SourceGalaxy object.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
 
         """
         super().__init__(sacc_tracer)

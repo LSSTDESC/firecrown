@@ -342,13 +342,13 @@ measurement types.
 """
 
 LENS_REGEX = re.compile(r"^lens\d+$")
-"""Regular expression for lens tracer bin names.
+"""Regular expression for SACC tracer names of lens samples.
 
 Matches names like lens0, lens1, lens2, etc.
 """
 
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
-"""Regular expression for source tracer bin names.
+"""Regular expression for SACC tracer names of source-galaxy samples.
 
 Matches names like src0, src1, source0, source1, etc.
 """
@@ -359,16 +359,16 @@ GALAXY_SOURCE_TYPES = (
     Galaxies.PART_OF_XI_MINUS,
     Galaxies.PART_OF_XI_PLUS,
 )
-"""Galaxy measurements for source tracers.
+"""Galaxy measurements for source-galaxy samples.
 
-Includes all shear-related measurements associated with source (weak lensing)
-tracers.
+Includes all shear-related measurements associated with source-galaxy
+samples.
 """
 
 GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
-"""Galaxy measurements for lens tracers.
+"""Galaxy measurements for lens samples.
 
-Includes galaxy number counts (density) associated with lens (clustering) tracers.
+Includes galaxy number counts associated with lens samples.
 """
 
 CMB_TYPES = tuple(CMB)

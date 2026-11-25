@@ -16,7 +16,7 @@ For background on the factory system, see [Two-Point Factory Basics](two_point_f
 
 Real analyses use only a subset of the measured two-point statistics, where the utilized data is typically limited by the accuracy of the models used to fit the data. It is useful to define the physical scales (corresponding to the data) that should be analyzed in a given likelihood evaluation of two-point statistics. Firecrown implements this feature through its factories, notably by defining a [[data_functions|TwoPointBinFilterCollection]] object.
 
-This object is a collection of [[data_functions|TwoPointBinFilter]] objects, which define the valid data analysis range for a given combination of two-point tracers. For instance, we can define the filtered range of galaxy clustering auto-correlations as follows:
+This object is a collection of [[data_functions|TwoPointBinFilter]] objects, which define the valid data analysis range for a given pair of SACC tracer names. For instance, we can define the filtered range of galaxy clustering auto-correlations as follows:
 
 ```{python}
 from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
@@ -61,7 +61,7 @@ tp_collection = TwoPointBinFilterCollection(
 Markdown(f"```yaml\n{base_model_to_yaml(tp_collection)}\n```")
 ```
 
-One may alternatively define the tracers directly (instead of from arguments) as [[data_functions|TwoPointTracerSpec]] objects.
+One may alternatively define the SACC tracer-name and measurement specifications directly (instead of from arguments) as [[data_functions|TwoPointTracerSpec]] objects.
 
 ## Using TwoPointExperiment
 

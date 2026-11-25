@@ -11,13 +11,17 @@ from firecrown.utils import YAMLSerializable
 
 @dataclass(frozen=True)
 class TracerNames(YAMLSerializable):
-    """The names of the two tracers in the sacc file."""
+    """A pair of tracer-related names.
+
+    Depending on context, the names may identify SACC tracers or Firecrown
+    tracer components. The pair does not itself contain tracer objects.
+    """
 
     name1: str
     name2: str
 
     def __getitem__(self, item: int) -> str:
-        """Get the name of the tracer at the given index."""
+        """Get the name at the given index."""
         if item == 0:
             return self.name1
         if item == 1:
@@ -36,7 +40,8 @@ class TracerNames(YAMLSerializable):
 TRACER_NAMES_TOTAL = TracerNames("", "")
 """Special TracerNames instance for totals.
 
-Represents the total/sum over all tracers, indicated by empty tracer names.
+Represents the total over all Firecrown tracer-component pairs, indicated by
+empty names.
 """
 
 

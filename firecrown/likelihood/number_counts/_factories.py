@@ -34,11 +34,11 @@ class LinearBiasSystematicFactory(BaseModel):
     ] = "LinearBiasSystematicFactory"
 
     def create(self, bin_name: str) -> LinearBiasSystematic:
-        """Create a LinearBiasSystematic object with the given tracer name."""
+        """Create a LinearBiasSystematic for a SACC tracer name."""
         return LinearBiasSystematic(bin_name)
 
     def create_global(self) -> LinearBiasSystematic:
-        """Create a LinearBiasSystematic object with the given tracer name."""
+        """Create a global LinearBiasSystematic."""
         raise ValueError("LinearBiasSystematic cannot be global.")
 
 
@@ -53,7 +53,7 @@ class PTNonLinearBiasSystematicFactory(BaseModel):
     ] = "PTNonLinearBiasSystematicFactory"
 
     def create(self, bin_name: str) -> PTNonLinearBiasSystematic:
-        """Create a PTNonLinearBiasSystematic object with the given tracer name.
+        """Create a PTNonLinearBiasSystematic for a SACC tracer name.
 
         :param bin_name: the name of the bin
         :returns: the created PTNonLinearBiasSystematic object
@@ -76,7 +76,7 @@ class MagnificationBiasSystematicFactory(BaseModel):
     ] = "MagnificationBiasSystematicFactory"
 
     def create(self, bin_name: str) -> MagnificationBiasSystematic:
-        """Create a MagnificationBiasSystematic object with the given tracer name.
+        """Create a MagnificationBiasSystematic for a SACC tracer name.
 
         :param bin_name: the name of the bin
         :returns: the created MagnificationBiasSystematic object
@@ -173,7 +173,7 @@ class NumberCountsFactory(BaseModel):
         ]
 
     def create(self, tomographic_bin: ProjectedField) -> NumberCounts:
-        """Create a NumberCounts object with the given tracer name and scale.
+        """Create a NumberCounts Source from projected-field metadata.
 
         :param tomographic_bin: the inferred redshift distribution
         :returns: a fully initialized NumberCounts object
@@ -202,9 +202,9 @@ class NumberCountsFactory(BaseModel):
         self,
         sacc_tracer: str,
     ) -> NumberCounts:
-        """Create an WeakLensing object with the given tracer name and scale.
+        """Create a NumberCounts Source from a SACC tracer name.
 
-        :param sacc_tracer: the name of the tracer
+        :param sacc_tracer: The SACC tracer name.
         :returns: a fully initialized NumberCounts object
         """
         sacc_tracer_id = hash(sacc_tracer)  # Improve this

@@ -10,6 +10,9 @@ release compatibility, and scientific test expectations.
 **Observable**:
 A physical quantity or field whose observed value or statistical summary can be compared with a model prediction. Examples include galaxy number density, weak-lensing shear, CMB lensing convergence, supernova apparent magnitude, and a binned cluster count or property.
 
+**Cosmological tracer**:
+A physical population or field whose spatial distribution or projected signal carries information about an underlying cosmological field. Examples include galaxies, quasars, galaxy clusters, intensity fields, weak-lensing shear, and weak-lensing or CMB convergence. A cosmological tracer need not directly trace the matter density field.
+
 **Statistic**:
 A Firecrown model component that represents either an observable or a statistical summary derived from one or more observables. It exposes the corresponding observed values as a data vector and computes model predictions as a theory vector. Examples include a supernova apparent magnitude, a binned cluster count, a binned cluster shear profile, and a two-point correlation of galaxy number density or weak-lensing shear.
 
@@ -20,12 +23,19 @@ The ordered observed or supplied values for the selected statistic entries.
 The ordered model predictions corresponding one-for-one to a data vector.
 
 **Source**:
-A Firecrown model component that describes a projected observable and supplies one or more CCL tracers for a two-point statistic.
+A Firecrown model component associated with one SACC tracer name that describes a projected observable and creates one or more Firecrown `Tracer` objects for a two-point statistic.
 _Avoid_: source galaxy, galaxy sample
 
+**Firecrown `Tracer`**:
+A Firecrown wrapper around one CCL tracer, with a tracer component name and optional 3D-field, perturbation-theory, and halo-model information.
+_Avoid_: SACC tracer, CCL tracer
+
+**Tracer component name**:
+The name of a contribution represented by a Firecrown `Tracer`, such as `shear`, `galaxies`, `magnification`, or `rsd`. It is distinct from a SACC tracer name.
+
 **CCL tracer**:
-A `pyccl.Tracer` describing one contribution of a projected observable to an angular spectrum.
-_Avoid_: Source, SACC tracer
+A `pyccl.Tracer` describing the projection of a sky observable for use in angular spectra. It may contain one or more contributions that CCL combines linearly.
+_Avoid_: Source, SACC tracer, Firecrown `Tracer`
 
 **Systematic**:
 An effect represented in a likelihood model because it changes the relation between the inferred observable and its idealized theoretical counterpart.
@@ -44,6 +54,10 @@ _Avoid_: inferred redshift distribution
 **Inferred redshift distribution**:
 The estimated distribution of true redshift for a selected population, sampled on a redshift grid; commonly represented as `dN/dz` or `n(z)`.
 _Avoid_: tomographic bin
+
+**Projected field**:
+Firecrown metadata derived from a SACC tracer for use in constructing a two-point `Source`. Examples include a `TomographicBin` and `CMBLensing`.
+_Avoid_: SACC tracer, CCL tracer, Firecrown `Tracer`
 
 **Lens sample**:
 A foreground galaxy population whose density or clustering provides the lensing or clustering field in a two-point analysis. The role does not by itself enforce redshift ordering.
@@ -64,6 +78,13 @@ An inclusive rule that selects two-point measurements by the statistic's native 
 _Avoid_: physical-distance cut
 
 ### 1.3 SACC Data
+
+**SACC tracer**:
+A named data-side object in a SACC file that data points refer to and that may carry calibration or bin metadata, such as an inferred redshift distribution, a map beam, survey information, or cluster-bin coordinates. A SACC tracer may also carry no attributes beyond its name.
+_Avoid_: cosmological tracer, CCL tracer, Firecrown `Tracer`
+
+**SACC tracer name**:
+The string identifying a SACC tracer. It is distinct from a tracer component name and does not identify a CCL tracer or Firecrown `Tracer`.
 
 **SACC structural metadata**:
 Descriptors of SACC tracer identities, bin combinations, data types, layouts, coordinates, and indices.

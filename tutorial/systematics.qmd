@@ -22,11 +22,11 @@ In Firecrown, *systematics* are used to modify the way a theory object works, so
 Often they are characterized by some unknown parameter which can be marginalized over in analysis.
 
 Systematics do not act on the output of the theory predictions.
-Instead, they act on *tracer arguments* objects, which are *data classes*[^dataclass] that contain the configuration data needed by the theory.
+Instead, they act on *source-argument objects*, which are *data classes*[^dataclass] that contain the configuration data needed by the theory.
 
-A tracer argument object encapsulates all the information needed to create a `pyccl.Tracer` object.
-A `SourceSystematic` object modifies a tracer argument in some way.
-Source tracer objects, such as `NumberCounts`, `WeakLensing`, and `CMBConvergence`, require configuration details, calibration inputs, and model parameters.
+A source-argument object encapsulates the information used by a `Source` to create its Firecrown `Tracer` objects.
+A `SourceSystematic` object modifies a source-argument object in some way.
+`Source` objects such as `NumberCounts`, `WeakLensing`, and `CMBConvergence` require configuration details, calibration inputs, and model parameters.
 
 In Firecrown, a source represents an observable that contributes to the construction of two-point statistics (like auto-correlations or cross-correlations).
 Examples of observables represented by sources include galaxy number density, weak lensing shear, or CMB lensing convergence.
@@ -34,11 +34,11 @@ Sources connect these observables to their theoretical predictions using tools l
 By representing specific observational data, sources enable the computation of likelihoods in cosmological analyses.
 For more, visit the [introductory article](intro_article.qmd).
 
-Galaxy source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution).
+Galaxy `Source` classes share a common requirement: a redshift distribution.
 To address this, we use a shared `SourceGalaxyArgs` class, which includes the redshift distribution, a generic `scale` parameter, and a `field` parameter specifying the power spectrum field to use.
 The CMB lensing convergence source is not a `SourceGalaxy` subclass; it uses `CMBConvergenceArgs`, including a source redshift for the CMB last-scattering surface, and does not use the galaxy redshift-distribution argument hierarchy.
 
-This shared structure allows us to define a common set of systematics that can be applied across all source tracers.
+This shared structure allows us to define a common set of systematics that can be applied across galaxy `Source` classes.
 For instance, the `PhotoZShift` object modifies the redshift distribution in a `SourceGalaxyArgs` object.
 
 The subclasses `WeakLensingArgs` and `NumberCountsArgs` inherit from `SourceGalaxyArgs` and add additional fields specific to weak lensing and number counts, respectively.
@@ -53,16 +53,16 @@ A class diagram for this systematic is shown below.
 classDiagram
 direction TB
 class NumberCountsSystematic {
-   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs)
+   apply(self, tools: ModelingTools, tracer_args: NumberCountsArgs)
 }
 class PTNonLinearBiasSystematic {
    b_2: float
    b_s: float
    __init__(self, sacc_tracer: None | str = None)
-   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs)
+   apply(self, tools: ModelingTools, tracer_args: NumberCountsArgs)
 }
 class SourceGalaxySystematic {
-   apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT)
+   apply(self, tools: ModelingTools, tracer_args: _SourceGalaxyArgsT)
 }
 class SourceSystematic {
    read(self, sacc_data: sacc.Sacc)
@@ -123,8 +123,8 @@ One concrete example is `PhotoZShift`[^2], which encapsulate a shift in the cent
       They are both derived from the `firecrown.likelihood.SourceSystematic` base class.
 
 Derived from `SourceSystematic`, and defined in the same module, is the class `SourceGalaxySystematic`.
-This class includes the `apply` method which is used to apply the systematic to a source galaxy tracer argument.
-It also introduces a restriction that subclasses of `SourceGalaxySystematic` can only be applied to source galaxy tracers.[^other]
+This class includes the `apply` method, which applies a systematic to a `SourceGalaxyArgs` object.
+It also restricts `SourceGalaxySystematic` subclasses to argument types for galaxy `Source` classes.[^other]
 This restriction will be enforced by the `mypy` type checker.
 This is done using the Python type systems support of *generics*.[^generics]
 The goal of this restriction is to avoid having systematics intended for one variety of observation (e.g. a weak lensing source) being applied to an inappropriate other variety of observation.
@@ -142,15 +142,15 @@ Systematics objects follow a simple lifecycle:
 
 1. They are created (either directly, or more often through a factory).
 2. They are `update`d, so that their parameter take on the correct values for their next application.
-3. They are `apply`ed to a given tracer arguments object, creating a new tracer arguments object in the modified state.
+3. They are `apply`ed to a source-argument object, creating a new source-argument object in the modified state.
 
 ## Creating Systematics Objects
 
 ### Direct Creation
 
-Systematics objects of all types can be created directly by using the constructor function that takes a single argument, the name of the tracer associated with the data that the systematic is applied to.
-This tracer name is used as a prefix for the parameters of the systematic.
-The systematic will have *attributes* with names corresponding to the parameter names *without* the tracer name prefix; initially, these attribute values will all be `None`.
+Systematics can be created directly by using a constructor that takes a SACC tracer name identifying the data to which the systematic applies.
+This SACC tracer name is used as a prefix for the systematic's parameters.
+The systematic will have *attributes* with names corresponding to the parameter names *without* the SACC tracer-name prefix; initially, these attribute values will all be `None`.
 The systematic can be queried for the names of its parameters:
 
 ```{python}

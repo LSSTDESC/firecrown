@@ -160,7 +160,7 @@ class WeakLensingFactory(BaseModel):
         ]
 
     def create(self, tomographic_bin: ProjectedField) -> WeakLensing:
-        """Create a WeakLensing object with the given tracer name and scale."""
+        """Create a WeakLensing Source from projected-field metadata."""
         assert isinstance(tomographic_bin, TomographicBin)
         inferred_zdist_id = id(tomographic_bin)
         if inferred_zdist_id in self._cache:
@@ -183,7 +183,7 @@ class WeakLensingFactory(BaseModel):
         self,
         sacc_tracer: str,
     ) -> WeakLensing:
-        """Create an WeakLensing object with the given tracer name and scale."""
+        """Create a WeakLensing Source from a SACC tracer name."""
         sacc_tracer_id = hash(sacc_tracer)  # Improve this
         if sacc_tracer_id in self._cache:
             return self._cache[sacc_tracer_id]

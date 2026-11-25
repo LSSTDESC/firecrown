@@ -33,7 +33,8 @@ In Firecrown, this means writing a new *likelihood factory function* -- the func
 ## Organize your data
 
 -   Firecrown expects data to be in [SACC](https://sacc.readthedocs.io) format.
--   Tracers: these are what you have observed
+-   SACC tracers: named data identities that may also carry calibration and bin metadata
+-   Data points: observed values associated with SACC tracer combinations
 -   Covariance: correlations between observations
 
 ## Select your statistics

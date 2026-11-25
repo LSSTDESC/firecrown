@@ -34,7 +34,7 @@ across different analysis pipelines.
 
 The SACC format is essential for Firecrown's operation because it:
 
-- Organizes measurements from multiple tracers (tomographic bins)
+- Organizes measurements using named SACC tracers
 - Enforces naming conventions for unambiguous interpretation
 - Stores measurement covariances and window functions
 

@@ -12,8 +12,8 @@ What is SACC?
 `SACC <https://sacc.readthedocs.io/en/latest/>`_ (Save All Correlations and
 Covariances) is a standardized format for storing measurements from cosmological surveys,
 including two-point correlation functions, SNIa observations, cluster counts, and other
-related cosmological probes. SACC files organize measurements from multiple tracers
-(e.g., tomographic bins) and provide a consistent interface for accessing data and metadata.
+related cosmological probes. SACC files organize measurements using named SACC tracers
+and provide a consistent interface for accessing data and metadata.
 
 **Note**: This guide focuses on the naming conventions and best practices for
 **two-point measurements** specifically. While SACC supports diverse measurement
@@ -21,9 +21,10 @@ types, the conventions described here are tailored to two-point correlations.
 
 Key Features of SACC:
 
-- **Tracers**: Represent tomographic bins or other matter distribution tracers 
-  (e.g., galaxies in a redshift range, CMB convergence map)
-- **Data Points**: Individual measurements of correlations between pairs of tracers
+- **SACC tracers**: Named data-side identities that data points refer to. They may
+  contain calibration or bin metadata, such as a tomographic redshift distribution,
+  a CMB map beam, or cluster-bin coordinates.
+- **Data Points**: Individual measurement values associated with SACC tracers
 - **Metadata**: Including covariances, window functions, and measurement types
 - **Data Types**: Standardized strings that identify what kind of measurement is stored
   (e.g., ``galaxy_shear_xi_plus``)
@@ -192,18 +193,20 @@ conceptual role. For galaxies, these include:
 - ``CMB_TYPES``: CMB convergence (``CONVERGENCE``)
 - ``CLUSTER_TYPES``: Cluster abundance
 
-A tracer may have multiple measurement types **as long as they belong to the same measurement set**.
-For example, a galaxy source tracer might have both ``SHEAR_T`` and ``PART_OF_XI_MINUS`` measurements,
-since both are part of ``GALAXY_SOURCE_TYPES``. However, mixing types from different sets
-(e.g., shear and counts) in the same tracer is not allowed by default.
+A SACC tracer may have multiple measurement types **as long as they belong to the
+same measurement set**. For example, a SACC tracer for a source-galaxy sample might
+have both ``SHEAR_T`` and ``PART_OF_XI_MINUS`` measurements, since both are part of
+``GALAXY_SOURCE_TYPES``. However, mixing types from different sets (e.g., shear and
+counts) in the same SACC tracer is not allowed by default.
 
 **Swap Detection and Auto-Correction (Deprecated)**: When Firecrown processes a SACC file,
-it may detect that a tracer was mistakenly assigned to the wrong measurement set. If tracers
-are reversed (e.g., a source tracer mixed with a lens tracer) in a measurement, Firecrown will:
+it may detect that a SACC tracer was assigned to the wrong measurement set. If
+SACC tracers are reversed (e.g., a source-galaxy tracer name appears in a lens-sample
+position) in a measurement, Firecrown will:
 
-1. Test if swapping the tracers would fix the issue
+1. Test if swapping the SACC tracer names would fix the issue
 2. If a swap corrects the assignment, emit a ``DeprecationWarning`` and perform the swap
-3. Apply the corrected measurement types to the tracers
+3. Apply the corrected measurement types to the SACC tracers
 
 **Important**: This auto-correction via tracer swapping is **deprecated** and will be removed
 in a future release. When strict enforcement is enabled:
@@ -230,8 +233,10 @@ refers to a tracer being associated with measurement types from **different meas
 **Within the same set is allowed**: A tracer **may** have multiple measurement types as long
 as they belong to the same measurement set. For example:
 
-- A source tracer can have both ``SHEAR_T`` and ``PART_OF_XI_MINUS`` (both in ``GALAXY_SOURCE_TYPES``)
-- A lens tracer can only have ``COUNTS`` (the only type in ``GALAXY_LENS_TYPES``)
+- A SACC tracer for a source-galaxy sample can have both ``SHEAR_T`` and
+  ``PART_OF_XI_MINUS`` (both in ``GALAXY_SOURCE_TYPES``)
+- A SACC tracer for a lens sample can have ``COUNTS`` (the only type in
+  ``GALAXY_LENS_TYPES``)
 
 However, mixing types from **different sets** in the same tracer (e.g., shear and counts) is
 not permitted by default.
@@ -259,7 +264,8 @@ whether mixed-type measurements (types from different sets) are permitted:
 
 By default, ``allow_mixed_types=False``, which raises a ``ValueError`` if a tracer is
 found to have measurement types from different sets. This strict behavior helps identify
-potential inconsistencies and ensures proper separation between source and lens tracers.
+potential inconsistencies and ensures proper separation between SACC tracers for
+source-galaxy and lens samples.
 
 **Note**: If ``allow_mixed_types=False`` and Firecrown detects reversed tracers that could
 be fixed by swapping, it will emit a ``DeprecationWarning`` and perform the swap. However,
@@ -543,13 +549,13 @@ Best Practices
    
    When creating SACC files, follow the naming convention from the beginning:
    
-   - Use clear, descriptive tracer names that indicate their measurement type
+   - Use clear, descriptive SACC tracer names that indicate their measurement type
    - Order tracers in data type entries to match the order in the data type string
    - Test your SACC file with Firecrown using ``allow_mixed_types=False`` to validate
      compliance
    - When writing a SACC file you can use Firecrown ordering support to determine automatically the correct order.
 
-2. **Use Descriptive Tracer Names**
+2. **Use Descriptive SACC Tracer Names**
    
    Make it obvious what each tracer represents:
    

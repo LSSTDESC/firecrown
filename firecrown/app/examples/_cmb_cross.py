@@ -32,7 +32,7 @@ class ExampleCMBCross(AnalysisBuilder):
     """CMB lensing cross-correlation analysis example with synthetic data.
 
     Generates synthetic weak lensing data for configurable tomographic bins
-    together with a single CMB lensing convergence tracer, including the
+    together with a single CMB lensing convergence CCL tracer, including the
     galaxy-galaxy and CMB-galaxy cross-correlation power spectra.
     """
 
@@ -126,7 +126,7 @@ class ExampleCMBCross(AnalysisBuilder):
     z_source: Annotated[
         float,
         typer.Option(
-            help="Source redshift for the CMB lensing convergence tracer",
+            help="Source redshift for the CMB lensing convergence CCL tracer",
             show_default=True,
         ),
     ] = 1100.0
@@ -355,10 +355,10 @@ class ExampleCMBCross(AnalysisBuilder):
     def _create_galaxy_tracers(
         self, sacc_data: sacc.Sacc, cosmo: pyccl.Cosmology, z_range: np.ndarray
     ) -> tuple[np.ndarray, list[pyccl.WeakLensingTracer]]:
-        """Create tomographic redshift bins and weak lensing tracers.
+        """Create tomographic bins, SACC tracers, and CCL tracers.
 
         :param sacc_data: SACC data object to populate with tracer metadata
-        :param cosmo: CCL cosmology object for tracer calculations
+        :param cosmo: CCL cosmology object for CCL-tracer calculations
         :param z_range: Redshift sampling array
         :returns: Bin centers and CCL WeakLensingTracer objects
         """
@@ -378,14 +378,14 @@ class ExampleCMBCross(AnalysisBuilder):
     def _create_cmb_tracer(
         self, sacc_data: sacc.Sacc, cosmo: pyccl.Cosmology
     ) -> pyccl.CMBLensingTracer:
-        """Create the CMB lensing convergence tracer.
+        """Create the CMB lensing convergence CCL tracer.
 
-        The tracer is stored in the SACC file as a ``MapTracer`` (spin-0,
-        unit beam) and the source redshift is stored in its metadata under
+        The CMB observable is represented in the SACC file by a ``MapTracer``
+        (spin-0, unit beam), with its source redshift stored in metadata under
         the ``z_lss`` key.
 
-        :param sacc_data: SACC data object to populate with tracer metadata
-        :param cosmo: CCL cosmology object for tracer calculations
+        :param sacc_data: SACC data object to populate with SACC tracer metadata
+        :param cosmo: CCL cosmology object for CCL-tracer calculations
         :returns: CCL CMBLensingTracer object for theory calculations
         """
         beam_ells = np.array([0.0, self.ell_max])
@@ -415,8 +415,8 @@ class ExampleCMBCross(AnalysisBuilder):
 
         :param sacc_data: SACC data object to populate with measurements
         :param cosmo: CCL cosmology for theoretical predictions
-        :param galaxy_tracers: List of weak lensing tracers for each bin
-        :param cmb_tracer: CMB lensing convergence tracer
+        :param galaxy_tracers: CCL tracers for the galaxy tomographic bins
+        :param cmb_tracer: CMB lensing convergence CCL tracer
         :param ell_range: Multipole sampling array
         :returns: List of noise-free theoretical power spectra for covariance
         """

@@ -13,7 +13,7 @@ from firecrown.modeling_tools import ModelingTools
 
 @dataclass(frozen=True)
 class CMBConvergenceArgs:
-    """Class for CMB convergence tracer arguments."""
+    """Arguments used by a CMB convergence Source to create Firecrown tracers."""
 
     scale: float = 1.0
     field: str = "delta_matter"
@@ -32,7 +32,7 @@ class CMBConvergence(Source):
     ):
         """Initialize the CMBConvergence object.
 
-        :param sacc_tracer: the name of the tracer in the SACC file.
+        :param sacc_tracer: The SACC tracer name.
         :param scale: the scale of the source.
         :param z_source: the source redshift for CMB lensing.
         """
@@ -116,13 +116,13 @@ class CMBConvergenceFactory(BaseModel):
         self._cache: dict[int, CMBConvergence] = {}
 
     def create(self, cmb_tracer: ProjectedField) -> CMBConvergence:
-        """Create a CMBConvergence object with the given inferred galaxy z distribution.
+        """Create a CMBConvergence object from projected-field metadata.
 
-        :param cmb_tracer: the inferred galaxy redshift distribution
+        :param cmb_tracer: CMB lensing projected-field metadata.
         :returns: a fully initialized CMBConvergence object
         """
         assert isinstance(cmb_tracer, CMBLensing)
-        # Use the bin_name as the tracer identifier
+        # bin_name contains the SACC tracer name.
         sacc_tracer = cmb_tracer.bin_name
         tracer_id = hash(sacc_tracer)
 
@@ -139,7 +139,7 @@ class CMBConvergenceFactory(BaseModel):
     def create_from_metadata_only(self, sacc_tracer: str) -> CMBConvergence:
         """Create a CMBConvergence object from metadata only.
 
-        :param sacc_tracer: the name of the tracer
+        :param sacc_tracer: The SACC tracer name.
         :returns: a fully initialized CMBConvergence object
         """
         tracer_id = hash(sacc_tracer)

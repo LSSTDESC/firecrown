@@ -71,10 +71,10 @@ format:
 ## Building blocks for `TwoPoint` statistics
 
 -   Sources: associated with one or more `Tracer`s
-    -   `Tracer`: encapulates a `pyccl.Tracer` with optional metainformation of how to calculate it.
+    -   Firecrown `Tracer`: wraps a `pyccl.Tracer` with optional metadata used to calculate it.
         [Caution]{.alert}: this code currently contains some features that are nowhere used.
 	We are working on simplification of this code.
-    -   Defines a `dataclass` that is used by the source to create the `pyccl.Tracer` object.
+    -   Defines source-argument data classes used by the `Source` to create Firecrown `Tracer` objects.
 -   Systematics are associated with a type of source:
     -    `apply(self, tools: ModelingTools, tracer_args: T) -> T`
     -    The type `T` is a the `dataclass` mentioned above.

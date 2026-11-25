@@ -77,8 +77,8 @@ class LinearBiasSystematic(NumberCountsSystematic):
     def __init__(self, sacc_tracer: str):
         """Initialize the LinearBiasSystematic.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
@@ -145,8 +145,8 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     def __init__(self, sacc_tracer: None | str = None):
         """Initialize the PTNonLinearBiasSystematic.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
@@ -205,8 +205,8 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     def __init__(self, sacc_tracer: str):
         """Initialize the MagnificationBiasSystematic.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
@@ -276,8 +276,8 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     def __init__(self, sacc_tracer: str):
         """Initialize the ConstantMagnificationBiasSystematic.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
 

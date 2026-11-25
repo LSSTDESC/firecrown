@@ -38,14 +38,14 @@ def make_interval_from_list(
 
 
 class TwoPointTracerSpec(BaseModel):
-    """Class defining a tracer bin specification."""
+    """Specify a projected field by SACC tracer name and measurement type."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    name: Annotated[str, Field(description="The name of the tracer bin.")]
+    name: Annotated[str, Field(description="The SACC tracer name.")]
     measurement: Annotated[
         Measurement,
-        Field(description="The measurement of the tracer bin."),
+        Field(description="The measurement type associated with the SACC tracer."),
         BeforeValidator(make_measurement),
     ]
 

@@ -16,6 +16,6 @@ These systematics can be shared between sources, or they can be specific to a gi
 When specific to a given source, any parameter name that is used in the systematic is prefixed with the name of the source.
 In contrast, when a systematic is shared between sources, the parameter names are not prefixed.
 
-Currently, the `TwoPoint` statistic caches the `pyccl.Tracer`s that are created for each source.
-This is done to avoid creating the same `Tracer` multiple times.
-We are planning to change this behavior in the future in order to avoid the need to cache the `Tracer`s.
+Currently, each `Source` caches the Firecrown `Tracer` objects it creates.
+This avoids recreating the same wrapped CCL tracers for an unchanged cosmology.
+We are planning to review this caching behavior in the future.

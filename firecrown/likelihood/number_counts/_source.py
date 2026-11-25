@@ -43,8 +43,8 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     ):
         """Initialize the NumberCounts object.
 
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
+        :param sacc_tracer: The SACC tracer name, used as a prefix for this
+            object's parameters.
         :param has_rsd: whether to include RSD in the tracer.
         :param derived_scale: whether to include a derived parameter for the scale
             of the tracer.
@@ -77,7 +77,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         scale: float = 1.0,
         systematics: None | list[SourceGalaxySystematic[NumberCountsArgs]] = None,
     ) -> NumberCounts:
-        """Create a NumberCounts object with the given tracer name and scale.
+        """Create a NumberCounts Source from a SACC tracer name.
 
         This is the recommended way to create a NumberCounts object. It creates
         a fully initialized object.

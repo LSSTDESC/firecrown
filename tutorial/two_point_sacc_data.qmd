@@ -16,7 +16,7 @@ For an overview of the factory system, see [Two-Point Factory Basics](two_point_
 
 A `SACC` object provides all components needed for a statistical analysis in Firecrown:
 
-- **Metadata**: Layout, data types, binning, tracer names.
+- **Metadata**: Layout, data types, binning, and SACC tracer names.
 - **Calibration data**: Redshift distributions $\mathrm{d}n/\mathrm{d}z$ for each bin.
 - **Data**: Measurements (e.g., power spectra).
 - **Covariance**: Uncertainties and correlations.
@@ -83,7 +83,7 @@ likelihood_ready = ConstGaussian.create_ready(
 
 This approach was used in Firecrown $\leq 1.7$. Users needed to know the structure of the `SACC` file a priori and create [[likelihood|TwoPoint]] objects manually.
 
-To reduce this burden, Firecrown introduced a helper to extract tracer pairs and data types from a `SACC` file:
+To reduce this burden, Firecrown introduced a helper to extract SACC tracer-name pairs and data types from a `SACC` file:
 
 ```{python}
 from firecrown.metadata_functions import extract_all_real_metadata_indices

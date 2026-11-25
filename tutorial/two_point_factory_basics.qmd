@@ -75,7 +75,7 @@ By default, both bins and factories use [[metadata_types|TypeSource.DEFAULT]], s
 Before using the factory, it's helpful to understand Firecrown's four-layer metadata hierarchy:
 
 1. **Bin Descriptors** (e.g., [[metadata_types|InferredGalaxyZDist]])
-   - Properties of individual observables (redshift distributions, tracer types)
+   - Properties of individual observables (redshift distributions and measurement types)
    - Shared across components for consistency
 
 2. **Bin Pairs** ([[metadata_types|TwoPointXY]])

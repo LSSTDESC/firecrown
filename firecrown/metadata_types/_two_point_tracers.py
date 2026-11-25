@@ -1,9 +1,8 @@
-"""Tomographic bin / tracer types.
+"""Projected-field metadata types.
 
-This module defines a Protocol for generic tracers and a concrete
-implementation previously known as ``TomographicBin``. The concrete
-class has been renamed to ``TomographicBin``; an alias ``TomographicBin``
-is provided for backwards compatibility.
+This module defines metadata derived from SACC tracers for use in constructing
+two-point Sources. It provides a generic ProjectedField protocol and concrete
+TomographicBin and CMBLensing implementations.
 """
 
 from dataclasses import dataclass, field
@@ -18,43 +17,42 @@ from firecrown.utils import YAMLSerializable
 
 @runtime_checkable
 class ProjectedField(Protocol):
-    """Protocol describing the minimal tracer interface used across Firecrown.
+    """Protocol for projected-field metadata derived from a SACC tracer.
 
-    Implementations must provide these attributes so that code can operate on
-    different kinds of tracers (not only galaxy redshift distributions).
+    Implementations provide metadata needed to construct a Source for either a
+    galaxy tomographic bin or another projected observable.
 
     The protocol is intentionally defined in terms of instance attributes,
     which makes it directly compatible with frozen dataclasses such as
     ``TomographicBin`` and other simple data containers.
 
-    :var bin_name: String identifier for the tracer or tomographic bin.
-    :var measurements: Set of Measurement values supported by the tracer.
-    :var type_source: TypeSource describing how the tracer was obtained.
+    :var bin_name: SACC tracer name for this projected field.
+    :var measurements: Set of measurements supported by this projected field.
+    :var type_source: TypeSource describing the source category of the data.
     """
 
     @property
     def bin_name(self) -> str:  # pragma: no cover - Protocol stub
-        """The name of the tracer or tomographic bin."""
+        """Return the SACC tracer name."""
 
     @property
     def measurements(self) -> set[Measurement]:  # pragma: no cover - Protocol stub
-        """The set of Measurement types supported by the tracer."""
+        """Return the measurement types supported by this projected field."""
 
     @property
     def measurement_list(self) -> list[Measurement]:  # pragma: no cover - Protocol stub
-        """The measurements supported by the tracer, as a sorted list."""
+        """Return the supported measurements as a sorted list."""
 
     @property
     def type_source(self) -> TypeSource:  # pragma: no cover - Protocol stub
-        """The source of the tracer type information."""
+        """Return the source category of the data."""
 
 
 @dataclass(frozen=True, kw_only=True)
 class TomographicBin(YAMLSerializable):
     """Concrete tomographic bin holding redshift distribution arrays.
 
-    This class is the renamed replacement for the legacy
-    ``TomographicBin`` type. It is intentionally frozen and lightweight.
+    This class is intentionally frozen and lightweight.
     """
 
     bin_name: str
@@ -88,7 +86,7 @@ class TomographicBin(YAMLSerializable):
 
         If ``other`` is another concrete ``TomographicBin`` instance we perform
         the full array and set comparisons. If ``other`` implements the
-        :class:`Tracer` protocol but is not a ``TomographicBin``, return False
+        :class:`ProjectedField` protocol but is not a ``TomographicBin``, return False
         (they are distinct implementations). For unrelated types return
         ``NotImplemented`` so Python can try the reflected operation.
         """
@@ -100,7 +98,7 @@ class TomographicBin(YAMLSerializable):
                 and self.measurements == other.measurements
             )
 
-        # Another object that satisfies the Tracer protocol: intentionally
+        # Another ProjectedField implementation: intentionally
         # considered not equal to this concrete TomographicBin implementation.
         if isinstance(other, ProjectedField):
             return False
@@ -121,13 +119,13 @@ InferredGalaxyZDist = TomographicBin
 
 @dataclass(frozen=True, kw_only=True)
 class CMBLensing(YAMLSerializable):
-    """Tracer type describing CMB lensing.
+    """Projected-field metadata for CMB lensing.
 
-    This minimal tracer exposes the same public interface as other tracers
+    This object exposes the ProjectedField interface
     (``bin_name``, ``measurements``, ``type_source``) and additionally
     stores the redshift of the last-scattering surface as ``z_lss``.
 
-    The only measurement supported by this tracer by default is
+    The only measurement supported by this projected field by default is
     :data:`firecrown.metadata_types._measurements.CMB.CONVERGENCE`.
     """
 
@@ -137,7 +135,7 @@ class CMBLensing(YAMLSerializable):
     type_source: TypeSource = TypeSource.DEFAULT
 
     def __post_init__(self) -> None:
-        """Basic validation for the CMB lensing tracer.
+        """Validate the CMB lensing projected-field metadata.
 
         - Ensure bin_name is not empty;
         - Ensure z_lss is a finite non-negative number; and
@@ -161,7 +159,7 @@ class CMBLensing(YAMLSerializable):
 
         Two CMBLensing instances are equal if they have the same bin_name,
         z_lss, measurements and type_source. If ``other`` implements the
-        Tracer protocol but is not a CMBLensing instance, we return False.
+        ProjectedField protocol but is not a CMBLensing instance, return False.
         For unrelated types, return NotImplemented.
         """
         if isinstance(other, CMBLensing):
