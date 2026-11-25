@@ -1,0 +1,140 @@
+---
+title: "Computing and Plotting 3x2pt Angular Power Spectra"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
+format:
+  html: default
+  ipynb:
+    wrap: none
+    filters:
+      - ../linkgen.lua
+      - ../ipynb-strip-xref.lua
+    execute:
+      eval: false
+      echo: true
+      output: true
+format-links: [ipynb]
+---
+
+## Purpose of this Recipe
+
+The 3x2pt data vector consists of three sets of angular power spectra: cosmic shear (source-source), galaxy-galaxy lensing (source-lens), and galaxy clustering (lens-lens).
+Below, the [[likelihood|TwoPoint]] objects for these spectra are built for the LSST Y1 tomographic bins, their theory vectors are computed at the default parameter values, and the spectra are plotted.
+The bin pairs and multipoles are generated from metadata, so no SACC file is read.
+A user running this notebook needs Firecrown, installed as described in the [installation quickstart](https://firecrown.readthedocs.io/en/latest/install_quick.html), and matplotlib.
+
+For the concepts used here, see the tutorials on [two-point generators](../two_point_generators.qmd), [bin pair selectors](../two_point_bin_selectors.qmd), and [factory basics](../two_point_factory_basics.qmd).
+
+## Tomographic Bins and Bin Pairs
+
+The LSST Y1 lens and source bin collections, [[generators|LSST_Y1_LENS_HARMONIC_BIN_COLLECTION]] and [[generators|LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION]], each generate five tomographic bins.
+The selector [[metadata_types|ThreeTwoBinPairSelector]] with `lens_dist=0` keeps three groups of bin pairs: all 15 source-source pairs, the 5 lens auto-correlations, and the 10 source-lens pairs whose source bin index is larger than the lens bin index.
+Keeping only the lens auto-correlations follows the LSST DESC Science Requirements Document ([arXiv:1809.01669](https://arxiv.org/abs/1809.01669), Appendices D1.1 and D2.1).
+
+```{python}
+from collections import Counter
+
+import numpy as np
+
+from firecrown.generators import (
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
+)
+from firecrown.metadata_functions import make_binned_two_point_filtered
+from firecrown.metadata_types import ThreeTwoBinPairSelector, TwoPointHarmonic
+
+lens_bins = LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.generate()
+source_bins = LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.generate()
+
+selector = ThreeTwoBinPairSelector(lens_dist=0)
+bin_pairs = make_binned_two_point_filtered(lens_bins + source_bins, selector)
+```
+
+Each bin pair, together with the multipoles at which the spectrum is computed, defines one [[metadata_types|TwoPointHarmonic]] metadata object.
+The multipoles below are 40 logarithmically spaced values between 20 and 2000, truncated to integers.
+
+```{python}
+ells = np.unique(np.geomspace(20, 2000, 40).astype(int))
+metadata = [TwoPointHarmonic(XY=xy, ells=ells) for xy in bin_pairs]
+
+Counter(md.get_sacc_name() for md in metadata)
+```
+
+## Building the TwoPoint Objects
+
+A [[likelihood|TwoPointFactory]] converts each metadata object into a [[likelihood|TwoPoint]] object.
+The factory below uses the default weak lensing and number counts sources, without systematics.
+
+```{python}
+from firecrown.likelihood import TwoPointFactory
+from firecrown.utils import base_model_from_yaml
+
+factory_yaml = """
+correlation_space: harmonic
+weak_lensing_factories:
+  - type_source: default
+    per_bin_systematics: []
+    global_systematics: []
+number_counts_factories:
+  - type_source: default
+    per_bin_systematics: []
+    global_systematics: []
+"""
+
+factory = base_model_from_yaml(TwoPointFactory, factory_yaml)
+two_points = factory.from_metadata(metadata)
+```
+
+## Computing the Theory Vectors
+
+The function [[updatable|get_default_params_map]] collects the default values of every parameter required by the [[modeling_tools|ModelingTools]] and by the [[likelihood|TwoPoint]] objects.
+These are the cosmological parameters and one linear galaxy bias per lens bin.
+
+```{python}
+from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import get_default_params_map
+
+tools = ModelingTools()
+params = get_default_params_map(tools, *two_points)
+
+dict(sorted(dict(params).items()))
+```
+
+The modeling tools are updated and prepared once.
+Each [[likelihood|TwoPoint]] object is then updated and computes its theory vector, the values of $C_\ell$ at the multipoles in `ells`.
+
+```{python}
+tools.update(params)
+tools.prepare()
+
+theory_vectors = []
+for two_point in two_points:
+    two_point.update(params)
+    theory_vectors.append(two_point.compute_theory_vector(tools))
+```
+
+## Plotting the Spectra
+
+The figure has one panel per SACC data type.
+Each line is one bin pair, labeled by the index of its first bin and the index of its second bin.
+For `galaxy_shearDensity_cl_e` the first bin is the source bin.
+
+```{python}
+# | label: fig-3x2pt-cells
+# | fig-cap: Angular power spectra of the LSST Y1 3x2pt bin pairs at the default parameter values.
+import matplotlib.pyplot as plt
+
+data_types = ["galaxy_shear_cl_ee", "galaxy_shearDensity_cl_e", "galaxy_density_cl"]
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 4.5), constrained_layout=True)
+for ax, data_type in zip(axes, data_types):
+    for md, cl in zip(metadata, theory_vectors):
+        if md.get_sacc_name() != data_type:
+            continue
+        label = f"({md.XY.x.bin_name[-1]}, {md.XY.y.bin_name[-1]})"
+        ax.loglog(md.ells, cl, label=label)
+    ax.set_title(data_type)
+    ax.set_xlabel(r"$\ell$")
+    ax.legend(fontsize="x-small", ncol=2)
+axes[0].set_ylabel(r"$C_\ell$")
+plt.show()
+```

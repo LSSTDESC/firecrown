@@ -1,0 +1,12 @@
+---
+title: "Firecrown Cookbook"
+subtitle: "Version {{< env FIRECROWN_VERSION >}}"
+---
+
+Each recipe in the cookbook is a short, self-contained page for one task with Firecrown.
+Each recipe is shown here with its output and can be downloaded as a Jupyter notebook from the Jupyter link under Other Formats on its page.
+The concepts used by the recipes are explained in the [tutorials](../index.qmd).
+
+## Two-Point Statistics
+
+- [Computing and Plotting 3x2pt Angular Power Spectra](two_point_cells.qmd): the LSST Y1 3x2pt [[likelihood|TwoPoint]] objects are built from metadata, and their theory vectors are computed and plotted.

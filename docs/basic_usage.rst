@@ -14,7 +14,7 @@ Each example writes its data, its likelihood factory, and the configuration for 
     cd cluster_example
     cosmosis cosmosis_cluster_counts.ini
 
-Next, we recommend reading the `introductory article <_static/intro_article.html>`_.
+Next, we recommend reading the `introductory article <_static/intro_article.html>`_, then the `tutorials <_static/index.html>`_ and the `cookbook <_static/cookbook/index.html>`_.
 
 CCL Usage Details
 -----------------

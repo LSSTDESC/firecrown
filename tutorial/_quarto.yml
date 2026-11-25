@@ -18,6 +18,8 @@ project:
     - two_point_scale_cuts.qmd
     - two_point_integration.qmd
     - systematics.qmd
+    - cookbook/index.qmd
+    - cookbook/two_point_cells.qmd
 
 website:
   title: "Firecrown Tutorial Documents"
@@ -28,6 +30,10 @@ website:
       - text: "Main Documentation"
         href: ../index.html
         icon: book
+      - text: "Tutorials"
+        href: intro_article.qmd
+      - text: "Cookbook"
+        href: cookbook/index.qmd
       - about.qmd
   sidebar:
       style: "docked"
@@ -64,6 +70,11 @@ website:
                   text: "Scale Cuts"
                 - href: two_point_integration.qmd
                   text: "Integration Methods"
+        - section: "Cookbook"
+          href: cookbook/index.qmd
+          contents:
+            - href: cookbook/two_point_cells.qmd
+              text: "3x2pt Angular Power Spectra"
         - section: "Firecrown on GitHub"
           contents:
             - text: "Source Code"

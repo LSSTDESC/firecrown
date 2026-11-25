@@ -3,8 +3,10 @@ title: "Firecrown Tutorial Documents"
 ---
 
 Welcome to the Firecrown Tutorial Documentation.
+The site has three parts:
 
-The tutorials are broken in to several parts.
-The first part includes an introductory article that describes Firecrown in general terms, and a small development example.
+- **Introduction**: an [introductory article](intro_article.qmd) on Firecrown in general terms, with a small development example.
+- **Tutorials**: documents on specific parts of Firecrown, starting with [inferred redshift distributions](tomographic_bin.qmd) and the [two-point framework](two_point_framework.qmd). All tutorials are listed in the sidebar.
+- **Cookbook**: [short recipes](cookbook/index.qmd), one task each. Every recipe can be downloaded as a Jupyter notebook.
 
-The second part includes a series of tutorials on specific aspects of Firecrown.
+Installation instructions and the API reference are in the [main documentation](../index.html).

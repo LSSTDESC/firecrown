@@ -19,10 +19,11 @@ within those samplers.
 It can also be used as a library in other contexts, and so the installation of
 Firecrown does not *require* the installation of a sampler.
 
-.. note::
-   Before installing Firecrown, we recommend visiting the `tutorial site <_static/index.html>`_.
-   This site serves as a comprehensive resource for Firecrown, offering both pre-installation information and post-installation guidance. 
-   It covers essential topics such as the general concepts behind Firecrown, installation instructions, and usage guidelines.
+.. tip::
+   New users should start with the `tutorials <_static/index.html>`_. The first is
+   the `introductory article <_static/intro_article.html>`_ on the general concepts
+   behind Firecrown. Short recipes, each downloadable as a Jupyter notebook, are in
+   the `cookbook <_static/cookbook/index.html>`_.
 
 Data Format
 -----------
@@ -50,7 +51,8 @@ see the **SACC Usage** guide.
    Installation Quickstart<install_quick.rst>
    Using Firecrown<basic_usage.rst>
    SACC Usage<sacc_usage.rst>
-   Tutorial Site <tutorial.rst>
+   Tutorials <tutorial.rst>
+   Cookbook (Jupyter notebooks) <cookbook.rst>
 
 .. toctree::
    :maxdepth: 1
