@@ -29,7 +29,7 @@ The `TomographicBin` object can be created by providing the following parameters
 from firecrown.metadata_types import Galaxies, TomographicBin
 import numpy as np
 
-z = np.linspace(0.0, 1.0, 200)
+z = np.linspace(0.0, 1.0, 200, dtype=np.float64)
 lens0 = TomographicBin(
     bin_name="lens0",
     z=z,
@@ -40,6 +40,13 @@ lens0 = TomographicBin(
 ```
 
 This dataclass can be serialized, but the resulting object will not be human-readable.
+Redshifts and distribution values are stored as `float64`. Construction accepts
+real integer and floating arrays and converts their dtype without changing units
+or normalizing the distribution. Already conforming arrays may share storage,
+including strided arrays; other real dtypes require conversion and may lose
+precision. Boolean, complex, string, object, structured, datetime, and masked
+arrays are rejected. Source reads from SACC retain their existing copy, flatten,
+and redshift-sort behavior.
 To obtain a human-readable format, Firecrown introduces generators that describe the data layout in a more readable way.
 This is described in the [tutorial on inferred distribution serialization](inferred_zdist_serialization.qmd).
 

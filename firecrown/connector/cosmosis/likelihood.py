@@ -10,10 +10,12 @@ likelihood.
 
 import warnings
 
+import numpy as _np
 import cosmosis.datablock
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
 
+from firecrown._integer_arrays import _as_multipole_array
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.likelihood import (
     GaussFamily,
@@ -257,11 +259,22 @@ class FirecrownLikelihood:
         assert have_ells != have_thetas
 
         if have_ells:
-            sample.put_int_array_1d(
-                "data_vector",
-                f"ell_{stat.sacc_data_type}_{tracer}",
-                stat.ells,
-            )
+            assert stat.ells is not None
+            ells = _as_multipole_array(stat.ells)
+            key = f"ell_{stat.sacc_data_type}_{tracer}"
+            if ells.dtype.kind == "f":
+                sample.put_double_array_1d(
+                    "data_vector", key, _np.asarray(ells, dtype=_np.float64)
+                )
+            else:
+                limits = _np.iinfo(_np.intc)
+                if ells.size and (
+                    int(ells.min()) < limits.min or int(ells.max()) > limits.max
+                ):
+                    raise ValueError("Multipoles are outside the CosmoSIS C int range.")
+                sample.put_int_array_1d(
+                    "data_vector", key, _np.asarray(ells, dtype=_np.intc)
+                )
 
         if have_thetas:
             sample.put_double_array_1d(

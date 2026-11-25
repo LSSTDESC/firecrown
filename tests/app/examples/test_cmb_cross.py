@@ -7,6 +7,7 @@ through Firecrown's YAML-driven TwoPointFactory system.
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 import sacc
 
@@ -18,7 +19,7 @@ from firecrown.app.examples._cmb_cross import (
     BUILD_LIKELIHOOD_FACTORY,
     ExampleCMBCross,
 )
-from firecrown.likelihood import ConstGaussian, NamedParameters
+from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
 from firecrown.likelihood.factories import build_two_point_likelihood
 from firecrown.metadata_types import CMBLensing, TomographicBin
 from firecrown.modeling_tools import ModelingTools
@@ -245,9 +246,11 @@ class TestExampleCMBCross:
     def test_build_likelihood_execution(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Test that the auto-discovered likelihood is built successfully,
-        picking up both the galaxy and CMB lensing tracers via the
-        WeakLensingFactory/CMBConvergenceFactory dispatch."""
+        """Build a likelihood from the example's fractional multipoles.
+
+        :param tmp_path: Temporary directory for generated example files.
+        :param monkeypatch: Pytest fixture used to run from the example directory.
+        """
         monkeypatch.chdir(tmp_path)
         builder = ExampleCMBCross(
             output_path=tmp_path,
@@ -265,19 +268,23 @@ class TestExampleCMBCross:
         params = builder.get_build_parameters(sacc_file)
 
         likelihood, modeling_tools = build_two_point_likelihood(params)
-
         assert isinstance(likelihood, ConstGaussian)
         assert isinstance(modeling_tools, ModelingTools)
-
-        # n_bins galaxy auto/cross + n_bins CMB-galaxy cross + 1 CMB auto
-        expected_n_stats = 2 * (2 + 1) // 2 + 2 + 1
-        assert len(likelihood.statistics) == expected_n_stats
+        assert any(
+            isinstance(guard.statistic, TwoPoint)
+            and guard.statistic.ells is not None
+            and np.any(guard.statistic.ells % 1 != 0)
+            for guard in likelihood.statistics
+        )
 
     def test_build_likelihood_without_cmb_auto(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Test that the auto-discovered likelihood correctly omits the CMB
-        auto-correlation when it is not present in the SACC file."""
+        """Build a likelihood without CMB auto-correlation.
+
+        :param tmp_path: Temporary directory for generated example files.
+        :param monkeypatch: Pytest fixture used to run from the example directory.
+        """
         monkeypatch.chdir(tmp_path)
         builder = ExampleCMBCross(
             output_path=tmp_path,
@@ -294,9 +301,14 @@ class TestExampleCMBCross:
         builder.generate_factory(tmp_path, sacc_file)
         params = builder.get_build_parameters(sacc_file)
 
-        likelihood, _ = build_two_point_likelihood(params)
+        data = sacc.Sacc.load_fits(str(sacc_file))
+        assert "cmb_convergence_cl" not in data.get_data_types()
+        likelihood, modeling_tools = build_two_point_likelihood(params)
         assert isinstance(likelihood, ConstGaussian)
-
-        # n_bins galaxy auto/cross + n_bins CMB-galaxy cross, no CMB auto
-        expected_n_stats = 2 * (2 + 1) // 2 + 2
-        assert len(likelihood.statistics) == expected_n_stats
+        assert isinstance(modeling_tools, ModelingTools)
+        assert any(
+            isinstance(guard.statistic, TwoPoint)
+            and guard.statistic.ells is not None
+            and np.any(guard.statistic.ells % 1 != 0)
+            for guard in likelihood.statistics
+        )

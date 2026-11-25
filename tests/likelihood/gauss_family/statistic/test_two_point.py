@@ -2,11 +2,14 @@
 Tests for the TwoPoint module.
 """
 
+from collections.abc import Callable
+
 import re
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
+import numpy.typing as npt
 import pyccl
 import pytest
 import sacc
@@ -22,6 +25,8 @@ from firecrown.generators._two_point import (
     EllOrThetaConfig,
     LogLinearElls,
     generate_bin_centers,
+    generate_ells_cells,
+    generate_reals,
 )
 from firecrown.likelihood._two_point import (
     NumberCountsFactory,
@@ -117,6 +122,7 @@ def fixture_binning_type(request: pytest.FixtureRequest) -> str:
 
 def test_log_linear_ells_no_rounding() -> None:
     res = LogLinearElls(minimum=0, midpoint=5, maximum=80, n_log=5).generate()
+    assert res.dtype == np.int64
     expected = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0, 80.0])
     assert res.shape == expected.shape
     assert np.allclose(expected, res)
@@ -124,12 +130,14 @@ def test_log_linear_ells_no_rounding() -> None:
 
 def test_log_linear_ells_doing_rounding() -> None:
     res = LogLinearElls(minimum=1, midpoint=3, maximum=100, n_log=5).generate()
+    assert res.dtype == np.int64
     expected = np.array([1.0, 2.0, 3.0, 7.0, 17.0, 42.0, 100.0])
     assert np.allclose(expected, res)
 
 
 def test_log_linear_ells_generate_all() -> None:
     res = LogLinearElls(minimum=1, midpoint=3, maximum=100, n_log=5).generate_all()
+    assert res.dtype == np.int64
     expected = np.arange(1, 100 + 1)
     assert np.allclose(expected, res)
 
@@ -224,7 +232,11 @@ def test_two_point_src0_src0_no_data_binning(
     sacc_galaxy_cells_src0_src0_no_data: SaccGalaxyDistributionFixture,
     binning_type: str,
 ) -> None:
-    """Test TwoPoint with different binning types when no data is present."""
+    """Retain real generated bin centers when no SACC observations exist.
+
+    :param sacc_galaxy_cells_src0_src0_no_data: SACC tracer with no observations.
+    :param binning_type: Existing linear or logarithmic binning prescription.
+    """
     sacc_data = sacc_galaxy_cells_src0_src0_no_data.sacc_data
 
     src0 = WeakLensing(sacc_tracer="src0")
@@ -244,13 +256,9 @@ def test_two_point_src0_src0_no_data_binning(
     )
     with pytest.warns(UserWarning, match="Empty index selected"):
         statistic.read(sacc_data)
-
-    assert statistic.window is None
-    assert statistic.ells is not None
-    assert statistic.thetas is None
-    assert all(np.isfinite(statistic.ells))
-    assert all(statistic.ells >= 1)
-    assert all(statistic.ells <= 100)
+    expected_ells, _ = generate_ells_cells(ell_config)
+    assert statistic.ells is not None and statistic.ells.dtype == np.float64
+    np.testing.assert_array_equal(statistic.ells, expected_ells)
 
 
 def test_two_point_lens0_lens0_generates_configured_thetas_without_measurements(
@@ -1030,3 +1038,22 @@ def test_two_point_normalize_window_used_in_read(
             assert not np.allclose(
                 two_point_normalized.theory.window, two_point_unnormalized.theory.window
             )
+
+
+@pytest.mark.parametrize("generate", [generate_ells_cells, generate_reals])
+def test_generated_sampling_coordinates_remain_fractional(
+    generate: Callable[
+        [EllOrThetaConfig], tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+    ],
+) -> None:
+    """Keep real bin centers separate from exact-multipole generation.
+
+    :param generate: Existing real-valued coordinate and placeholder generator.
+    """
+    coordinates, values = generate(
+        {"minimum": 0.0, "maximum": 10.0, "n": 2, "binning": "lin"}
+    )
+    assert coordinates.dtype == np.float64
+    assert values.dtype == np.float64
+    np.testing.assert_array_equal(coordinates, [2.5, 7.5])
+    np.testing.assert_array_equal(values, [0.0, 0.0])

@@ -8,8 +8,11 @@ from numpy import typing as npt
 
 
 def make_log_interpolator(
-    x: npt.NDArray[np.int64], y: npt.NDArray[np.float64]
-) -> Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]]:
+    x: npt.NDArray[np.int64] | npt.NDArray[np.float64],
+    y: npt.NDArray[np.float64],
+) -> Callable[
+    [npt.NDArray[np.int64] | npt.NDArray[np.float64]], npt.NDArray[np.float64]
+]:
     """Return a function object that does 1D spline interpolation.
 
     If all the y values are greater than 0, the function
@@ -24,7 +27,9 @@ def make_log_interpolator(
             np.log(x), np.log(y), ext=2
         )
 
-        def log_log_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
+        def log_log_interpolator(
+            x_: npt.NDArray[np.int64] | npt.NDArray[np.float64],
+        ) -> npt.NDArray[np.float64]:
             """Interpolate on log-log scale."""
             return np.exp(intp(np.log(x_)))
 
@@ -32,7 +37,9 @@ def make_log_interpolator(
     # only use log for x
     intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
 
-    def log_x_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
+    def log_x_interpolator(
+        x_: npt.NDArray[np.int64] | npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Interpolate on log-x scale."""
         return intp(np.log(x_))
 

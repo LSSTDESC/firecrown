@@ -64,13 +64,10 @@ def build_likelihood(_):
     sacc_data.add_tracer(
         "NZ", "lens0", np.array([0.1, 0.2, 0.3]), np.array([0.0, 1.0, 0.0])
     )
-    sacc_data.add_ell_cl(
-        "galaxy_density_cl",
-        "lens0",
-        "lens0",
-        np.array([10, 20, 30]),
-        np.array([1.0, 2.0, 3.0]),
-    )
+    for ell, cell in zip([10, 20, 30], [1.0, 2.0, 3.0]):
+        sacc_data.add_data_point(
+            "galaxy_density_cl", ("lens0", "lens0"), cell, ell=ell
+        )
     sacc_data.add_covariance(np.eye(3) * 0.1)
 
     likelihood = ConstGaussian(statistics=statistics)
