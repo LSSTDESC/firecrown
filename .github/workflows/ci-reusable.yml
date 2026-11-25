@@ -61,6 +61,8 @@ env:
   CONDA_ENV: firecrown_developer
   CACHE_VERSION: 34
   CONDA_LOCK_VERSION: "4.0.5"
+  # UCX's UD transport fails on the runners' MANA devices, which aborts MPI initialization
+  UCX_TLS: tcp,sm,self
 
 jobs:
   quick-validation:
