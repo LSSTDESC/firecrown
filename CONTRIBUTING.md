@@ -223,7 +223,7 @@ interpret the API report in pull-request CI.
 Developers must have `conda-lock` installed to regenerate lockfiles. Install it with:
 
 ```bash
-pip install conda-lock==4.0.2
+pip install conda-lock==4.0.5
 ```
 
 The `CONTRIBUTING_ADVANCED.md` file contains detailed information about lockfile management and the CI system.
