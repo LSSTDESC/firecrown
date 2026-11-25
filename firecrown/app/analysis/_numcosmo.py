@@ -513,6 +513,7 @@ def _setup_models(
         fc_model = FirecrownModel()
         mset.set(fc_model)
         for parameter in model.parameters:
+            fc_model.param_set_desc(parameter.name, _param_to_nc_dict(parameter))
             if parameter.prior is not None:
                 _add_prior(
                     priors,

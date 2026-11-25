@@ -244,16 +244,15 @@ def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
 
 
 def format_float(value: float) -> str:
-    """Format float for CosmoSIS compatibility.
+    """Format a float for CosmoSIS.
 
-    Formats to 3 significant digits and ensures decimal point is present
-    (adds '.0' if needed). CosmoSIS requires floats to have decimal points.
+    Returns the shortest decimal representation that reads back as the same float.
+    It always contains a decimal point or an exponent, as CosmoSIS requires.
 
     :param value: Numeric value to format
-    :returns: Formatted string (e.g., '0.67', '1.0', '2.5e-9')
+    :returns: Formatted string (e.g., '0.2664315', '1.0', '2.5e-09')
     """
-    s = f"{value:.3g}"
-    return s if ("." in s or "e" in s) else s + ".0"
+    return repr(float(value))
 
 
 def add_firecrown_model(

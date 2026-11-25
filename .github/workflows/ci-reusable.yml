@@ -60,7 +60,9 @@ on:
 env:
   CONDA_ENV: firecrown_developer
   CACHE_VERSION: 34
-  CONDA_LOCK_VERSION: "4.0.2"
+  CONDA_LOCK_VERSION: "4.0.5"
+  # UCX's UD transport fails on the runners' MANA devices, which aborts MPI initialization
+  UCX_TLS: tcp,sm,self
 
 jobs:
   quick-validation:
@@ -242,6 +244,9 @@ jobs:
       - name: Install environment from lockfile if cache not hit
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
         shell: bash -l {0}
+        # isitgr's Makefile links libgomp statically on macOS; conda-forge's gfortran >=15 ships no libgomp.a
+        env:
+          MAKEFLAGS: ${{ matrix.os == 'macos' && 'SFFLAGS=-dynamiclib' || '' }}
         run: |
           echo "=== Conda diagnostics ==="
           conda --version
@@ -418,6 +423,9 @@ jobs:
       - name: Install environment from lockfile if cache not hit
         shell: bash -l {0}
         if: ${{ steps.cache-lock.outputs.cache-hit != 'true' }}
+        # isitgr's Makefile links libgomp statically on macOS; conda-forge's gfortran >=15 ships no libgomp.a
+        env:
+          MAKEFLAGS: SFFLAGS=-dynamiclib
         run: |
           echo "=== Conda diagnostics ==="
           conda --version
